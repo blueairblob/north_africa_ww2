@@ -63,9 +63,11 @@ def run_headless(
     prompts) -- the "watch two AIs fight it out" mode. `delay` paces
     playback when watching; ignored otherwise.
 
-    `snapshot_dir`, if given, writes a PNG of the whole board after every
-    turn (render.image -- requires the optional `image` extra: `pip install
-    desert-rats[image]`). Independent of `watch`; useful for headless runs
+    `snapshot_dir`, if given, writes both a tactical PNG (render.image,
+    the confirmed in-game colour model) and a strategic overview PNG
+    (render.overview, pubmap_units.png-style terrain legend + unit dots)
+    after every turn -- requires the optional `image` extra: `pip install
+    desert-rats[image]`. Independent of `watch`; useful for headless runs
     where you want to inspect the game visually afterwards rather than
     live in a terminal.
     """
@@ -75,13 +77,19 @@ def run_headless(
     snapshot = None
     if snapshot_dir is not None:
         from .render import image as render_image
+        from .render import overview as render_overview
         import os
 
         os.makedirs(snapshot_dir, exist_ok=True)
 
         def snapshot(turn_state: game.GameState) -> None:
-            path = os.path.join(snapshot_dir, f"turn_{turn_state.turn_counter:04d}.png")
-            render_image.save_board_image(turn_state.units, board, path)
+            turn = turn_state.turn_counter
+            render_image.save_board_image(
+                turn_state.units, board, os.path.join(snapshot_dir, f"turn_{turn:04d}_tactical.png")
+            )
+            render_overview.save_overview_image(
+                turn_state.units, board, os.path.join(snapshot_dir, f"turn_{turn:04d}_overview.png")
+            )
 
     if not watch and snapshot is None:
         game.run_until_over(state, providers, max_turns=max_turns)
@@ -254,8 +262,9 @@ def parse_args(argv: Optional[list] = None) -> argparse.Namespace:
     )
     parser.add_argument(
         "--snapshot-dir", type=str, default=None,
-        help="write a PNG of the board after every turn to this directory "
-        "(render.image; requires the 'image' extra: pip install desert-rats[image])",
+        help="write both a tactical PNG (render.image) and a strategic overview "
+        "PNG (render.overview) after every turn to this directory "
+        "(requires the 'image' extra: pip install desert-rats[image])",
     )
     return parser.parse_args(argv)
 

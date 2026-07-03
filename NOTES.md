@@ -237,6 +237,20 @@ confirmed; everything else about the AI's target selection is inferred.
   flat coloured blocks in `image.py`, not the original's 8x8 tile art.
   BUILD_SPEC §1/§8 explicitly accept this tier; pixel-exact tiles are
   optional/later (`reference/prospects.md` #12/#13).
+- **`overview.py` (new) — a strategic overview map, styled after the
+  person-supplied `pubmap_units.png` reference.** Explicitly *not* a
+  fidelity claim (see its own module docstring, and `image.py`'s entry
+  above for why): it reuses the exact 16-colour terrain-code legend
+  sampled from `data/terrain_authentic.png` (the extraction tooling's
+  debug legibility palette) so it's visually comparable to that reference
+  and to `pubmap_units.png`, plus a small dot per living unit coloured by
+  nationality. Real-world town labels (`APPROXIMATE_TOWN_COLUMNS`) are
+  **off by default** and, when enabled, are positioned from real-world
+  coastal road distances between El Agheila and Alexandria as a rough
+  orientation aid — not decoded game data (terrain point-feature naming is
+  still an open item, `reference/prospects.md` #11). Wired into
+  `main.py --snapshot-dir` alongside `image.py`'s tactical render — every
+  turn now writes both a `_tactical.png` and an `_overview.png`.
 - **German ink rendered as bright-black/grey, not pure black** — pure ANSI
   black is usually invisible against a typical dark terminal background.
   Legibility substitution only; the confirmed Spectrum ink codes
