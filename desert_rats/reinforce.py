@@ -1,10 +1,11 @@
 """Campaign clock, arrival admission from the master OOB, board-edge staging.
 
-See BUILD_SPEC.md §3.3, §5.6. `mps` has no source in data/master_oob.json
-(see units.py's module docstring) -- a genuine, unresolved data gap, not
-listed as a numbered item in BUILD_SPEC.md §10 but the same kind of thing:
-admission here assigns every unit a single flat, named, tunable MPS value
-rather than inventing a per-unit table with no basis in the recovered data.
+See BUILD_SPEC.md §3.3, §5.6. `mps` is not part of the 10-byte master_oob
+table (see data.Unit's docstring); admission uses the per-unit value merged
+in from data/unit_mps.json (real for 56/128 units, an evidenced type-level
+fallback for the rest -- see NOTES.md). `DEFAULT_MPS` remains as a last-
+resort override for callers that construct units outside the OOB pipeline
+(e.g. tests).
 """
 from __future__ import annotations
 
@@ -33,8 +34,9 @@ STAGING_POINTS = {
 # point to find a free footprint -- a safety cap, not a rules value.
 MAX_NUDGE_RADIUS = 30
 
-# Genuinely unrecovered (see module docstring); 6 is a commonly-observed
-# value among the per-unit mps figures BUILD_SPEC.md §3.2 mentions.
+# Last-resort fallback for callers that don't go through admit_reinforcements
+# (e.g. constructing a bare Unit directly in a test). Real admission below
+# uses oob_unit.mps (see module docstring), not this constant.
 DEFAULT_MPS = 6
 
 
@@ -82,7 +84,7 @@ def admit_reinforcements(
     current_units: Iterable[Unit],
     day: int,
     board: Board,
-    mps: int = DEFAULT_MPS,
+    mps: Optional[int] = None,
 ) -> list:
     """Units newly entering play this turn (BUILD_SPEC.md §5.6).
 
@@ -90,6 +92,11 @@ def admit_reinforcements(
     (tracked by the caller across turns -- it must include destroyed units
     too, so they don't re-enter). Processes the roster in index order so
     same-day arrivals nudge around each other deterministically.
+
+    Each admitted unit's mps comes from its OOB roster entry (oob_unit.mps,
+    merged from data/unit_mps.json) by default. Pass `mps` to force every
+    admission this call to a single flat value instead (e.g. tests that
+    want a uniform, deterministic MPS regardless of roster data).
     """
     occupied = set()
     for unit in current_units:
@@ -101,7 +108,8 @@ def admit_reinforcements(
         if oob_unit.index in already_on_board or oob_unit.arrival > day:
             continue
         x, y = find_free_staging_cell(oob_unit.side, board, occupied)
-        unit = Unit.from_oob(oob_unit, x=x, y=y, mps=mps)
+        unit_mps = mps if mps is not None else oob_unit.mps
+        unit = Unit.from_oob(oob_unit, x=x, y=y, mps=unit_mps)
         occupied.update(unit.footprint_cells())
         admitted.append(unit)
 

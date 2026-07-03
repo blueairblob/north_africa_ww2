@@ -1,0 +1,650 @@
+{
+ "_provenance": "Derived by reference/extraction_tools/derive_unit_mps.py from the on_map=true records in units_scenario_{enter_rommel,battleaxe,operation_crusader}.json, cross-referenced against master_oob.json by (designation, division). NOT part of the original master_oob 10-byte table, which has no mps field. See BUILD_SPEC.md units.py notes and NOTES.md for the full account.",
+ "_counts": {
+  "unit": 56,
+  "type": 67,
+  "global": 5
+ },
+ "units": {
+  "0": {
+   "mps": 6,
+   "source": "unit",
+   "confidence": "confirmed"
+  },
+  "1": {
+   "mps": 7,
+   "source": "unit",
+   "confidence": "confirmed"
+  },
+  "2": {
+   "mps": 10,
+   "source": "unit",
+   "confidence": "confirmed"
+  },
+  "3": {
+   "mps": 6,
+   "source": "unit",
+   "confidence": "confirmed"
+  },
+  "4": {
+   "mps": 6,
+   "source": "type",
+   "confidence": "type_fallback(type=14,8/8)"
+  },
+  "5": {
+   "mps": 6,
+   "source": "unit",
+   "confidence": "confirmed"
+  },
+  "6": {
+   "mps": 6,
+   "source": "type",
+   "confidence": "type_fallback(type=10,43/55)"
+  },
+  "7": {
+   "mps": 4,
+   "source": "type",
+   "confidence": "type_fallback(type=5,10/10)"
+  },
+  "8": {
+   "mps": 4,
+   "source": "type",
+   "confidence": "type_fallback(type=5,10/10)"
+  },
+  "9": {
+   "mps": 6,
+   "source": "unit",
+   "confidence": "confirmed"
+  },
+  "10": {
+   "mps": 8,
+   "source": "unit",
+   "confidence": "confirmed"
+  },
+  "11": {
+   "mps": 6,
+   "source": "unit",
+   "confidence": "confirmed"
+  },
+  "12": {
+   "mps": 6,
+   "source": "unit",
+   "confidence": "confirmed"
+  },
+  "13": {
+   "mps": 6,
+   "source": "unit",
+   "confidence": "confirmed"
+  },
+  "14": {
+   "mps": 7,
+   "source": "unit",
+   "confidence": "confirmed"
+  },
+  "15": {
+   "mps": 10,
+   "source": "unit",
+   "confidence": "confirmed"
+  },
+  "16": {
+   "mps": 6,
+   "source": "unit",
+   "confidence": "confirmed"
+  },
+  "17": {
+   "mps": 6,
+   "source": "unit",
+   "confidence": "confirmed"
+  },
+  "18": {
+   "mps": 4,
+   "source": "type",
+   "confidence": "type_fallback(type=5,10/10)"
+  },
+  "19": {
+   "mps": 4,
+   "source": "type",
+   "confidence": "type_fallback(type=5,10/10)"
+  },
+  "20": {
+   "mps": 4,
+   "source": "type",
+   "confidence": "type_fallback(type=5,10/10)"
+  },
+  "21": {
+   "mps": 6,
+   "source": "type",
+   "confidence": "type_fallback(type=10,43/55)"
+  },
+  "22": {
+   "mps": 6,
+   "source": "type",
+   "confidence": "type_fallback(type=10,43/55)"
+  },
+  "23": {
+   "mps": 6,
+   "source": "unit",
+   "confidence": "confirmed"
+  },
+  "24": {
+   "mps": 4,
+   "source": "unit",
+   "confidence": "confirmed"
+  },
+  "25": {
+   "mps": 6,
+   "source": "type",
+   "confidence": "type_fallback(type=10,43/55)"
+  },
+  "26": {
+   "mps": 6,
+   "source": "unit",
+   "confidence": "confirmed"
+  },
+  "27": {
+   "mps": 6,
+   "source": "unit",
+   "confidence": "confirmed"
+  },
+  "28": {
+   "mps": 6,
+   "source": "unit",
+   "confidence": "confirmed"
+  },
+  "29": {
+   "mps": 6,
+   "source": "unit",
+   "confidence": "confirmed"
+  },
+  "30": {
+   "mps": 6,
+   "source": "unit",
+   "confidence": "confirmed"
+  },
+  "31": {
+   "mps": 4,
+   "source": "unit",
+   "confidence": "confirmed"
+  },
+  "32": {
+   "mps": 10,
+   "source": "unit",
+   "confidence": "confirmed"
+  },
+  "33": {
+   "mps": 6,
+   "source": "type",
+   "confidence": "type_fallback(type=12,26/41)"
+  },
+  "34": {
+   "mps": 6,
+   "source": "type",
+   "confidence": "type_fallback(type=10,43/55)"
+  },
+  "35": {
+   "mps": 6,
+   "source": "global",
+   "confidence": "global_fallback(no_on_map_data_for_type)"
+  },
+  "36": {
+   "mps": 6,
+   "source": "type",
+   "confidence": "type_fallback(type=10,43/55)"
+  },
+  "37": {
+   "mps": 6,
+   "source": "type",
+   "confidence": "type_fallback(type=10,43/55)"
+  },
+  "38": {
+   "mps": 6,
+   "source": "type",
+   "confidence": "type_fallback(type=10,43/55)"
+  },
+  "39": {
+   "mps": 6,
+   "source": "type",
+   "confidence": "type_fallback(type=10,43/55)"
+  },
+  "40": {
+   "mps": 6,
+   "source": "type",
+   "confidence": "type_fallback(type=10,43/55)"
+  },
+  "41": {
+   "mps": 6,
+   "source": "type",
+   "confidence": "type_fallback(type=10,43/55)"
+  },
+  "42": {
+   "mps": 6,
+   "source": "type",
+   "confidence": "type_fallback(type=10,43/55)"
+  },
+  "43": {
+   "mps": 4,
+   "source": "type",
+   "confidence": "type_fallback(type=5,10/10)"
+  },
+  "44": {
+   "mps": 6,
+   "source": "global",
+   "confidence": "global_fallback(no_on_map_data_for_type)"
+  },
+  "45": {
+   "mps": 6,
+   "source": "global",
+   "confidence": "global_fallback(no_on_map_data_for_type)"
+  },
+  "46": {
+   "mps": 6,
+   "source": "global",
+   "confidence": "global_fallback(no_on_map_data_for_type)"
+  },
+  "47": {
+   "mps": 6,
+   "source": "global",
+   "confidence": "global_fallback(no_on_map_data_for_type)"
+  },
+  "48": {
+   "mps": 6,
+   "source": "type",
+   "confidence": "type_fallback(type=10,43/55)"
+  },
+  "49": {
+   "mps": 6,
+   "source": "type",
+   "confidence": "type_fallback(type=10,43/55)"
+  },
+  "50": {
+   "mps": 6,
+   "source": "type",
+   "confidence": "type_fallback(type=10,43/55)"
+  },
+  "51": {
+   "mps": 6,
+   "source": "type",
+   "confidence": "type_fallback(type=10,43/55)"
+  },
+  "52": {
+   "mps": 6,
+   "source": "unit",
+   "confidence": "confirmed"
+  },
+  "53": {
+   "mps": 8,
+   "source": "unit",
+   "confidence": "confirmed"
+  },
+  "54": {
+   "mps": 6,
+   "source": "unit",
+   "confidence": "confirmed"
+  },
+  "55": {
+   "mps": 6,
+   "source": "unit",
+   "confidence": "confirmed"
+  },
+  "56": {
+   "mps": 6,
+   "source": "unit",
+   "confidence": "confirmed"
+  },
+  "57": {
+   "mps": 6,
+   "source": "unit",
+   "confidence": "confirmed"
+  },
+  "58": {
+   "mps": 6,
+   "source": "unit",
+   "confidence": "confirmed"
+  },
+  "59": {
+   "mps": 6,
+   "source": "type",
+   "confidence": "type_fallback(type=10,43/55)"
+  },
+  "60": {
+   "mps": 6,
+   "source": "type",
+   "confidence": "type_fallback(type=10,43/55)"
+  },
+  "61": {
+   "mps": 6,
+   "source": "type",
+   "confidence": "type_fallback(type=12,26/41)"
+  },
+  "62": {
+   "mps": 6,
+   "source": "type",
+   "confidence": "type_fallback(type=12,26/41)"
+  },
+  "63": {
+   "mps": 6,
+   "source": "unit",
+   "confidence": "confirmed"
+  },
+  "64": {
+   "mps": 6,
+   "source": "type",
+   "confidence": "type_fallback(type=12,26/41)"
+  },
+  "65": {
+   "mps": 4,
+   "source": "unit",
+   "confidence": "confirmed_majority(1/2)"
+  },
+  "66": {
+   "mps": 8,
+   "source": "unit",
+   "confidence": "confirmed_majority(3/5)"
+  },
+  "67": {
+   "mps": 8,
+   "source": "unit",
+   "confidence": "confirmed_majority(3/5)"
+  },
+  "68": {
+   "mps": 6,
+   "source": "unit",
+   "confidence": "confirmed"
+  },
+  "69": {
+   "mps": 6,
+   "source": "unit",
+   "confidence": "confirmed"
+  },
+  "70": {
+   "mps": 6,
+   "source": "type",
+   "confidence": "type_fallback(type=10,43/55)"
+  },
+  "71": {
+   "mps": 6,
+   "source": "type",
+   "confidence": "type_fallback(type=10,43/55)"
+  },
+  "72": {
+   "mps": 6,
+   "source": "type",
+   "confidence": "type_fallback(type=10,43/55)"
+  },
+  "73": {
+   "mps": 6,
+   "source": "unit",
+   "confidence": "confirmed"
+  },
+  "74": {
+   "mps": 6,
+   "source": "unit",
+   "confidence": "confirmed"
+  },
+  "75": {
+   "mps": 6,
+   "source": "unit",
+   "confidence": "confirmed"
+  },
+  "76": {
+   "mps": 6,
+   "source": "type",
+   "confidence": "type_fallback(type=10,43/55)"
+  },
+  "77": {
+   "mps": 6,
+   "source": "unit",
+   "confidence": "confirmed"
+  },
+  "78": {
+   "mps": 6,
+   "source": "unit",
+   "confidence": "confirmed"
+  },
+  "79": {
+   "mps": 6,
+   "source": "unit",
+   "confidence": "confirmed"
+  },
+  "80": {
+   "mps": 6,
+   "source": "unit",
+   "confidence": "confirmed"
+  },
+  "81": {
+   "mps": 6,
+   "source": "unit",
+   "confidence": "confirmed"
+  },
+  "82": {
+   "mps": 6,
+   "source": "unit",
+   "confidence": "confirmed"
+  },
+  "83": {
+   "mps": 6,
+   "source": "unit",
+   "confidence": "confirmed"
+  },
+  "84": {
+   "mps": 6,
+   "source": "type",
+   "confidence": "type_fallback(type=10,43/55)"
+  },
+  "85": {
+   "mps": 6,
+   "source": "unit",
+   "confidence": "confirmed"
+  },
+  "86": {
+   "mps": 6,
+   "source": "unit",
+   "confidence": "confirmed"
+  },
+  "87": {
+   "mps": 6,
+   "source": "unit",
+   "confidence": "confirmed"
+  },
+  "88": {
+   "mps": 6,
+   "source": "unit",
+   "confidence": "confirmed"
+  },
+  "89": {
+   "mps": 6,
+   "source": "unit",
+   "confidence": "confirmed"
+  },
+  "90": {
+   "mps": 6,
+   "source": "unit",
+   "confidence": "confirmed"
+  },
+  "91": {
+   "mps": 6,
+   "source": "unit",
+   "confidence": "confirmed"
+  },
+  "92": {
+   "mps": 6,
+   "source": "unit",
+   "confidence": "confirmed"
+  },
+  "93": {
+   "mps": 6,
+   "source": "unit",
+   "confidence": "confirmed"
+  },
+  "94": {
+   "mps": 8,
+   "source": "unit",
+   "confidence": "confirmed_majority(3/5)"
+  },
+  "95": {
+   "mps": 6,
+   "source": "type",
+   "confidence": "type_fallback(type=10,43/55)"
+  },
+  "96": {
+   "mps": 6,
+   "source": "type",
+   "confidence": "type_fallback(type=10,43/55)"
+  },
+  "97": {
+   "mps": 6,
+   "source": "type",
+   "confidence": "type_fallback(type=10,43/55)"
+  },
+  "98": {
+   "mps": 6,
+   "source": "type",
+   "confidence": "type_fallback(type=10,43/55)"
+  },
+  "99": {
+   "mps": 6,
+   "source": "type",
+   "confidence": "type_fallback(type=10,43/55)"
+  },
+  "100": {
+   "mps": 6,
+   "source": "type",
+   "confidence": "type_fallback(type=10,43/55)"
+  },
+  "101": {
+   "mps": 6,
+   "source": "type",
+   "confidence": "type_fallback(type=10,43/55)"
+  },
+  "102": {
+   "mps": 6,
+   "source": "type",
+   "confidence": "type_fallback(type=10,43/55)"
+  },
+  "103": {
+   "mps": 6,
+   "source": "type",
+   "confidence": "type_fallback(type=10,43/55)"
+  },
+  "104": {
+   "mps": 6,
+   "source": "type",
+   "confidence": "type_fallback(type=10,43/55)"
+  },
+  "105": {
+   "mps": 6,
+   "source": "type",
+   "confidence": "type_fallback(type=10,43/55)"
+  },
+  "106": {
+   "mps": 6,
+   "source": "type",
+   "confidence": "type_fallback(type=10,43/55)"
+  },
+  "107": {
+   "mps": 6,
+   "source": "type",
+   "confidence": "type_fallback(type=10,43/55)"
+  },
+  "108": {
+   "mps": 6,
+   "source": "type",
+   "confidence": "type_fallback(type=12,26/41)"
+  },
+  "109": {
+   "mps": 6,
+   "source": "type",
+   "confidence": "type_fallback(type=10,43/55)"
+  },
+  "110": {
+   "mps": 6,
+   "source": "type",
+   "confidence": "type_fallback(type=10,43/55)"
+  },
+  "111": {
+   "mps": 6,
+   "source": "type",
+   "confidence": "type_fallback(type=10,43/55)"
+  },
+  "112": {
+   "mps": 6,
+   "source": "type",
+   "confidence": "type_fallback(type=10,43/55)"
+  },
+  "113": {
+   "mps": 6,
+   "source": "type",
+   "confidence": "type_fallback(type=10,43/55)"
+  },
+  "114": {
+   "mps": 6,
+   "source": "type",
+   "confidence": "type_fallback(type=10,43/55)"
+  },
+  "115": {
+   "mps": 6,
+   "source": "type",
+   "confidence": "type_fallback(type=10,43/55)"
+  },
+  "116": {
+   "mps": 6,
+   "source": "type",
+   "confidence": "type_fallback(type=10,43/55)"
+  },
+  "117": {
+   "mps": 6,
+   "source": "type",
+   "confidence": "type_fallback(type=10,43/55)"
+  },
+  "118": {
+   "mps": 6,
+   "source": "type",
+   "confidence": "type_fallback(type=10,43/55)"
+  },
+  "119": {
+   "mps": 6,
+   "source": "type",
+   "confidence": "type_fallback(type=10,43/55)"
+  },
+  "120": {
+   "mps": 6,
+   "source": "type",
+   "confidence": "type_fallback(type=10,43/55)"
+  },
+  "121": {
+   "mps": 6,
+   "source": "type",
+   "confidence": "type_fallback(type=10,43/55)"
+  },
+  "122": {
+   "mps": 6,
+   "source": "type",
+   "confidence": "type_fallback(type=10,43/55)"
+  },
+  "123": {
+   "mps": 6,
+   "source": "type",
+   "confidence": "type_fallback(type=10,43/55)"
+  },
+  "124": {
+   "mps": 6,
+   "source": "type",
+   "confidence": "type_fallback(type=10,43/55)"
+  },
+  "125": {
+   "mps": 6,
+   "source": "type",
+   "confidence": "type_fallback(type=10,43/55)"
+  },
+  "126": {
+   "mps": 6,
+   "source": "type",
+   "confidence": "type_fallback(type=10,43/55)"
+  },
+  "127": {
+   "mps": 6,
+   "source": "type",
+   "confidence": "type_fallback(type=10,43/55)"
+  }
+ }
+}

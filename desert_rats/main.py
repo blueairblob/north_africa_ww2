@@ -55,28 +55,49 @@ def run_headless(
     max_turns: int = game.DEFAULT_MAX_TURNS,
     watch: bool = False,
     delay: float = 0.0,
+    snapshot_dir: Optional[str] = None,
 ) -> game.GameState:
     """Run a full game with no interactive I/O. Defaults to AI vs AI.
 
     `watch=True` renders the board after every turn (still no input
     prompts) -- the "watch two AIs fight it out" mode. `delay` paces
     playback when watching; ignored otherwise.
+
+    `snapshot_dir`, if given, writes a PNG of the whole board after every
+    turn (render.image -- requires the optional `image` extra: `pip install
+    desert-rats[image]`). Independent of `watch`; useful for headless runs
+    where you want to inspect the game visually afterwards rather than
+    live in a terminal.
     """
     providers = build_order_providers(british_mode, axis_mode)
     state = game.new_game(scenario, board, oob)
 
-    if not watch:
+    snapshot = None
+    if snapshot_dir is not None:
+        from .render import image as render_image
+        import os
+
+        os.makedirs(snapshot_dir, exist_ok=True)
+
+        def snapshot(turn_state: game.GameState) -> None:
+            path = os.path.join(snapshot_dir, f"turn_{turn_state.turn_counter:04d}.png")
+            render_image.save_board_image(turn_state.units, board, path)
+
+    if not watch and snapshot is None:
         game.run_until_over(state, providers, max_turns=max_turns)
         return state
 
-    strings = load_ui_strings()
+    strings = load_ui_strings() if watch else None
     turns_played = 0
     while not state.is_over and turns_played < max_turns:
         game.play_turn(state, providers)
         turns_played += 1
-        _render_turn(state, board, strings, clear_screen=True)
-        if delay:
-            time.sleep(delay)
+        if snapshot is not None:
+            snapshot(state)
+        if watch:
+            _render_turn(state, board, strings, clear_screen=True)
+            if delay:
+                time.sleep(delay)
     return state
 
 
@@ -231,6 +252,11 @@ def parse_args(argv: Optional[list] = None) -> argparse.Namespace:
         "--delay", type=float, default=0.3,
         help="seconds to pause between turns with --watch (default 0.3; 0 = as fast as possible)",
     )
+    parser.add_argument(
+        "--snapshot-dir", type=str, default=None,
+        help="write a PNG of the board after every turn to this directory "
+        "(render.image; requires the 'image' extra: pip install desert-rats[image])",
+    )
     return parser.parse_args(argv)
 
 
@@ -245,7 +271,8 @@ def main(argv: Optional[list] = None) -> int:
         strings = load_ui_strings()
 
         state = run_headless(
-            scenario, board, oob, max_turns=args.max_turns, watch=args.watch, delay=args.delay
+            scenario, board, oob, max_turns=args.max_turns, watch=args.watch,
+            delay=args.delay, snapshot_dir=args.snapshot_dir,
         )
         print(format_status_line(state.turn_counter, state.clock, state.scenario.name, strings, state.result))
         return 0

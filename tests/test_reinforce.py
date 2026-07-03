@@ -126,6 +126,24 @@ class TestAdmitReinforcements(unittest.TestCase):
         admitted = reinforce.admit_reinforcements(oob, set(), [], day=0, board=b)
         self.assertEqual(admitted[0].mps, reinforce.DEFAULT_MPS)
 
+    def test_admitted_units_use_their_own_oob_mps_when_not_overridden(self):
+        # Unlike the coincidental default=6 case above, this exercises real
+        # per-unit sourcing: two units in the same OOB with different mps
+        # must be admitted with their own value, not a shared flat one.
+        b = make_desert_board()
+        roster = tuple(
+            data.Unit(
+                index=i, nationality=data.Nationality.BRITISH,
+                designation=f"Unit {i}", division=None, name=f"Unit {i}",
+                x=0, strength=100, type=10, arrival=0, morale=50, role=0,
+                mps=mps, mps_confidence="confirmed",
+            )
+            for i, mps in enumerate([4, 10])
+        )
+        oob = data.OrderOfBattle(source="test", fields_note="test", units=roster)
+        admitted = reinforce.admit_reinforcements(oob, set(), [], day=0, board=b)
+        self.assertEqual([u.mps for u in admitted], [4, 10])
+
     def test_british_units_stage_at_the_east_edge_point(self):
         b = make_desert_board()
         oob = make_oob([(data.Nationality.BRITISH, 0)])

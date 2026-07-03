@@ -3,9 +3,10 @@ dest/order/travel/caught state, and branch derivation from designation.
 
 See BUILD_SPEC.md §3.2. This module builds runtime `Unit`s from the static
 roster (`data.Unit`) but does not itself place them on the board — initial
-(x, y) and `mps` are not present in data/master_oob.json (mps is a known
-data gap; see BUILD_SPEC.md §10) and must be supplied by the caller
-(reinforce.py, not yet implemented).
+(x, y) is assigned by the caller (reinforce.py) at reinforcement entry.
+`mps` defaults to the roster's `data.Unit.mps` (merged from
+data/unit_mps.json -- see that module's docstring) but can be overridden by
+the caller, e.g. reinforce.admit_reinforcements' flat-mps test override.
 """
 from __future__ import annotations
 
@@ -150,10 +151,11 @@ class Unit:
     ) -> "Unit":
         """Build runtime state for a roster entry entering the board.
 
-        `x`, `y` and `mps` have no source in data/master_oob.json (see the
-        module docstring) so the caller must supply them — typically
-        reinforce.py placing the unit at its side's board-edge staging
-        point.
+        `x`, `y` have no source in data/master_oob.json (a unit's live
+        board position is assigned at reinforcement entry, not roster load)
+        so the caller must supply them — typically reinforce.py placing the
+        unit at its side's board-edge staging point. `mps` is required too;
+        callers normally pass `oob_unit.mps` (see the module docstring).
         """
         return cls(
             oob_index=oob_unit.index,

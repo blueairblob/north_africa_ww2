@@ -1,0 +1,30 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "desert-rats"
+version = "0.1.0"
+description = "Clean-room Python reimplementation of Desert Rats (CCS, 1985)"
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "See README.md — engine code original; game data extracted, respect original copyright" }
+dependencies = []
+
+[project.optional-dependencies]
+dev = ["pytest>=7"]
+# Only render/image.py needs this; the terminal renderer and the rest of
+# the engine have zero third-party dependencies.
+image = ["Pillow>=10"]
+
+[project.scripts]
+desert-rats = "desert_rats.main:main"
+
+[tool.setuptools.packages.find]
+include = ["desert_rats*"]
+
+[tool.setuptools.package-data]
+desert_rats = ["py.typed"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

@@ -17,14 +17,41 @@ what to adjust and where. Ordered by module build order.
   designation string. BUILD_SPEC.md §3.2 says branch comes from designation
   but gives no table; this mapping is unconfirmed and display-only (doesn't
   affect any rule).
-- **`mps` has no source in `data/master_oob.json` at all** — not merely a
-  tuning gap, a missing field. Every unit needs it supplied externally at
-  `Unit.from_oob()` time. See `reinforce.DEFAULT_MPS` below for where this
-  currently gets filled in with a flat placeholder — this is the single
-  biggest fidelity gap in the build; a real per-unit MPS table would need to
-  be recovered (or cross-checked from `data/units_scenario_enter_rommel.json`,
-  a superseded snapshot extract that does carry real MPS values) before the
-  diff harness can mean anything.
+- **`mps` has no source in `data/master_oob.json` at all** — confirmed: the
+  table's own `fields` string lists 10 fields and mps isn't one of them.
+  **Update: closed, to the extent the current data allows.** The three
+  superseded per-scenario snapshot files (`units_scenario_enter_rommel.json`,
+  `_battleaxe.json`, `_operation_crusader.json`) turn out to be pulled from a
+  *different*, live-state table that does carry a real per-unit mps byte for
+  every `on_map: true` record. `reference/extraction_tools/derive_unit_mps.py`
+  cross-references those on-map sightings against `master_oob.json` by
+  `(designation, division)` and writes `data/unit_mps.json`, which
+  `data.load_master_oob()` now merges into every roster `Unit` as `.mps` /
+  `.mps_confidence`. Breakdown across the 128 units:
+  - **56 "unit"** — directly observed on-map for exactly that unit (a real
+    recovered value, "confirmed", or "confirmed_majority(n/total)" where one
+    of the 3 snapshots disagreed — almost always because the unit was
+    off-map with an uninitialised/zeroed mps byte in that particular
+    snapshot, outvoted by the others).
+  - **67 "type"** — never directly observed (arrives in a scenario window
+    none of the 3 snapshots cover, e.g. Gazala/Alamein-era units), so
+    fallback to the majority mps value seen among *other* on-map units
+    sharing this unit's `type` code. Confidence varies a lot by type: type 5
+    is unanimous (10/10 sightings all mps=4), type 10 is 43/55 = 78% for its
+    mode, but type 12 is only 26/41 = 63% — `type` genuinely doesn't cleanly
+    determine mps (consistent with BUILD_SPEC §3.2's "not a clean branch"
+    note about `type`), so these 67 values are a real but imperfect guess.
+  - **5 "global"** — `type` itself never sighted on-map in any snapshot
+    (types 3, 4, 6 combined); falls back to the overall majority mps (6)
+    across every sighting, the least-informed tier.
+  - `reinforce.admit_reinforcements` now sources mps from each unit's own
+    `oob_unit.mps` by default; the old flat-value `mps=` parameter still
+    exists as an explicit override (used by tests wanting a uniform value).
+  - Still open: the 67+5 unconfirmed units remain a genuine gap the diff
+    harness (§12) should close for real once golden traces exist — this
+    change replaces "no data, flat guess for everyone" with "real data
+    where it exists, an evidenced per-type guess elsewhere," not a full
+    recovery.
 
 ## zoc_supply.py
 
@@ -184,10 +211,32 @@ confirmed; everything else about the AI's target selection is inferred.
   PAPER 6 = desert yellow; features vary" but the per-terrain-type paper
   table isn't recovered, so only the one confirmed distinct terrain type
   (sea) gets special treatment.
-- **Tile-graphic assignment is entirely unrecovered** (§10) — units and
-  terrain render as ASCII/branch-letter glyphs, not the original's 8x8 tile
-  art. BUILD_SPEC §1/§8 explicitly accept a text/terminal renderer at this
-  tier; pixel-exact tiles are optional/later.
+- **`image.py` (new) — a real PNG renderer, same colour model as
+  `terminal.py`.** Investigated why the in-repo `data/terrain_authentic.png`
+  reference asset looks nothing like this build's output: its 16-colour,
+  one-shade-per-terrain-code palette is **not recovered game data** — the
+  script/values behind it aren't sourced anywhere in `reference/
+  extraction_tools/`, and the real per-terrain-type paper table (0xD80E)
+  is explicitly still unrecovered (`reference/prospects.md` #12; graphics.json
+  only confirms "mostly PAPER 6"). `terrain_authentic.png` was a debug
+  legibility aid made *while* reverse-engineering the map layout, not a
+  fidelity target — a faithful renderer should not try to match its
+  palette. `image.py` renders the model this repo has actually confirmed
+  (desert yellow + sea blue paper, nationality-coloured 2x2/1x1 unit
+  counters with a strength label) as an actual image instead of ANSI
+  escape codes, using the real ZX Spectrum hardware RGB values from
+  graphics.json's `zx_palette` (not invented colours). Wired into
+  `main.py` as an optional `--snapshot-dir` flag (writes one PNG per turn);
+  independent of `--watch`. Needs Pillow — kept as the `image` extra in
+  `pyproject.toml` so the rest of the engine stays dependency-free.
+  Road cells get a thin line overlay for legibility (their *position* is
+  confirmed data; their *paper colour* is not — this is a display choice,
+  not a recovered colour fact).
+- Tile-graphic assignment is entirely unrecovered** (§10) — units and
+  terrain render as ASCII/branch-letter glyphs in the terminal renderer, or
+  flat coloured blocks in `image.py`, not the original's 8x8 tile art.
+  BUILD_SPEC §1/§8 explicitly accept this tier; pixel-exact tiles are
+  optional/later (`reference/prospects.md` #12/#13).
 - **German ink rendered as bright-black/grey, not pure black** — pure ANSI
   black is usually invisible against a typical dark terminal background.
   Legibility substitution only; the confirmed Spectrum ink codes

@@ -80,6 +80,40 @@ class TestLoadMasterOob(unittest.TestCase):
                 data.load_master_oob(bad_path)
 
 
+class TestUnitMps(unittest.TestCase):
+    """Every real unit gets a real, positive per-unit mps from
+    data/unit_mps.json (not the flat DEFAULT_MPS placeholder) -- see
+    data.Unit's docstring and NOTES.md.
+    """
+
+    @classmethod
+    def setUpClass(cls):
+        cls.oob = data.load_master_oob()
+
+    def test_every_unit_has_a_positive_mps(self):
+        for unit in self.oob:
+            self.assertGreater(unit.mps, 0, unit.name)
+
+    def test_mps_confidence_is_one_of_the_documented_sources(self):
+        valid_prefixes = ("confirmed", "type_fallback", "global_fallback")
+        for unit in self.oob:
+            self.assertTrue(
+                unit.mps_confidence.startswith(valid_prefixes),
+                f"{unit.name}: unexpected mps_confidence {unit.mps_confidence!r}",
+            )
+
+    def test_a_directly_observed_unit_gets_its_confirmed_value(self):
+        # Panzer Regt 5, 5th Light Division (oob index 0) is on_map=true
+        # with mps=6 in units_scenario_enter_rommel.json.
+        unit = self.oob.by_index(0)
+        self.assertEqual(unit.mps, 6)
+        self.assertEqual(unit.mps_confidence, "confirmed")
+
+    def test_mps_path_override_is_used(self):
+        oob = data.load_master_oob(mps_path=data.UNIT_MPS_PATH)
+        self.assertEqual(oob.by_index(0).mps, self.oob.by_index(0).mps)
+
+
 class TestLoadScenarios(unittest.TestCase):
     def setUp(self):
         self.scenarios = data.load_scenarios()

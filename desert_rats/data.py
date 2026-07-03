@@ -13,6 +13,7 @@ from typing import Optional
 DATA_DIR = Path(__file__).resolve().parent.parent / "data"
 MASTER_OOB_PATH = DATA_DIR / "master_oob.json"
 SCENARIOS_PATH = DATA_DIR / "scenarios.json"
+UNIT_MPS_PATH = DATA_DIR / "unit_mps.json"
 
 
 class Nationality(str, Enum):
@@ -47,8 +48,20 @@ class Unit:
     board coordinate (observed range ~1-12, far smaller than the 100-wide
     map). A unit's actual (x, y) on the map is assigned at reinforcement
     entry (BUILD_SPEC.md §5.6) and changes during play; that runtime state
-    (position, mps, efficiency, order, travel, caught, ...) belongs to
+    (position, efficiency, order, travel, caught, ...) belongs to
     units.py/reinforce.py, not this static roster.
+
+    `mps` is NOT part of the 10-byte table (it has no mps field at all) --
+    it's merged in from data/unit_mps.json, derived from a *different*,
+    live-state table observed in the superseded per-scenario snapshot files
+    (see reference/extraction_tools/derive_unit_mps.py). `mps_confidence`
+    records how: "confirmed" (seen on-map for exactly this unit),
+    "confirmed_majority(...)" (seen for this unit across snapshots with one
+    dissenting reading, e.g. an off-map zero), "type_fallback(...)" (no
+    direct sighting; majority value for other on-map units sharing this
+    unit's `type` code), or "global_fallback(...)" (type never sighted
+    on-map either; overall majority value). 56/128 units are "unit"-sourced,
+    67/128 "type"-sourced, 5/128 "global"-sourced -- see NOTES.md.
     """
 
     index: int
@@ -62,6 +75,10 @@ class Unit:
     arrival: int
     morale: int
     role: int
+    # Defaults let existing tests build a bare Unit(...) without mps data;
+    # load_master_oob() always supplies real values from unit_mps.json.
+    mps: int = 6
+    mps_confidence: str = "not_from_oob_pipeline"
 
     @property
     def side(self) -> Side:
@@ -101,11 +118,29 @@ class OrderOfBattle:
         return tuple(u for u in self.units if u.arrival <= day)
 
 
-def load_master_oob(path: Optional[Path] = None) -> OrderOfBattle:
-    """Load and parse data/master_oob.json into an OrderOfBattle."""
+def _load_unit_mps(path: Optional[Path] = None) -> dict:
+    """Load data/unit_mps.json's per-index mps table.
+
+    Derived data (see reference/extraction_tools/derive_unit_mps.py), not
+    part of the original 10-byte master_oob table -- see Unit's docstring.
+    """
+    path = Path(path) if path is not None else UNIT_MPS_PATH
+    with open(path, encoding="utf-8") as f:
+        return json.load(f)["units"]
+
+
+def load_master_oob(
+    path: Optional[Path] = None, mps_path: Optional[Path] = None
+) -> OrderOfBattle:
+    """Load and parse data/master_oob.json into an OrderOfBattle.
+
+    mps is merged in from data/unit_mps.json (see Unit's docstring); pass
+    mps_path to override its location (e.g. in tests).
+    """
     path = Path(path) if path is not None else MASTER_OOB_PATH
     with open(path, encoding="utf-8") as f:
         raw = json.load(f)
+    mps_table = _load_unit_mps(mps_path)
 
     units = tuple(
         Unit(
@@ -120,6 +155,8 @@ def load_master_oob(path: Optional[Path] = None) -> OrderOfBattle:
             arrival=u["arrival"],
             morale=u["morale"],
             role=u["role"],
+            mps=mps_table[str(u["i"])]["mps"],
+            mps_confidence=mps_table[str(u["i"])]["confidence"],
         )
         for u in raw["units"]
     )

@@ -30,6 +30,9 @@ data/                 Extracted game data — the build inputs:
   unit_name_tables.json   Designation/division tables + token encoding.
   graphics.json           Tile base/format, colour tables (decoded), draw model, palette.
   tiles_sheet.png         Rendered 8x8 tile/sprite/glyph sheet (source art).
+  unit_mps.json            Per-unit movement points, derived (not part of the original
+                          10-byte OOB table) -- see NOTES.md and
+                          reference/extraction_tools/derive_unit_mps.py.
   (units_scenario_*.json, terrain_map.json, strings_table.json — superseded, kept for
    cross-checking.)
 
