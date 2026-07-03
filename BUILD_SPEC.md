@@ -345,6 +345,20 @@ edge entry; **geographic/objective victory** with tactical/major/decisive ladder
 budget-40 planner with **±25-column offensive band**; nationality colours (British blue /
 German black / Italian magenta); tile data at the recovered base.
 
+> **Addendum (post-build, sourced from a real gameplay screenshot, not
+> disassembly):** the paper-table characterisation above ("mostly PAPER 6 =
+> desert yellow; ink field varies per feature", §8) understated how much
+> varies. A 256x192 in-game screenshot confirms **escarpment terrain
+> (types 2/3) renders as a distinct 8x8 tile — red ink hash pattern on
+> desert paper**, not flat desert. The exact tile bitmap was extracted
+> pixel-for-pixel: `(0x60, 0x90, 0x09, 0x06)` repeating (MSB=leftmost
+> pixel). The same screenshot also independently validated the 22x22
+> viewport and 2x2 unit-counter footprint above, and gave exact nation-ink
+> RGB values (German pure black, British non-bright blue `(0,0,162)`,
+> Italian `(231,0,182)`). See `desert_rats/render/image.py` and NOTES.md
+> for the implementation and full account. The other 14 terrain codes'
+> paper/ink remain unconfirmed — this addendum resolves escarpment only.
+
 **Inferred / tunable (agent has latitude; validate against original — §12):**
 - the `combat_readiness` numerator's exact meaning (the "+3 byte") and the precise
   odds test;
@@ -356,7 +370,9 @@ German black / Italian magenta); tile data at the recovered base.
 - **schedule tables** (per-month supply/replacement, indexed by clock/30) — located, not
   fully labelled;
 - **AI target-region weighting**;
-- terrain **point-feature names** (town/port/oasis) and **tile↔terrain assignment**;
+- terrain **point-feature names** (town/port/oasis) and **tile↔terrain assignment**
+  (escarpment now confirmed per the addendum above; the other 14 terrain codes remain
+  unmapped);
 - **Malta status** effect (strings present, no invocation found in the 48K image);
 - **sound** and exact **UI panel layout** — untouched.
 

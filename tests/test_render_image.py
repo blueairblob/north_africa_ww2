@@ -76,6 +76,23 @@ class TestRenderBoardImage(unittest.TestCase):
         corner_off_the_road_line = img.getpixel((11, 1))
         self.assertEqual(corner_off_the_road_line, render_image.PAPER_DESERT)
 
+    def test_escarpment_cells_show_the_real_extracted_tile_pattern(self):
+        # See render/image.py's module docstring: this pattern was
+        # extracted pixel-for-pixel from a real gameplay screenshot, not
+        # guessed -- unlike road/grid lines, this IS a colour claim about
+        # the original.
+        b = make_board(width=3, height=1)
+        b = b.__class__(
+            width=b.width, height=b.height,
+            grid=tuple(tuple(2 for _ in range(3)) for _ in range(1)),
+            legend=b.legend,
+        )
+        img = render_image.render_board_image([], b, cell_px=8)
+        # Row 2 = 0x09 = 00001001 -> col4 set (ink), col1 unset (paper).
+        # Sampled away from y=0/x=0 (grid-line border alpha-blends there).
+        self.assertEqual(img.getpixel((4, 2)), render_image.ESCARPMENT_INK)
+        self.assertEqual(img.getpixel((1, 2)), render_image.PAPER_DESERT)
+
     def test_units_of_different_nationalities_render_different_colours(self):
         b = make_board(width=10, height=10)
         u_brit = make_unit(data.Nationality.BRITISH, 0, 0, index=0)

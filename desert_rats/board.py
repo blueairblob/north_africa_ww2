@@ -22,6 +22,11 @@ VIEWPORT_SIZE = 22
 DESERT = 0
 ROAD = 5
 SEA = 14
+# Types 2/3 in data/terrain_authentic.json's legend ("Escarpment (E-W
+# ridge)" / "Escarpment / coastal ridge"). Confirmed to render as a
+# distinct tile (not flat desert) by a real gameplay screenshot -- see
+# render/image.py's ESCARPMENT_TILE_BYTES and NOTES.md.
+ESCARPMENT_TYPES = (2, 3)
 
 
 @dataclass(frozen=True)

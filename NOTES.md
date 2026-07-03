@@ -206,32 +206,50 @@ confirmed; everything else about the AI's target selection is inferred.
 
 ## render/
 
-- **`palette.py` terrain paper** — only sea gets a distinct paper (blue);
-  everything else is desert yellow. BUILD_SPEC §8 says paper is "mostly
-  PAPER 6 = desert yellow; features vary" but the per-terrain-type paper
-  table isn't recovered, so only the one confirmed distinct terrain type
-  (sea) gets special treatment.
-- **`image.py` (new) — a real PNG renderer, same colour model as
-  `terminal.py`.** Investigated why the in-repo `data/terrain_authentic.png`
-  reference asset looks nothing like this build's output: its 16-colour,
-  one-shade-per-terrain-code palette is **not recovered game data** — the
-  script/values behind it aren't sourced anywhere in `reference/
-  extraction_tools/`, and the real per-terrain-type paper table (0xD80E)
-  is explicitly still unrecovered (`reference/prospects.md` #12; graphics.json
-  only confirms "mostly PAPER 6"). `terrain_authentic.png` was a debug
-  legibility aid made *while* reverse-engineering the map layout, not a
-  fidelity target — a faithful renderer should not try to match its
-  palette. `image.py` renders the model this repo has actually confirmed
-  (desert yellow + sea blue paper, nationality-coloured 2x2/1x1 unit
-  counters with a strength label) as an actual image instead of ANSI
-  escape codes, using the real ZX Spectrum hardware RGB values from
-  graphics.json's `zx_palette` (not invented colours). Wired into
-  `main.py` as an optional `--snapshot-dir` flag (writes one PNG per turn);
-  independent of `--watch`. Needs Pillow — kept as the `image` extra in
-  `pyproject.toml` so the rest of the engine stays dependency-free.
-  Road cells get a thin line overlay for legibility (their *position* is
-  confirmed data; their *paper colour* is not — this is a display choice,
-  not a recovered colour fact).
+- **`palette.py` terrain paper (terminal.py, ANSI)** — only sea gets a
+  distinct paper (blue); everything else is desert yellow. This is a
+  **known simplification specific to the ANSI terminal renderer**, kept
+  as-is (see `image.py` below for where the fuller model now lives) —
+  ANSI's coarse 8-colour-plus-bright palette doesn't have room for a
+  proper 8x8 tile pattern the way `image.py` does.
+- **`image.py` — a real PNG renderer, corrected against a real gameplay
+  screenshot.** First pass reused `terminal.py`'s "mostly desert yellow,
+  only sea distinct" model, reasoning that `data/terrain_authentic.png`'s
+  16-colour palette wasn't recovered game data (still true — see below)
+  and that BUILD_SPEC §8's own characterisation of the paper table was the
+  best available evidence. **That reasoning was incomplete.** The person
+  supplied a real gameplay screenshot (256x192 pixels — the actual ZX
+  Spectrum hardware resolution, not a mockup or emulator chrome) which
+  shows escarpment terrain (types 2/3) rendering as a distinct 8x8 tile —
+  red ink hash pattern on yellow paper — not flat desert. I extracted the
+  exact tile bitmap pixel-for-pixel from the screenshot:
+  `ESCARPMENT_TILE_BYTES = (0x60, 0x90, 0x09, 0x06)` repeating (MSB=leftmost
+  pixel, matching graphics.json's documented tile format) — this is now a
+  **confirmed** value, sourced from direct visual evidence rather than
+  disassembly, and `image.py` draws it for terrain types 2/3. The same
+  screenshot also **validated** two things already in BUILD_SPEC as
+  confirmed: the viewport is exactly 176px wide = 22 cells @ 8px (§8's
+  22x22 claim), and unit counters occupy a 16x16px block = 2x2 cells (§3.2's
+  2x2 footprint claim). And it corrected the nation-ink RGB values sampled
+  from the actual rendering: German is pure black `(0,0,0)` (the ANSI
+  renderer's grey substitution for dark-terminal legibility was solving a
+  problem that doesn't exist here, since the PNG's background is desert
+  yellow, not black — reverted to the confirmed value), British is a
+  non-bright blue `(0,0,162)` (previously guessed as ZX bright blue),
+  Italian is `(231,0,182)` (close to the previous magenta guess, tightened
+  to the sampled value).
+  - **Still not fully closed:** the *other* 14 terrain codes' paper/ink are
+    still unconfirmed beyond desert/sea/escarpment — this screenshot only
+    covered one scene near Gazala. `reference/prospects.md` #12 (tile
+    tables) should be updated to reflect escarpment as resolved rather
+    than fully open; the remaining codes are still open.
+  - **`data/terrain_authentic.png`'s 16-colour debug legend is still not
+    recovered game data** — this correction doesn't change that finding,
+    it just means the *real* palette turned out to have more structure
+    than "only sea is different" (an incomplete but not fabricated
+    reading of BUILD_SPEC §8's own hedge — "features vary").
+  - Road-cell line overlay and grid lines are unaffected — still a
+    legibility choice over real position data, not a colour claim.
 - Tile-graphic assignment is entirely unrecovered** (§10) — units and
   terrain render as ASCII/branch-letter glyphs in the terminal renderer, or
   flat coloured blocks in `image.py`, not the original's 8x8 tile art.
