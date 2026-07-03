@@ -1,0 +1,46 @@
+{
+ "source": "presentation layer recovered from the 48K image",
+ "tile_bitmaps": {
+  "base": "0xF438",
+  "format": "8 bytes per 8x8 tile, MSB=leftmost pixel",
+  "count_approx": 361,
+  "address_formula": "0xF438 + (symbol_code + hi*4 - 1) * 8 (routine 0x694B)",
+  "render": "tiles_sheet.png"
+ },
+ "terrain_attribute_table": {
+  "addr": "0xD80E",
+  "index": "full cell byte (0-255)",
+  "returns": "ZX attribute byte",
+  "note": "paper/bright taken from terrain; mostly PAPER 6 (desert yellow), ink varies for features"
+ },
+ "side_ink_table": {
+  "addr": "0xCAC5",
+  "index": "side (1=British,2=German,3=Italian)",
+  "raw": [
+   0,
+   1,
+   24,
+   27,
+   0,
+   165
+  ],
+  "decoded_ink_low3": {
+   "British": 1,
+   "German": 0,
+   "Italian": 3
+  },
+  "note": "code masks AND 7 -> British blue, German black, Italian magenta (historic Spectrum colours)"
+ },
+ "draw_model": "cell attribute = (terrain paper/bright from 0xD80E[cellbyte]) | (side ink from 0xCAC5[side] & 7); unit counter symbol = UDG chosen by unit type (special codes 13/14/15) via 0x694B",
+ "zx_palette": {
+  "0": "black",
+  "1": "blue",
+  "2": "red",
+  "3": "magenta",
+  "4": "green",
+  "5": "cyan",
+  "6": "yellow",
+  "7": "white",
+  "bright": "+brightness"
+ }
+}

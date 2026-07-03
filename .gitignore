@@ -1,0 +1,18 @@
+# Original ZX Spectrum game files -- not ours to redistribute, even privately
+# (BUILD_SPEC.md's provenance note: build from spec+data, don't ship the
+# original binary/ROM). The extracted data/ directory is the clean-room
+# artifact and is fine to commit.
+artifacts/
+
+# SkoolKit venv used only for the extraction tools in reference/extraction_tools/
+py3/
+
+# Python
+__pycache__/
+*.pyc
+
+# Local shell history dump from the extraction session, not project content
+desert_rats.log
+
+# Claude Code local-machine settings (permissions allowlist etc.)
+.claude/settings.local.json

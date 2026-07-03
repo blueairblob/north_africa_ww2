@@ -1,0 +1,348 @@
+{
+ "source": "scenario table, working copy at 0xDE6C (25 bytes/entry), 6 scenarios",
+ "fields": "start_day(+0/1), end_day/turn-limit(+2/3), objectives as (x,type) pairs (British +7..10, Axis +11..14), unit thresholds(+21/22)",
+ "scenarios": [
+  {
+   "index": 1,
+   "name": "Enter Rommel",
+   "start_day": 1,
+   "end_day": 31,
+   "british_objectives": [
+    [
+     50,
+     3
+    ],
+    [
+     76,
+     3
+    ]
+   ],
+   "axis_objectives": [
+    [
+     95,
+     4
+    ],
+    [
+     76,
+     1
+    ]
+   ],
+   "unit_thresholds": {
+    "british": 10,
+    "axis": 10
+   },
+   "raw": [
+    1,
+    0,
+    31,
+    0,
+    0,
+    0,
+    0,
+    50,
+    3,
+    76,
+    3,
+    95,
+    4,
+    76,
+    1,
+    0,
+    0,
+    0,
+    1,
+    0,
+    0,
+    10,
+    10,
+    0,
+    0
+   ]
+  },
+  {
+   "index": 2,
+   "name": "Battleaxe",
+   "start_day": 77,
+   "end_day": 83,
+   "british_objectives": [
+    [
+     0,
+     3
+    ],
+    [
+     76,
+     3
+    ]
+   ],
+   "axis_objectives": [
+    [
+     76,
+     4
+    ],
+    [
+     76,
+     5
+    ]
+   ],
+   "unit_thresholds": {
+    "british": 11,
+    "axis": 16
+   },
+   "raw": [
+    77,
+    0,
+    83,
+    0,
+    142,
+    3,
+    0,
+    0,
+    3,
+    76,
+    3,
+    76,
+    4,
+    76,
+    5,
+    9,
+    0,
+    0,
+    2,
+    32,
+    8,
+    11,
+    16,
+    0,
+    0
+   ]
+  },
+  {
+   "index": 3,
+   "name": "Operation Crusader",
+   "start_day": 233,
+   "end_day": 277,
+   "british_objectives": [
+    [
+     50,
+     3
+    ],
+    [
+     76,
+     5
+    ]
+   ],
+   "axis_objectives": [
+    [
+     20,
+     4
+    ],
+    [
+     76,
+     3
+    ]
+   ],
+   "unit_thresholds": {
+    "british": 24,
+    "axis": 24
+   },
+   "raw": [
+    233,
+    0,
+    21,
+    1,
+    90,
+    0,
+    200,
+    50,
+    3,
+    76,
+    5,
+    20,
+    4,
+    76,
+    3,
+    101,
+    100,
+    0,
+    2,
+    0,
+    8,
+    24,
+    24,
+    0,
+    0
+   ]
+  },
+  {
+   "index": 4,
+   "name": "The Battle of Gazala",
+   "start_day": 422,
+   "end_day": 460,
+   "british_objectives": [
+    [
+     150,
+     3
+    ],
+    [
+     80,
+     5
+    ]
+   ],
+   "axis_objectives": [
+    [
+     20,
+     1
+    ],
+    [
+     0,
+     3
+    ]
+   ],
+   "unit_thresholds": {
+    "british": 20,
+    "axis": 25
+   },
+   "raw": [
+    166,
+    1,
+    204,
+    1,
+    84,
+    1,
+    100,
+    150,
+    3,
+    80,
+    5,
+    20,
+    1,
+    0,
+    3,
+    123,
+    100,
+    0,
+    1,
+    32,
+    0,
+    20,
+    25,
+    0,
+    0
+   ]
+  },
+  {
+   "index": 5,
+   "name": "El Alamein",
+   "start_day": 572,
+   "end_day": 590,
+   "british_objectives": [
+    [
+     20,
+     3
+    ],
+    [
+     57,
+     5
+    ]
+   ],
+   "axis_objectives": [
+    [
+     15,
+     3
+    ],
+    [
+     112,
+     3
+    ]
+   ],
+   "unit_thresholds": {
+    "british": 40,
+    "axis": 20
+   },
+   "raw": [
+    60,
+    2,
+    78,
+    2,
+    78,
+    2,
+    200,
+    20,
+    3,
+    57,
+    5,
+    15,
+    3,
+    112,
+    3,
+    130,
+    50,
+    0,
+    2,
+    32,
+    32,
+    40,
+    20,
+    0,
+    0
+   ]
+  },
+  {
+   "index": 6,
+   "name": "The Desert War",
+   "start_day": 1,
+   "end_day": 624,
+   "british_objectives": [
+    [
+     50,
+     0
+    ],
+    [
+     0,
+     0
+    ]
+   ],
+   "axis_objectives": [
+    [
+     0,
+     0
+    ],
+    [
+     0,
+     0
+    ]
+   ],
+   "unit_thresholds": {
+    "british": 1,
+    "axis": 1
+   },
+   "raw": [
+    1,
+    0,
+    112,
+    2,
+    0,
+    0,
+    0,
+    50,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    1,
+    0,
+    0,
+    1,
+    1,
+    0,
+    0
+   ]
+  }
+ ]
+}

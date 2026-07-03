@@ -1,0 +1,881 @@
+{
+ "note": "Desert Rats string/name token table extracted from the 48K binary (region 0xE124-0xEAB4). Unit names are composed from these tokens.",
+ "strings": [
+  {
+   "addr": "0xE124",
+   "text": "0th "
+  },
+  {
+   "addr": "0xE129",
+   "text": "1st "
+  },
+  {
+   "addr": "0xE12E",
+   "text": "2nd "
+  },
+  {
+   "addr": "0xE133",
+   "text": "3rd "
+  },
+  {
+   "addr": "0xE138",
+   "text": "4th "
+  },
+  {
+   "addr": "0xE13D",
+   "text": "5th "
+  },
+  {
+   "addr": "0xE142",
+   "text": "6th "
+  },
+  {
+   "addr": "0xE147",
+   "text": "7th "
+  },
+  {
+   "addr": "0xE14C",
+   "text": "8th "
+  },
+  {
+   "addr": "0xE151",
+   "text": "9th "
+  },
+  {
+   "addr": "0xE156",
+   "text": "11th "
+  },
+  {
+   "addr": "0xE15C",
+   "text": "12th "
+  },
+  {
+   "addr": "0xE162",
+   "text": "13th "
+  },
+  {
+   "addr": "0xE168",
+   "text": "Division "
+  },
+  {
+   "addr": "0xE172",
+   "text": "Brigade "
+  },
+  {
+   "addr": "0xE17B",
+   "text": "Regiment "
+  },
+  {
+   "addr": "0xE185",
+   "text": "Battalion "
+  },
+  {
+   "addr": "0xE190",
+   "text": "Artillery "
+  },
+  {
+   "addr": "0xE19B",
+   "text": "Bn "
+  },
+  {
+   "addr": "0xE19F",
+   "text": "Bde "
+  },
+  {
+   "addr": "0xE1A4",
+   "text": "Regt "
+  },
+  {
+   "addr": "0xE1AA",
+   "text": "Div "
+  },
+  {
+   "addr": "0xE1AF",
+   "text": "Infantry "
+  },
+  {
+   "addr": "0xE1B9",
+   "text": "Panzer "
+  },
+  {
+   "addr": "0xE1C1",
+   "text": "Armoured "
+  },
+  {
+   "addr": "0xE1CB",
+   "text": "HQ "
+  },
+  {
+   "addr": "0xE1CF",
+   "text": "Corps "
+  },
+  {
+   "addr": "0xE1D6",
+   "text": "Recce "
+  },
+  {
+   "addr": "0xE1DD",
+   "text": "Rifle "
+  },
+  {
+   "addr": "0xE1E4",
+   "text": "South African "
+  },
+  {
+   "addr": "0xE1F3",
+   "text": "SA "
+  },
+  {
+   "addr": "0xE1F7",
+   "text": "Tank "
+  },
+  {
+   "addr": "0xE1FD",
+   "text": "Army "
+  },
+  {
+   "addr": "0xE203",
+   "text": "Indian "
+  },
+  {
+   "addr": "0xE20B",
+   "text": "New Zealand "
+  },
+  {
+   "addr": "0xE218",
+   "text": "NZ "
+  },
+  {
+   "addr": "0xE21C",
+   "text": "Australian "
+  },
+  {
+   "addr": "0xE228",
+   "text": "Aust "
+  },
+  {
+   "addr": "0xE22E",
+   "text": "Panzergrenadier "
+  },
+  {
+   "addr": "0xE23F",
+   "text": "Light "
+  },
+  {
+   "addr": "0xE246",
+   "text": "Afrika "
+  },
+  {
+   "addr": "0xE24E",
+   "text": "Corpo d'Armata "
+  },
+  {
+   "addr": "0xE25E",
+   "text": "Bersaglieri "
+  },
+  {
+   "addr": "0xE26B",
+   "text": "Parachute "
+  },
+  {
+   "addr": "0xE276",
+   "text": "Support Group "
+  },
+  {
+   "addr": "0xE285",
+   "text": "Motor "
+  },
+  {
+   "addr": "0xE28C",
+   "text": "Fighting French "
+  },
+  {
+   "addr": "0xE29D",
+   "text": "TURN"
+  },
+  {
+   "addr": "0xE2A2",
+   "text": "SQUARE"
+  },
+  {
+   "addr": "0xE2A9",
+   "text": "BRITISH"
+  },
+  {
+   "addr": "0xE2B1",
+   "text": "AXIS"
+  },
+  {
+   "addr": "0xE2B6",
+   "text": "TACTICAL"
+  },
+  {
+   "addr": "0xE2BF",
+   "text": "MAJOR"
+  },
+  {
+   "addr": "0xE2C5",
+   "text": "VICTORY"
+  },
+  {
+   "addr": "0xE2CD",
+   "text": "DECISIVE"
+  },
+  {
+   "addr": "0xE2D6",
+   "text": "A "
+  },
+  {
+   "addr": "0xE2D9",
+   "text": " GAME"
+  },
+  {
+   "addr": "0xE2DF",
+   "text": " TAPE"
+  },
+  {
+   "addr": "0xE2E5",
+   "text": "PLAYERS"
+  },
+  {
+   "addr": "0xE2FF",
+   "text": "zbV "
+  },
+  {
+   "addr": "0xE30A",
+   "text": "16"
+  },
+  {
+   "addr": "0xE310",
+   "text": "Ariete "
+  },
+  {
+   "addr": "0xE31A",
+   "text": "Littorio "
+  },
+  {
+   "addr": "0xE326",
+   "text": "Folgore "
+  },
+  {
+   "addr": "0xE331",
+   "text": "Trieste Motorised "
+  },
+  {
+   "addr": "0xE370",
+   "text": "(Tyne Tees) "
+  },
+  {
+   "addr": "0xE385",
+   "text": "(Home Counties) "
+  },
+  {
+   "addr": "0xE39E",
+   "text": "(Highland) "
+  },
+  {
+   "addr": "0xE3B8",
+   "text": "A/T "
+  },
+  {
+   "addr": "0xE3BD",
+   "text": "39"
+  },
+  {
+   "addr": "0xE3C0",
+   "text": "A/T "
+  },
+  {
+   "addr": "0xE3C5",
+   "text": "605"
+  },
+  {
+   "addr": "0xE3C9",
+   "text": "Mg "
+  },
+  {
+   "addr": "0xE3D2",
+   "text": "Pavia "
+  },
+  {
+   "addr": "0xE3DA",
+   "text": "Brescia "
+  },
+  {
+   "addr": "0xE3E6",
+   "text": "13"
+  },
+  {
+   "addr": "0xE3F0",
+   "text": "13"
+  },
+  {
+   "addr": "0xE3FE",
+   "text": "33"
+  },
+  {
+   "addr": "0xE403",
+   "text": "115"
+  },
+  {
+   "addr": "0xE407",
+   "text": "A/T "
+  },
+  {
+   "addr": "0xE40C",
+   "text": "33"
+  },
+  {
+   "addr": "0xE40F",
+   "text": "Trento "
+  },
+  {
+   "addr": "0xE418",
+   "text": "Bologna "
+  },
+  {
+   "addr": "0xE422",
+   "text": "Savona "
+  },
+  {
+   "addr": "0xE42C",
+   "text": "XXI"
+  },
+  {
+   "addr": "0xE430",
+   "text": "Deutsches "
+  },
+  {
+   "addr": "0xE43B",
+   "text": "Korps "
+  },
+  {
+   "addr": "0xE445",
+   "text": "104"
+  },
+  {
+   "addr": "0xE44B",
+   "text": "155"
+  },
+  {
+   "addr": "0xE450",
+   "text": "di Manovre XX"
+  },
+  {
+   "addr": "0xE472",
+   "text": "361"
+  },
+  {
+   "addr": "0xE478",
+   "text": "580"
+  },
+  {
+   "addr": "0xE47E",
+   "text": "200"
+  },
+  {
+   "addr": "0xE484",
+   "text": "13"
+  },
+  {
+   "addr": "0xE48E",
+   "text": "13"
+  },
+  {
+   "addr": "0xE498",
+   "text": "125"
+  },
+  {
+   "addr": "0xE49E",
+   "text": "382"
+  },
+  {
+   "addr": "0xE4A4",
+   "text": "433"
+  },
+  {
+   "addr": "0xE4A8",
+   "text": "Ramcke "
+  },
+  {
+   "addr": "0xE4B2",
+   "text": "Sabratha "
+  },
+  {
+   "addr": "0xE4BD",
+   "text": "Pistoia "
+  },
+  {
+   "addr": "0xE4C7",
+   "text": "GGFF (Young Fascists) "
+  },
+  {
+   "addr": "0xE4DF",
+   "text": "La Spezia "
+  },
+  {
+   "addr": "0xE4EB",
+   "text": "Centauro "
+  },
+  {
+   "addr": "0xE4F9",
+   "text": "18"
+  },
+  {
+   "addr": "0xE4FF",
+   "text": "18"
+  },
+  {
+   "addr": "0xE505",
+   "text": "18"
+  },
+  {
+   "addr": "0xE52F",
+   "text": "Hussars "
+  },
+  {
+   "addr": "0xE53B",
+   "text": "Guards "
+  },
+  {
+   "addr": "0xE55E",
+   "text": "Polish Carpathian "
+  },
+  {
+   "addr": "0xE575",
+   "text": "Car "
+  },
+  {
+   "addr": "0xE57C",
+   "text": "Kings Dragoon Guards "
+  },
+  {
+   "addr": "0xE5EE",
+   "text": "(Maori) "
+  },
+  {
+   "addr": "0xE606",
+   "text": "XIII "
+  },
+  {
+   "addr": "0xE60E",
+   "text": "XXX "
+  },
+  {
+   "addr": "0xE61C",
+   "text": "15"
+  },
+  {
+   "addr": "0xE622",
+   "text": "15"
+  },
+  {
+   "addr": "0xE64D",
+   "text": "16"
+  },
+  {
+   "addr": "0xE654",
+   "text": "X "
+  },
+  {
+   "addr": "0xE65B",
+   "text": "13"
+  },
+  {
+   "addr": "0xE661",
+   "text": "13"
+  },
+  {
+   "addr": "0xE677",
+   "text": "13"
+  },
+  {
+   "addr": "0xE67A",
+   "text": "Lorried "
+  },
+  {
+   "addr": "0xE68B",
+   "text": "15"
+  },
+  {
+   "addr": "0xE691",
+   "text": "15"
+  },
+  {
+   "addr": "0xE697",
+   "text": "15"
+  },
+  {
+   "addr": "0xE69E",
+   "text": "Greek "
+  },
+  {
+   "addr": "0xE6A7",
+   "text": "Supply Unit"
+  },
+  {
+   "addr": "0xE6B5",
+   "text": "155"
+  },
+  {
+   "addr": "0xE6D3",
+   "text": "20"
+  },
+  {
+   "addr": "0xE6D6",
+   "text": "Guards "
+  },
+  {
+   "addr": "0xE6E2",
+   "text": "M MOVE"
+  },
+  {
+   "addr": "0xE6EA",
+   "text": "A ASSAULT"
+  },
+  {
+   "addr": "0xE6F5",
+   "text": "H HOLD"
+  },
+  {
+   "addr": "0xE6FE",
+   "text": "T TRAVEL"
+  },
+  {
+   "addr": "0xE70A",
+   "text": "R REPORT"
+  },
+  {
+   "addr": "0xE714",
+   "text": "D DIVIDE"
+  },
+  {
+   "addr": "0xE71E",
+   "text": "ENTER TO END"
+  },
+  {
+   "addr": "0xE72B",
+   "text": "PRESS ANY KEY"
+  },
+  {
+   "addr": "0xE739",
+   "text": "STR"
+  },
+  {
+   "addr": "0xE73D",
+   "text": "MPS"
+  },
+  {
+   "addr": "0xE741",
+   "text": "SUP "
+  },
+  {
+   "addr": "0xE746",
+   "text": "MOR"
+  },
+  {
+   "addr": "0xE74A",
+   "text": "A/M"
+  },
+  {
+   "addr": "0xE74E",
+   "text": "UNITS"
+  },
+  {
+   "addr": "0xE754",
+   "text": "MOVE CURSOR TO DESIRED ROAD "
+  },
+  {
+   "addr": "0xE775",
+   "text": " NOT ON ROAD"
+  },
+  {
+   "addr": "0xE783",
+   "text": "0 TO CANCEL"
+  },
+  {
+   "addr": "0xE793",
+   "text": "JAN"
+  },
+  {
+   "addr": "0xE797",
+   "text": "FEB"
+  },
+  {
+   "addr": "0xE79B",
+   "text": "MAR"
+  },
+  {
+   "addr": "0xE79F",
+   "text": "APR"
+  },
+  {
+   "addr": "0xE7A3",
+   "text": "MAY"
+  },
+  {
+   "addr": "0xE7A7",
+   "text": "JUNE"
+  },
+  {
+   "addr": "0xE7AC",
+   "text": "JULY"
+  },
+  {
+   "addr": "0xE7B1",
+   "text": "AUG"
+  },
+  {
+   "addr": "0xE7B5",
+   "text": "SEPT"
+  },
+  {
+   "addr": "0xE7BA",
+   "text": "OCT"
+  },
+  {
+   "addr": "0xE7BE",
+   "text": "NOV"
+  },
+  {
+   "addr": "0xE7C2",
+   "text": "DEC"
+  },
+  {
+   "addr": "0xE7C6",
+   "text": "F FORTIFY"
+  },
+  {
+   "addr": "0xE7D1",
+   "text": "P GO TO PORT"
+  },
+  {
+   "addr": "0xE7DF",
+   "text": "EFF"
+  },
+  {
+   "addr": "0xE7E4",
+   "text": "UNIT TO BE WITHDRAWN NEXT "
+  },
+  {
+   "addr": "0xE802",
+   "text": "SUPPLY LOW"
+  },
+  {
+   "addr": "0xE80E",
+   "text": "STRENGTH LOW"
+  },
+  {
+   "addr": "0xE81B",
+   "text": "-M TO RETURN TO MENU"
+  },
+  {
+   "addr": "0xE830",
+   "text": "ANY OTHER KEY TO CONTINUE"
+  },
+  {
+   "addr": "0xE84A",
+   "text": "REORG PHASE"
+  },
+  {
+   "addr": "0xE856",
+   "text": "FORCES MOVING"
+  },
+  {
+   "addr": "0xE864",
+   "text": "REPLACEMENTS"
+  },
+  {
+   "addr": "0xE872",
+   "text": "INF "
+  },
+  {
+   "addr": "0xE877",
+   "text": "ARM "
+  },
+  {
+   "addr": "0xE87C",
+   "text": "SUPPLIES"
+  },
+  {
+   "addr": "0xE887",
+   "text": "PER DAY"
+  },
+  {
+   "addr": "0xE88F",
+   "text": "THE RESULT IS"
+  },
+  {
+   "addr": "0xE8B4",
+   "text": "A DRAW"
+  },
+  {
+   "addr": "0xE8BB",
+   "text": "AN "
+  },
+  {
+   "addr": "0xE8D2",
+   "text": "FRT"
+  },
+  {
+   "addr": "0xE8D6",
+   "text": "1) BEGIN NEW"
+  },
+  {
+   "addr": "0xE8E5",
+   "text": "1) CONTINUE PLAY"
+  },
+  {
+   "addr": "0xE8F7",
+   "text": "3) SAVE"
+  },
+  {
+   "addr": "0xE901",
+   "text": "2) LOAD NEW"
+  },
+  {
+   "addr": "0xE90F",
+   "text": "4) ABANDON"
+  },
+  {
+   "addr": "0xE91C",
+   "text": "4) EXTEND"
+  },
+  {
+   "addr": "0xE928",
+   "text": "START"
+  },
+  {
+   "addr": "0xE930",
+   "text": "PUBLISHED BY"
+  },
+  {
+   "addr": "0xE941",
+   "text": " 1985 R.T.SMITH"
+  },
+  {
+   "addr": "0xE95F",
+   "text": "WHICH SCENARIO?"
+  },
+  {
+   "addr": "0xE971",
+   "text": "1) ENTER ROMMEL"
+  },
+  {
+   "addr": "0xE982",
+   "text": "2) BATTLEAXE"
+  },
+  {
+   "addr": "0xE990",
+   "text": "3) OPERATION CRUSADER"
+  },
+  {
+   "addr": "0xE9A7",
+   "text": "4) THE BATTLE OF GAZALA"
+  },
+  {
+   "addr": "0xE9C0",
+   "text": "5) EL ALAMEIN"
+  },
+  {
+   "addr": "0xE9CF",
+   "text": "6) THE DESERT WAR"
+  },
+  {
+   "addr": "0xE9E1",
+   "text": "MALTA STATUS?"
+  },
+  {
+   "addr": "0xE9F1",
+   "text": "1) HISTORICAL"
+  },
+  {
+   "addr": "0xEA00",
+   "text": "2) OPERATION HERKULES"
+  },
+  {
+   "addr": "0xEA17",
+   "text": "3) NOT USED AS BASE"
+  },
+  {
+   "addr": "0xEA2B",
+   "text": "CONFIRM CHOICE! (Y/N)"
+  },
+  {
+   "addr": "0xEA42",
+   "text": " ERROR"
+  },
+  {
+   "addr": "0xEA4B",
+   "text": "NONE"
+  },
+  {
+   "addr": "0xEA50",
+   "text": "V LOW"
+  },
+  {
+   "addr": "0xEA56",
+   "text": "LOW"
+  },
+  {
+   "addr": "0xEA5A",
+   "text": "Q LOW"
+  },
+  {
+   "addr": "0xEA60",
+   "text": "FAIR"
+  },
+  {
+   "addr": "0xEA65",
+   "text": "GOOD"
+  },
+  {
+   "addr": "0xEA6A",
+   "text": "V GOOD"
+  },
+  {
+   "addr": "0xEA71",
+   "text": "NO OF "
+  },
+  {
+   "addr": "0xEA78",
+   "text": "? (1/2)"
+  },
+  {
+   "addr": "0xEA80",
+   "text": "COMPUTER TO PLAY "
+  },
+  {
+   "addr": "0xEA92",
+   "text": " OR "
+  },
+  {
+   "addr": "0xEA97",
+   "text": "? (A/B)"
+  },
+  {
+   "addr": "0xEA9F",
+   "text": "5) CHANGE NO OF "
+  },
+  {
+   "addr": "0xEAB4",
+   "text": "THINKING!"
+  },
+  {
+   "addr": "0xEAF0",
+   "text": "8)"
+  },
+  {
+   "addr": "0xEAF3",
+   "text": "9)"
+  },
+  {
+   "addr": "0xEAF6",
+   "text": ":)"
+  },
+  {
+   "addr": "0xEAF9",
+   "text": ";+"
+  }
+ ]
+}

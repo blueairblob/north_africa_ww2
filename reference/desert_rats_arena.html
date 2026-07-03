@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Desert Rats — Operation Battleaxe</title>
+<style>
+  :root{
+    /* Authentic ZX Spectrum 8-colour palette (BUILD_SPEC.md §8): PAPER 6
+       (yellow, #D7D700) for desert, sea as PAPER 1 (blue), escarpment as
+       PAPER 7 (white/grey ridge), road kept as a dark track. Ink: British
+       blue(1), German black(0) -- rendered as dark grey instead of pure
+       black so it stays visible against a black canvas background (same
+       legibility substitution documented in desert_rats/render/palette.py),
+       Italian magenta(3).
+    */
+    --sea:#0000d7; --desert:#d7d700; --escarp:#d7d7d7; --road:#101010; --feature:#c7c100;
+    --brit:#0000ff; --ger:#5a5a5a; --ita:#ff00ff; --sel:#ffe600;
+    --bg:#000; --ink:#d8d8d8; --dim:#7d7d7d; --cyan:#22c9c9; --yel:#d9d300; --red:#cc1414; --grn:#27c93f;
+    --panel:#0a0a0a; --line:#222;
+    --mono:ui-monospace,"SFMono-Regular","Cascadia Mono","Consolas","Liberation Mono",monospace;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%}
+  body{background:var(--bg);color:var(--ink);font-family:var(--mono);font-size:13px;line-height:1.45;
+       display:flex;flex-direction:column;height:100vh;overflow:hidden}
+  .bar{display:flex;align-items:center;gap:13px;padding:9px 14px;border-bottom:2px solid var(--line);flex-wrap:wrap}
+  .title{font-size:18px;font-weight:700;letter-spacing:.28em;color:var(--yel);text-transform:uppercase}
+  .sub{color:var(--dim);font-size:11px}
+  .spacer{flex:1}
+  .turnbox{letter-spacing:.1em;text-transform:uppercase}
+  .turnbox b{color:var(--cyan)}
+  .side-axis{color:var(--ita);font-weight:700}
+  .side-brit{color:var(--brit);font-weight:700}
+  button{font-family:var(--mono);background:#141414;color:var(--ink);border:1px solid #333;
+         padding:5px 10px;text-transform:uppercase;letter-spacing:.06em;cursor:pointer;font-size:11.5px}
+  button:hover{border-color:var(--cyan)}
+  button.primary{background:#15351a;border-color:#2a7a3a;color:#cfeed6}
+  button.active{border-color:var(--cyan);color:var(--cyan)}
+  button:disabled{opacity:.4;cursor:not-allowed}
+  main{flex:1;display:flex;min-height:0}
+  .arenawrap{flex:1;overflow:auto;background:#000;display:flex;align-items:flex-start;justify-content:center;padding:12px}
+  canvas{image-rendering:pixelated;cursor:crosshair}
+  aside{width:340px;flex:none;border-left:2px solid var(--line);background:var(--panel);display:flex;flex-direction:column;overflow:hidden}
+  .pane{padding:11px 13px;border-bottom:2px solid var(--line)}
+  .pane h2{margin:0 0 8px;font-size:11px;letter-spacing:.16em;color:var(--cyan);text-transform:uppercase;display:flex;justify-content:space-between}
+  .filters{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:7px}
+  .deploy{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:6px}
+  .roster{max-height:230px;overflow:auto;border:1px solid #1c1c1c}
+  .ru{display:flex;align-items:center;gap:7px;padding:3px 7px;border-bottom:1px solid #161616;cursor:pointer;font-size:11.5px}
+  .ru:hover{background:#161616}
+  .ru.pick{background:#23230a;outline:1px solid var(--yel)}
+  .ru.done{opacity:.34;cursor:default;text-decoration:line-through}
+  .natdot{width:9px;height:9px;border-radius:50%;border:1px solid #000;flex:none}
+  .ru .nm{flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .ru .meta{color:var(--dim);font-size:10px;flex:none}
+  .row{display:flex;justify-content:space-between;gap:10px;padding:1px 0}
+  .row .k{color:var(--yel);text-transform:uppercase;letter-spacing:.07em;font-size:11px}
+  .row .v{color:#fff;text-align:right}
+  .bar2{height:7px;background:#222;border:1px solid #333;margin-top:2px}
+  .bar2 i{display:block;height:100%}
+  .orderbtns{display:flex;gap:6px;margin-top:8px;flex-wrap:wrap}
+  .log{flex:1;overflow:auto;padding:9px 13px;font-size:11.5px}
+  .log .e{padding:2px 0;border-bottom:1px solid #161616;color:var(--dim)}
+  .log .e b{color:var(--ink)}
+  .log .fight{color:#ffd2d2}
+  .log .move{color:#bfe0ff}
+  .log .turn{color:var(--cyan);text-transform:uppercase;letter-spacing:.1em;margin-top:4px}
+  .legend{display:flex;gap:11px;flex-wrap:wrap;padding:7px 14px;border-top:2px solid var(--line);font-size:11px;color:var(--dim)}
+  .sw{display:inline-block;width:11px;height:11px;border:1px solid #000;vertical-align:-2px;margin-right:5px}
+  .hint{color:var(--dim);font-size:11px;margin-top:7px;line-height:1.5}
+  .mode-pill{font-size:11px;color:var(--dim)}
+  .mode-pill b{color:var(--yel)}
+</style>
+</head>
+<body>
+<div class="bar">
+  <span class="title" id="scenariotitle">2) Battleaxe</span>
+  <span class="sub">Desert Rats engine · real OOB · real 100×32 map</span>
+  <span class="spacer"></span>
+  <span class="turnbox">Day <b id="dayno">77</b> (<span id="monthname">MAR</span>) · Turn <b id="turnno">1</b> · <span id="activeside" class="side-axis">/ AXIS TURN /</span></span>
+  <button id="endturn" class="primary">End Turn ▸</button>
+  <button id="autoplay">▶ Auto-battle (AI vs AI)</button>
+  <button id="reset">Clear board</button>
+</div>
+
+<main>
+  <div class="arenawrap"><canvas id="cv" tabindex="0"></canvas></div>
+  <aside>
+    <div class="pane">
+      <h2>Order of battle <span class="mode-pill" id="modepill">place</span></h2>
+      <div class="filters" id="filters"></div>
+      <div class="deploy">
+        <button id="dep-axis">Deploy Axis (Battleaxe, day 77)</button>
+        <button id="dep-brit">Deploy British (Battleaxe, day 77)</button>
+      </div>
+      <div class="roster" id="roster"></div>
+      <p class="hint">Click a formation to pick it, then click the map to deploy (2×2). German &amp; Italian fight as
+      <b>Axis</b>; British alone. Or deploy every formation on the roster by day 77 (Battleaxe's start day) per side.
+      Then select a unit → click a cell to set a move order, or an adjacent enemy to assault. Road + <b>Travel</b> =
+      1×1 extended reach. The map is the real 100×32 campaign board -- scroll to see the rest.</p>
+    </div>
+    <div class="pane" id="reportpane">
+      <h2>Unit report</h2>
+      <p class="hint" id="reportempty">Select a deployed unit to inspect and order it.</p>
+      <div id="report" style="display:none"></div>
+      <div class="orderbtns" id="orderbtns" style="display:none">
+        <button id="o-travel">T TRAVEL</button>
+        <button id="o-clear">Clear order</button>
+        <button id="o-recall">Recall</button>
+      </div>
+      <div class="orderbtns" style="margin-top:7px">
+        <button id="t-supply">Supply overlay</button>
+        <button id="t-zoc">ZOC overlay</button>
+      </div>
+    </div>
+    <div class="pane" style="flex:1;display:flex;flex-direction:column;min-height:0;padding-bottom:0">
+      <h2>Battle log</h2>
+      <div class="log" id="log"></div>
+    </div>
+  </aside>
+</main>
+
+<div class="legend">
+  <span><span class="sw" style="background:var(--sea)"></span>Sea</span>
+  <span><span class="sw" style="background:var(--desert)"></span>Desert</span>
+  <span><span class="sw" style="background:var(--escarp)"></span>Escarpment</span>
+  <span><span class="sw" style="background:var(--road)"></span>Road</span>
+  <span><span class="sw" style="background:var(--feature)"></span>Point feature (town/oasis, unnamed)</span>
+  <span><span class="sw" style="background:var(--brit);border-radius:50%"></span>British</span>
+  <span><span class="sw" style="background:var(--ger);border-radius:50%"></span>German</span>
+  <span><span class="sw" style="background:var(--ita);border-radius:50%"></span>Italian</span>
+</div>
+
+<script>
+//// ── Master OOB (extracted from 0xEF58) ────────────────────────────────────
+const OOB = [{"i":0,"nm":"Panzer Regt 5, 5th Light Division","de":"Panzer Regt 5","dv":"5th Light Division","nat":"German","br":"armour","mp":6,"st":100,"ar":0},{"i":1,"nm":"Recce Battalion 3, 5th Light Division","de":"Recce Battalion 3","dv":"5th Light Division","nat":"German","br":"recce","mp":8,"st":120,"ar":0},{"i":2,"nm":"A/T Battalion 39, 5th Light Division","de":"A/T Battalion 39","dv":"5th Light Division","nat":"German","br":"artillery","mp":6,"st":40,"ar":0},{"i":3,"nm":"A/T Battalion 605, 5th Light Division","de":"A/T Battalion 605","dv":"5th Light Division","nat":"German","br":"artillery","mp":5,"st":40,"ar":0},{"i":4,"nm":"Mg Battalion 8","de":"Mg Battalion 8","dv":null,"nat":"German","br":"infantry","mp":5,"st":40,"ar":0},{"i":5,"nm":"Corpo d'Armata X, 5th Light Division","de":"Corpo d'Armata X","dv":"5th Light Division","nat":"German","br":"infantry","mp":6,"st":40,"ar":0},{"i":6,"nm":"Pavia Division","de":"Pavia Division","dv":null,"nat":"Italian","br":"infantry","mp":6,"st":100,"ar":0},{"i":7,"nm":"Brescia Division","de":"Brescia Division","dv":null,"nat":"Italian","br":"infantry","mp":4,"st":200,"ar":0},{"i":8,"nm":"HQ","de":"HQ","dv":null,"nat":"Italian","br":"infantry","mp":4,"st":200,"ar":0},{"i":9,"nm":"132nd Armoured Regt, Ariete Armoured Division","de":"132nd Armoured Regt","dv":"Ariete Armoured Division","nat":"Italian","br":"armour","mp":6,"st":100,"ar":0},{"i":10,"nm":"8th Bersaglieri Regt, Ariete Armoured Division","de":"8th Bersaglieri Regt","dv":"Ariete Armoured Division","nat":"Italian","br":"armour","mp":6,"st":100,"ar":0},{"i":11,"nm":"132nd Artillery Regt, Ariete Armoured Division","de":"132nd Artillery Regt","dv":"Ariete Armoured Division","nat":"Italian","br":"armour","mp":6,"st":100,"ar":0},{"i":12,"nm":"HQ, Ariete Armoured Division","de":"HQ","dv":"Ariete Armoured Division","nat":"Italian","br":"armour","mp":6,"st":100,"ar":0},{"i":13,"nm":"Panzer Regt 8, 15th Panzer Division","de":"Panzer Regt 8","dv":"15th Panzer Division","nat":"German","br":"armour","mp":6,"st":100,"ar":20},{"i":14,"nm":"Recce Battalion 33, 15th Panzer Division","de":"Recce Battalion 33","dv":"15th Panzer Division","nat":"German","br":"recce","mp":8,"st":120,"ar":20},{"i":15,"nm":"Infantry Regt 115, 15th Panzer Division","de":"Infantry Regt 115","dv":"15th Panzer Division","nat":"German","br":"infantry","mp":6,"st":40,"ar":20},{"i":16,"nm":"A/T Battalion 33, 15th Panzer Division","de":"A/T Battalion 33","dv":"15th Panzer Division","nat":"German","br":"artillery","mp":6,"st":100,"ar":20},{"i":17,"nm":"Trento Division, 15th Panzer Division","de":"Trento Division","dv":"15th Panzer Division","nat":"German","br":"infantry","mp":5,"st":40,"ar":20},{"i":18,"nm":"Bologna Division","de":"Bologna Division","dv":null,"nat":"Italian","br":"infantry","mp":4,"st":200,"ar":14},{"i":19,"nm":"Savona Division","de":"Savona Division","dv":null,"nat":"Italian","br":"infantry","mp":4,"st":200,"ar":42},{"i":20,"nm":"Corpo d'Armata XXI","de":"Corpo d'Armata XXI","dv":null,"nat":"Italian","br":"infantry","mp":4,"st":200,"ar":43},{"i":21,"nm":"Deutsches Afrika Korps HQ","de":"Deutsches Afrika Korps HQ","dv":null,"nat":"Italian","br":"infantry","mp":6,"st":100,"ar":44},{"i":22,"nm":"Rifle Regt 104","de":"Rifle Regt 104","dv":null,"nat":"German","br":"infantry","mp":6,"st":100,"ar":36},{"i":23,"nm":"Infantry Regt 155, 21st Panzer Division","de":"Infantry Regt 155","dv":"21st Panzer Division","nat":"German","br":"infantry","mp":6,"st":100,"ar":36},{"i":24,"nm":"Corpo d'Armata di Manovre XX, Division zbV Afrika","de":"Corpo d'Armata di Manovre XX","dv":"Division zbV Afrika","nat":"German","br":"infantry","mp":6,"st":100,"ar":45},{"i":25,"nm":"HQ","de":"HQ","dv":null,"nat":"Italian","br":"infantry","mp":6,"st":100,"ar":58},{"i":26,"nm":"65th Infantry Regt, Trieste Motorised Division","de":"65th Infantry Regt","dv":"Trieste Motorised Division","nat":"Italian","br":"infantry","mp":6,"st":100,"ar":54},{"i":27,"nm":"66th Infantry Regt, Trieste Motorised Division","de":"66th Infantry Regt","dv":"Trieste Motorised Division","nat":"Italian","br":"infantry","mp":6,"st":100,"ar":55},{"i":28,"nm":"9th Bersaglieri Regt, Trieste Motorised Division","de":"9th Bersaglieri Regt","dv":"Trieste Motorised Division","nat":"Italian","br":"infantry","mp":6,"st":100,"ar":56},{"i":29,"nm":"HQ, Trieste Motorised Division","de":"HQ","dv":"Trieste Motorised Division","nat":"Italian","br":"infantry","mp":6,"st":100,"ar":57},{"i":30,"nm":"Afrika Regt 361, Division zbV Afrika","de":"Afrika Regt 361","dv":"Division zbV Afrika","nat":"German","br":"infantry","mp":6,"st":100,"ar":57},{"i":31,"nm":"Recce Battalion 580, Division zbV Afrika","de":"Recce Battalion 580","dv":"Division zbV Afrika","nat":"German","br":"recce","mp":8,"st":100,"ar":58},{"i":32,"nm":"Panzergrenadier Regt 200, Division zbV Afrika","de":"Panzergrenadier Regt 200","dv":"Division zbV Afrika","nat":"German","br":"infantry","mp":6,"st":40,"ar":52},{"i":33,"nm":"HQ, 90th Light Division","de":"HQ","dv":"90th Light Division","nat":"German","br":"infantry","mp":6,"st":100,"ar":115},{"i":34,"nm":"133rd Armoured Regt, Littorio Armoured Division","de":"133rd Armoured Regt","dv":"Littorio Armoured Division","nat":"Italian","br":"armour","mp":6,"st":100,"ar":143},{"i":35,"nm":"12th Bersaglieri Regt, Littorio Armoured Division","de":"12th Bersaglieri Regt","dv":"Littorio Armoured Division","nat":"Italian","br":"armour","mp":6,"st":120,"ar":144},{"i":36,"nm":"133rd Artillery Regt, Littorio Armoured Division","de":"133rd Artillery Regt","dv":"Littorio Armoured Division","nat":"Italian","br":"armour","mp":6,"st":100,"ar":145},{"i":37,"nm":"HQ, Littorio Armoured Division","de":"HQ","dv":"Littorio Armoured Division","nat":"Italian","br":"armour","mp":6,"st":100,"ar":146},{"i":38,"nm":"Infantry Regt 125, 164th Light Division","de":"Infantry Regt 125","dv":"164th Light Division","nat":"German","br":"infantry","mp":6,"st":100,"ar":158},{"i":39,"nm":"Infantry Regt 382, 164th Light Division","de":"Infantry Regt 382","dv":"164th Light Division","nat":"German","br":"infantry","mp":6,"st":100,"ar":153},{"i":40,"nm":"Infantry Regt 433, 164th Light Division","de":"Infantry Regt 433","dv":"164th Light Division","nat":"German","br":"infantry","mp":6,"st":100,"ar":163},{"i":41,"nm":"Ramcke Parachute Bde, 164th Light Division","de":"Ramcke Parachute Bde","dv":"164th Light Division","nat":"German","br":"infantry","mp":6,"st":100,"ar":166},{"i":42,"nm":"Sabratha Division","de":"Sabratha Division","dv":null,"nat":"German","br":"infantry","mp":6,"st":120,"ar":167},{"i":43,"nm":"Pistoia Division","de":"Pistoia Division","dv":null,"nat":"Italian","br":"infantry","mp":4,"st":200,"ar":114},{"i":44,"nm":"GGFF (Young Fascists) Div","de":"GGFF (Young Fascists) Div","dv":null,"nat":"Italian","br":"infantry","mp":5,"st":150,"ar":170},{"i":45,"nm":"La Spezia Division","de":"La Spezia Division","dv":null,"nat":"Italian","br":"infantry","mp":4,"st":100,"ar":195},{"i":46,"nm":"Centauro Armoured Div","de":"Centauro Armoured Div","dv":null,"nat":"Italian","br":"armour","mp":6,"st":200,"ar":195},{"i":47,"nm":"HQ","de":"HQ","dv":null,"nat":"Italian","br":"infantry","mp":5,"st":200,"ar":205},{"i":48,"nm":"185th Parachute Regt, Folgore Parachute Division","de":"185th Parachute Regt","dv":"Folgore Parachute Division","nat":"Italian","br":"infantry","mp":6,"st":100,"ar":170},{"i":49,"nm":"186th Parachute Regt, Folgore Parachute Division","de":"186th Parachute Regt","dv":"Folgore Parachute Division","nat":"Italian","br":"infantry","mp":6,"st":100,"ar":171},{"i":50,"nm":"187th Parachute Regt, Folgore Parachute Division","de":"187th Parachute Regt","dv":"Folgore Parachute Division","nat":"Italian","br":"infantry","mp":6,"st":100,"ar":172},{"i":51,"nm":"HQ, Folgore Parachute Division","de":"HQ","dv":"Folgore Parachute Division","nat":"Italian","br":"infantry","mp":6,"st":100,"ar":173},{"i":52,"nm":"3rd Armoured Bde, 2nd Armoured Division","de":"3rd Armoured Bde","dv":"2nd Armoured Division","nat":"British","br":"armour","mp":6,"st":100,"ar":0},{"i":53,"nm":"2nd Support Group, 2nd Armoured Division","de":"2nd Support Group","dv":"2nd Armoured Division","nat":"British","br":"armour","mp":6,"st":86,"ar":0},{"i":54,"nm":"HQ, 2nd Armoured Division","de":"HQ","dv":"2nd Armoured Division","nat":"British","br":"armour","mp":6,"st":100,"ar":0},{"i":55,"nm":"20th Australian Bde, 9th Australian Division","de":"20th Australian Bde","dv":"9th Australian Division","nat":"British","br":"infantry","mp":6,"st":100,"ar":0},{"i":56,"nm":"24th Australian Bde, 9th Australian Division","de":"24th Australian Bde","dv":"9th Australian Division","nat":"British","br":"infantry","mp":6,"st":100,"ar":0},{"i":57,"nm":"26th Australian Bde, 9th Australian Division","de":"26th Australian Bde","dv":"9th Australian Division","nat":"British","br":"infantry","mp":6,"st":100,"ar":0},{"i":58,"nm":"Fighting French Motor Bn, 9th Australian Division","de":"Fighting French Motor Bn","dv":"9th Australian Division","nat":"British","br":"infantry","mp":6,"st":100,"ar":0},{"i":59,"nm":"3rd Indian Motor Bde","de":"3rd Indian Motor Bde","dv":null,"nat":"British","br":"infantry","mp":6,"st":40,"ar":0},{"i":60,"nm":"11th Hussars Bn","de":"11th Hussars Bn","dv":null,"nat":"British","br":"recce","mp":8,"st":100,"ar":0},{"i":61,"nm":"22nd Guards Bde","de":"22nd Guards Bde","dv":null,"nat":"British","br":"infantry","mp":6,"st":40,"ar":0},{"i":62,"nm":"7th Support Group","de":"7th Support Group","dv":null,"nat":"British","br":"infantry","mp":6,"st":100,"ar":6},{"i":63,"nm":"18th Australian Bde, 7th Armoured Division","de":"18th Australian Bde","dv":"7th Armoured Division","nat":"British","br":"armour","mp":6,"st":100,"ar":6},{"i":64,"nm":"4th Armoured Bde","de":"4th Armoured Bde","dv":null,"nat":"British","br":"armour","mp":6,"st":100,"ar":0},{"i":65,"nm":"7th Armoured Bde, 7th Armoured Division","de":"7th Armoured Bde","dv":"7th Armoured Division","nat":"British","br":"armour","mp":6,"st":100,"ar":12},{"i":66,"nm":"HQ, 7th Armoured Division","de":"HQ","dv":"7th Armoured Division","nat":"British","br":"armour","mp":6,"st":100,"ar":22},{"i":67,"nm":"HQ, 7th Armoured Division","de":"HQ","dv":"7th Armoured Division","nat":"British","br":"armour","mp":6,"st":100,"ar":22},{"i":68,"nm":"11th Indian Infantry Bde, 4th Indian Division","de":"11th Indian Infantry Bde","dv":"4th Indian Division","nat":"British","br":"infantry","mp":6,"st":100,"ar":22},{"i":69,"nm":"1st Polish Carpathian Bde, 4th Indian Division","de":"1st Polish Carpathian Bde","dv":"4th Indian Division","nat":"British","br":"infantry","mp":6,"st":100,"ar":22},{"i":70,"nm":"4th SA Armoured Car Regt","de":"4th SA Armoured Car Regt","dv":null,"nat":"British","br":"recce","mp":8,"st":100,"ar":45},{"i":71,"nm":"1st Kings Dragoon Guards Bn","de":"1st Kings Dragoon Guards Bn","dv":null,"nat":"British","br":"recce","mp":8,"st":40,"ar":45},{"i":72,"nm":"5th Indian Infantry Bde","de":"5th Indian Infantry Bde","dv":null,"nat":"British","br":"infantry","mp":6,"st":40,"ar":0},{"i":73,"nm":"7th Indian Infantry Bde, 4th Indian Division","de":"7th Indian Infantry Bde","dv":"4th Indian Division","nat":"British","br":"infantry","mp":6,"st":100,"ar":42},{"i":74,"nm":"5th SA Infantry Bde, 4th Indian Division","de":"5th SA Infantry Bde","dv":"4th Indian Division","nat":"British","br":"infantry","mp":6,"st":100,"ar":42},{"i":75,"nm":"1st Army Tank Brigade, 1st South African Division","de":"1st Army Tank Brigade","dv":"1st South African Division","nat":"British","br":"armour","mp":6,"st":100,"ar":20},{"i":76,"nm":"HQ","de":"HQ","dv":null,"nat":"British","br":"infantry","mp":6,"st":135,"ar":36},{"i":77,"nm":"1st SA Infantry Bde, 1st South African Division","de":"1st SA Infantry Bde","dv":"1st South African Division","nat":"British","br":"infantry","mp":5,"st":100,"ar":45},{"i":78,"nm":"2nd SA Infantry Bde, 1st South African Division","de":"2nd SA Infantry Bde","dv":"1st South African Division","nat":"British","br":"infantry","mp":5,"st":100,"ar":45},{"i":79,"nm":"HQ, 1st South African Division","de":"HQ","dv":"1st South African Division","nat":"British","br":"infantry","mp":5,"st":100,"ar":45},{"i":80,"nm":"3rd SA Infantry Bde, 2nd South African Division","de":"3rd SA Infantry Bde","dv":"2nd South African Division","nat":"British","br":"infantry","mp":6,"st":100,"ar":55},{"i":81,"nm":"4th SA Infantry Bde, 2nd South African Division","de":"4th SA Infantry Bde","dv":"2nd South African Division","nat":"British","br":"infantry","mp":5,"st":100,"ar":55},{"i":82,"nm":"5th SA Infantry Bde, 2nd South African Division","de":"5th SA Infantry Bde","dv":"2nd South African Division","nat":"British","br":"infantry","mp":6,"st":100,"ar":55},{"i":83,"nm":"32nd Army Tank Brigade, 2nd South African Division","de":"32nd Army Tank Brigade","dv":"2nd South African Division","nat":"British","br":"armour","mp":6,"st":100,"ar":55},{"i":84,"nm":"HQ","de":"HQ","dv":null,"nat":"British","br":"infantry","mp":6,"st":130,"ar":66},{"i":85,"nm":"14th Infantry Bde, 70th Infantry Division","de":"14th Infantry Bde","dv":"70th Infantry Division","nat":"British","br":"infantry","mp":6,"st":100,"ar":50},{"i":86,"nm":"16th Infantry Bde, 70th Infantry Division","de":"16th Infantry Bde","dv":"70th Infantry Division","nat":"British","br":"infantry","mp":6,"st":100,"ar":50},{"i":87,"nm":"23rd Infantry Bde, 70th Infantry Division","de":"23rd Infantry Bde","dv":"70th Infantry Division","nat":"British","br":"infantry","mp":6,"st":100,"ar":50},{"i":88,"nm":"HQ, 70th Infantry Division","de":"HQ","dv":"70th Infantry Division","nat":"British","br":"infantry","mp":6,"st":100,"ar":50},{"i":89,"nm":"4th NZ Infantry Bde, 2nd New Zealand Division","de":"4th NZ Infantry Bde","dv":"2nd New Zealand Division","nat":"British","br":"infantry","mp":6,"st":100,"ar":48},{"i":90,"nm":"5th NZ Infantry Bde, 2nd New Zealand Division","de":"5th NZ Infantry Bde","dv":"2nd New Zealand Division","nat":"British","br":"infantry","mp":6,"st":100,"ar":48},{"i":91,"nm":"6th NZ Infantry Bde, 2nd New Zealand Division","de":"6th NZ Infantry Bde","dv":"2nd New Zealand Division","nat":"British","br":"infantry","mp":6,"st":100,"ar":48},{"i":92,"nm":"28th (Maori) Bn, 2nd New Zealand Division","de":"28th (Maori) Bn","dv":"2nd New Zealand Division","nat":"British","br":"infantry","mp":6,"st":100,"ar":48},{"i":93,"nm":"22nd Armoured Bde, 2nd New Zealand Division","de":"22nd Armoured Bde","dv":"2nd New Zealand Division","nat":"British","br":"armour","mp":6,"st":40,"ar":48},{"i":94,"nm":"HQ, 7th Armoured Division","de":"HQ","dv":"7th Armoured Division","nat":"British","br":"armour","mp":6,"st":155,"ar":70},{"i":95,"nm":"1st Support Group, 1st Armoured Division","de":"1st Support Group","dv":"1st Armoured Division","nat":"British","br":"armour","mp":6,"st":100,"ar":95},{"i":96,"nm":"2nd Armoured Bde, 1st Armoured Division","de":"2nd Armoured Bde","dv":"1st Armoured Division","nat":"British","br":"armour","mp":6,"st":100,"ar":95},{"i":97,"nm":"XIII Corps HQ, 1st Armoured Division","de":"XIII Corps HQ","dv":"1st Armoured Division","nat":"British","br":"armour","mp":6,"st":100,"ar":95},{"i":98,"nm":"XXX Corps HQ","de":"XXX Corps HQ","dv":null,"nat":"British","br":"infantry","mp":6,"st":100,"ar":25},{"i":99,"nm":"HQ","de":"HQ","dv":null,"nat":"British","br":"infantry","mp":6,"st":100,"ar":45},{"i":100,"nm":"69th Infantry Bde, 50th (Tyne Tees) Division","de":"69th Infantry Bde","dv":"50th (Tyne Tees) Division","nat":"British","br":"infantry","mp":6,"st":100,"ar":124},{"i":101,"nm":"150th Infantry Bde, 50th (Tyne Tees) Division","de":"150th Infantry Bde","dv":"50th (Tyne Tees) Division","nat":"British","br":"infantry","mp":6,"st":100,"ar":124},{"i":102,"nm":"151st Infantry Bde, 50th (Tyne Tees) Division","de":"151st Infantry Bde","dv":"50th (Tyne Tees) Division","nat":"British","br":"infantry","mp":6,"st":100,"ar":124},{"i":103,"nm":"HQ, 50th (Tyne Tees) Division","de":"HQ","dv":"50th (Tyne Tees) Division","nat":"British","br":"infantry","mp":6,"st":100,"ar":124},{"i":104,"nm":"9th Indian Infantry Bde, 5th Indian Division","de":"9th Indian Infantry Bde","dv":"5th Indian Division","nat":"British","br":"infantry","mp":6,"st":100,"ar":146},{"i":105,"nm":"10th Indian Infantry Bde, 5th Indian Division","de":"10th Indian Infantry Bde","dv":"5th Indian Division","nat":"British","br":"infantry","mp":6,"st":100,"ar":116},{"i":106,"nm":"29th Indian Infantry Bde, 5th Indian Division","de":"29th Indian Infantry Bde","dv":"5th Indian Division","nat":"British","br":"infantry","mp":6,"st":100,"ar":146},{"i":107,"nm":"1st Fighting French Bde, 5th Indian Division","de":"1st Fighting French Bde","dv":"5th Indian Division","nat":"British","br":"infantry","mp":6,"st":100,"ar":116},{"i":108,"nm":"HQ","de":"HQ","dv":null,"nat":"British","br":"infantry","mp":6,"st":100,"ar":124},{"i":109,"nm":"20th Indian Infantry Bde, 10th Indian Division","de":"20th Indian Infantry Bde","dv":"10th Indian Division","nat":"British","br":"infantry","mp":6,"st":100,"ar":150},{"i":110,"nm":"21st Indian Infantry Bde, 10th Indian Division","de":"21st Indian Infantry Bde","dv":"10th Indian Division","nat":"British","br":"infantry","mp":6,"st":100,"ar":145},{"i":111,"nm":"161st Indian Infantry Bde","de":"161st Indian Infantry Bde","dv":null,"nat":"British","br":"infantry","mp":6,"st":100,"ar":160},{"i":112,"nm":"X Corps HQ","de":"X Corps HQ","dv":null,"nat":"British","br":"infantry","mp":6,"st":100,"ar":160},{"i":113,"nm":"HQ","de":"HQ","dv":null,"nat":"British","br":"infantry","mp":6,"st":100,"ar":150},{"i":114,"nm":"131st Infantry Bde, 44th (Home Counties) Division","de":"131st Infantry Bde","dv":"44th (Home Counties) Division","nat":"British","br":"infantry","mp":6,"st":100,"ar":170},{"i":115,"nm":"132nd Infantry Bde, 44th (Home Counties) Division","de":"132nd Infantry Bde","dv":"44th (Home Counties) Division","nat":"British","br":"infantry","mp":6,"st":100,"ar":170},{"i":116,"nm":"23rd Armoured Bde, 44th (Home Counties) Division","de":"23rd Armoured Bde","dv":"44th (Home Counties) Division","nat":"British","br":"armour","mp":6,"st":100,"ar":170},{"i":117,"nm":"HQ","de":"HQ","dv":null,"nat":"British","br":"infantry","mp":6,"st":156,"ar":156},{"i":118,"nm":"8th Armoured Bde, 10th Armoured Division","de":"8th Armoured Bde","dv":"10th Armoured Division","nat":"British","br":"armour","mp":6,"st":100,"ar":170},{"i":119,"nm":"24th Armoured Bde, 10th Armoured Division","de":"24th Armoured Bde","dv":"10th Armoured Division","nat":"British","br":"armour","mp":6,"st":84,"ar":170},{"i":120,"nm":"133rd Lorried Infantry Bde, 10th Armoured Division","de":"133rd Lorried Infantry Bde","dv":"10th Armoured Division","nat":"British","br":"armour","mp":6,"st":150,"ar":176},{"i":121,"nm":"9th Armoured Bde, 10th Armoured Division","de":"9th Armoured Bde","dv":"10th Armoured Division","nat":"British","br":"armour","mp":6,"st":100,"ar":176},{"i":122,"nm":"HQ, 2nd New Zealand Division","de":"HQ","dv":"2nd New Zealand Division","nat":"British","br":"infantry","mp":6,"st":150,"ar":180},{"i":123,"nm":"152nd Infantry Bde, 51st (Highland) Division","de":"152nd Infantry Bde","dv":"51st (Highland) Division","nat":"British","br":"infantry","mp":6,"st":100,"ar":178},{"i":124,"nm":"153rd Infantry Bde, 51st (Highland) Division","de":"153rd Infantry Bde","dv":"51st (Highland) Division","nat":"British","br":"infantry","mp":6,"st":100,"ar":178},{"i":125,"nm":"154th Infantry Bde, 51st (Highland) Division","de":"154th Infantry Bde","dv":"51st (Highland) Division","nat":"British","br":"infantry","mp":6,"st":100,"ar":178},{"i":126,"nm":"1st Greek Infantry Bde, 51st (Highland) Division","de":"1st Greek Infantry Bde","dv":"51st (Highland) Division","nat":"British","br":"infantry","mp":6,"st":100,"ar":178},{"i":127,"nm":"Supply Unit","de":"Supply Unit","dv":null,"nat":"British","br":"infantry","mp":6,"st":100,"ar":180}];  // {i,nm,de,dv,nat,br,mp,st,ar}
+
+//// ── Recovered engine constants ───────────────────────────────────────────
+const SUPPLY_CURVE=[90,80,75,70,65,60,55,50,49,48,47,46,45,44,43,42,41,41,40,40,39,39,38,38,37,37,36,36,36,35,35];
+const BANDS=['NONE','V LOW','LOW','Q LOW','FAIR','GOOD','V GOOD'];
+const COMBAT_LOSS=10, ATTRITION=3, TRAVEL_COST_MULT=0.5;
+const recover=e=>Math.min(100,e+Math.floor((100-e)/16)+1);
+const effectivePower=(b,e)=>b*e/100;
+
+// Real terrain codes (data/terrain_authentic.json, low nibble of each cell
+// byte). Confirmed: 0 desert(open), 5 road/track, 14 sea(impassable), 2 &
+// 3 escarpment. Every other code is an unnamed point-feature (town/port/
+// oasis -- BUILD_SPEC.md §10: categorised coastal/inland, not individually
+// named) and is treated as open desert for passability/cost, with its own
+// paper tint purely so it reads as "something is here" on the map.
+const SEA=14, ROAD=5, DESERT=0;
+const isEscarp=t=>t===2||t===3;
+const isFeature=t=>t!==SEA&&t!==ROAD&&t!==DESERT&&!isEscarp(t);
+const TCOST=t=>t===SEA?Infinity:t===ROAD?1:isEscarp(t)?3:2;
+const paperFor=t=>t===SEA?'#0000d7':t===ROAD?'#101010':isEscarp(t)?'#d7d7d7':isFeature(t)?'#c7c100':'#d7d700';
+const NATCOL={British:'#0000ff',German:'#5a5a5a',Italian:'#ff00ff'};
+const sideOf=nat=>nat==='British'?'British':'Axis';
+
+// data/scenarios.json #2 -- the scenario this arena is scoped to.
+const SCENARIO={index:2,name:'Battleaxe',start_day:77,end_day:83};
+// data/ui_strings.json calendar & turn_phases, reused verbatim (leading/
+// trailing " /" are the original's line-continuation artifacts, stripped).
+const CALENDAR=['JAN','FEB','MAR','APR','MAY','JUNE','JULY','AUG','SEPT','OCT','NOV','DEC'];
+const PHASE_BRITISH='BRITISH TURN', PHASE_AXIS='AXIS TURN', PHASE_THINKING='THINKING!', PHASE_MOVING='FORCES MOVING';
+const dayOf=t=>SCENARIO.start_day+(t-1);         // this arena's own turn=1 is Battleaxe's day 77
+const monthOf=d=>CALENDAR[Math.floor(d/30)%12];  // inferred mapping -- see NOTES.md
+
+//// ── State ────────────────────────────────────────────────────────────────
+let W=100,H=32,cell=16;
+let terrain,units,turn,active,mode,pick,selected,overlays,nextId,supplyMap,zocMap,busy,filter;
+let aiOn=false, aiTurnsRun=0;
+const AI_BAND_HALF=25, AI_MAX_TURNS=200; // mirrors desert_rats/ai.py's confirmed constants
+const cv=document.getElementById('cv'), ctx=cv.getContext('2d');
+const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+
+// data/terrain_authentic.json's 100x32 grid, flattened row-major (y*100+x).
+const TERRAIN_FLAT=[14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,7,6,7,8,10,10,2,2,2,2,2,11,9,10,7,3,6,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,10,2,2,7,6,7,3,3,8,8,2,2,2,11,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,12,2,7,11,3,3,3,5,14,3,6,3,3,3,12,8,2,11,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,15,7,3,3,5,8,3,11,4,14,12,1,1,1,1,6,8,2,8,2,0,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,15,7,5,13,3,3,11,4,14,14,14,14,14,14,14,14,14,6,8,0,0,0,1,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,15,7,5,1,4,14,14,14,14,14,14,14,14,14,14,14,10,7,5,6,8,0,0,0,10,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,8,13,5,9,4,14,14,14,14,14,14,14,14,14,14,10,7,12,4,9,0,6,8,0,0,4,12,6,15,6,1,6,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,7,10,3,12,13,6,15,14,3,12,0,6,4,14,14,14,14,14,14,14,10,7,0,0,0,15,0,0,0,0,6,3,8,8,11,14,14,14,14,14,9,4,7,7,10,0,14,14,14,12,0,14,14,14,14,14,14,14,14,8,14,9,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,3,15,0,3,4,14,14,14,14,10,7,0,0,0,0,0,2,0,0,0,0,0,0,15,10,0,8,2,2,2,2,12,14,14,14,14,14,14,12,2,4,0,0,10,14,14,14,14,14,14,14,7,6,7,6,3,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,6,1,10,13,6,3,9,7,14,6,14,14,14,14,14,14,14,14,14,14,14,14,14,3,4,0,0,4,4,10,7,0,0,0,0,0,0,0,2,0,0,5,0,0,15,11,13,6,3,11,3,0,0,12,8,2,2,2,2,2,4,7,3,3,3,8,4,7,6,7,9,14,6,12,2,2,2,2,2,0,14,14,2,6,9,7,10,13,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,12,2,14,14,14,14,14,14,14,14,14,14,14,14,14,3,4,0,0,0,4,0,0,0,0,0,0,0,0,15,11,11,11,2,11,11,13,0,0,0,3,3,1,4,14,14,3,3,3,3,3,3,3,5,13,3,7,0,8,11,14,14,14,14,15,7,11,3,3,3,3,8,6,2,2,2,2,0,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,15,0,10,14,14,14,14,14,14,14,14,14,14,14,14,14,2,6,8,0,0,0,4,0,0,5,0,15,11,11,13,0,0,0,12,0,0,0,0,0,0,0,0,0,7,15,3,3,15,3,3,3,3,3,5,0,0,5,4,14,4,14,14,14,15,7,5,0,0,0,0,0,6,3,3,3,0,15,8,1,14,10,11,14,14,14,14,12,0,14,14,10,1,14,14,14,14,14,14,15,7,5,0,14,14,14,14,14,14,14,14,14,14,14,14,14,14,0,6,8,0,0,0,0,15,11,11,13,0,0,0,0,0,0,12,0,0,0,0,0,0,0,0,0,0,0,6,3,3,6,0,0,0,0,0,0,0,14,7,4,8,2,2,4,7,5,0,0,0,0,0,0,0,0,13,1,4,3,6,8,6,7,8,2,2,2,4,0,6,1,14,6,1,6,2,10,14,3,15,7,5,0,0,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,9,4,0,0,0,15,13,0,0,0,0,0,0,0,0,0,14,11,11,11,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,8,9,5,5,6,11,3,8,3,5,0,13,3,7,0,0,0,0,0,0,0,7,3,7,6,3,3,3,3,8,3,3,3,3,8,6,2,11,14,14,14,12,4,7,5,0,0,0,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,3,4,0,0,15,13,0,0,0,0,0,0,0,0,0,0,0,0,0,0,14,11,0,0,0,0,0,14,3,3,3,5,0,0,0,0,0,0,0,0,14,1,1,1,12,3,3,5,0,0,0,0,0,14,3,1,0,0,0,0,14,3,3,3,3,7,12,0,0,0,10,6,5,8,8,2,2,4,7,3,5,0,0,0,0,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,13,4,0,15,13,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,14,11,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,2,0,15,13,0,0,0,0,0,0,0,0,0,0,0,3,0,0,0,0,0,0,0,0,0,12,0,0,0,5,9,0,6,3,3,11,3,5,0,0,0,0,0,0,14,14,14,14,14,14,14,14,14,14,14,14,14,14,8,0,4,0,12,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,14,11,0,0,0,0,0,0,0,0,0,0,15,11,11,11,11,11,11,13,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,15,13,0,0,0,0,8,2,2,9,0,0,6,2,9,0,0,0,0,0,14,14,14,14,14,14,6,12,10,9,6,7,14,6,3,0,9,11,13,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,14,11,11,11,11,11,11,11,11,11,13,0,0,0,0,2,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,12,0,0,0,0,6,0,0,0,0,8,2,4,0,0,0,0,0,0,0,14,14,14,14,14,14,14,14,14,14,14,14,14,14,3,0,12,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,2,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,12,0,0,0,0,0,0,8,9,0,0,0,0,0,0,0,0,0,0,0,14,14,14,14,14,14,14,14,14,14,14,14,14,14,13,0,4,0,0,0,0,0,0,0,0,0,6,1,5,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,2,0,0,0,0,0,0,0,0,0,0,0,0,0,0,5,0,0,8,9,0,0,0,15,13,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,2,0,14,14,10,1,14,14,14,14,14,14,14,13,13,7,5,0,0,0,0,0,0,0,0,0,4,14,12,5,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,2,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,12,0,0,0,0,0,12,0,0,0,8,9,0,0,0,0,0,0,0,0,0,0,0,6,1,1,1,3,8,1,14,6,12,13,10,14,1,6,14,15,13,7,5,0,0,0,0,0,0,0,0,0,0,4,14,14,12,5,0,0,0,0,0,0,0,0,0,0,0,0,0,14,12,15,0,1,0,0,0,0,0,0,0,2,0,0,0,0,0,0,9,10,12,11,13,0,0,0,0,0,0,0,0,0,0,0,12,0,0,0,10,5,5,5,9,0,0,0,0,0,0,9,9,14,14,14,14,0,6,8,6,2,0,14,14,14,10,2,4,13,7,5,0,0,0,0,0,0,0,0,0,0,0,14,14,14,14,12,5,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,2,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,12,0,0,10,13,2,2,2,0,5,9,0,0,0,9,14,14,14,14,14,14,0,0,6,3,3,8,6,2,2,7,7,3,3,5,0,0,6,1,1,5,0,0,0,0,0,0,14,14,14,14,14,14,5,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,2,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,6,7,8,13,0,10,13,2,2,2,2,2,2,0,5,9,9,14,14,14,14,14,14,14,0,0,0,0,0,6,3,11,3,3,5,0,0,0,0,0,14,14,14,12,5,0,0,0,0,0,4,14,14,14,14,14,12,5,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,2,0,0,0,0,0,0,0,0,0,0,0,0,6,7,8,0,1,2,10,11,0,13,10,5,13,2,2,2,2,2,2,14,6,6,11,14,14,14,14,14,14,14,14,0,0,0,0,0,0,1,1,1,5,0,0,0,0,0,0,11,14,14,14,12,5,0,0,0,0,4,14,14,14,14,14,14,12,5,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,2,0,0,6,7,8,0,6,7,8,0,1,2,11,0,13,14,0,0,8,0,10,5,13,2,2,2,2,2,2,14,6,11,4,14,14,14,14,14,14,14,14,14,14,0,0,0,0,0,0,8,2,11,12,5,0,0,0,0,0,8,11,14,14,14,12,5,0,0,0,8,11,14,14,14,14,14,14,12,5,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,2,0,10,11,0,13,15,11,0,13,14,4,6,8,0,0,0,0,0,10,5,13,2,2,2,2,2,2,2,14,11,4,14,14,14,14,14,14,14,14,14,14,14,14,0,0,0,0,0,0,0,0,8,14,12,5,0,0,0,0,0,0,11,14,14,14,3,0,0,0,0,4,14,14,14,14,14,14,14,12,5,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,2,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,10,5,13,3,4,5,5,4,6,4,2,14,11,4,14,14,14,14,14,14,14,14,14,14,14,14,14,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,4,14,14,14,12,5,0,0,0,8,11,14,14,14,14,14,14,14,12,5,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,2,0,0,0,0,0,0,0,0,0,0,0,0,0,0,10,5,13,7,8,9,6,8,10,10,11,12,13,7,4,14,14,14,14,14,14,14,14,14,14,14,14,14,14,0,0,0,0,0,0,0,14,8,14,8,11,3,3,8,2,8,2,2,2,0,5,8,15,3,11,3,3,0,0,9,10,1,1,0,0,0,3,9,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,3,14,10,11,3,2,9,12,6,11,12,4,4,5,11,5,9,4,4,0,9,10,9,10,15,7,12,11,14,7,11,7,7,0,14,13,14,13,2,2,0,10,12,10,12,5,5,0,1,14,7,15,6,6,0,12,0,12,0,4,4,0,6,9,6,9,4,4,0,15,5,15,5,4,0,8,0,0,7,4,2,2,0,0,0,6,4,1,1,0,0,0,0,4,1,1,0,0,0,10,4,1,1,0,0,0,4,4,1,1,0,14,5,14,5,2,2,0,8,4,8,4];
+function freshTerrain(){
+  const t=[];
+  for(let y=0;y<H;y++) t.push(TERRAIN_FLAT.slice(y*W,(y+1)*W));
+  return t;
+}
+function reset(){
+  terrain=freshTerrain(); units=[]; turn=1; active='Axis'; mode='place'; pick=null;
+  selected=null; nextId=1; busy=false; overlays={supply:false,zoc:false}; filter='all';
+  aiOn=false; aiTurnsRun=0; refreshAutoBtn();
+  OOB.forEach(o=>o.deployed=false);
+  logEl.innerHTML=''; recompute(); buildFilters(); buildRoster(); refreshToggles(); draw(); updateHUD(); showReport();
+  log('turn',`— OPERATION BATTLEAXE, day ${dayOf(turn)} (${monthOf(dayOf(turn))}). Pick formations or deploy the day-77 roster. —`);
+}
+
+//// ── Geometry (2×2 / 1×1 travelling) ──────────────────────────────────────
+const foot=u=> u.travel?[[u.x,u.y]]:[[u.x,u.y],[u.x+1,u.y],[u.x,u.y+1],[u.x+1,u.y+1]];
+const inb=(x,y)=>x>=0&&y>=0&&x<W&&y<H;
+const footCells=(x,y,t)=> t?[[x,y]]:[[x,y],[x+1,y],[x,y+1],[x+1,y+1]];
+function footOk(x,y,t,ig){ for(const [cx,cy] of footCells(x,y,t)){ if(!inb(cx,cy)) return false; if(terrain[cy][cx]===SEA) return false; const o=unitAtCell(cx,cy); if(o&&o!==ig) return false; } return true; }
+function unitAtCell(x,y){ for(const u of units) for(const [cx,cy] of foot(u)) if(cx===x&&cy===y) return u; return null; }
+function adjacent(a,b){ for(const [ax,ay] of foot(a)) for(const [bx,by] of foot(b)) if(Math.abs(ax-bx)+Math.abs(ay-by)===1) return true; return false; }
+const nearEnemy=u=>units.some(e=>e.side!==u.side&&adjacent(u,e));
+const onRoad=u=>foot(u).some(([cx,cy])=>terrain[cy][cx]===ROAD)||[[u.x-1,u.y],[u.x+2,u.y],[u.x,u.y-1],[u.x,u.y+2]].some(([cx,cy])=>inb(cx,cy)&&terrain[cy][cx]===ROAD);
+
+//// ── ZOC + supply ──────────────────────────────────────────────────────────
+function recompute(){ computeZOC(); computeSupply(); }
+function computeZOC(){ zocMap={Axis:new Set(),British:new Set()};
+  for(const u of units) for(const [cx,cy] of foot(u)) for(const [dx,dy] of [[0,0],[1,0],[-1,0],[0,1],[0,-1]]){ const x=cx+dx,y=cy+dy; if(inb(x,y)) zocMap[u.side].add(x+','+y); } }
+function computeSupply(){ supplyMap={Axis:dij('Axis'),British:dij('British')}; }
+function dij(side){ const enemy=side==='Axis'?'British':'Axis';
+  const ec=new Set(); for(const u of units) if(u.side===enemy) for(const [cx,cy] of foot(u)) ec.add(cx+','+cy);
+  const dist=Array.from({length:H},()=>Array(W).fill(Infinity)); const pq=[]; const col=side==='Axis'?0:W-1;
+  for(let y=0;y<H;y++) if(terrain[y][col]!==SEA&&!ec.has(col+','+y)&&!zocMap[enemy].has(col+','+y)){ dist[y][col]=0; pq.push([0,col,y]); }
+  while(pq.length){ pq.sort((a,b)=>a[0]-b[0]); const [d,x,y]=pq.shift(); if(d>dist[y][x]) continue;
+    for(const [dx,dy] of [[1,0],[-1,0],[0,1],[0,-1]]){ const nx=x+dx,ny=y+dy; if(!inb(nx,ny)) continue; const t=terrain[ny][nx]; if(t===SEA) continue;
+      if(ec.has(nx+','+ny)||zocMap[enemy].has(nx+','+ny)) continue; const nd=d+TCOST(t); if(nd<dist[ny][nx]){ dist[ny][nx]=nd; pq.push([nd,nx,ny]); } } }
+  return dist; }
+function unitSupply(u){ let best=Infinity; for(const [cx,cy] of foot(u)) best=Math.min(best,supplyMap[u.side][cy][cx]);
+  if(!isFinite(best)) return {band:0,level:0,dist:Infinity}; const lvl=SUPPLY_CURVE[Math.min(best>>2,SUPPLY_CURVE.length-1)];
+  const band=lvl<=0?0:lvl<37?1:lvl<41?2:lvl<46?3:lvl<60?4:lvl<80?5:6; return {band,level:lvl,dist:best}; }
+const inEnemyZOC=u=>{ const e=u.side==='Axis'?'British':'Axis'; return foot(u).some(([cx,cy])=>zocMap[e].has(cx+','+cy)); };
+
+//// ── Pathfinding ───────────────────────────────────────────────────────────
+function pathTo(u,tx,ty){ const key=(x,y)=>x+','+y; const dist={},prev={}; dist[key(u.x,u.y)]=0; const pq=[[0,u.x,u.y]];
+  while(pq.length){ pq.sort((a,b)=>a[0]-b[0]); const [d,x,y]=pq.shift(); if(d>dist[key(x,y)]) continue; if(x===tx&&y===ty) break;
+    for(const [dx,dy] of [[1,0],[-1,0],[0,1],[0,-1]]){ const nx=x+dx,ny=y+dy; if(!footOk(nx,ny,u.travel,u)) continue;
+      const nd=d+TCOST(terrain[ny][nx]),k=key(nx,ny); if(dist[k]===undefined||nd<dist[k]){ dist[k]=nd; prev[k]=[x,y]; pq.push([nd,nx,ny]); } } }
+  if(dist[key(tx,ty)]===undefined) return null; const path=[]; let cur=[tx,ty];
+  while(cur){ path.unshift(cur); cur=prev[key(cur[0],cur[1])]; } return path; }
+
+//// ── Combat ────────────────────────────────────────────────────────────────
+function combatMods(u,role){ const sup=unitSupply(u); let m=1; if(sup.level<=0) m*=0.5; const t=terrain[u.y][u.x];
+  if(role==='attack'&&u.br==='armour') m*=isEscarp(t)?0.8:1.3;
+  if(role==='defend'){ if(isEscarp(t)) m*=1.5; else if(t===ROAD) m*=1.1; } return m; }
+const lossFor=u=>(u.travel||u.caught)?COMBAT_LOSS*2:COMBAT_LOSS;
+function assault(att,def){
+  const ap=effectivePower(att.str,att.eff)*combatMods(att,'attack');
+  const dp=effectivePower(def.str,def.eff)*combatMods(def,'defend'); let note;
+  if(ap>dp*1.05){ note=`${nm(att)} overruns ${nm(def)}`; def.eff-=lossFor(def); att.eff-=ATTRITION; if(def.travel) def.caught=true; }
+  else if(dp>ap*1.05){ note=`${nm(def)} repels ${nm(att)}`; att.eff-=lossFor(att); def.eff-=ATTRITION; if(att.travel) att.caught=true; }
+  else { note=`${nm(att)} & ${nm(def)} stand off`; att.eff-=ATTRITION; def.eff-=ATTRITION; }
+  att.eff=Math.max(0,att.eff); def.eff=Math.max(0,def.eff); att.mpsLeft=0; att.dest=null;
+  const c=(att.caught?` (${nm(att)} caught!)`:'')+(def.caught?` (${nm(def)} caught!)`:'');
+  log('fight',`<b>ASSAULT</b> ${note}. ${ap.toFixed(0)} v ${dp.toFixed(0)} → atk ${att.eff}% / def ${def.eff}%${c}`);
+  [att,def].forEach(u=>{ if(u.eff<=0){ log('fight',`${nm(u)} shattered.`); units=units.filter(x=>x!==u); if(selected===u.id) selected=null; const o=OOB.find(z=>z.i===u.oob); if(o) o.deployed=true; }});
+  recompute(); }
+
+//// ── AI (headless side-planner; mirrors desert_rats/ai.py §6) ───────────────
+// One region per column here (W=30 columns ≈ the 30-slot regional map
+// BUILD_SPEC.md §6 describes). Three fixes learned building the Python
+// engine's AI, ported straight across because they're not board-specific:
+//  1. every unit of a side must NOT chase the exact same (x,y) -- they'd
+//     pile up and block each other short of the enemy, freezing the front;
+//     each unit chases the target's column but its own nearest-enemy row.
+//  2. "biggest own-minus-enemy advantage" degenerates to just "own[r]"
+//     wherever there's no enemy at all, i.e. a side's own rear -- so the
+//     target search only considers columns with actual enemy presence,
+//     falling back to the front-line midpoint's column when none exist yet.
+//  3. an adjacent enemy must be checked BEFORE the offensive/defensive
+//     split, for every unit -- an "offensive" unit in contact still needs
+//     to fight, not keep re-issuing Move into a halted contact-stop.
+function frontMidpoint(){
+  const ax=units.filter(u=>u.side==='Axis').map(u=>u.x), br=units.filter(u=>u.side==='British').map(u=>u.x);
+  if(!ax.length||!br.length) return null;
+  return (Math.max(...ax)+Math.min(...br))/2;
+}
+function regionalStrength(){
+  const Axis=Array(W).fill(0), British=Array(W).fill(0);
+  for(const u of units){ const w=u.mps*(u.br==='armour'?2:1); const p=effectivePower(u.str,u.eff)*w;
+    (u.side==='Axis'?Axis:British)[u.x]+=p; }
+  return {Axis,British};
+}
+function pickTargetColumn(side,midpoint){
+  const strength=regionalStrength(), own=strength[side], hostile=strength[side==='Axis'?'British':'Axis'];
+  let lo=0,hi=W-1;
+  if(midpoint!=null){ lo=Math.max(0,Math.floor(midpoint-AI_BAND_HALF)); hi=Math.min(W-1,Math.floor(midpoint+AI_BAND_HALF)); }
+  let best=null,bestScore=-Infinity;
+  for(let x=lo;x<=hi;x++) if(hostile[x]>0 && own[x]-hostile[x]>bestScore){ bestScore=own[x]-hostile[x]; best=x; }
+  if(best!=null) return best;
+  if(midpoint!=null) return Math.max(0,Math.min(W-1,Math.round(midpoint)));
+  return Math.floor((lo+hi)/2);
+}
+function nearestEnemy(u){ let best=null,bd=Infinity;
+  for(const e of units){ if(e.side===u.side) continue; const d=Math.abs(e.x-u.x)+Math.abs(e.y-u.y); if(d<bd){bd=d;best=e;} } return best; }
+function aiPlanSide(side){
+  const midpoint=frontMidpoint(), targetX=pickTargetColumn(side,midpoint);
+  for(const u of units){
+    if(u.side!==side || u.eff<=0 || u.mpsLeft<=0) continue;
+    const adj=units.find(e=>e.side!==side && adjacent(u,e));
+    if(adj){ assault(u,adj); continue; }
+    const enemy=nearestEnemy(u), targetY=enemy?enemy.y:u.y;
+    const ax=u.travel?targetX:Math.min(targetX,W-2), ay=u.travel?targetY:Math.min(targetY,H-2);
+    if(footOk(ax,ay,u.travel,u) && pathTo(u,ax,ay)) u.dest={x:ax,y:ay};
+  }
+}
+function refreshAutoBtn(){ const b=document.getElementById('autoplay');
+  b.textContent=aiOn?'■ Stop auto-battle':'▶ Auto-battle (AI vs AI)'; b.classList.toggle('active',aiOn); }
+async function autoContinue(){
+  if(!aiOn) return;
+  const axisLeft=units.some(u=>u.side==='Axis'), britLeft=units.some(u=>u.side==='British');
+  if(!axisLeft||!britLeft){ log('turn',`— ${axisLeft?'British':'Axis'} eliminated. Auto-battle stopped. —`); aiOn=false; refreshAutoBtn(); return; }
+  if(++aiTurnsRun>=AI_MAX_TURNS){ log('turn','— Auto-battle stopped: turn cap reached. —'); aiOn=false; refreshAutoBtn(); return; }
+  log('turn',`— / ${PHASE_THINKING} / —`);
+  aiPlanSide(active);
+  setTimeout(endTurn,200);
+}
+document.getElementById('autoplay').onclick=()=>{
+  aiOn=!aiOn; refreshAutoBtn();
+  if(aiOn){
+    aiTurnsRun=0;
+    if(!units.some(u=>u.side==='Axis')) deployWave('Axis');
+    if(!units.some(u=>u.side==='British')) deployWave('British');
+    if(!busy){ log('turn',`— / ${PHASE_THINKING} / —`); aiPlanSide(active); endTurn(); }
+  }
+};
+
+//// ── Turn resolution ───────────────────────────────────────────────────────
+async function endTurn(){ if(busy) return; busy=true; document.getElementById('endturn').disabled=true;
+  log('turn',`— ${PHASE_MOVING} —`);
+  await animateMoves(); recompute();
+  for(const u of [...units]){ const s=unitSupply(u),z=inEnemyZOC(u); if(s.level<=0||z) u.eff=Math.max(0,u.eff-ATTRITION); else u.eff=recover(u.eff); }
+  for(const u of [...units]) if(u.eff<=0){ log('fight',`${nm(u)} collapses from attrition.`); units=units.filter(x=>x!==u); }
+  active=active==='Axis'?'British':'Axis'; if(active==='Axis') turn++;
+  for(const u of units) if(u.side===active) u.mpsLeft=u.mps;
+  selected=null; recompute();
+  const d=dayOf(turn);
+  log('turn',`— Day ${d} (${monthOf(d)}) · / ${active==='Axis'?PHASE_AXIS:PHASE_BRITISH} / —`);
+  busy=false; document.getElementById('endturn').disabled=false; updateHUD(); draw(); showReport(); buildRoster();
+  autoContinue(); }
+async function animateMoves(){
+  for(const u of units.filter(z=>z.side===active&&z.dest)){ let budget=u.mpsLeft;
+    while(budget>0.001){
+      if(u.x===u.dest.x&&u.y===u.dest.y){ u.dest=null; if(!u.caught) u.travel=false; recompute(); draw(); break; }
+      const path=pathTo(u,u.dest.x,u.dest.y); if(!path||path.length<2){ u.dest=null; break; }
+      const [nx,ny]=path[1]; const stepCost=Math.max(0.5,TCOST(terrain[ny][nx])*(u.travel?TRAVEL_COST_MULT:1));
+      if(stepCost>budget+0.001) break;
+      u.x=nx; u.y=ny; budget-=stepCost; recompute(); draw(); await sleep(130);
+      if(u.x===u.dest.x&&u.y===u.dest.y){ u.dest=null; if(!u.caught) u.travel=false; recompute(); draw(); break; }
+      if(nearEnemy(u)){ if(u.travel){ u.caught=true; log('move',`${nm(u)} caught on the road!`); } else log('move',`${nm(u)} halts on contact.`); u.dest=null; recompute(); draw(); break; }
+    } u.mpsLeft=Math.max(0,budget); } }
+
+//// ── Render ─────────────────────────────────────────────────────────────────
+function draw(){ cv.width=W*cell; cv.height=H*cell;
+  for(let y=0;y<H;y++)for(let x=0;x<W;x++){ const t=terrain[y][x]; ctx.fillStyle=paperFor(t); ctx.fillRect(x*cell,y*cell,cell,cell);
+    if(isFeature(t)){ ctx.fillStyle='#000'; ctx.fillRect(x*cell+cell*0.4,y*cell+cell*0.4,cell*0.2,cell*0.2); } }
+  if(overlays.supply) for(const s of ['Axis','British']){ const m=supplyMap[s]; ctx.fillStyle=s==='Axis'?'rgba(209,31,209,.13)':'rgba(27,108,242,.13)'; for(let y=0;y<H;y++)for(let x=0;x<W;x++) if(isFinite(m[y][x])) ctx.fillRect(x*cell,y*cell,cell,cell); }
+  if(overlays.zoc) for(const s of ['Axis','British']){ ctx.fillStyle=s==='Axis'?'rgba(209,31,209,.22)':'rgba(27,108,242,.22)'; for(const k of zocMap[s]){ const [x,y]=k.split(',').map(Number); ctx.fillRect(x*cell+cell*.35,y*cell+cell*.35,cell*.3,cell*.3); } }
+  ctx.strokeStyle='rgba(0,0,0,.18)'; ctx.lineWidth=1;
+  for(let x=0;x<=W;x++){ctx.beginPath();ctx.moveTo(x*cell,0);ctx.lineTo(x*cell,H*cell);ctx.stroke();}
+  for(let y=0;y<=H;y++){ctx.beginPath();ctx.moveTo(0,y*cell);ctx.lineTo(W*cell,y*cell);ctx.stroke();}
+  const su=units.find(z=>z.id===selected);
+  if(su&&su.dest){ const p=pathTo(su,su.dest.x,su.dest.y); if(p){ ctx.strokeStyle='rgba(255,230,0,.7)'; ctx.lineWidth=2; ctx.setLineDash([4,4]); ctx.beginPath(); p.forEach(([x,y],i)=>{ const cx=x*cell+cell,cy=y*cell+cell; i?ctx.lineTo(cx,cy):ctx.moveTo(cx,cy); }); ctx.stroke(); ctx.setLineDash([]); } drawFlag(su.dest.x,su.dest.y); }
+  for(const u of units) drawUnit(u); }
+function drawFlag(x,y){ const px=x*cell+cell,py=y*cell+4; ctx.strokeStyle='#ffe600'; ctx.lineWidth=2; ctx.beginPath(); ctx.moveTo(px,py); ctx.lineTo(px,py+cell*.8); ctx.stroke(); ctx.fillStyle='#ffe600'; ctx.beginPath(); ctx.moveTo(px,py); ctx.lineTo(px+10,py+4); ctx.lineTo(px,py+8); ctx.fill(); }
+function drawUnit(u){ const px=u.x*cell,py=u.y*cell,s=u.travel?cell:cell*2;
+  ctx.fillStyle=NATCOL[u.nat]; ctx.fillRect(px+2,py+2,s-4,s-4);
+  ctx.strokeStyle=(selected===u.id)?'#ffe600':(u.caught?'#ff3030':'#000'); ctx.lineWidth=(selected===u.id||u.caught)?3:1; ctx.strokeRect(px+2.5,py+2.5,s-5,s-5);
+  const cx=px+s/2, cy=py+s/2; ctx.strokeStyle='rgba(255,255,255,.92)'; ctx.lineWidth=2;
+  if(u.travel){ ctx.beginPath(); ctx.moveTo(cx,py+5);ctx.lineTo(px+s-5,cy);ctx.lineTo(cx,py+s-5);ctx.lineTo(px+5,cy);ctx.closePath(); ctx.stroke(); }
+  else{ ctx.beginPath();
+    if(u.br==='armour'){ ctx.ellipse(cx,cy-3,s*0.2,s*0.12,0,0,7); ctx.stroke(); }
+    else if(u.br==='recce'){ ctx.moveTo(px+8,py+s-9);ctx.lineTo(px+s-8,py+9); ctx.stroke(); }
+    else if(u.br==='artillery'){ ctx.fillStyle='#fff'; ctx.beginPath();ctx.arc(cx,cy-3,3,0,7);ctx.fill(); }
+    else { ctx.moveTo(px+8,py+8);ctx.lineTo(px+s-8,cy);ctx.moveTo(px+s-8,py+8);ctx.lineTo(px+8,cy); ctx.stroke(); }
+    ctx.fillStyle='#fff'; ctx.font=`${Math.floor(cell*0.46)}px ui-monospace,monospace`; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText(String(u.str), cx, py+cell*0.66); }
+  const bw=s-8,bx=px+4,by=py+s-7; ctx.fillStyle='#222'; ctx.fillRect(bx,by,bw,4); ctx.fillStyle=`hsl(${Math.round(u.eff*1.2)},80%,50%)`; ctx.fillRect(bx,by,bw*u.eff/100,4);
+  const sup=unitSupply(u),dc=['#cc1414','#cc5a14','#cc9a14','#ccc814','#9acc14','#27c93f','#27c9c9'][sup.band]; ctx.fillStyle=dc; ctx.beginPath(); ctx.arc(px+7,py+7,3,0,7); ctx.fill(); ctx.strokeStyle='#000'; ctx.lineWidth=1; ctx.stroke();
+  if(u.side===active&&u.mpsLeft<=0&&!u.dest){ ctx.fillStyle='rgba(0,0,0,.3)'; ctx.fillRect(px+2,py+2,s-4,s-4); } }
+
+//// ── Interaction ───────────────────────────────────────────────────────────
+const cellAt=ev=>{ const r=cv.getBoundingClientRect(); return {x:Math.floor((ev.clientX-r.left)/cell),y:Math.floor((ev.clientY-r.top)/cell)}; };
+cv.addEventListener('click',ev=>{ if(busy||aiOn) return; const {x,y}=cellAt(ev); if(!inb(x,y)) return;
+  const clicked=unitAtCell(x,y), su=units.find(z=>z.id===selected);
+  if(su){
+    if(clicked&&clicked.side!==su.side){ if(su.mpsLeft>0&&adjacent(su,clicked)) assault(su,clicked); else log('e',`${nm(su)} can't assault there.`); draw(); showReport(); return; }
+    if(clicked===su){ selected=null; draw(); showReport(); return; }
+    if(!clicked&&su.side===active){ const ax=su.travel?x:Math.min(x,W-2), ay=su.travel?y:Math.min(y,H-2);
+      if(footOk(ax,ay,su.travel,su)&&pathTo(su,ax,ay)){ su.dest={x:ax,y:ay}; log('move',`${nm(su)} → ${ax},${ay}${su.travel?' (travel)':''}.`); draw(); showReport(); return; } else { log('e','No path there.'); return; } }
+  }
+  if(clicked){ selected=clicked.id; mode='select'; draw(); showReport(); return; }
+  if(pick){ const ax=Math.min(x,W-2), ay=Math.min(y,H-2); if(footOk(ax,ay,false,null)){ placeUnit(pick,ax,ay); } } });
+
+function placeUnit(o,x,y){ units.push({id:nextId++,oob:o.i,nm:o.nm,de:o.de,dv:o.dv,nat:o.nat,side:sideOf(o.nat),br:o.br,
+    x,y,str:o.st,eff:100,mps:o.mp,mpsLeft:sideOf(o.nat)===active?o.mp:0,dest:null,travel:false,caught:false,arrival:o.ar});
+  o.deployed=true; recompute(); draw(); buildRoster(); log('e',`Deployed <b>${o.nm}</b> at ${x},${y}.`); }
+// Expanding-ring nudge search from a side's real staging point (BUILD_SPEC.md
+// §5.6: British ~(98,11) east edge, Axis west edge) -- mirrors
+// desert_rats/reinforce.py's find_free_staging_cell, needed now that up to
+// ~45 units per side must fit around the real coastline (fixed columns
+// weren't enough room once sea started eating into the candidate cells).
+function findDeploySlot(bx,by,maxR=40){
+  if(footOk(bx,by,false,null)) return [bx,by];
+  for(let r=1;r<=maxR;r++) for(let dy=-r;dy<=r;dy++) for(let dx=-r;dx<=r;dx++){
+    if(Math.max(Math.abs(dx),Math.abs(dy))!==r) continue;
+    const x=bx+dx,y=by+dy; if(inb(x,y)&&footOk(x,y,false,null)) return [x,y];
+  }
+  return null;
+}
+function deployWave(side){ const nats=side==='Axis'?['German','Italian']:['British'];
+  const wave=OOB.filter(o=>!o.deployed&&o.ar<=SCENARIO.start_day&&nats.includes(o.nat));
+  const baseX=side==='Axis'?0:W-2, baseY=11; let placed=0;
+  for(const o of wave){ const slot=findDeploySlot(baseX,baseY); if(slot){ placeUnit(o,slot[0],slot[1]); placed++; } }
+  log('turn',`— ${side} roster deployed for Battleaxe, day ${SCENARIO.start_day} (${placed} formations). —`); draw(); buildRoster(); }
+
+//// ── Order buttons ─────────────────────────────────────────────────────────
+document.getElementById('o-travel').onclick=()=>{ const u=units.find(z=>z.id===selected); if(!u||u.side!==active) return;
+  if(u.caught){ log('e',`${nm(u)} is caught and can't form up.`); return; }
+  if(!u.travel){ if(!onRoad(u)){ log('e',`${nm(u)} needs a road to Travel.`); return; } u.travel=true; log('move',`${nm(u)} enters Travel (1×1).`); }
+  else { if(nearEnemy(u)){ log('e',`Can't deploy beside enemy.`); return; } u.travel=false; log('move',`${nm(u)} forms up (2×2).`); }
+  recompute(); draw(); showReport(); };
+document.getElementById('o-clear').onclick=()=>{ const u=units.find(z=>z.id===selected); if(u){ u.dest=null; draw(); showReport(); } };
+document.getElementById('o-recall').onclick=()=>{ const u=units.find(z=>z.id===selected); if(u){ const o=OOB.find(z=>z.i===u.oob); if(o) o.deployed=false; units=units.filter(x=>x!==u); selected=null; recompute(); draw(); buildRoster(); showReport(); } };
+
+//// ── Roster / filters / HUD / report ───────────────────────────────────────
+const logEl=document.getElementById('log');
+function buildFilters(){ const f=document.getElementById('filters'); f.innerHTML='';
+  for(const [id,lbl] of [['all','All'],['British','British'],['German','German'],['Italian','Italian'],['wave','Battleaxe (day 77)']]){ const b=document.createElement('button'); b.textContent=lbl;
+    if(id===filter) b.classList.add('active'); b.onclick=()=>{ filter=id; buildFilters(); buildRoster(); }; f.appendChild(b); } }
+function buildRoster(){ const r=document.getElementById('roster'); r.innerHTML='';
+  let list=OOB.slice(); if(filter==='wave') list=list.filter(o=>o.ar<=SCENARIO.start_day); else if(filter!=='all') list=list.filter(o=>o.nat===filter);
+  for(const o of list){ const d=document.createElement('div'); d.className='ru'+(o.deployed?' done':'')+(pick&&pick.i===o.i?' pick':'');
+    d.innerHTML=`<span class="natdot" style="background:${NATCOL[o.nat]}"></span><span class="nm">${o.nm}</span><span class="meta">str ${o.st}${o.ar?` · t${o.ar}`:''}</span>`;
+    if(!o.deployed) d.onclick=()=>{ pick=o; mode='place'; selected=null; buildRoster(); draw(); showReport(); }; r.appendChild(d); } }
+function nm(u){ return u.nm; }
+function updateHUD(){ document.getElementById('turnno').textContent=turn;
+  const d=dayOf(turn); document.getElementById('dayno').textContent=d; document.getElementById('monthname').textContent=monthOf(d);
+  const s=document.getElementById('activeside'); s.textContent=`/ ${active==='Axis'?PHASE_AXIS:PHASE_BRITISH} /`; s.className=active==='Axis'?'side-axis':'side-brit'; }
+function showReport(){ const empty=document.getElementById('reportempty'),rep=document.getElementById('report'),btns=document.getElementById('orderbtns');
+  const u=units.find(z=>z.id===selected); document.getElementById('modepill').textContent=u?'select':(pick?('place: '+pick.nm):'place');
+  if(!u){ empty.style.display='block'; rep.style.display='none'; btns.style.display='none'; return; }
+  empty.style.display='none'; rep.style.display='block'; btns.style.display='flex';
+  const sup=unitSupply(u),ep=effectivePower(u.str,u.eff);
+  rep.innerHTML=
+   `<div class="row"><span class="k">Unit</span><span class="v" style="color:${NATCOL[u.nat]==='#5a5a5a'?'#aaa':NATCOL[u.nat]}">${u.de}</span></div>`+
+   (u.dv?`<div class="row"><span class="k">Division</span><span class="v">${u.dv}</span></div>`:'')+
+   `<div class="row"><span class="k">Nation</span><span class="v">${u.nat} (${u.side})</span></div>`+
+   `<div class="row"><span class="k">Formation</span><span class="v">${u.caught?'1×1 CAUGHT':(u.travel?'1×1 travel':'2×2')}</span></div>`+
+   `<div class="row"><span class="k">Strength</span><span class="v">${u.str}</span></div>`+
+   `<div class="row"><span class="k">Efficiency</span><span class="v">${u.eff}%</span></div>`+
+   `<div class="bar2"><i style="width:${u.eff}%;background:hsl(${Math.round(u.eff*1.2)},80%,50%)"></i></div>`+
+   `<div class="row"><span class="k">Eff. power</span><span class="v">${ep.toFixed(0)}</span></div>`+
+   `<div class="row"><span class="k">Supply</span><span class="v">${BANDS[sup.band]}${isFinite(sup.dist)?` (d${sup.dist})`:''}</span></div>`+
+   `<div class="row"><span class="k">Order</span><span class="v">${u.dest?('move → '+u.dest.x+','+u.dest.y):'—'}</span></div>`+
+   `<div class="row"><span class="k">MPS</span><span class="v">${u.side===active?u.mpsLeft+'/'+u.mps:u.mps}</span></div>`;
+  document.getElementById('o-travel').textContent=u.travel?'Form up':'T · Travel'; }
+function log(c,h){ const d=document.createElement('div'); d.className='e '+c; d.innerHTML=h; logEl.appendChild(d); logEl.scrollTop=logEl.scrollHeight; }
+function refreshToggles(){ document.getElementById('t-supply').classList.toggle('active',overlays.supply); document.getElementById('t-zoc').classList.toggle('active',overlays.zoc); }
+
+document.getElementById('endturn').onclick=endTurn;
+document.getElementById('reset').onclick=reset;
+document.getElementById('dep-axis').onclick=()=>deployWave('Axis');
+document.getElementById('dep-brit').onclick=()=>deployWave('British');
+document.getElementById('t-supply').onclick=()=>{ overlays.supply=!overlays.supply; refreshToggles(); draw(); };
+document.getElementById('t-zoc').onclick=()=>{ overlays.zoc=!overlays.zoc; refreshToggles(); draw(); };
+
+reset();
+</script>
+</body>
+</html>
