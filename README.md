@@ -38,6 +38,10 @@ data/                 Extracted game data — the build inputs:
                           coverage. Tile BITMAPS are original pixel art and are NOT
                           committed -- regenerate data/tiles_original.json locally with
                           reference/extraction_tools/extract_render_tables.py.
+  schedules.json          Turn-phased campaign schedule tables (0xDEFC/0xDF84/0xDFB6),
+                          indexed by turn/30, incl. the Axis-only Malta modifier --
+                          structure confirmed, value semantics hypotheses; see NOTES.md
+                          and reference/extraction_tools/extract_schedules.py.
   (units_scenario_*.json, terrain_map.json, strings_table.json — superseded, kept for
    cross-checking.)
 

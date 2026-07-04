@@ -372,13 +372,20 @@ German black / Italian magenta); tile data at the recovered base.
   model used as approximation;
 - **Assault ×1.5 / caught-on-road ×2** exact application;
 - **minor-order effects** (Divide, Fortify, Go-To-Port) — Report confirmed;
-- **schedule tables** (per-month supply/replacement, indexed by clock/30) — located, not
-  fully labelled;
+- **schedule tables** — structure now recovered (see `data/schedules.json`): four
+  tables indexed by `turn ÷ 30` (month), 22 monthly entries per side, values ×10 on
+  read, read by the 0x96E0 routine family. Value *semantics* remain hypotheses
+  pending the diff harness. The engine does not consume them yet — wiring them in
+  is follow-up work;
+- **Malta status** — invocation FOUND (correcting the earlier "no invocation in the
+  48K image" reading): a selector at 0xCB25 gates a 22-entry monthly modifier table
+  applied to the **Axis side only** (1 → first half, 2 → second half, 3 → bypass),
+  modulating the scheduled values. Exact applied arithmetic still open;
 - **AI target-region weighting**;
-- terrain **point-feature names** (town/port/oasis) and **tile↔terrain assignment**
-  (escarpment now confirmed per the addendum above; the other 14 terrain codes remain
-  unmapped);
-- **Malta status** effect (strings present, no invocation found in the 48K image);
+- terrain **point-feature names** (town/port/oasis) — still open; the tile↔terrain
+  **rendering** assignment itself is now fully recovered (see the addendum above and
+  `data/render_model.json`), but which feature tiles correspond to which named
+  real-world places remains unmapped;
 - **sound** and exact **UI panel layout** — untouched.
 
 Where inferred, prefer a simple, deterministic model and expose it as a tunable constant;

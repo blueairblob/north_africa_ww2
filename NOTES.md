@@ -314,3 +314,34 @@ confirmed; everything else about the AI's target selection is inferred.
   acceptance criterion. `run_interactive()`'s menu flow (scenario → British
   mode → Axis mode → Malta) is original orchestration code, not recovered
   from the source.
+
+## Schedule tables & Malta (tape extraction, follow-up pass)
+
+- **The §10 "schedule tables" are now structurally recovered** — see
+  `data/schedules.json` and `reference/extraction_tools/extract_schedules.py`.
+  Four tables, all indexed by month (`turn ÷ 30`, turn counter at 0xCB0F),
+  22 monthly entries per side, values ×10 on read, read by the 0x96E0
+  routine family (whose index arithmetic, side offsets and scaling were
+  pinned by targeted disassembly of the readers — analysis-side work in
+  the engine-map tradition; no machine code is transcribed into the
+  engine):
+  - `monthly_unit_schedule` (0xDEFC): 22 × 6-byte groups; the reader
+    consumes `[side][q0|q1]` per group (bytes 4–5 unread by this family).
+  - `monthly_side_rate` (0xDF84): 22 per side. Side 1 ramps 5→20 across
+    the war; side 2 flat 10 peaking 15 in months 13–14 (the Gazala
+    window) — historically shaped like British buildup vs Axis peak,
+    which is the basis for the side-1=British hypothesis. Semantics
+    (supply rate vs replacement points) are a hypothesis for the diff
+    harness, marked as such in the data file.
+  - `malta_modifier` (0xDFB6): 22 × 2 halves, applied by 0x9704 to the
+    **Axis side only**, gated by a selector at 0xCB25 (1 → half 1,
+    2 → half 2, 3 → bypass). **This corrects engine-map.md**: the Malta
+    option's invocation does exist in the 48K image — it modulates
+    Axis-side scheduled values monthly. The exact arithmetic 0x82DF
+    applies is still open.
+  - Extraction includes a supply-curve (0xDFE8) byte-match alignment
+    check so a wrong/shifted tape image fails loudly.
+- **The engine does not consume these tables yet.** Wiring them in
+  (probably in `reinforce.py`/`zoc_supply.py`) is follow-up work — do it
+  alongside diff-harness validation so the semantic hypotheses get
+  settled rather than baked in as guesses.
