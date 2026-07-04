@@ -154,5 +154,56 @@ class TestRenderBoardImage(unittest.TestCase):
                 reopened.verify()
 
 
+@unittest.skipUnless(PIL_AVAILABLE, "Pillow not installed")
+class TestAuthenticRenderModel(unittest.TestCase):
+    """The recovered render model (data/render_model.json -- see
+    reference/extraction_tools/extract_render_tables.py) applies when
+    rendering the real 100x32 board. These tests hold whether or not the
+    local-only tile-art file is present: sea's tile is fully inked
+    (coverage 1.0) and desert's fully blank (coverage 0.0), so both paths
+    produce the same colour for them.
+    """
+
+    @classmethod
+    def setUpClass(cls):
+        from desert_rats import board as b
+        cls.board = b.load_board()
+        cls.model = render_image._render_model()
+
+    def test_render_model_is_available_in_repo(self):
+        self.assertIsNotNone(self.model)
+
+    def test_sea_renders_ink_blue_not_paper(self):
+        # Sea = tile 0x0E, all pixels set -> INK blue over yellow paper.
+        img = render_image.render_board_image([], self.board, cell_px=8)
+        attrs, grid, coverage, tiles = self.model
+        # find a deep-sea cell (full-byte 0x0E) away from coastline art
+        for y, row in enumerate(grid):
+            for x, cell in enumerate(row):
+                if cell == 0x0E:
+                    px = img.getpixel((x * 8 + 4, y * 8 + 4))
+                    self.assertEqual(px, (0, 0, 162))
+                    return
+        self.fail("no 0x0E sea cell found in the recovered grid")
+
+    def test_open_desert_renders_paper_yellow(self):
+        img = render_image.render_board_image([], self.board, cell_px=8)
+        attrs, grid, coverage, tiles = self.model
+        for y, row in enumerate(grid):
+            for x, cell in enumerate(row):
+                if cell == 0x00:
+                    px = img.getpixel((x * 8 + 4, y * 8 + 4))
+                    self.assertEqual(px, (210, 210, 0))
+                    return
+        self.fail("no 0x00 desert cell found in the recovered grid")
+
+    def test_synthetic_boards_do_not_use_the_real_map_model(self):
+        # A small synthetic board must fall back to the legacy flat
+        # model, not have the real 100x32 map's tiles painted onto it.
+        b = make_board(width=4, height=4)
+        img = render_image.render_board_image([], b, cell_px=10)
+        self.assertEqual(img.getpixel((15, 15)), render_image.PAPER_DESERT)
+
+
 if __name__ == "__main__":
     unittest.main()

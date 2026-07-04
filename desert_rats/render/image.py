@@ -26,6 +26,8 @@ dependency-free default.
 """
 from __future__ import annotations
 
+import json
+from pathlib import Path
 from typing import Iterable, Optional
 
 from ..board import Board, DESERT, ESCARPMENT_TYPES, ROAD, SEA, VIEWPORT_SIZE
@@ -92,6 +94,81 @@ PAPER_SEA = _zx(1, bright=True)  # the one other confirmed distinct paper (§8)
 ROAD_LINE = (90, 78, 40)
 
 GRID_LINE = (0, 0, 0, 40)  # faint, alpha-blended cell separators
+
+# ---------------------------------------------------------------------------
+# Authentic render model (recovered from the original tape -- see
+# reference/extraction_tools/extract_render_tables.py and NOTES.md).
+#
+# data/render_model.json (committed): 256-entry attribute table indexed by
+# the FULL map cell byte, the full-byte 100x32 tile-index grid, and a
+# per-tile ink-coverage fraction.
+# data/tiles_original.json (gitignored, local-only -- original pixel art):
+# the 256 8-byte tile bitmaps. When present, terrain renders pixel-exact;
+# when absent, each cell renders as a paper/ink blend weighted by the
+# committed coverage fraction (a close colour approximation with no art).
+# ---------------------------------------------------------------------------
+_RENDER_MODEL_PATH = Path(__file__).resolve().parent.parent.parent / "data" / "render_model.json"
+_TILES_PATH = Path(__file__).resolve().parent.parent.parent / "data" / "tiles_original.json"
+
+# ZX colour number -> RGB, non-bright levels sampled from the real
+# gameplay screenshot where observed; standard hardware values otherwise.
+_ZX_ATTR_RGB = {
+    0: (0, 0, 0), 1: (0, 0, 162), 2: (223, 0, 0), 3: (231, 0, 182),
+    4: (0, 199, 0), 5: (0, 199, 199), 6: (210, 210, 0), 7: (202, 202, 202),
+}
+
+
+def _load_render_model():
+    """Load (attrs, grid, coverage, tiles_or_None); None if the committed
+    model file is missing (renders fall back to the flat legacy model).
+    """
+    if not _RENDER_MODEL_PATH.exists():
+        return None
+    model = json.loads(_RENDER_MODEL_PATH.read_text())
+    tiles = None
+    if _TILES_PATH.exists():
+        tiles = json.loads(_TILES_PATH.read_text())["tiles"]
+    return (
+        model["attribute_table"],
+        model["tile_index_grid"],
+        model["ink_coverage"],
+        tiles,
+    )
+
+
+_render_model_cache = ...  # sentinel: not loaded yet
+
+
+def _render_model():
+    global _render_model_cache
+    if _render_model_cache is ...:
+        _render_model_cache = _load_render_model()
+    return _render_model_cache
+
+
+def _attr_colours(attr: int) -> tuple:
+    """ZX attribute byte -> (paper_rgb, ink_rgb)."""
+    return _ZX_ATTR_RGB[(attr >> 3) & 7], _ZX_ATTR_RGB[attr & 7]
+
+
+def _blend(paper: tuple, ink: tuple, frac: float) -> tuple:
+    return tuple(round(p + (i - p) * frac) for p, i in zip(paper, ink))
+
+
+def _draw_tile_bitmap(draw, tile_bytes, px0: int, py0: int, cell_px: int, paper, ink) -> None:
+    """Draw one 8x8 tile bitmap (MSB=leftmost) scaled to cell_px."""
+    draw.rectangle([px0, py0, px0 + cell_px, py0 + cell_px], fill=paper)
+    for row in range(8):
+        byte = tile_bytes[row]
+        if not byte:
+            continue
+        y0 = py0 + round(row * cell_px / 8)
+        y1 = py0 + round((row + 1) * cell_px / 8)
+        for col in range(8):
+            if byte & (0x80 >> col):
+                x0 = px0 + round(col * cell_px / 8)
+                x1 = px0 + round((col + 1) * cell_px / 8)
+                draw.rectangle([x0, y0, max(x0, x1 - 1), max(y0, y1 - 1)], fill=ink)
 
 # Decode ESCARPMENT_TILE_BYTES (MSB=leftmost pixel) into an 8x8 bool grid
 # once, then scale to whatever cell_px the render is using.
@@ -161,6 +238,13 @@ def render_board_image(
     img = Image.new("RGB", (width * cell_px, height * cell_px), PAPER_DESERT)
     draw = ImageDraw.Draw(img, "RGBA")
 
+    model = _render_model()
+    # The recovered model describes the real 100x32 map; synthetic boards
+    # (tests, experiments) fall through to the legacy flat model.
+    if model is not None and (
+        len(model[1]) != board.height or len(model[1][0]) != board.width
+    ):
+        model = None
     for gy in range(height):
         for gx in range(width):
             x, y = origin_x + gx, origin_y + gy
@@ -168,12 +252,25 @@ def render_board_image(
             px1, py1 = px0 + cell_px, py0 + cell_px
             if not board.in_bounds(x, y):
                 continue
-            terrain_type = board.terrain_at(x, y)
-            draw.rectangle([px0, py0, px1, py1], fill=_terrain_colour(terrain_type))
-            if terrain_type in ESCARPMENT_TYPES:
-                _draw_escarpment_tile(draw, px0, py0, cell_px)
-            if terrain_type == ROAD:
-                draw.line([px0, py0 + cell_px // 2, px1, py0 + cell_px // 2], fill=ROAD_LINE, width=max(1, cell_px // 6))
+            if model is not None and y < len(model[1]) and x < len(model[1][y]):
+                # Authentic path: full-byte tile index -> attr (+ bitmap
+                # if the local tile-art file is present, else a coverage
+                # blend). See the render-model comment block above.
+                attrs, grid, coverage, tiles = model
+                cell = grid[y][x]
+                paper, ink = _attr_colours(attrs[cell])
+                if tiles is not None:
+                    _draw_tile_bitmap(draw, tiles[cell], px0, py0, cell_px, paper, ink)
+                else:
+                    draw.rectangle([px0, py0, px1, py1], fill=_blend(paper, ink, coverage[cell]))
+            else:
+                # Legacy flat model (render_model.json absent).
+                terrain_type = board.terrain_at(x, y)
+                draw.rectangle([px0, py0, px1, py1], fill=_terrain_colour(terrain_type))
+                if terrain_type in ESCARPMENT_TYPES:
+                    _draw_escarpment_tile(draw, px0, py0, cell_px)
+                if terrain_type == ROAD:
+                    draw.line([px0, py0 + cell_px // 2, px1, py0 + cell_px // 2], fill=ROAD_LINE, width=max(1, cell_px // 6))
             draw.rectangle([px0, py0, px1, py1], outline=GRID_LINE, width=1)
 
     font = _load_font(max(8, cell_px - 2))

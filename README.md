@@ -33,6 +33,11 @@ data/                 Extracted game data — the build inputs:
   unit_mps.json            Per-unit movement points, derived (not part of the original
                           10-byte OOB table) -- see NOTES.md and
                           reference/extraction_tools/derive_unit_mps.py.
+  render_model.json       Recovered render model: 256-entry attribute table (0xD80E),
+                          full-byte 100x32 tile-index grid (0xCB39), per-tile ink
+                          coverage. Tile BITMAPS are original pixel art and are NOT
+                          committed -- regenerate data/tiles_original.json locally with
+                          reference/extraction_tools/extract_render_tables.py.
   (units_scenario_*.json, terrain_map.json, strings_table.json — superseded, kept for
    cross-checking.)
 

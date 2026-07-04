@@ -238,11 +238,33 @@ confirmed; everything else about the AI's target selection is inferred.
   non-bright blue `(0,0,162)` (previously guessed as ZX bright blue),
   Italian is `(231,0,182)` (close to the previous magenta guess, tightened
   to the sampled value).
-  - **Still not fully closed:** the *other* 14 terrain codes' paper/ink are
-    still unconfirmed beyond desert/sea/escarpment — this screenshot only
-    covered one scene near Gazala. `reference/prospects.md` #12 (tile
-    tables) should be updated to reflect escarpment as resolved rather
-    than fully open; the remaining codes are still open.
+  - **Update: closed via tape extraction.** The person supplied the
+    original tape image; `reference/extraction_tools/extract_render_tables.py`
+    reconstructs memory from the TZX and recovers the full render model.
+    Key discovery: **the map cell byte is a full-byte tile index**, not
+    just "type in low nibble" — rendering looks up a 256-entry attribute
+    table at 0xD80E and 8-byte tile bitmaps at 0xF6D8 **by the whole
+    byte**; the low nibble is only the game-logic type mask. Notable
+    decoded facts: sea (tile 0x0E) is a fully-inked tile — its blue is
+    INK blue over yellow PAPER, not blue paper; open desert (0x00) is a
+    blank tile (pure paper); the escarpment art (e.g. 0x6E) is yellow
+    paper / red ink, matching the screenshot-extracted bitmap exactly
+    (which is also how the tile base address was located: memory search
+    for that bitmap, then confirmed by the blank/solid tiles and a 94.8%
+    sea-mask agreement between a full-map reconstruction and
+    pubmap_units.png). Committed as `data/render_model.json` (attribute
+    table + full-byte tile-index grid + per-tile ink-coverage fractions —
+    factual data). **Tile bitmaps are original pixel art and are NOT
+    committed** (`data/tiles_original.json`, gitignored): regenerate
+    locally with the extraction script; `render/image.py` renders
+    pixel-exact terrain when that file is present and a per-cell
+    paper/ink coverage blend when it isn't. The flat legacy model remains
+    as the fallback for synthetic boards and for clones without
+    `render_model.json`.
+  - Also noted: 32 of 3200 cells differ in low nibble between the
+    tape-loaded map at 0xCB39 and `data/terrain_authentic.json` — likely
+    a snapshot-state difference in the original extraction; worth a
+    diff-harness look eventually, harmless for now.
   - **`data/terrain_authentic.png`'s 16-colour debug legend is still not
     recovered game data** — this correction doesn't change that finding,
     it just means the *real* palette turned out to have more structure
