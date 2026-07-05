@@ -414,3 +414,43 @@ routines directly. Findings, in decreasing order of impact:
 Test suite updated throughout (board coordinates re-verified against the
 code-verified grid; combat tests rewritten for the pressure model;
 overview legend rekeyed to the 0–8 type space). All passing.
+
+## Content-pack seam (generic engine, swappable theatres/skins)
+
+Motivated by two goals: a public build that carries no original-game
+expression, and support for other strategy theatres on the same engine.
+
+- **Architecture** (`desert_rats/packs.py`): a pack is a directory under
+  `content_packs/` with a `pack.json` manifest (`name`, `title`,
+  optional `inherits`, og-only `legacy_data`). File resolution walks the
+  pack, its ancestors, then — if the chain allows — the historical
+  top-level `data/` directory. All loaders (`board.load_board`,
+  `data.load_master_oob/scenarios/deployments`, `render.strings`,
+  `render.image`'s render model) resolve through the ACTIVE pack;
+  explicit path arguments still override for tests/tools. The active
+  pack defaults to `og` (exact pre-seam behaviour) and is switched with
+  `--pack` on the CLI or `packs.set_active_pack()`.
+- **`og` pack**: transitional thin manifest over the existing `data/`
+  directory. Long-term it is generated entirely locally from the
+  person's own tape by the extraction tools (as
+  `data/tiles_original.json` already is), and the public repo ships only
+  the engine plus clean packs.
+- **`default` pack**: the historical North Africa theatre with an
+  ORIGINAL map — `tools/build_default_map.py` rasterizes a hand-authored
+  polyline of the real coastline (public-knowledge geography: El Agheila
+  → Benghazi → the Cyrenaica bulge → Tobruk → Sollum → El Alamein →
+  Alexandria), the coastal road and the Agedabia–Mechili inland track,
+  the Jebel Akhdar and Sollum escarpments, and the Qattara Depression,
+  into the engine's 100x32 grid. A small affine frame calibration plus a
+  feathered coastline-constraint pass keep every inherited deployment /
+  staging coordinate on passable land (asserted at build time and in
+  tests). Other layers currently inherit from og; migrating them to
+  clean equivalents (own strings, own names, sourced OOB) is staged
+  follow-up work per the layering plan.
+- **Render-model scoping bug caught by tests**: a pack that overrides
+  terrain but inherits its parent's render model must not have the
+  parent's terrain art painted over its own map — the model is only
+  used when it resolves at the same pack level as the terrain.
+- Verified: full deterministic headless game on the default pack;
+  pack switching changes the board; OG behaviour byte-identical
+  (suite unchanged before/after the seam).

@@ -10,7 +10,9 @@ from enum import Enum
 from pathlib import Path
 from typing import Optional
 
-DATA_DIR = Path(__file__).resolve().parent.parent / "data"
+from . import packs
+
+DATA_DIR = Path(__file__).resolve().parent.parent / "data"  # legacy; loaders go through packs
 MASTER_OOB_PATH = DATA_DIR / "master_oob.json"
 SCENARIOS_PATH = DATA_DIR / "scenarios.json"
 UNIT_MPS_PATH = DATA_DIR / "unit_mps.json"
@@ -125,7 +127,7 @@ def _load_unit_mps(path: Optional[Path] = None) -> dict:
     Derived data (see reference/extraction_tools/derive_unit_mps.py), not
     part of the original 10-byte master_oob table -- see Unit's docstring.
     """
-    path = Path(path) if path is not None else UNIT_MPS_PATH
+    path = Path(path) if path is not None else packs.active_pack().resolve("unit_mps.json")
     with open(path, encoding="utf-8") as f:
         return json.load(f)["units"]
 
@@ -138,7 +140,7 @@ def load_master_oob(
     mps is merged in from data/unit_mps.json (see Unit's docstring); pass
     mps_path to override its location (e.g. in tests).
     """
-    path = Path(path) if path is not None else MASTER_OOB_PATH
+    path = Path(path) if path is not None else packs.active_pack().resolve("master_oob.json")
     with open(path, encoding="utf-8") as f:
         raw = json.load(f)
     mps_table = _load_unit_mps(mps_path)
@@ -191,7 +193,7 @@ class Scenario:
 
 def load_scenarios(path: Optional[Path] = None) -> tuple[Scenario, ...]:
     """Load and parse data/scenarios.json into the 6 Scenarios, in order."""
-    path = Path(path) if path is not None else SCENARIOS_PATH
+    path = Path(path) if path is not None else packs.active_pack().resolve("scenarios.json")
     with open(path, encoding="utf-8") as f:
         raw = json.load(f)
 
@@ -220,8 +222,8 @@ def load_deployments(path: Optional[Path] = None) -> dict:
     later reinforcements. Returns {} if the file is absent so synthetic
     setups degrade to edge staging.
     """
-    path = Path(path) if path is not None else DEPLOYMENTS_PATH
-    if not path.exists():
+    path = Path(path) if path is not None else packs.active_pack().resolve("deployments.json")
+    if path is None or not path.exists():
         return {}
     with open(path, encoding="utf-8") as f:
         raw = json.load(f)

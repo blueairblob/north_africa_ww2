@@ -250,6 +250,11 @@ def run_interactive() -> game.GameState:
 def parse_args(argv: Optional[list] = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Desert Rats")
     parser.add_argument("--headless", action="store_true", help="run AI vs AI with no prompts")
+    parser.add_argument(
+        "--pack",
+        default=None,
+        help="content pack to play (see content_packs/); default: og",
+    )
     parser.add_argument("--scenario", type=int, default=1, help="scenario index for --headless (1-6)")
     parser.add_argument("--max-turns", type=int, default=game.DEFAULT_MAX_TURNS)
     parser.add_argument(
@@ -271,6 +276,10 @@ def parse_args(argv: Optional[list] = None) -> argparse.Namespace:
 
 def main(argv: Optional[list] = None) -> int:
     args = parse_args(argv)
+    if args.pack:
+        from . import packs
+        pack = packs.set_active_pack(args.pack)
+        print(f"content pack: {pack.title}")
 
     if args.headless:
         board = load_board()

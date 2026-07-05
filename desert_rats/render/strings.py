@@ -12,6 +12,8 @@ from __future__ import annotations
 import json
 from dataclasses import dataclass
 from pathlib import Path
+
+from .. import packs
 from typing import Optional
 
 from ..units import Order
@@ -35,7 +37,7 @@ class UiStrings:
 
 
 def load_ui_strings(path: Optional[Path] = None) -> UiStrings:
-    path = Path(path) if path is not None else UI_STRINGS_PATH
+    path = Path(path) if path is not None else packs.active_pack().resolve("ui_strings.json")
     with open(path, encoding="utf-8") as f:
         raw = json.load(f)
 

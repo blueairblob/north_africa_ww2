@@ -1,0 +1,6 @@
+{
+  "name": "og",
+  "title": "Desert Rats 1985 (original data)",
+  "legacy_data": true,
+  "_note": "Transitional thin manifest: resolves files from the repo-level data/ directory. Long-term this pack is generated entirely locally from the person's own tape by reference/extraction_tools/ (as data/tiles_original.json already is), and the public repo ships only the engine and clean packs."
+}

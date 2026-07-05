@@ -62,6 +62,16 @@ reference/            Provenance & audit trail (not required to build):
   extraction_tools/       Python scripts used to extract the data (for re-derivation).
 ```
 
+## Content packs
+The engine is generic; everything expressive lives in swappable packs under
+`content_packs/` (see `desert_rats/packs.py`). `--pack default` plays the
+historical North Africa theatre on an ORIGINAL map digitized from real
+geography (`tools/build_default_map.py`); `--pack og` (the default for now)
+plays the original 1985 data. A pack.json manifest can inherit another pack
+and override any file. Long-term: the og pack is generated locally from your
+own tape by reference/extraction_tools/, and the public repo ships only the
+engine + clean packs.
+
 ## How to use
 1. **Read** `CLEANROOM_BRIEF.md` then `BUILD_SPEC.md`.
 2. **Load** `data/*` into typed structures (spec §3, §9).

@@ -1,0 +1,6 @@
+{
+  "name": "default",
+  "title": "North Africa 1941-42 (historical, original digitization)",
+  "inherits": "og",
+  "_note": "The default historical pack. Its terrain is an ORIGINAL digitization of the real North African coast at game scale (100x32) -- built by tools/build_default_map.py from a hand-authored geographic polyline, not derived from the game image. Other layers currently inherit from og; migrating them to clean equivalents (own strings, own names, sourced OOB) is staged follow-up work."
+}

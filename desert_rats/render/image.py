@@ -107,8 +107,9 @@ GRID_LINE = (0, 0, 0, 40)  # faint, alpha-blended cell separators
 # when absent, each cell renders as a paper/ink blend weighted by the
 # committed coverage fraction (a close colour approximation with no art).
 # ---------------------------------------------------------------------------
-_RENDER_MODEL_PATH = Path(__file__).resolve().parent.parent.parent / "data" / "render_model.json"
-_TILES_PATH = Path(__file__).resolve().parent.parent.parent / "data" / "tiles_original.json"
+# Paths resolve through the active content pack (packs.py): the OG pack
+# provides render_model.json (and, locally, tiles_original.json); packs
+# without a render model fall back to the flat legend colours below.
 
 # ZX colour number -> RGB, non-bright levels sampled from the real
 # gameplay screenshot where observed; standard hardware values otherwise.
@@ -119,15 +120,27 @@ _ZX_ATTR_RGB = {
 
 
 def _load_render_model():
-    """Load (attrs, grid, coverage, tiles_or_None); None if the committed
-    model file is missing (renders fall back to the flat legacy model).
+    """Load (attrs, grid, coverage, tiles_or_None) from the active pack;
+    None if the pack provides no render model (renders fall back to the
+    flat legend model).
     """
-    if not _RENDER_MODEL_PATH.exists():
+    from .. import packs
+
+    model_path = packs.active_pack().resolve("render_model.json")
+    if model_path is None:
         return None
-    model = json.loads(_RENDER_MODEL_PATH.read_text())
+    # A render model describes ONE map: it is only valid if it lives at
+    # the same pack level as the terrain. A pack that overrides
+    # terrain_logic.json but inherits its parent's render model must NOT
+    # have the parent's terrain art painted over its own map.
+    terrain_path = packs.active_pack().resolve("terrain_logic.json")
+    if terrain_path is not None and terrain_path.parent != model_path.parent:
+        return None
+    model = json.loads(model_path.read_text())
     tiles = None
-    if _TILES_PATH.exists():
-        tiles = json.loads(_TILES_PATH.read_text())["tiles"]
+    tiles_path = packs.active_pack().resolve("tiles_original.json")
+    if tiles_path is not None:
+        tiles = json.loads(tiles_path.read_text())["tiles"]
     return (
         model["attribute_table"],
         model["tile_index_grid"],
@@ -136,14 +149,16 @@ def _load_render_model():
     )
 
 
-_render_model_cache = ...  # sentinel: not loaded yet
+_render_model_cache = {}  # pack name -> model tuple or None
 
 
 def _render_model():
-    global _render_model_cache
-    if _render_model_cache is ...:
-        _render_model_cache = _load_render_model()
-    return _render_model_cache
+    from .. import packs
+
+    key = packs.active_pack().name
+    if key not in _render_model_cache:
+        _render_model_cache[key] = _load_render_model()
+    return _render_model_cache[key]
 
 
 def _attr_colours(attr: int) -> tuple:

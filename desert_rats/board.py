@@ -22,8 +22,10 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Optional
 
-DATA_DIR = Path(__file__).resolve().parent.parent / "data"
-TERRAIN_PATH = DATA_DIR / "terrain_logic.json"
+from . import packs
+
+DATA_DIR = Path(__file__).resolve().parent.parent / "data"  # legacy
+TERRAIN_PATH = DATA_DIR / "terrain_logic.json"  # legacy; load_board goes through packs
 
 WIDTH = 100
 HEIGHT = 32
@@ -107,7 +109,11 @@ def load_board(path: Optional[Path] = None) -> Board:
     The grid is the code-verified logic_type_grid (see module docstring);
     legend entries carry the confidence notes from the extraction.
     """
-    path = Path(path) if path is not None else TERRAIN_PATH
+    path = Path(path) if path is not None else packs.active_pack().resolve("terrain_logic.json")
+    if path is None:
+        raise FileNotFoundError(
+            f"active content pack {packs.active_pack().name!r} provides no terrain_logic.json"
+        )
     with open(path, encoding="utf-8") as f:
         raw = json.load(f)
 
