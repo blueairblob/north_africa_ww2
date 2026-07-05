@@ -14,6 +14,7 @@ DATA_DIR = Path(__file__).resolve().parent.parent / "data"
 MASTER_OOB_PATH = DATA_DIR / "master_oob.json"
 SCENARIOS_PATH = DATA_DIR / "scenarios.json"
 UNIT_MPS_PATH = DATA_DIR / "unit_mps.json"
+DEPLOYMENTS_PATH = DATA_DIR / "deployments.json"
 
 
 class Nationality(str, Enum):
@@ -206,3 +207,22 @@ def load_scenarios(path: Optional[Path] = None) -> tuple[Scenario, ...]:
         )
         for s in raw["scenarios"]
     )
+
+
+def load_deployments(path: Optional[Path] = None) -> dict:
+    """Load data/deployments.json: scenario index (int) -> list of
+    {"oob_index", "x", "y"} scripted starting placements.
+
+    Recovered from the original's per-scenario deployment lists (see
+    reference/extraction_tools/extract_deployments.py and NOTES.md):
+    initial deployment is scripted historical data -- divisions deploy
+    clustered, often sharing cells -- and edge staging applies only to
+    later reinforcements. Returns {} if the file is absent so synthetic
+    setups degrade to edge staging.
+    """
+    path = Path(path) if path is not None else DEPLOYMENTS_PATH
+    if not path.exists():
+        return {}
+    with open(path, encoding="utf-8") as f:
+        raw = json.load(f)
+    return {int(k): v for k, v in raw["scenarios"].items()}

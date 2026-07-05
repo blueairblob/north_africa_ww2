@@ -19,14 +19,14 @@ def make_board(width=30, height=30, sea_cells=(), escarpment_cells=()):
         if (x, y) in sea:
             return board_mod.SEA
         if (x, y) in escarpment:
-            return 2
+            return board_mod.ESCARPMENT
         return board_mod.DESERT
 
     grid = tuple(tuple(terrain(x, y) for x in range(width)) for y in range(height))
     legend = {
         board_mod.DESERT: board_mod.TerrainInfo("Desert", "confirmed"),
         board_mod.SEA: board_mod.TerrainInfo("Sea", "confirmed"),
-        2: board_mod.TerrainInfo("Escarpment", "likely"),
+        board_mod.ESCARPMENT: board_mod.TerrainInfo("Escarpment", "likely"),
     }
     return board_mod.Board(width=width, height=height, grid=grid, legend=legend)
 
@@ -55,7 +55,7 @@ class TestRenderOverviewImage(unittest.TestCase):
     def test_escarpment_gets_its_own_legend_colour(self):
         b = make_board(width=4, height=4, escarpment_cells=[(1, 1)])
         img = render_overview.render_overview_image([], b, cell_px=10)
-        self.assertEqual(img.getpixel((15, 15)), render_overview.TERRAIN_LEGEND_COLOUR[2])
+        self.assertEqual(img.getpixel((15, 15)), render_overview.TERRAIN_LEGEND_COLOUR[board_mod.ESCARPMENT])
 
     def test_units_are_drawn_as_dots_coloured_by_nationality(self):
         b = make_board(width=10, height=10)

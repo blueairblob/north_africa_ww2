@@ -46,22 +46,20 @@ except ImportError as exc:  # pragma: no cover - exercised only without Pillow
 # that image) -- see this module's docstring. NOT the recovered in-game
 # attribute table (still unrecovered; reference/prospects.md #12).
 TERRAIN_LEGEND_COLOUR = {
-    0: (214, 197, 110),   # desert (open)
-    1: (198, 175, 70),    # rough / coastal strip
-    2: (150, 80, 40),     # escarpment (E-W ridge)
-    3: (120, 64, 30),     # escarpment / coastal ridge
-    4: (90, 110, 50),     # coastal feature (town?)
+    # Keyed by the CODE-VERIFIED logic types (data/terrain_logic.json,
+    # type space 0..8) -- updated when board.py moved off the erroneous
+    # low-nibble typing. Colours remain the debug-legend convention
+    # (legibility aid, not recovered palette; render/image.py is the
+    # authentic renderer).
+    0: (214, 197, 110),   # open desert (incl. decorative art cells)
+    1: (12, 50, 200),     # sea (impassable)
+    2: (95, 158, 160),    # unknown small type (incl. British staging cell)
+    3: (112, 128, 144),   # unknown small type
+    4: (150, 80, 40),     # escarpment
     5: (60, 60, 60),      # road/track
-    6: (130, 130, 130),   # coastal point (town/port)
-    7: (160, 160, 160),   # coastal point (town)
-    8: (195, 195, 195),   # inland point (oasis/fort)
-    9: (95, 158, 160),    # coastal point
-    10: (224, 190, 140),  # port / coastal town
-    11: (200, 130, 60),   # broken / rough ground
-    12: (70, 130, 180),   # coastal point
-    13: (112, 128, 144),  # inland point (oasis/fort)
-    14: (12, 50, 200),    # sea (impassable)
-    15: (230, 230, 230),  # isolated key point (objective marker?)
+    6: (200, 200, 200),   # marsh / depression art
+    7: (200, 130, 60),    # unknown small type
+    8: (230, 230, 230),   # unknown small type
 }
 
 # BUILD_SPEC.md §8 / graphics.json side_ink_table -- reused from image.py

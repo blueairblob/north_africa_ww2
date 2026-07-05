@@ -84,7 +84,7 @@ class TestRenderBoardImage(unittest.TestCase):
         b = make_board(width=3, height=1)
         b = b.__class__(
             width=b.width, height=b.height,
-            grid=tuple(tuple(2 for _ in range(3)) for _ in range(1)),
+            grid=tuple(tuple(board_mod.ESCARPMENT for _ in range(3)) for _ in range(1)),
             legend=b.legend,
         )
         img = render_image.render_board_image([], b, cell_px=8)

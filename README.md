@@ -38,6 +38,13 @@ data/                 Extracted game data — the build inputs:
                           coverage. Tile BITMAPS are original pixel art and are NOT
                           committed -- regenerate data/tiles_original.json locally with
                           reference/extraction_tools/extract_render_tables.py.
+  terrain_logic.json      CODE-VERIFIED terrain typing: type_table (0xD90E), road-
+                          direction table (0xDA0E), logic_type_grid = table[cell]&15.
+                          Supersedes terrain_authentic.json's grid for game logic
+                          (which is wrong for 2011/3200 cells) -- see NOTES.md.
+  deployments.json        Per-scenario scripted starting deployments (0xDE53/0xEABF):
+                          divisions deploy clustered at historical positions, often
+                          sharing cells. Edge staging is only for later reinforcements.
   schedules.json          Turn-phased campaign schedule tables (0xDEFC/0xDF84/0xDFB6),
                           indexed by turn/30, incl. the Axis-only Malta modifier --
                           structure confirmed, value semantics hypotheses; see NOTES.md

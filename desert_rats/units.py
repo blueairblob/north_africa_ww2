@@ -102,6 +102,9 @@ class Unit:
     dest_x: Optional[int] = None
     dest_y: Optional[int] = None
     efficiency: int = 100
+    # Combat-pressure accumulator (recovered model -- BUILD_SPEC.md §5.5
+    # addendum): starts 0, fed by adjacent enemies, tested against morale.
+    pressure: int = 0
     supply: Optional[int] = None
     order: Order = Order.HOLD
     travel: bool = False

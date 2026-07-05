@@ -114,6 +114,48 @@ def main() -> None:
     ]
     tiles = [list(mem[TILE_BASE + t * 8 : TILE_BASE + t * 8 + 8]) for t in range(256)]
 
+    # Logic-type table at 0xD90E: the movement/rules code derives a cell's
+    # terrain TYPE as table[cell_byte] & 15 (verified in the mover's road
+    # check) -- NOT as the cell byte's own low nibble, which the original
+    # extraction wrongly assumed (2011/3200 cells differ). Real type space
+    # is 0..8. Road-direction bits at 0xDA0E gate the road cost discount
+    # to steps moving along the road.
+    type_table = list(mem[0xD90E:0xDA0E])
+    road_direction_table = list(mem[0xDA0E:0xDB0E])
+    logic_type_grid = [[type_table[c] & 15 for c in row] for row in grid]
+
+    terrain_logic = {
+        "_provenance": (
+            "Extracted by reference/extraction_tools/extract_render_tables.py. "
+            "logic_type_grid[y][x] = type_table[cell_byte] & 15, the exact "
+            "lookup the original movement code performs (road check: type == "
+            "5). This SUPERSEDES terrain_authentic.json's grid for game "
+            "logic: that file's low-nibble types are wrong for 2011 of 3200 "
+            "cells. Confirmed type meanings: 0 = open desert (includes all "
+            "decorative coast/border/label art -- passable), 1 = sea "
+            "(impassable), 4 = escarpment, 5 = road, 6 = marsh/depression "
+            "art. Types 2, 3, 7, 8 exist (small counts) with semantics not "
+            "yet pinned. road_direction_table[cell_byte] carries the "
+            "direction bits the road-discount test masks against the step "
+            "direction. See NOTES.md."
+        ),
+        "type_table": type_table,
+        "road_direction_table": road_direction_table,
+        "logic_type_grid": logic_type_grid,
+        "legend": {
+            "0": "open desert (incl. decorative art cells)",
+            "1": "sea (impassable)",
+            "2": "unknown (17 cells)",
+            "3": "unknown (23 cells)",
+            "4": "escarpment",
+            "5": "road/track",
+            "6": "marsh/depression art",
+            "7": "unknown (16 cells)",
+            "8": "unknown (3 cells)",
+        },
+    }
+    (DATA / "terrain_logic.json").write_text(json.dumps(terrain_logic, indent=1))
+
     # Sanity checks from the validated model
     assert attrs[0x00] == 0x30, "attr[0x00] should be PAPER yellow / INK black"
     assert all(b == 0x00 for b in tiles[0x00]), "tile 0x00 should be blank (open desert)"

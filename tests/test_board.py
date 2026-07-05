@@ -15,8 +15,8 @@ class TestLoadBoard(unittest.TestCase):
 
     def test_known_cells(self):
         self.assertEqual(self.board.terrain_at(0, 10), board.SEA)
-        self.assertEqual(self.board.terrain_at(13, 10), 3)
-        self.assertEqual(self.board.terrain_at(24, 3), board.ROAD)
+        self.assertEqual(self.board.terrain_at(25, 3), board.ESCARPMENT)
+        self.assertEqual(self.board.terrain_at(23, 2), board.ROAD)
 
     def test_top_row_is_entirely_sea(self):
         self.assertTrue(all(self.board.terrain_at(x, 0) == board.SEA for x in range(100)))
@@ -24,7 +24,8 @@ class TestLoadBoard(unittest.TestCase):
     def test_legend_covers_every_terrain_type_present_in_the_grid(self):
         present = {v for row in self.board.grid for v in row}
         self.assertTrue(present.issubset(self.board.legend.keys()))
-        self.assertEqual(present, set(range(16)))
+        # Code-verified logic-type space is 0..8 (see data/terrain_logic.json)
+        self.assertEqual(present, set(range(9)))
 
     def test_terrain_at_out_of_bounds_raises(self):
         with self.assertRaises(IndexError):
@@ -52,7 +53,7 @@ class TestPassability(unittest.TestCase):
         self.assertTrue(self.board.is_passable(13, 10))
 
     def test_is_road(self):
-        self.assertTrue(self.board.is_road(24, 3))
+        self.assertTrue(self.board.is_road(23, 2))
         self.assertFalse(self.board.is_road(0, 10))
 
     def test_off_board_is_not_passable(self):
@@ -76,10 +77,10 @@ class TestFootprint(unittest.TestCase):
             self.board.footprint_cells(0, 0, size=3)
 
     def test_footprint_passable_false_when_any_cell_is_sea(self):
-        # (16,0) is sea while (17,1) is land -> a 2x2 anchored here straddles the coast
-        self.assertEqual(self.board.terrain_at(16, 0), board.SEA)
-        self.assertNotEqual(self.board.terrain_at(17, 1), board.SEA)
-        self.assertFalse(self.board.footprint_passable(16, 0, size=2))
+        # (21,0) is sea while (22,1) is land -> a 2x2 anchored here straddles the coast
+        self.assertEqual(self.board.terrain_at(21, 0), board.SEA)
+        self.assertNotEqual(self.board.terrain_at(22, 1), board.SEA)
+        self.assertFalse(self.board.footprint_passable(21, 0, size=2))
 
     def test_footprint_passable_true_on_open_land(self):
         self.assertTrue(self.board.footprint_passable(13, 10, size=2))

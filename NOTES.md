@@ -345,3 +345,72 @@ confirmed; everything else about the AI's target selection is inferred.
   (probably in `reinforce.py`/`zoc_supply.py`) is follow-up work — do it
   alongside diff-harness validation so the semantic hypotheses get
   settled rather than baked in as guesses.
+
+## Travel & combat 1:1 audit, deployment recovery, terrain-typing correction (tape disassembly)
+
+Prompted by the person noticing units arriving unstacked (the original
+deploys formations together) and asking whether Travel and Combat are 1:1
+with the source. The audit read the original's mover, resolver and setup
+routines directly. Findings, in decreasing order of impact:
+
+- **Terrain typing was wrong.** A cell's terrain type is
+  `type_table[cell_byte] & 15` via a 256-entry table at 0xD90E — NOT the
+  cell byte's own low nibble, which `terrain_authentic.json` assumed and
+  which misclassifies 2011/3200 cells. Code-verified type space is 0–8:
+  0 desert (incl. all decorative coast/border/label art — passable),
+  1 sea (impassable), 4 escarpment, 5 road (the mover's road test is
+  literally `type == 5`), 6 marsh; 2/3/7/8 are small unknowns (type 2
+  includes the British staging cell (98,11) and is passable).
+  `data/terrain_logic.json` now supersedes the old grid;
+  `desert_rats/board.py` loads it (SEA=1, ROAD=5, ESCARPMENT=4, MARSH=6).
+  A road-DIRECTION table at 0xDA0E gates the road cost discount by step
+  direction — located, arithmetic not yet applied in the clone (open).
+
+- **Deployment & stacking.** Initial deployment is scripted data, not
+  edge staging: scenario records at 0xDE53 (25 bytes, 1-based index)
+  carry an offset (bytes 4–5) into a deployment region at 0xEABF; each
+  list is [count] then (slot, x, y) triplets, slot 1-based into the
+  roster. The placement routine (0x93AF) writes those coordinates
+  directly. Divisions deploy clustered — frequently several units on the
+  SAME cell (e.g. Ariete's four units on one cell in Enter Rommel) — so
+  co-location at setup is confirmed original behaviour; our movement
+  rules keep no-overlap from the first move onward. Extracted to
+  `data/deployments.json` (day-window cross-check against scenarios.json
+  on extraction); `reinforce.scripted_deployment()` + `game.new_game()`
+  use it, with edge staging retained for post-start reinforcements and
+  for synthetic scenarios. Also observed at the placement/arrival site:
+  efficiency is adjusted by a day-based term and the arrival field is
+  zeroed on entry — NOT yet modelled (open).
+
+- **Travel is 1:1.** The mode multiplier routine applies exactly
+  Assault ×1.5 (HL += HL/2) and Travel ×0.5 (HL /= 2) to the step cost;
+  the road test masks to type 5; the footprint scan iterates the 2×2
+  block and collapses to 1×1 when the travel flag (state-byte bit 4) is
+  set. `movement.py` needed no changes.
+
+- **Combat was NOT 1:1 — model replaced.** The engine-map's mysterious
+  "+3 byte" is a per-unit combat-PRESSURE accumulator: zeroed at
+  placement, 8-bit saturating, fed by a scan loop adding enemy-derived
+  amounts. Resolution per unit: value = pressure × 100 / strength,
+  tested against the unit's MORALE (or the fixed 20 for combat-class-10
+  units); at/above threshold → −10 efficiency (call site confirmed),
+  order forced to HOLD, one-cell retreat attempt (a coded direction,
+  then its opposite); if the retreat fails, pressure escalates ×1.5
+  (cap 255); pressure ≥ strength routes to a separate break path whose
+  semantics are still open. `combat.py` rewritten accordingly
+  (`apply_combat_pressure`, `pressure_threshold`, `resolve_pressure`);
+  the old symmetric power-comparison `resolve_assault` is gone.
+  Inferred constants exposed for the diff harness:
+  `PRESSURE_INFLOW_DIVISOR` (inflow = adjacent enemy effective power //
+  10), `PRESSURE_DECAY_OUT_OF_CONTACT` (reset when no enemy adjacent),
+  and the retreat direction order. NOTE: the −3 attrition call site is
+  confirmed, but NO distinct −20 caught-on-road call site exists — the
+  ×2 doubling is retained provisionally and flagged for the harness.
+
+- **Supply index bias.** The curve is indexed by `(distance + 2) >> 2`,
+  not `distance >> 2` — fixed in `zoc_supply.py` (shifts every band
+  boundary by two cells).
+
+Test suite updated throughout (board coordinates re-verified against the
+code-verified grid; combat tests rewritten for the pressure model;
+overview legend rekeyed to the 0–8 type space). All passing.

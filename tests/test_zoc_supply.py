@@ -127,10 +127,15 @@ class TestSupplyCurve(unittest.TestCase):
     def test_distance_zero_is_the_top_of_the_curve(self):
         self.assertEqual(zoc_supply.supply_level(0), 90)
 
-    def test_indexes_by_distance_over_four(self):
-        self.assertEqual(zoc_supply.supply_level(4), 80)
-        self.assertEqual(zoc_supply.supply_level(7), 80)
-        self.assertEqual(zoc_supply.supply_level(8), 75)
+    def test_indexes_by_distance_plus_two_over_four(self):
+        # Disassembly-audited: index = (distance + 2) >> 2 (NOT dist >> 2).
+        self.assertEqual(zoc_supply.supply_level(0), 90)   # (0+2)//4 = 0
+        self.assertEqual(zoc_supply.supply_level(1), 90)
+        self.assertEqual(zoc_supply.supply_level(2), 80)   # (2+2)//4 = 1
+        self.assertEqual(zoc_supply.supply_level(5), 80)
+        self.assertEqual(zoc_supply.supply_level(6), 75)   # (6+2)//4 = 2
+        self.assertEqual(zoc_supply.supply_level(9), 75)
+        self.assertEqual(zoc_supply.supply_level(10), 70)  # (10+2)//4 = 3
 
     def test_clamps_to_the_last_entry_for_far_distances(self):
         far = zoc_supply.supply_level(1000)

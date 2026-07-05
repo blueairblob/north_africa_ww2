@@ -15,7 +15,7 @@ from typing import Callable, Dict, List, Optional, Set
 
 from . import combat, movement, reinforce, victory
 from .board import Board
-from .data import OrderOfBattle, Scenario, Side, opposing_side
+from .data import OrderOfBattle, Scenario, Side, load_deployments, opposing_side
 from .units import Order, Unit
 from .zoc_supply import FlagGrid, build_flag_grid, compute_supply
 
@@ -42,20 +42,50 @@ class GameState:
         return self.result is not None
 
 
-def new_game(scenario: Scenario, board: Board, oob: OrderOfBattle) -> GameState:
-    """Set up a scenario's starting roster (BUILD_SPEC.md §4.1).
+def new_game(
+    scenario: Scenario,
+    board: Board,
+    oob: OrderOfBattle,
+    deployments: Optional[dict] = None,
+) -> GameState:
+    """Set up a scenario's starting roster (BUILD_SPEC.md §4.1 + §5.6
+    addendum).
 
     Scenarios are windows into one continuous 624-day campaign, so the
     turn counter is initialised to the smallest turn whose campaign clock
-    equals the scenario's start day (inverting §3.3's clock formula), not
-    reset to 0 -- otherwise a mid-campaign scenario like Battleaxe (day 77)
-    would incorrectly start with only day-0 units present.
+    equals the scenario's start day (inverting §3.3's clock formula).
+
+    Starting units come from the scenario's SCRIPTED DEPLOYMENT list
+    (data/deployments.json, recovered from the original -- divisions
+    deploy clustered at historical positions, often sharing cells), not
+    from edge staging. Units whose arrival predates the window but who
+    aren't on the deployment list are treated as already admitted (the
+    original's start set IS the list). Edge staging applies only to
+    reinforcements arriving after scenario start. Falls back to edge
+    admission when no deployment list exists for the scenario (synthetic
+    scenarios in tests).
     """
     turn_counter = 3 * scenario.start_day - 2
     clock = reinforce.campaign_clock(turn_counter)
 
-    starting_units = reinforce.admit_reinforcements(oob, set(), [], clock, board)
-    admitted_indices = {u.oob_index for u in starting_units}
+    if deployments is None:
+        deployments = load_deployments()
+    entries = deployments.get(scenario.index)
+    roster_size = sum(1 for _ in oob)
+    if entries and any(e["oob_index"] >= roster_size for e in entries):
+        # Synthetic scenario sharing a real scenario's index but with a
+        # smaller roster (tests): the real deployment list doesn't apply.
+        entries = None
+
+    if entries:
+        starting_units = reinforce.scripted_deployment(entries, oob, board)
+        admitted_indices = {u.oob_index for u in starting_units}
+        # The deployment list defines the start set exactly: roster units
+        # already "arrived" but not listed do not enter later at an edge.
+        admitted_indices |= {u.index for u in oob if u.arrival <= clock}
+    else:
+        starting_units = reinforce.admit_reinforcements(oob, set(), [], clock, board)
+        admitted_indices = {u.oob_index for u in starting_units}
 
     return GameState(
         board=board,
@@ -95,12 +125,14 @@ def find_adjacent_enemy(unit: Unit, units: List[Unit]) -> Optional[Unit]:
 
 
 def _resolve_combat_for_side(state: GameState, side: Side) -> None:
-    for unit in state.units:
-        if unit.is_destroyed or unit.side is not side or unit.order is not Order.ASSAULT:
-            continue
-        enemy = find_adjacent_enemy(unit, state.units)
-        if enemy is not None:
-            combat.resolve_assault(unit, enemy)
+    """The recovered pressure model (BUILD_SPEC.md §5.5 addendum), run as
+    this side's combat phase: the side's units accumulate pressure from
+    adjacent enemies, then each is tested against its morale threshold.
+    """
+    side_units = [u for u in state.units if u.side is side and not u.is_destroyed]
+    combat.apply_combat_pressure(side_units, state.units)
+    for unit in side_units:
+        combat.resolve_pressure(unit, state.units, state.board)
 
 
 def play_turn(state: GameState, order_providers: Optional[Dict[Side, OrderProvider]] = None) -> None:

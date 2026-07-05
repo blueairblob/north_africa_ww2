@@ -167,16 +167,22 @@ class TestPlayTurn(unittest.TestCase):
         game.play_turn(state, {data.Side.BRITISH: set_move_order})
         self.assertEqual((mover.x, mover.y), (9, 5))
 
-    def test_assault_resolves_combat_between_adjacent_units(self):
-        attacker = make_unit(data.Nationality.BRITISH, 5, 5, order=units.Order.ASSAULT, index=0)
-        defender = make_unit(data.Nationality.GERMAN, 7, 5, index=1)
-        attacker.strength, defender.strength = 200, 100
-        state = self._state([attacker, defender])
-        game.play_turn(state)
-        # -10 combat loss, then -3 adverse-position attrition since being
-        # in contact also means standing in the enemy's ZOC (§5.5).
-        self.assertEqual(defender.efficiency, 87)
-        self.assertEqual(defender.order, units.Order.HOLD)
+    def test_combat_phase_builds_pressure_and_cracks_units(self):
+        # Recovered model: adjacency builds pressure each turn until the
+        # morale test fails, costing -10 efficiency and forcing Hold.
+        strong = make_unit(data.Nationality.BRITISH, 5, 5, index=0)
+        weak = make_unit(data.Nationality.GERMAN, 7, 5, index=1)
+        strong.strength, weak.strength = 200, 100
+        weak.morale = 10   # cracks quickly under pressure
+        weak.type = 12     # morale threshold, not the class-10 override
+        state = self._state([strong, weak])
+        start_eff = weak.efficiency
+        for _ in range(6):
+            game.play_turn(state)
+            if weak.efficiency < start_eff:
+                break
+        self.assertLess(weak.efficiency, start_eff)
+        self.assertGreater(weak.pressure, 0)
 
     def test_attrition_and_recovery_apply_after_movement(self):
         safe_unit = make_unit(data.Nationality.BRITISH, 5, 5, efficiency=50)

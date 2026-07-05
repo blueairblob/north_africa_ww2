@@ -114,3 +114,24 @@ def admit_reinforcements(
         admitted.append(unit)
 
     return admitted
+
+
+def scripted_deployment(entries, oob: OrderOfBattle, board: Board) -> list:
+    """Create the scenario-start units at their scripted positions.
+
+    `entries` is a data/deployments.json scenario list ({"oob_index",
+    "x", "y"} dicts) recovered from the original's deployment tables (see
+    NOTES.md "Deployment & stacking"). Unlike edge admission, scripted
+    placement performs NO occupancy nudging: the original deploys
+    divisions clustered, frequently with several units sharing a cell --
+    that overlap is confirmed original behaviour at setup, and the
+    movement rules keep their no-overlap constraint from the first move
+    onward.
+    """
+    units = []
+    for entry in entries:
+        oob_unit = oob.by_index(entry["oob_index"])
+        units.append(
+            Unit.from_oob(oob_unit, x=entry["x"], y=entry["y"], mps=oob_unit.mps)
+        )
+    return units

@@ -116,8 +116,11 @@ def trace_supply_distance(unit: Unit, board: Board, flags: FlagGrid) -> Optional
 
 
 def supply_level(distance: int) -> int:
-    """BUILD_SPEC.md §5.4 curve, indexed by distance // 4 (clamped)."""
-    index = min(distance // 4, len(SUPPLY_CURVE) - 1)
+    """BUILD_SPEC.md §5.4 curve. Corrected by disassembly audit (see
+    NOTES.md): the original indexes by (distance + 2) >> 2, not
+    distance >> 2 -- a +2 bias that shifts the band boundaries.
+    """
+    index = min((distance + 2) // 4, len(SUPPLY_CURVE) - 1)
     return SUPPLY_CURVE[index]
 
 

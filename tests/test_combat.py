@@ -55,52 +55,99 @@ class TestEffectivePower(unittest.TestCase):
         self.assertEqual(combat.effective_power(unit), 0)
 
 
-class TestResolveAssault(unittest.TestCase):
-    def test_stronger_attacker_wins_defender_loses_efficiency(self):
-        attacker = make_unit(data.Nationality.BRITISH, 0, 0, strength=200, efficiency=100)
-        defender = make_unit(data.Nationality.GERMAN, 1, 0, strength=100, efficiency=100, index=1)
-        loser = combat.resolve_assault(attacker, defender)
-        self.assertIs(loser, defender)
-        self.assertEqual(defender.efficiency, 90)
-        self.assertEqual(attacker.efficiency, 100)
+class TestPressureModel(unittest.TestCase):
+    """The recovered per-unit combat model (BUILD_SPEC.md §5.5 addendum):
+    pressure accumulates from adjacent enemies; value = pressure*100//strength
+    tested against morale (or the fixed 20 for combat-class-10 units); at or
+    above threshold: -10 efficiency, forced Hold, retreat attempt, x1.5
+    escalation when trapped.
+    """
 
-    def test_stronger_defender_wins_attacker_loses_efficiency(self):
-        attacker = make_unit(data.Nationality.BRITISH, 0, 0, strength=50, efficiency=100)
-        defender = make_unit(data.Nationality.GERMAN, 1, 0, strength=200, efficiency=100, index=1)
-        loser = combat.resolve_assault(attacker, defender)
-        self.assertIs(loser, attacker)
-        self.assertEqual(attacker.efficiency, 90)
+    def test_pressure_accumulates_from_adjacent_enemy(self):
+        u = make_unit(data.Nationality.BRITISH, 0, 0)
+        e = make_unit(data.Nationality.GERMAN, 2, 0, strength=100, efficiency=100)
+        combat.apply_combat_pressure([u], [u, e])
+        self.assertEqual(u.pressure, 100 // combat.PRESSURE_INFLOW_DIVISOR)
 
-    def test_loser_order_is_forced_to_hold(self):
-        attacker = make_unit(data.Nationality.BRITISH, 0, 0, strength=200, efficiency=100)
-        defender = make_unit(data.Nationality.GERMAN, 1, 0, strength=100, efficiency=100, index=1)
-        combat.resolve_assault(attacker, defender)
-        self.assertEqual(defender.order, units.Order.HOLD)
+    def test_pressure_resets_out_of_contact(self):
+        u = make_unit(data.Nationality.BRITISH, 0, 0)
+        u.pressure = 40
+        combat.apply_combat_pressure([u], [u])
+        self.assertEqual(u.pressure, 0)
 
-    def test_tie_produces_no_loser_or_change(self):
-        attacker = make_unit(data.Nationality.BRITISH, 0, 0, strength=100, efficiency=100)
-        defender = make_unit(data.Nationality.GERMAN, 1, 0, strength=100, efficiency=100, index=1)
-        loser = combat.resolve_assault(attacker, defender)
-        self.assertIsNone(loser)
-        self.assertEqual(attacker.efficiency, 100)
-        self.assertEqual(defender.efficiency, 100)
+    def test_pressure_caps_at_255(self):
+        u = make_unit(data.Nationality.BRITISH, 0, 0)
+        u.pressure = 250
+        e = make_unit(data.Nationality.GERMAN, 2, 0, strength=200, efficiency=100)
+        combat.apply_combat_pressure([u], [u, e])
+        self.assertEqual(u.pressure, combat.PRESSURE_CAP)
 
-    def test_caught_on_road_doubles_the_loss(self):
-        attacker = make_unit(data.Nationality.BRITISH, 0, 0, strength=200, efficiency=100)
-        defender = make_unit(
-            data.Nationality.GERMAN, 1, 0, strength=100, efficiency=100, caught=True, index=1
-        )
-        combat.resolve_assault(attacker, defender)
-        self.assertEqual(defender.efficiency, 80)
+    def test_below_threshold_no_effect(self):
+        u = make_unit(data.Nationality.BRITISH, 0, 0, strength=100)
+        u.type = 12          # not the class-10 fixed-threshold override
+        u.morale = 50
+        u.pressure = 49  # value 49 < morale 50
+        board = make_board()
+        cracked = combat.resolve_pressure(u, [u], board)
+        self.assertFalse(cracked)
+        self.assertEqual(u.efficiency, 100)
+
+    def test_at_threshold_loses_10_and_holds(self):
+        u = make_unit(data.Nationality.BRITISH, 5, 5, strength=100, efficiency=100)
+        u.morale = 50
+        u.order = units.Order.MOVE
+        u.pressure = 50  # value 50 >= morale 50
+        board = make_board()
+        cracked = combat.resolve_pressure(u, [u], board)
+        self.assertTrue(cracked)
+        self.assertEqual(u.efficiency, 90)
+        self.assertIs(u.order, units.Order.HOLD)
+
+    def test_class_10_uses_fixed_threshold_20(self):
+        u = make_unit(data.Nationality.BRITISH, 5, 5, strength=100)
+        u.type = combat.ARMOUR_COMBAT_CLASS
+        u.morale = 90  # would NOT crack on morale; must crack on the fixed 20
+        u.pressure = 20
+        self.assertEqual(combat.pressure_threshold(u), combat.ARMOUR_FIXED_THRESHOLD)
+        cracked = combat.resolve_pressure(u, [u], make_board())
+        self.assertTrue(cracked)
+
+    def test_caught_unit_takes_double_loss(self):
+        u = make_unit(data.Nationality.BRITISH, 5, 5, strength=100, caught=True)
+        u.travel = True
+        u.morale = 10
+        u.pressure = 50
+        combat.resolve_pressure(u, [u], make_board())
+        self.assertEqual(u.efficiency, 100 - combat.CAUGHT_ON_ROAD_LOSS)
+
+    def test_cracked_unit_retreats_away_from_enemy(self):
+        u = make_unit(data.Nationality.BRITISH, 5, 5, strength=100)
+        u.morale = 10
+        u.pressure = 50
+        e = make_unit(data.Nationality.GERMAN, 3, 5)
+        combat.resolve_pressure(u, [u, e], make_board())
+        self.assertEqual((u.x, u.y), (6, 5))  # one cell away from the enemy
+
+    def test_trapped_unit_escalates_pressure_by_half(self):
+        # Box the unit in with enemies/board edge so no retreat cell exists.
+        u = make_unit(data.Nationality.BRITISH, 0, 0, strength=200)
+        u.morale = 10
+        u.pressure = 100
+        blockers = [
+            make_unit(data.Nationality.GERMAN, 2, 0),
+            make_unit(data.Nationality.GERMAN, 0, 2),
+            make_unit(data.Nationality.GERMAN, 2, 2),
+        ]
+        combat.resolve_pressure(u, [u] + blockers, make_board())
+        self.assertEqual(u.pressure, 150)
 
     def test_efficiency_loss_clamps_at_zero(self):
-        attacker = make_unit(data.Nationality.BRITISH, 0, 0, strength=200, efficiency=100)
-        defender = make_unit(
-            data.Nationality.GERMAN, 1, 0, strength=100, efficiency=5, caught=True, index=1
-        )
-        combat.resolve_assault(attacker, defender)
-        self.assertEqual(defender.efficiency, 0)
-        self.assertTrue(defender.is_destroyed)
+        u = make_unit(data.Nationality.BRITISH, 5, 5, strength=100, efficiency=5)
+        u.morale = 10
+        u.pressure = 50
+        combat.resolve_pressure(u, [u], make_board())
+        self.assertEqual(u.efficiency, 0)
+        self.assertTrue(u.is_destroyed)
 
 
 class TestAdversePosition(unittest.TestCase):
