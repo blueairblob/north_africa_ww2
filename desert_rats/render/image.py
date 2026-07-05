@@ -242,11 +242,42 @@ def _terrain_colour(terrain_type: int) -> tuple:
 
 
 # --- Atlas layer (packs with features.json and no pixel render model) ---
-ATLAS_COAST = (40, 40, 30)
-ATLAS_ROAD = (80, 55, 20)
-ATLAS_INK = (35, 30, 25)
-ATLAS_HALO = (240, 232, 200)
-MARSH_STIPPLE = (150, 150, 150)
+# Period-atlas conventions: cream paper, pale sea, thin dark coastline,
+# relief hachures, dot-and-label settlements, oblique region names.
+ATLAS_PAPER = (238, 231, 205)
+ATLAS_SEA = (176, 205, 219)
+ATLAS_COAST = (72, 99, 117)
+ATLAS_ROAD = (128, 84, 40)
+ATLAS_INK = (52, 44, 36)
+ATLAS_HALO = ATLAS_PAPER
+ATLAS_RELIEF_FILL = (228, 213, 180)
+ATLAS_HACHURE = (183, 149, 106)
+ATLAS_REGION_INK = (146, 128, 100)
+MARSH_STIPPLE = (168, 168, 160)
+
+_ATLAS_FONT_DIR = "/usr/share/fonts/truetype/dejavu"
+
+
+def _atlas_fonts(cell_px: int):
+    """(town_font, region_font, small_font); serif if available."""
+    try:
+        town = ImageFont.truetype(f"{_ATLAS_FONT_DIR}/DejaVuSerif.ttf", max(10, cell_px + 1))
+        region = ImageFont.truetype(f"{_ATLAS_FONT_DIR}/DejaVuSerif-Italic.ttf", max(11, cell_px + 3))
+        small = ImageFont.truetype(f"{_ATLAS_FONT_DIR}/DejaVuSerif.ttf", max(9, cell_px))
+        return town, region, small
+    except Exception:
+        f = ImageFont.load_default()
+        return f, f, f
+
+
+def _atlas_terrain_colour(terrain_type: int) -> tuple:
+    from .. import board as board_mod
+
+    if terrain_type == board_mod.SEA:
+        return ATLAS_SEA
+    if terrain_type in ESCARPMENT_TYPES:
+        return ATLAS_RELIEF_FILL
+    return ATLAS_PAPER
 
 
 def _draw_atlas_terrain_extras(draw, board, origin_x, origin_y, width, height, cell_px):
@@ -282,6 +313,13 @@ def _draw_atlas_terrain_extras(draw, board, origin_x, origin_y, width, height, c
                     nx, ny = x + dx, y + dy
                     if board.in_bounds(nx, ny) and board.terrain_at(nx, ny) == board_mod.ROAD:
                         draw.line([centre(x, y), centre(nx, ny)], fill=ATLAS_ROAD, width=lw)
+            if t in ESCARPMENT_TYPES:
+                # relief hachures: short SW-NE ticks
+                for hx in (2, 6):
+                    x0h = px0 + hx * cell_px // 8
+                    y0h = py0 + 6 * cell_px // 8
+                    draw.line([x0h, y0h, x0h + cell_px // 4, y0h - cell_px // 2],
+                              fill=ATLAS_HACHURE, width=1)
             if t == getattr(board_mod, "MARSH", -1):
                 for sx, sy in ((2, 3), (5, 6), (7, 2)):
                     dx = px0 + sx * cell_px // 8
@@ -291,15 +329,20 @@ def _draw_atlas_terrain_extras(draw, board, origin_x, origin_y, width, height, c
 
 
 def _draw_atlas_features(draw, features, origin_x, origin_y, board, cell_px):
-    """Named points, region labels and the frontier wire."""
-    try:
-        font = ImageFont.load_default()
-    except Exception:
-        font = None
+    """Named points, region labels, sea label, frontier wire, north arrow
+    and scale bar -- standard period-atlas furniture.
+    """
+    town_font, region_font, small_font = _atlas_fonts(cell_px)
 
     def to_px(x, y):
         return ((x - origin_x) * cell_px + cell_px // 2,
                 (y - origin_y) * cell_px + cell_px // 2)
+
+    def text_with_halo(pos, label, fill, font):
+        tx, ty = pos
+        for ox, oy in ((-1, 0), (1, 0), (0, -1), (0, 1), (-1, -1), (1, 1), (-1, 1), (1, -1)):
+            draw.text((tx + ox, ty + oy), label, font=font, fill=ATLAS_HALO)
+        draw.text((tx, ty), label, font=font, fill=fill)
 
     fx = features.get("frontier_x")
     if fx is not None and origin_x <= fx < origin_x + board.width:
@@ -307,36 +350,55 @@ def _draw_atlas_features(draw, features, origin_x, origin_y, board, cell_px):
         for y0 in range(0, board.height * cell_px, cell_px):
             draw.line([px, y0, px, y0 + cell_px // 2], fill=ATLAS_INK, width=1)
 
-    def text_with_halo(pos, label, fill):
-        if font is None:
-            return
-        tx, ty = pos
-        for ox, oy in ((-1, 0), (1, 0), (0, -1), (0, 1)):
-            draw.text((tx + ox, ty + oy), label, font=font, fill=ATLAS_HALO)
-        draw.text((tx, ty), label, font=font, fill=fill)
+    sea = features.get("sea_label")
+    if sea is not None:
+        tx, ty = to_px(sea["x"], sea["y"])
+        spaced = " ".join(sea["name"])
+        w = draw.textlength(spaced, font=region_font)
+        draw.text((tx - w / 2, ty - cell_px), spaced, font=region_font, fill=(90, 118, 136))
 
     for lab in features.get("region_labels", ()):
         tx, ty = to_px(lab["x"], lab["y"])
         spaced = " ".join(lab["name"])
-        text_with_halo((tx - 4 * len(lab["name"]), ty - 5), spaced, (120, 105, 80))
+        w = draw.textlength(spaced, font=region_font)
+        text_with_halo((tx - w / 2, ty - cell_px), spaced, ATLAS_REGION_INK, region_font)
 
-    r = max(2, cell_px // 3)
+    r = max(2, cell_px // 4)
     for pt in features.get("points", ()):
         cx, cy = to_px(pt["x"], pt["y"])
         kind = pt.get("kind", "town")
         if kind == "fort":
-            draw.rectangle([cx - r, cy - r, cx + r, cy + r], outline=ATLAS_INK,
-                           width=max(1, cell_px // 8))
+            draw.rectangle([cx - r, cy - r, cx + r, cy + r], outline=ATLAS_INK, width=1)
         elif kind == "port":
-            draw.ellipse([cx - r, cy - r, cx + r, cy + r], outline=ATLAS_INK,
-                         width=max(1, cell_px // 8))
+            draw.ellipse([cx - r, cy - r, cx + r, cy + r], outline=ATLAS_INK, width=1)
             draw.ellipse([cx - 1, cy - 1, cx + 1, cy + 1], fill=ATLAS_INK)
         elif kind == "pass":
             draw.line([cx - r, cy + r, cx, cy - r], fill=ATLAS_INK, width=1)
             draw.line([cx, cy - r, cx + r, cy + r], fill=ATLAS_INK, width=1)
         else:  # town
-            draw.ellipse([cx - r + 1, cy - r + 1, cx + r - 1, cy + r - 1], fill=ATLAS_INK)
-        text_with_halo((cx + r + 2, cy - 5), pt["name"], ATLAS_INK)
+            draw.ellipse([cx - r, cy - r, cx + r, cy + r], fill=ATLAS_INK)
+        text_with_halo((cx + r + 2, cy - cell_px + 1), pt["name"], ATLAS_INK, town_font)
+
+    # -- map furniture: north arrow (top right) and scale bar (bottom right)
+    W_px = board.width * cell_px
+    H_px = board.height * cell_px
+    nx, ny = W_px - 3 * cell_px, int(1.2 * cell_px)
+    draw.line([nx, ny + 2 * cell_px, nx, ny], fill=ATLAS_INK, width=max(1, cell_px // 6))
+    ah = max(2, cell_px // 2)
+    draw.polygon([(nx - ah // 2, ny + ah), (nx + ah // 2, ny + ah), (nx, ny)], fill=ATLAS_INK)
+    draw.text((nx + 4, ny), "N", font=small_font, fill=ATLAS_INK)
+
+    kpc = features.get("km_per_cell")
+    if kpc:
+        bar_km = 100
+        bar_px = int(bar_km / kpc * cell_px)
+        bx0 = W_px - bar_px - 2 * cell_px
+        by0 = H_px - int(1.6 * cell_px)
+        draw.line([bx0, by0, bx0 + bar_px, by0], fill=ATLAS_INK, width=max(1, cell_px // 5))
+        for frac, lab in ((0, "0"), (0.5, "50"), (1.0, f"{bar_km} km")):
+            tx = bx0 + int(frac * bar_px)
+            draw.line([tx, by0 - cell_px // 3, tx, by0], fill=ATLAS_INK, width=1)
+            text_with_halo((tx - 3, by0 - int(1.3 * cell_px)), lab, ATLAS_INK, small_font)
 
 
 def _build_occupancy(units: Iterable[Unit]) -> dict:
@@ -409,10 +471,15 @@ def render_board_image(
             else:
                 # Legacy flat model (render_model.json absent).
                 terrain_type = board.terrain_at(x, y)
+                if features is not None:
+                    # Atlas mode: period palette, relief drawn as hachures
+                    # in the extras pass, no cell grid.
+                    draw.rectangle([px0, py0, px1, py1], fill=_atlas_terrain_colour(terrain_type))
+                    continue
                 draw.rectangle([px0, py0, px1, py1], fill=_terrain_colour(terrain_type))
                 if terrain_type in ESCARPMENT_TYPES:
                     _draw_escarpment_tile(draw, px0, py0, cell_px)
-                if terrain_type == ROAD and features is None:
+                if terrain_type == ROAD:
                     draw.line([px0, py0 + cell_px // 2, px1, py0 + cell_px // 2], fill=ROAD_LINE, width=max(1, cell_px // 6))
             draw.rectangle([px0, py0, px1, py1], outline=GRID_LINE, width=1)
 

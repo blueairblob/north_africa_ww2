@@ -287,15 +287,29 @@ FEATURES = [
     ("Mersa Matruh", 27.24, 31.35, "port"),
     ("El Alamein",   28.95, 30.84, "town"),
     ("Alexandria",   29.92, 31.20, "port"),
+    ("Tmimi",        23.10, 32.39, "town"),
+    ("Bir Hacheim",  23.48, 31.59, "fort"),
+    ("Sidi Rezegh",  24.03, 31.90, "town"),
+    ("Bir el Gubi",  24.02, 31.56, "town"),
+    ("Gabr Saleh",   24.55, 31.45, "town"),
+    ("Gambut",       24.60, 31.98, "town"),
+    ("Fort Capuzzo", 25.08, 31.63, "fort"),
+    ("Sidi Omar",    24.98, 31.40, "town"),
+    ("Beda Fomm",    20.15, 31.35, "town"),
+    ("Ben Gania",    21.05, 30.90, "town"),
 ]
 
 REGION_LABELS = [
-    ("CYRENAICA", 21.6, 31.3),
-    ("LIBYA",     22.8, 30.2),
-    ("EGYPT",     27.0, 30.3),
-    ("QATTARA DEPRESSION", 28.4, 29.85),
+    ("CYRENAICA", 21.6, 31.25),
+    ("LIBYA",     22.8, 30.15),
+    ("EGYPT",     27.2, 30.25),
+    ("QATTARA DEPRESSION", 28.3, 29.85),
     ("JEBEL AKHDAR", 21.7, 32.45),
+    ("WESTERN DESERT", 26.6, 30.75),
+    ("LIBYAN DESERT", 23.4, 29.75),
 ]
+
+SEA_LABEL = ("MEDITERRANEAN SEA", 25.6, 33.12)
 
 FRONTIER_LON = 25.15  # the Libyan-Egyptian border wire
 
@@ -310,7 +324,13 @@ def write_features():
         x, y = to_grid(lon, lat)
         labels.append({"name": name, "x": round(x), "y": round(y)})
     bx, _ = to_grid(FRONTIER_LON, 31.0)
+    # ground scale (km per cell in x) from the projection, for the scale bar
+    import math
+    km_per_cell = (LON_E - LON_W) * 111.32 * math.cos(math.radians(31.5)) / (W - 1)
+    sx, sy = to_grid(SEA_LABEL[1], SEA_LABEL[2])
     features = {
+        "km_per_cell": round(km_per_cell, 2),
+        "sea_label": {"name": SEA_LABEL[0], "x": round(sx), "y": round(sy)},
         "_provenance": (
             "ORIGINAL WORK -- compilation of well-known places and regions "
             "of the 1941-42 North African theatre (public-knowledge "

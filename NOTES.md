@@ -478,3 +478,28 @@ every second column, skipped sea cells). Both addressed:
   follow the same pack-level scoping rule as render models (only valid
   alongside the terrain they annotate); the OG pack is untouched (its
   names are baked into its tile art).
+
+## Period-atlas restyle of the default map
+
+Feedback: the first atlas pass was still visually unclear (ZX palette,
+per-cell grid lines, tiny bitmap font). Restyled the atlas mode around
+standard period-cartography conventions — the generic visual language of
+mid-century theatre maps, not any particular published map:
+
+- Palette: cream paper, pale blue sea, thin dark coastline, brown road
+  strokes, tan relief fill with hachure ticks for escarpments, grey
+  stipple for the Depression. No cell grid in atlas mode.
+- Typography: DejaVu Serif for settlement labels, Serif Italic
+  (letter-spaced caps) for region and sea names, with paper-coloured
+  halos; falls back to the bitmap font if truetype is unavailable.
+- Furniture: north arrow (top right) and a 100 km scale bar (bottom
+  right) driven by `km_per_cell`, which the builder now computes from
+  the projection and stores in features.json.
+- Place compilation extended with more well-known locations of the
+  theatre (Bir Hacheim, Sidi Rezegh, Bir el Gubi, Gabr Saleh, Gambut,
+  Fort Capuzzo, Sidi Omar, Tmimi, Beda Fomm, Ben Gania), region labels
+  (WESTERN DESERT, LIBYAN DESERT) and the MEDITERRANEAN SEA label — all
+  positioned by own approximate lon/lat (public-knowledge geography).
+  Off-map places (Jalo Oasis, Cairo, Suez) deliberately omitted.
+- OG rendering is untouched throughout (atlas mode only activates for
+  packs providing features.json without a pixel render model).

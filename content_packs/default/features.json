@@ -1,4 +1,10 @@
 {
+ "km_per_cell": 10.74,
+ "sea_label": {
+  "name": "MEDITERRANEAN SEA",
+  "x": 58,
+  "y": 1
+ },
  "_provenance": "ORIGINAL WORK -- compilation of well-known places and regions of the 1941-42 North African theatre (public-knowledge geography/history), positioned by real lon/lat through the map's projection. Built by tools/build_default_map.py.",
  "points": [
   {
@@ -96,33 +102,103 @@
    "x": 97,
    "y": 15,
    "kind": "port"
+  },
+  {
+   "name": "Tmimi",
+   "x": 36,
+   "y": 6,
+   "kind": "town"
+  },
+  {
+   "name": "Bir Hacheim",
+   "x": 40,
+   "y": 12,
+   "kind": "fort"
+  },
+  {
+   "name": "Sidi Rezegh",
+   "x": 44,
+   "y": 10,
+   "kind": "town"
+  },
+  {
+   "name": "Bir el Gubi",
+   "x": 44,
+   "y": 12,
+   "kind": "town"
+  },
+  {
+   "name": "Gabr Saleh",
+   "x": 49,
+   "y": 13,
+   "kind": "town"
+  },
+  {
+   "name": "Gambut",
+   "x": 50,
+   "y": 9,
+   "kind": "town"
+  },
+  {
+   "name": "Fort Capuzzo",
+   "x": 54,
+   "y": 12,
+   "kind": "fort"
+  },
+  {
+   "name": "Sidi Omar",
+   "x": 53,
+   "y": 13,
+   "kind": "town"
+  },
+  {
+   "name": "Beda Fomm",
+   "x": 10,
+   "y": 14,
+   "kind": "town"
+  },
+  {
+   "name": "Ben Gania",
+   "x": 18,
+   "y": 17,
+   "kind": "town"
   }
  ],
  "region_labels": [
   {
    "name": "CYRENAICA",
    "x": 23,
-   "y": 14
+   "y": 15
   },
   {
    "name": "LIBYA",
    "x": 34,
-   "y": 22
+   "y": 23
   },
   {
    "name": "EGYPT",
-   "x": 71,
-   "y": 21
+   "x": 72,
+   "y": 22
   },
   {
    "name": "QATTARA DEPRESSION",
-   "x": 83,
+   "x": 82,
    "y": 25
   },
   {
    "name": "JEBEL AKHDAR",
    "x": 24,
    "y": 6
+  },
+  {
+   "name": "WESTERN DESERT",
+   "x": 67,
+   "y": 18
+  },
+  {
+   "name": "LIBYAN DESERT",
+   "x": 39,
+   "y": 25
   }
  ],
  "frontier_x": 54
