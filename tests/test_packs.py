@@ -97,7 +97,9 @@ class TestAtlasFeatureLayer(unittest.TestCase):
         from desert_rats.render import image
         packs.set_active_pack("default")
         b = board.load_board()
-        img = image.render_board_image([], b, cell_px=8)
+        # use_map_image=False exercises the live atlas layer (the baked
+        # map.png otherwise takes precedence -- tested separately below)
+        img = image.render_board_image([], b, cell_px=8, use_map_image=False)
         colours = set(img.getdata())
         self.assertIn(image.ATLAS_ROAD, colours)   # connected road strokes
         self.assertIn(image.ATLAS_COAST, colours)  # coastline outline
@@ -127,3 +129,45 @@ class TestAtlasFeatureLayer(unittest.TestCase):
                     if (cx + dx, cy + dy) in roads
                 )
         self.assertLessEqual(comps, 3, f"road network fragmented: {comps} components")
+
+
+class TestMapImageSkin(unittest.TestCase):
+    def tearDown(self):
+        packs.set_active_pack(packs.DEFAULT_PACK)
+
+    def test_default_pack_provides_a_calibrated_map_image(self):
+        from desert_rats.render import image
+        packs.set_active_pack("default")
+        mi = image._map_image()
+        self.assertIsNotNone(mi)
+        path, calx, caly = mi
+        self.assertTrue(path.name == "map.png")
+        self.assertEqual(len(calx), 2)
+
+    def test_og_pack_has_no_map_image(self):
+        from desert_rats.render import image
+        packs.set_active_pack("og")
+        self.assertIsNone(image._map_image())
+
+    def test_image_skin_renders_and_viewport_crops_consistently(self):
+        try:
+            from PIL import Image  # noqa: F401
+        except ImportError:
+            self.skipTest("Pillow not installed")
+        from desert_rats.render import image
+        packs.set_active_pack("default")
+        b = board.load_board()
+        full = image.render_board_image([], b, cell_px=8)
+        self.assertEqual(full.size, (b.width * 8, b.height * 8))
+        # a viewport render of cells (10..20, 5..15) must equal the same
+        # region of the full render (identity calibration, same scale)
+        view = image.render_board_image([], b, origin=(10, 5), size=10, cell_px=8)
+        crop = full.crop((10 * 8, 5 * 8, 20 * 8, 15 * 8))
+        # allow resampling tolerance: compare average colour closely
+        import math
+        def avg(im):
+            data = list(im.getdata())
+            n = len(data)
+            return tuple(sum(px[i] for px in data) / n for i in range(3))
+        a, c = avg(view), avg(crop)
+        self.assertLess(max(abs(x - y) for x, y in zip(a, c)), 3.0)

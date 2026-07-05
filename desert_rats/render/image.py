@@ -166,6 +166,41 @@ def _load_features():
     return json.loads(fp.read_text())
 
 
+def _load_map_image():
+    """Cartographic map-image skin: content_packs/<pack>/map.png plus
+    map_calibration.json (fitted by tools/calibrate_map_image.py). The
+    100x32 grid stays the invisible engine underlay; the image is THE
+    map, and counters are transposed onto it through the calibration.
+    Same pack-level scoping rule as the render model / features layer.
+    User-supplied archive scans are supported locally but are often
+    still in copyright: keep them uncommitted (policy as for
+    data/tiles_original.json; see NOTES.md).
+    """
+    from .. import packs
+
+    img_path = packs.active_pack().resolve("map.png")
+    cal_path = packs.active_pack().resolve("map_calibration.json")
+    if img_path is None or cal_path is None:
+        return None
+    tp = packs.active_pack().resolve("terrain_logic.json")
+    if tp is not None and tp.parent != img_path.parent:
+        return None
+    cal = json.loads(cal_path.read_text())
+    return (img_path, cal["cell_to_px_x"], cal["cell_to_px_y"])
+
+
+_map_image_cache = {}  # pack name -> (path, calx, caly) or None
+
+
+def _map_image():
+    from .. import packs
+
+    key = packs.active_pack().name
+    if key not in _map_image_cache:
+        _map_image_cache[key] = _load_map_image()
+    return _map_image_cache[key]
+
+
 _features_cache = {}  # pack name -> features dict or None
 
 
@@ -424,6 +459,7 @@ def render_board_image(
     origin: Optional[tuple] = None,
     size: Optional[int] = None,
     cell_px: int = 12,
+    use_map_image: bool = True,
 ) -> "Image.Image":
     """Render a viewport (or the whole board if origin/size are None) to a
     Pillow Image: desert/sea/escarpment paper, road lines, and 2x2/1x1 unit
@@ -443,13 +479,27 @@ def render_board_image(
     draw = ImageDraw.Draw(img, "RGBA")
 
     model = _render_model()
-    features = _features() if _render_model() is None else None
+    map_image = _map_image() if (model is None and use_map_image) else None
+    features = _features() if (model is None and map_image is None) else None
     # The recovered model describes the real 100x32 map; synthetic boards
     # (tests, experiments) fall through to the legacy flat model.
     if model is not None and (
         len(model[1]) != board.height or len(model[1][0]) != board.width
     ):
         model = None
+    if map_image is not None:
+        img_path, (cax, cbx), (cay, cby) = map_image
+        src = Image.open(img_path).convert("RGB")
+        # crop the source region for the cell viewport and scale it so
+        # each cell lands exactly at (gx*cell_px, gy*cell_px) -- the
+        # counter-drawing code below then needs no changes at all.
+        sx0 = cax * origin_x + cbx
+        sy0 = cay * origin_y + cby
+        sx1 = cax * (origin_x + width) + cbx
+        sy1 = cay * (origin_y + height) + cby
+        crop = src.crop((round(sx0), round(sy0), round(sx1), round(sy1)))
+        img.paste(crop.resize((width * cell_px, height * cell_px), Image.LANCZOS), (0, 0))
+
     for gy in range(height):
         for gx in range(width):
             x, y = origin_x + gx, origin_y + gy
@@ -457,6 +507,8 @@ def render_board_image(
             px1, py1 = px0 + cell_px, py0 + cell_px
             if not board.in_bounds(x, y):
                 continue
+            if map_image is not None:
+                continue  # the image IS the terrain layer
             if model is not None and y < len(model[1]) and x < len(model[1][y]):
                 # Authentic path: full-byte tile index -> attr (+ bitmap
                 # if the local tile-art file is present, else a coverage

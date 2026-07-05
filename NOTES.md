@@ -503,3 +503,35 @@ mid-century theatre maps, not any particular published map:
   Off-map places (Jalo Oasis, Cairo, Suez) deliberately omitted.
 - OG rendering is untouched throughout (atlas mode only activates for
   packs providing features.json without a pixel render model).
+
+## Map-image skins: the cartographic image IS the map
+
+Architecture change per the person's direction: the 100x32 grid is the
+invisible engine underlay; a pack's visual layer can be a full
+cartographic IMAGE, with counters transposed onto it through a
+calibration mapping grid coordinates to image pixels.
+
+- A pack provides `map.png` + `map_calibration.json`
+  (`cell_to_px_x/y = [a, b]`, i.e. px = a*grid + b, axis-aligned
+  affine). `tools/calibrate_map_image.py` fits the calibration by least
+  squares from anchor points ("Tobruk is at pixel (X,Y)"), reporting
+  residuals so a bad anchor is obvious; two anchors minimum, more for a
+  fit. Same pack-level scoping rule as the render model and features.
+- `render/image.py`: when a calibrated map image resolves, the renderer
+  crops the source region for the cell viewport and scales it so each
+  cell lands exactly on the output cell lattice — the counter-drawing
+  code needed NO changes. Precedence: pixel render model (og) →
+  map image → live atlas layer → legacy flat. `use_map_image=False`
+  bypasses (used by the bake tool and the atlas-layer tests).
+- The default pack's `map.png` (3200x1024, committed) is baked by
+  `tools/build_default_map_image.py` from the pack's own atlas layer —
+  original work end to end. Rebuild order: build_default_map.py →
+  build_default_map_image.py.
+- USER-SUPPLIED ARCHIVE SCANS: fully supported — drop the scan at
+  content_packs/<pack>/map.png, pick a few identifiable places, run the
+  calibration tool. But period map scans are frequently still in
+  copyright: treat such an image exactly like data/tiles_original.json —
+  keep it local, do NOT commit it to the public repo. The committed
+  default map must remain our own work.
+- Verified: viewport crops of the image skin are pixel-consistent with
+  the full render (test), counters transpose correctly in play.

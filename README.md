@@ -68,7 +68,13 @@ The engine is generic; everything expressive lives in swappable packs under
 historical North Africa theatre on an ORIGINAL map digitized from real
 geography (`tools/build_default_map.py`); `--pack og` (the default for now)
 plays the original 1985 data. A pack.json manifest can inherit another pack
-and override any file. Long-term: the og pack is generated locally from your
+and override any file. A pack may also provide a full cartographic map
+IMAGE (`map.png` + `map_calibration.json`, fitted from anchor points by
+`tools/calibrate_map_image.py`): the 100x32 grid stays the invisible
+engine underlay and counters are transposed onto the image. The default
+pack ships a baked 3200x1024 image of its own atlas. User-supplied
+archive scans work too but are often still in copyright -- keep them
+local and uncommitted (same policy as data/tiles_original.json). Long-term: the og pack is generated locally from your
 own tape by reference/extraction_tools/, and the public repo ships only the
 engine + clean packs.
 
