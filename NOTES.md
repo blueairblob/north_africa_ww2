@@ -535,3 +535,30 @@ calibration mapping grid coordinates to image pixels.
   default map must remain our own work.
 - Verified: viewport crops of the image skin are pixel-consistent with
   the full render (test), counters transpose correctly in play.
+
+## Vector-drawn map image (replacing the grid-rasterized bake)
+
+Feedback: the baked map image still looked nothing like professional
+cartography. Root cause: it was rendered FROM the 100x32 cell grid, so
+it carried a staircase coastline and chunky roads at any resolution.
+`tools/build_default_map_image.py` rewritten to draw the image directly
+from the VECTOR source shared with the terrain builder -- the eased
+coast profile (upsampled + smoothed), the road and relief control
+polylines, and the place compilation -- at 32px/cell (3200x1024):
+
+- smooth anti-aliased coastline with a near-shore tint band over pale sea;
+- relief as blurred tan strokes with perpendicular hachure ticks
+  (Jebel Akhdar, Sollum, Gazala ridges);
+- the Qattara Depression as a soft blob with stipple;
+- the coastal road as a smooth offset of the coast path, the inland
+  track dashed; dashed frontier wire;
+- serif settlement labels with paper halos, italic letter-spaced region
+  names, sea name, north arrow, 100 km scale bar.
+
+Alignment with the playable grid is preserved because the image and the
+grid derive from the same projection and the same eased profile
+(sub-cell visual smoothness only). The game view downsamples the bake
+with LANCZOS: ~6,800 distinct colours in a 1000px view vs ~40 for the
+old grid render. The image remains ORIGINAL work drawn with generic
+period-atlas conventions; it reproduces no published map's artwork
+(user-supplied scans remain the local-only route for that look).
