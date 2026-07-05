@@ -69,3 +69,61 @@ class TestPackSystem(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class TestAtlasFeatureLayer(unittest.TestCase):
+    def tearDown(self):
+        packs.set_active_pack(packs.DEFAULT_PACK)
+
+    def test_default_pack_provides_features(self):
+        from desert_rats.render import image
+        packs.set_active_pack("default")
+        f = image._features()
+        self.assertIsNotNone(f)
+        names = {p["name"] for p in f["points"]}
+        self.assertIn("Tobruk", names)
+        self.assertIn("Halfaya Pass", names)
+
+    def test_og_pack_has_no_feature_layer(self):
+        from desert_rats.render import image
+        packs.set_active_pack("og")
+        self.assertIsNone(image._features())
+
+    def test_default_map_renders_the_atlas_layer(self):
+        try:
+            from PIL import Image  # noqa: F401
+        except ImportError:
+            self.skipTest("Pillow not installed")
+        from desert_rats.render import image
+        packs.set_active_pack("default")
+        b = board.load_board()
+        img = image.render_board_image([], b, cell_px=8)
+        colours = set(img.getdata())
+        self.assertIn(image.ATLAS_ROAD, colours)   # connected road strokes
+        self.assertIn(image.ATLAS_COAST, colours)  # coastline outline
+        self.assertIn(image.ATLAS_INK, colours)    # labels/markers
+
+    def test_default_road_network_is_contiguous(self):
+        import json
+        from desert_rats import packs as p
+        grid = json.loads(
+            (p.PACKS_DIR / "default" / "terrain_logic.json").read_text()
+        )["logic_type_grid"]
+        roads = {(x, y) for y in range(32) for x in range(100) if grid[y][x] == 5}
+        seen, comps = set(), 0
+        for cell in roads:
+            if cell in seen:
+                continue
+            comps += 1
+            stack = [cell]
+            while stack:
+                cx, cy = stack.pop()
+                if (cx, cy) in seen:
+                    continue
+                seen.add((cx, cy))
+                stack.extend(
+                    (cx + dx, cy + dy)
+                    for dx in (-1, 0, 1) for dy in (-1, 0, 1)
+                    if (cx + dx, cy + dy) in roads
+                )
+        self.assertLessEqual(comps, 3, f"road network fragmented: {comps} components")

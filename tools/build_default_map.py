@@ -163,14 +163,44 @@ def main():
                         grid[y][x] = MARSH
 
     # Coastal road (the historical Via Balbia and its Egyptian
-    # continuation): one cell inland of the coast for the full span.
-    road_pts = [(x, profile[x] + 1.2) for x in range(0, W, 2)]
-    stroke(grid, road_pts, ROAD)
+    # continuation): one cell inland of the coast, every column, with
+    # vertical steps filled so the road is CONTIGUOUS (8-connected).
+    def land_row(x, y):
+        y = max(0, min(H - 1, int(round(y))))
+        while y < H and grid[y][x] == SEA:
+            y += 1
+        return min(y, H - 1)
 
-    # Desert track cutting the base of the Cyrenaica bulge
-    # (the historical Agedabia-Msus-Mechili-Tobruk inland route).
+    road_cells = []
+    prev_y = None
+    for x in range(W):
+        y = land_row(x, profile[x] + 1)
+        if prev_y is not None and abs(y - prev_y) > 1:
+            step = 1 if y > prev_y else -1
+            for yy in range(prev_y + step, y, step):
+                road_cells.append((x, land_row(x, yy)))
+        road_cells.append((x, y))
+        prev_y = y
+    for (x, y) in road_cells:
+        if grid[y][x] != SEA:
+            grid[y][x] = ROAD
+
+    # Desert track cutting the base of the Cyrenaica bulge (the
+    # historical Agedabia-Msus-Mechili route rejoining near Tobruk) --
+    # drawn cell-by-cell along the polyline so it is contiguous too.
+    def contiguous_stroke(points, terrain):
+        for (x0, y0), (x1, y1) in zip(points, points[1:]):
+            steps = int(max(abs(x1 - x0), abs(y1 - y0)) * 2) + 1
+            px, py = None, None
+            for i in range(steps + 1):
+                t = i / steps
+                x, y = round(x0 + t * (x1 - x0)), round(y0 + t * (y1 - y0))
+                if (x, y) != (px, py) and 0 <= x < W and 0 <= y < H and grid[y][x] != SEA:
+                    grid[y][x] = terrain
+                    px, py = x, y
+
     chord = [to_grid(*p) for p in [(20.2, 30.85), (21.3, 31.5), (22.5, 31.8), (23.9, 31.95)]]
-    stroke(grid, chord, ROAD)
+    contiguous_stroke(chord, ROAD)
 
     # --- validation: inherited og deployments + staging must be on land
     deployments = json.loads((ROOT / "data" / "deployments.json").read_text())
@@ -184,6 +214,29 @@ def main():
                 problems.append(((x, y), (cx, cy)))
     if problems:
         raise SystemExit(f"constraint pass failed; {len(problems)} cells still in sea: {problems[:8]}")
+
+    # --- road connectivity check (8-connected components)
+    roads = {(x, y) for y in range(H) for x in range(W) if grid[y][x] == ROAD}
+    seen, comps = set(), 0
+    for cell in roads:
+        if cell in seen:
+            continue
+        comps += 1
+        stack = [cell]
+        while stack:
+            cx, cy = stack.pop()
+            if (cx, cy) in seen:
+                continue
+            seen.add((cx, cy))
+            for dx in (-1, 0, 1):
+                for dy in (-1, 0, 1):
+                    if (cx + dx, cy + dy) in roads:
+                        stack.append((cx + dx, cy + dy))
+    print(f"road network: {len(roads)} cells in {comps} connected component(s)")
+    if comps > 3:
+        raise SystemExit(f"road network fragmented into {comps} components")
+
+    write_features()
 
     out = {
         "_provenance": (
@@ -207,6 +260,70 @@ def main():
     from collections import Counter
     c = Counter(t for row in grid for t in row)
     print(f"wrote {OUT}; type counts: {dict(sorted(c.items()))}")
+
+
+
+# ---------------------------------------------------------------------------
+# Atlas feature layer: an ORIGINAL compilation of well-known places of the
+# 1941-42 North African theatre (public-knowledge geography and history),
+# positioned by real longitude/latitude through the same projection as the
+# terrain. kinds: town, port, fort, pass. Also region labels and the
+# Libyan-Egyptian frontier ("the Wire") as a decorative border.
+# ---------------------------------------------------------------------------
+FEATURES = [
+    ("El Agheila",   19.13, 30.26, "fort"),
+    ("Agedabia",     20.22, 30.85, "town"),
+    ("Benghazi",     20.07, 32.12, "port"),
+    ("Barce",        20.89, 32.50, "town"),
+    ("Derna",        22.64, 32.76, "port"),
+    ("Mechili",      23.90, 32.02, "fort"),
+    ("Msus",         21.00, 31.60, "fort"),
+    ("Gazala",       23.68, 32.15, "town"),
+    ("Tobruk",       23.97, 32.08, "port"),
+    ("Bardia",       25.09, 31.76, "fort"),
+    ("Sollum",       25.15, 31.57, "town"),
+    ("Halfaya Pass", 25.50, 31.49, "pass"),
+    ("Sidi Barrani", 25.92, 31.61, "town"),
+    ("Mersa Matruh", 27.24, 31.35, "port"),
+    ("El Alamein",   28.95, 30.84, "town"),
+    ("Alexandria",   29.92, 31.20, "port"),
+]
+
+REGION_LABELS = [
+    ("CYRENAICA", 21.6, 31.3),
+    ("LIBYA",     22.8, 30.2),
+    ("EGYPT",     27.0, 30.3),
+    ("QATTARA DEPRESSION", 28.4, 29.85),
+    ("JEBEL AKHDAR", 21.7, 32.45),
+]
+
+FRONTIER_LON = 25.15  # the Libyan-Egyptian border wire
+
+
+def write_features():
+    points = []
+    for name, lon, lat, kind in FEATURES:
+        x, y = to_grid(lon, lat)
+        points.append({"name": name, "x": round(x), "y": round(y), "kind": kind})
+    labels = []
+    for name, lon, lat in REGION_LABELS:
+        x, y = to_grid(lon, lat)
+        labels.append({"name": name, "x": round(x), "y": round(y)})
+    bx, _ = to_grid(FRONTIER_LON, 31.0)
+    features = {
+        "_provenance": (
+            "ORIGINAL WORK -- compilation of well-known places and regions "
+            "of the 1941-42 North African theatre (public-knowledge "
+            "geography/history), positioned by real lon/lat through the "
+            "map's projection. Built by tools/build_default_map.py."
+        ),
+        "points": points,
+        "region_labels": labels,
+        "frontier_x": round(bx),
+    }
+    out_path = OUT.parent / "features.json"
+    out_path.write_text(json.dumps(features, indent=1))
+    print(f"wrote {out_path} ({len(points)} points, {len(labels)} labels)")
 
 
 if __name__ == "__main__":

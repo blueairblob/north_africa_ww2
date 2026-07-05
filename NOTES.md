@@ -454,3 +454,27 @@ expression, and support for other strategy theatres on the same engine.
 - Verified: full deterministic headless game on the default pack;
   pack switching changes the board; OG behaviour byte-identical
   (suite unchanged before/after the seam).
+
+## Atlas feature layer for the default pack
+
+The first default-pack map was game-logic terrain only — no names, forts
+or region features, and the road stroke had gaps (a builder bug: sampled
+every second column, skipped sea cells). Both addressed:
+
+- `tools/build_default_map.py` now draws the coastal road cell-by-cell
+  along the eased coast profile with vertical steps filled, and the
+  inland track contiguously; the build asserts the road network forms at
+  most 3 (currently 1) 8-connected components.
+- The builder also emits `content_packs/default/features.json`: an
+  original compilation of well-known places of the theatre (towns,
+  ports, forts, Halfaya Pass), region labels (LIBYA, EGYPT, CYRENAICA,
+  QATTARA DEPRESSION, JEBEL AKHDAR) and the Libyan-Egyptian frontier
+  wire, positioned by real lon/lat through the map's projection.
+- `render/image.py` gained an atlas layer for packs that provide
+  features.json (and no pixel render model): coastline outlining,
+  connected road strokes, marsh stipple, kind-specific markers
+  (fort=square, port=circle, town=dot, pass=chevron), haloed name
+  labels, letter-spaced region labels, dashed frontier. Feature layers
+  follow the same pack-level scoping rule as render models (only valid
+  alongside the terrain they annotate); the OG pack is untouched (its
+  names are baked into its tile art).

@@ -149,6 +149,35 @@ def _load_render_model():
     )
 
 
+def _load_features():
+    """Atlas feature layer (content_packs/<pack>/features.json): named
+    points (town/port/fort/pass), region labels, frontier line. Only
+    valid at the same pack level as the terrain it annotates (same rule
+    as the render model). Packs without one render terrain only.
+    """
+    from .. import packs
+
+    fp = packs.active_pack().resolve("features.json")
+    if fp is None:
+        return None
+    tp = packs.active_pack().resolve("terrain_logic.json")
+    if tp is not None and tp.parent != fp.parent:
+        return None
+    return json.loads(fp.read_text())
+
+
+_features_cache = {}  # pack name -> features dict or None
+
+
+def _features():
+    from .. import packs
+
+    key = packs.active_pack().name
+    if key not in _features_cache:
+        _features_cache[key] = _load_features()
+    return _features_cache[key]
+
+
 _render_model_cache = {}  # pack name -> model tuple or None
 
 
@@ -212,6 +241,104 @@ def _terrain_colour(terrain_type: int) -> tuple:
     return PAPER_SEA if terrain_type == SEA else PAPER_DESERT
 
 
+# --- Atlas layer (packs with features.json and no pixel render model) ---
+ATLAS_COAST = (40, 40, 30)
+ATLAS_ROAD = (80, 55, 20)
+ATLAS_INK = (35, 30, 25)
+ATLAS_HALO = (240, 232, 200)
+MARSH_STIPPLE = (150, 150, 150)
+
+
+def _draw_atlas_terrain_extras(draw, board, origin_x, origin_y, width, height, cell_px):
+    """Coast outline, connected road strokes, marsh stipple."""
+    from .. import board as board_mod
+
+    def centre(x, y):
+        return ((x - origin_x) * cell_px + cell_px // 2,
+                (y - origin_y) * cell_px + cell_px // 2)
+
+    lw = max(1, cell_px // 5)
+    for gy in range(height):
+        for gx in range(width):
+            x, y = origin_x + gx, origin_y + gy
+            if not board.in_bounds(x, y):
+                continue
+            t = board.terrain_at(x, y)
+            px0, py0 = gx * cell_px, gy * cell_px
+            if t != board_mod.SEA:
+                # coastline: outline edges shared with sea
+                for dx, dy, seg in (
+                    (0, -1, (px0, py0, px0 + cell_px, py0)),
+                    (0, 1, (px0, py0 + cell_px, px0 + cell_px, py0 + cell_px)),
+                    (-1, 0, (px0, py0, px0, py0 + cell_px)),
+                    (1, 0, (px0 + cell_px, py0, px0 + cell_px, py0 + cell_px)),
+                ):
+                    nx, ny = x + dx, y + dy
+                    if board.in_bounds(nx, ny) and board.terrain_at(nx, ny) == board_mod.SEA:
+                        draw.line(seg, fill=ATLAS_COAST, width=max(1, cell_px // 6))
+            if t == board_mod.ROAD:
+                # connect to road neighbours (E, SE, S, SW) for contiguity
+                for dx, dy in ((1, 0), (1, 1), (0, 1), (-1, 1)):
+                    nx, ny = x + dx, y + dy
+                    if board.in_bounds(nx, ny) and board.terrain_at(nx, ny) == board_mod.ROAD:
+                        draw.line([centre(x, y), centre(nx, ny)], fill=ATLAS_ROAD, width=lw)
+            if t == getattr(board_mod, "MARSH", -1):
+                for sx, sy in ((2, 3), (5, 6), (7, 2)):
+                    dx = px0 + sx * cell_px // 8
+                    dy = py0 + sy * cell_px // 8
+                    draw.rectangle([dx, dy, dx + max(1, cell_px // 8) - 1,
+                                    dy + max(1, cell_px // 8) - 1], fill=MARSH_STIPPLE)
+
+
+def _draw_atlas_features(draw, features, origin_x, origin_y, board, cell_px):
+    """Named points, region labels and the frontier wire."""
+    try:
+        font = ImageFont.load_default()
+    except Exception:
+        font = None
+
+    def to_px(x, y):
+        return ((x - origin_x) * cell_px + cell_px // 2,
+                (y - origin_y) * cell_px + cell_px // 2)
+
+    fx = features.get("frontier_x")
+    if fx is not None and origin_x <= fx < origin_x + board.width:
+        px = (fx - origin_x) * cell_px
+        for y0 in range(0, board.height * cell_px, cell_px):
+            draw.line([px, y0, px, y0 + cell_px // 2], fill=ATLAS_INK, width=1)
+
+    def text_with_halo(pos, label, fill):
+        if font is None:
+            return
+        tx, ty = pos
+        for ox, oy in ((-1, 0), (1, 0), (0, -1), (0, 1)):
+            draw.text((tx + ox, ty + oy), label, font=font, fill=ATLAS_HALO)
+        draw.text((tx, ty), label, font=font, fill=fill)
+
+    for lab in features.get("region_labels", ()):
+        tx, ty = to_px(lab["x"], lab["y"])
+        spaced = " ".join(lab["name"])
+        text_with_halo((tx - 4 * len(lab["name"]), ty - 5), spaced, (120, 105, 80))
+
+    r = max(2, cell_px // 3)
+    for pt in features.get("points", ()):
+        cx, cy = to_px(pt["x"], pt["y"])
+        kind = pt.get("kind", "town")
+        if kind == "fort":
+            draw.rectangle([cx - r, cy - r, cx + r, cy + r], outline=ATLAS_INK,
+                           width=max(1, cell_px // 8))
+        elif kind == "port":
+            draw.ellipse([cx - r, cy - r, cx + r, cy + r], outline=ATLAS_INK,
+                         width=max(1, cell_px // 8))
+            draw.ellipse([cx - 1, cy - 1, cx + 1, cy + 1], fill=ATLAS_INK)
+        elif kind == "pass":
+            draw.line([cx - r, cy + r, cx, cy - r], fill=ATLAS_INK, width=1)
+            draw.line([cx, cy - r, cx + r, cy + r], fill=ATLAS_INK, width=1)
+        else:  # town
+            draw.ellipse([cx - r + 1, cy - r + 1, cx + r - 1, cy + r - 1], fill=ATLAS_INK)
+        text_with_halo((cx + r + 2, cy - 5), pt["name"], ATLAS_INK)
+
+
 def _build_occupancy(units: Iterable[Unit]) -> dict:
     occupancy = {}
     for unit in units:
@@ -254,6 +381,7 @@ def render_board_image(
     draw = ImageDraw.Draw(img, "RGBA")
 
     model = _render_model()
+    features = _features() if _render_model() is None else None
     # The recovered model describes the real 100x32 map; synthetic boards
     # (tests, experiments) fall through to the legacy flat model.
     if model is not None and (
@@ -284,9 +412,13 @@ def render_board_image(
                 draw.rectangle([px0, py0, px1, py1], fill=_terrain_colour(terrain_type))
                 if terrain_type in ESCARPMENT_TYPES:
                     _draw_escarpment_tile(draw, px0, py0, cell_px)
-                if terrain_type == ROAD:
+                if terrain_type == ROAD and features is None:
                     draw.line([px0, py0 + cell_px // 2, px1, py0 + cell_px // 2], fill=ROAD_LINE, width=max(1, cell_px // 6))
             draw.rectangle([px0, py0, px1, py1], outline=GRID_LINE, width=1)
+
+    if features is not None:
+        _draw_atlas_terrain_extras(draw, board, origin_x, origin_y, width, height, cell_px)
+        _draw_atlas_features(draw, features, origin_x, origin_y, board, cell_px)
 
     font = _load_font(max(8, cell_px - 2))
     drawn_units = set()

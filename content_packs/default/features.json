@@ -1,0 +1,129 @@
+{
+ "_provenance": "ORIGINAL WORK -- compilation of well-known places and regions of the 1941-42 North African theatre (public-knowledge geography/history), positioned by real lon/lat through the map's projection. Built by tools/build_default_map.py.",
+ "points": [
+  {
+   "name": "El Agheila",
+   "x": 1,
+   "y": 22,
+   "kind": "fort"
+  },
+  {
+   "name": "Agedabia",
+   "x": 11,
+   "y": 17,
+   "kind": "town"
+  },
+  {
+   "name": "Benghazi",
+   "x": 9,
+   "y": 8,
+   "kind": "port"
+  },
+  {
+   "name": "Barce",
+   "x": 17,
+   "y": 5,
+   "kind": "town"
+  },
+  {
+   "name": "Derna",
+   "x": 32,
+   "y": 4,
+   "kind": "port"
+  },
+  {
+   "name": "Mechili",
+   "x": 43,
+   "y": 9,
+   "kind": "fort"
+  },
+  {
+   "name": "Msus",
+   "x": 18,
+   "y": 12,
+   "kind": "fort"
+  },
+  {
+   "name": "Gazala",
+   "x": 41,
+   "y": 8,
+   "kind": "town"
+  },
+  {
+   "name": "Tobruk",
+   "x": 44,
+   "y": 8,
+   "kind": "port"
+  },
+  {
+   "name": "Bardia",
+   "x": 54,
+   "y": 11,
+   "kind": "fort"
+  },
+  {
+   "name": "Sollum",
+   "x": 54,
+   "y": 12,
+   "kind": "town"
+  },
+  {
+   "name": "Halfaya Pass",
+   "x": 57,
+   "y": 13,
+   "kind": "pass"
+  },
+  {
+   "name": "Sidi Barrani",
+   "x": 61,
+   "y": 12,
+   "kind": "town"
+  },
+  {
+   "name": "Mersa Matruh",
+   "x": 73,
+   "y": 14,
+   "kind": "port"
+  },
+  {
+   "name": "El Alamein",
+   "x": 88,
+   "y": 18,
+   "kind": "town"
+  },
+  {
+   "name": "Alexandria",
+   "x": 97,
+   "y": 15,
+   "kind": "port"
+  }
+ ],
+ "region_labels": [
+  {
+   "name": "CYRENAICA",
+   "x": 23,
+   "y": 14
+  },
+  {
+   "name": "LIBYA",
+   "x": 34,
+   "y": 22
+  },
+  {
+   "name": "EGYPT",
+   "x": 71,
+   "y": 21
+  },
+  {
+   "name": "QATTARA DEPRESSION",
+   "x": 83,
+   "y": 25
+  },
+  {
+   "name": "JEBEL AKHDAR",
+   "x": 24,
+   "y": 6
+  }
+ ],
+ "frontier_x": 54
+}
