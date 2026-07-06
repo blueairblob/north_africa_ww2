@@ -116,12 +116,17 @@ def trace_supply_distance(unit: Unit, board: Board, flags: FlagGrid) -> Optional
 
 
 def supply_level(distance: int) -> int:
-    """BUILD_SPEC.md §5.4 curve. Corrected by disassembly audit (see
-    NOTES.md): the original indexes by (distance + 2) >> 2, not
-    distance >> 2 -- a +2 bias that shifts the band boundaries.
+    """BUILD_SPEC.md §5.4 curve. ORACLE-VERIFIED against the original
+    routine executing under emulation (reference/diff_harness/): the
+    index is a = min(distance + 2, 127) >> 2; a == 0 (distance <= 1)
+    returns FULL supply (100, a band that is not in the table), else
+    curve[a - 1]. Both our earlier distance>>2 and the first audit's
+    (distance+2)>>2-into-curve readings were one band off everywhere.
     """
-    index = min((distance + 2) // 4, len(SUPPLY_CURVE) - 1)
-    return SUPPLY_CURVE[index]
+    a = min(distance + 2, 127) >> 2
+    if a == 0:
+        return 100
+    return SUPPLY_CURVE[min(a - 1, len(SUPPLY_CURVE) - 1)]
 
 
 def supply_band(level: int) -> str:

@@ -400,6 +400,24 @@ German black / Italian magenta); tile data at the recovered base.
 >   adjusts efficiency by a day-based term and zeroes the arrival field
 >   (not yet modelled).
 
+> **Third addendum (oracle harness -- the original's routines executed
+> under emulation as ground truth; see reference/diff_harness/ and
+> NOTES.md):** supply banding corrected (`a = min(d+2,127)>>2`; a=0 is a
+> full-supply 100 band preceding the table; else `curve[a-1]`; the value
+> is applied as a PERCENTAGE of the base quantity). The −20 caught
+> doubling is FALSIFIED (flat −10 for all). Retreat is a
+> nationality-coded diagonal toward the unit's own edge (British +1,+1;
+> Axis −1,+1), terrain-blocked only — unit occupancy never blocks it.
+> Pressure ≥ strength DESTROYS the unit (strength := 0), including after
+> a trapped ×1.5 escalation. The OOB byte previously labelled 'x' is the
+> COMBAT CLASS: class 10 → fixed threshold 20 (infantry/AT formations,
+> not armour — the earlier "armour override" reading is corrected);
+> class 13 → exempt (unused by this roster). Recovery and the odds form
+> verified exactly. The monthly replacement phase (0x96DD) was confirmed
+> reading the schedule tables at the correct month/side/Malta cells;
+> its per-unit application conditions, the pressure inflow scaling and
+> the calendar mapping are the harness's next targets.
+
 **Inferred / tunable (agent has latitude; validate against original — §12):**
 - ~~the `combat_readiness` numerator~~ — RESOLVED by the audit (see the second
   addendum): a combat-pressure accumulator tested against morale. Now inferred

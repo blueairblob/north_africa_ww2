@@ -88,6 +88,18 @@ class Unit:
         return SIDE_OF_NATIONALITY[self.nationality]
 
 
+    @property
+    def combat_class(self) -> int:
+        """The OOB byte historically extracted as 'x' (range 1-13) is the
+        unit's COMBAT CLASS -- oracle-verified against the original
+        resolver (reference/diff_harness/): class 10 uses the fixed
+        pressure threshold 20, class 13 is exempt from the pressure test
+        entirely. Live board positions never came from the OOB (they are
+        scripted in data/deployments.json).
+        """
+        return self.x
+
+
 @dataclass(frozen=True)
 class OrderOfBattle:
     """The full master roster plus its source metadata."""

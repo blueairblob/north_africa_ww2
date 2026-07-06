@@ -601,3 +601,59 @@ The 1:1 OG experience gained its missing piece -- the AUTHENTIC SCREEN:
   original shows "MAY 27th 1942" at the Gazala start; the formula is not
   yet recovered -- render_screen takes the date as input meanwhile), and
   the right-hand end of the status band (cursor/extra info glyphs).
+
+## Diff harness v1: the original's routines as executable oracles
+
+The planned "diff harness against an emulator trace" landed in a stronger
+form than trace-diffing: `reference/diff_harness/harness.py` loads the
+64K memory reconstructed from the person's own tape into a Z80 CPU
+emulator (pip `z80`; no ZX ROM needed -- the ROM area is RET-filled and
+the target routines are self-contained), crafts unit records, CALLS the
+original routines directly, and diffs the results against the Python
+engine across swept inputs. Probes live in the harness; raw outputs in
+`reference/diff_harness/results/oracle_results.json`.
+
+Verified 1:1 (previously implemented correctly):
+- recovery: eff += (100-eff)>>4 + 1, cap 100 (101/101 sweep match);
+- the odds form value = pressure*100/strength vs threshold; morale as
+  the default threshold; -10 on crack; forced HOLD; escalation x1.5
+  exactly (50->75, 60->90), cap 255.
+
+Corrected by the oracle (engine updated):
+- SUPPLY BANDS were one off everywhere, in both our old and first-audit
+  readings: a = min(distance+2, 127) >> 2; a == 0 (distance <= 1) is a
+  FULL-supply band (100) that is not in the 31-value table; otherwise
+  curve[a-1]. Also pinned: the routine SCALES its input by the band
+  percentage (supply = base * band / 100), and with the in-supply flag
+  clear it passes the input through unchanged with A=0.
+- The -20 CAUGHT-ON-ROAD DOUBLING IS FALSIFIED: travelling/caught units
+  take the flat -10 like everyone else (swept across flag/order
+  combinations). Constant removed.
+- RETREAT is a nationality-coded diagonal toward the unit's own map
+  edge -- British (+1,+1), Axis (-1,+1) -- NOT away-from-enemy; when
+  terrain blocks it the mirrored diagonal is taken; UNIT OCCUPANCY DOES
+  NOT BLOCK IT (five stacked blockers ignored; only terrain matters).
+  Northward fallbacks remain inferred.
+- BREAK PATH DECODED: pressure >= strength destroys the unit outright
+  (strength := 0, pressure := 0) -- both at the pre-test gate and after
+  a trapped escalation reaches strength. Unit.is_destroyed now also
+  covers strength <= 0.
+- THE 'x' FIELD IN master_oob IS THE COMBAT CLASS (range 1-13), not a
+  position: class 10 (six infantry/AT formations -- NOT armour, the old
+  "armour override" story is wrong) uses the fixed threshold 20 and so
+  cracks sooner; class 13 (unused by this roster) is exempt entirely,
+  via bit 3 of the derived byte the class-derive routine (0x643F)
+  produces. Exposed as data.Unit.combat_class / Unit.combat_class.
+- Cracking also clears the in-supply flag (bit 0 of the state byte) --
+  recorded; not separately modelled since our supply recomputes per turn.
+
+Confirmed live but not yet pinned to formulas (next harness targets):
+- 0x96DD is the whole monthly REPLACEMENT PHASE: with turn/side/Malta
+  set it read exactly the right schedule cells (monthly_side_rate and
+  malta_modifier for the crafted month/side/half) then scanned all 128
+  records at stride 30 -- but a lone desert unit received no writes, so
+  application is gated (port/position conditions suspected). It ends in
+  a print-and-wait loop, so full-phase probing needs qualification
+  conditions or a breakpoint before the report.
+- The pressure INFLOW loop (scaling of enemy-derived amounts) and the
+  clock->calendar date mapping remain open.

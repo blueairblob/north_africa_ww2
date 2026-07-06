@@ -104,42 +104,96 @@ class TestPressureModel(unittest.TestCase):
         self.assertIs(u.order, units.Order.HOLD)
 
     def test_class_10_uses_fixed_threshold_20(self):
+        # Oracle-verified: the COMBAT CLASS byte (not 'type') selects the
+        # fixed threshold -- class-10 units crack sooner than morale would.
         u = make_unit(data.Nationality.BRITISH, 5, 5, strength=100)
-        u.type = combat.ARMOUR_COMBAT_CLASS
+        u.combat_class = combat.FIXED_THRESHOLD_CLASS
         u.morale = 90  # would NOT crack on morale; must crack on the fixed 20
         u.pressure = 20
-        self.assertEqual(combat.pressure_threshold(u), combat.ARMOUR_FIXED_THRESHOLD)
+        self.assertEqual(combat.pressure_threshold(u), combat.FIXED_THRESHOLD)
         cracked = combat.resolve_pressure(u, [u], make_board())
         self.assertTrue(cracked)
 
-    def test_caught_unit_takes_double_loss(self):
+    def test_class_13_is_exempt_from_the_pressure_test(self):
+        u = make_unit(data.Nationality.BRITISH, 5, 5, strength=100)
+        u.combat_class = combat.PRESSURE_EXEMPT_CLASS
+        u.morale = 10
+        u.pressure = 90
+        self.assertIsNone(combat.pressure_threshold(u))
+        self.assertFalse(combat.resolve_pressure(u, [u], make_board()))
+        self.assertEqual(u.efficiency, 100)
+
+    def test_travelling_units_take_the_same_flat_loss(self):
+        # Oracle-FALSIFIED spec claim: there is no -20 caught doubling;
+        # travelling/caught units take the flat -10 like everyone else.
         u = make_unit(data.Nationality.BRITISH, 5, 5, strength=100, caught=True)
         u.travel = True
+        u.type = 12
         u.morale = 10
         u.pressure = 50
         combat.resolve_pressure(u, [u], make_board())
-        self.assertEqual(u.efficiency, 100 - combat.CAUGHT_ON_ROAD_LOSS)
+        self.assertEqual(u.efficiency, 100 - combat.COMBAT_LOSS)
 
-    def test_cracked_unit_retreats_away_from_enemy(self):
-        u = make_unit(data.Nationality.BRITISH, 5, 5, strength=100)
-        u.morale = 10
-        u.pressure = 50
-        e = make_unit(data.Nationality.GERMAN, 3, 5)
-        combat.resolve_pressure(u, [u, e], make_board())
-        self.assertEqual((u.x, u.y), (6, 5))  # one cell away from the enemy
+    def test_retreat_is_a_nationality_coded_diagonal(self):
+        # Oracle-verified: British retreat (+1,+1) SE; Axis (-1,+1) SW --
+        # toward their own map edge, away from the coast. Enemies'
+        # positions do not steer it.
+        brit = make_unit(data.Nationality.BRITISH, 5, 5, strength=100)
+        brit.type = 12; brit.morale = 10; brit.pressure = 50
+        combat.resolve_pressure(brit, [brit], make_board())
+        self.assertEqual((brit.x, brit.y), (6, 6))
+        axis = make_unit(data.Nationality.GERMAN, 5, 5, strength=100)
+        axis.type = 12; axis.morale = 10; axis.pressure = 50
+        combat.resolve_pressure(axis, [axis], make_board())
+        self.assertEqual((axis.x, axis.y), (4, 6))
+
+    def test_retreat_ignores_unit_occupancy(self):
+        # Oracle-verified: stacked units do not block retreat; only
+        # terrain does.
+        u = make_unit(data.Nationality.GERMAN, 5, 5, strength=100)
+        u.type = 12; u.morale = 10; u.pressure = 50
+        blocker = make_unit(data.Nationality.BRITISH, 4, 6, index=1)
+        combat.resolve_pressure(u, [u, blocker], make_board())
+        self.assertEqual((u.x, u.y), (4, 6))
+
+    def _sea_ring_board(self, size=9, cx=4, cy=4):
+        # land only at the unit's 2x2 footprint; sea everywhere else
+        grid = []
+        for y in range(size):
+            row = []
+            for x in range(size):
+                land = cx <= x <= cx + 1 and cy <= y <= cy + 1
+                row.append(board_mod.DESERT if land else board_mod.SEA)
+            grid.append(tuple(row))
+        legend = {board_mod.DESERT: board_mod.TerrainInfo("Desert", "confirmed"),
+                  board_mod.SEA: board_mod.TerrainInfo("Sea", "confirmed")}
+        return board_mod.Board(width=size, height=size, grid=tuple(grid), legend=legend)
 
     def test_trapped_unit_escalates_pressure_by_half(self):
-        # Box the unit in with enemies/board edge so no retreat cell exists.
-        u = make_unit(data.Nationality.BRITISH, 0, 0, strength=200)
-        u.morale = 10
-        u.pressure = 100
-        blockers = [
-            make_unit(data.Nationality.GERMAN, 2, 0),
-            make_unit(data.Nationality.GERMAN, 0, 2),
-            make_unit(data.Nationality.GERMAN, 2, 2),
-        ]
-        combat.resolve_pressure(u, [u] + blockers, make_board())
-        self.assertEqual(u.pressure, 150)
+        # Oracle-verified: terrain-trapped -> pressure x1.5 (50 -> 75),
+        # no movement, -10 and Hold still applied.
+        u = make_unit(data.Nationality.GERMAN, 4, 4, strength=200)
+        u.type = 12; u.morale = 10; u.pressure = 50
+        combat.resolve_pressure(u, [u], self._sea_ring_board())
+        self.assertEqual(u.pressure, 75)
+        self.assertEqual((u.x, u.y), (4, 4))
+        self.assertEqual(u.efficiency, 90)
+
+    def test_trapped_escalation_reaching_strength_destroys(self):
+        # Oracle-verified: escalated pressure >= strength -> strength := 0.
+        u = make_unit(data.Nationality.GERMAN, 4, 4, strength=100)
+        u.type = 12; u.morale = 10; u.pressure = 80  # 80*1.5=120 >= 100
+        combat.resolve_pressure(u, [u], self._sea_ring_board())
+        self.assertTrue(u.is_destroyed)
+        self.assertEqual(u.strength, 0)
+
+    def test_pressure_at_strength_destroys_outright(self):
+        u = make_unit(data.Nationality.BRITISH, 5, 5, strength=100)
+        u.type = 12; u.morale = 50; u.pressure = 100
+        cracked = combat.resolve_pressure(u, [u], make_board())
+        self.assertTrue(cracked)
+        self.assertTrue(u.is_destroyed)
+        self.assertEqual((u.strength, u.pressure), (0, 0))
 
     def test_efficiency_loss_clamps_at_zero(self):
         u = make_unit(data.Nationality.BRITISH, 5, 5, strength=100, efficiency=5)

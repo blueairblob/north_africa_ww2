@@ -33,15 +33,17 @@ from .zoc_supply import FlagGrid, is_out_of_supply
 
 # Confirmed values (BUILD_SPEC.md §5.5 + addendum).
 COMBAT_LOSS = 10
-CAUGHT_ON_ROAD_LOSS = 2 * COMBAT_LOSS  # spec value; no distinct call site found in audit
 ADVERSE_POSITION_LOSS = 3
 RECOVERY_DIVISOR = 16
 RECOVERY_MINIMUM = 1
 MAX_EFFICIENCY = 100
 MIN_EFFICIENCY = 0
-PRESSURE_CAP = 255                 # confirmed: 8-bit accumulator, saturating
-ARMOUR_COMBAT_CLASS = 10           # confirmed: class-10 override
-ARMOUR_FIXED_THRESHOLD = 20        # confirmed
+PRESSURE_CAP = 255                 # oracle-verified: 8-bit saturating accumulator
+FIXED_THRESHOLD_CLASS = 10         # oracle-verified: combat CLASS 10 (an OOB byte,
+                                   # NOT the 'type' field; mostly infantry/AT units)
+FIXED_THRESHOLD = 20               # oracle-verified (these units crack sooner)
+PRESSURE_EXEMPT_CLASS = 13         # oracle-verified via the class-derive routine
+                                   # (bit-3 gate); unused by this game's roster
 # Inferred, tunable (see module docstring):
 PRESSURE_INFLOW_DIVISOR = 10       # inflow = adjacent enemy effective power // this
 PRESSURE_DECAY_OUT_OF_CONTACT = True  # pressure resets when no enemy is adjacent
@@ -92,65 +94,75 @@ def apply_combat_pressure(side_units: List[Unit], all_units: List[Unit]) -> None
         unit.pressure = min(PRESSURE_CAP, unit.pressure + inflow)
 
 
-def pressure_threshold(unit: Unit) -> int:
-    """Morale, or the fixed 20 for combat-class-10 units (confirmed)."""
-    if unit.type == ARMOUR_COMBAT_CLASS:
-        return ARMOUR_FIXED_THRESHOLD
+def pressure_threshold(unit: Unit) -> Optional[int]:
+    """Morale, or the fixed 20 for combat-class-10 units; None for the
+    exempt class 13. Oracle-verified: the class byte tested is the unit's
+    COMBAT CLASS (data.Unit.combat_class), not its 'type'.
+    """
+    if unit.combat_class == PRESSURE_EXEMPT_CLASS:
+        return None
+    if unit.combat_class == FIXED_THRESHOLD_CLASS:
+        return FIXED_THRESHOLD
     return unit.morale
 
 
 def _try_retreat(unit: Unit, all_units: List[Unit], board: Board) -> bool:
-    """One-cell retreat attempt, away from the nearest adjacent enemy.
+    """One-cell diagonal retreat toward the unit's own map edge.
 
-    The original tries a coded direction then its opposite; the direction
-    ORDER here (primary axis away from the enemy, then the perpendicular
-    pair) is inferred. Deterministic; respects passability, bounds and the
-    movement-time no-overlap rule.
+    Oracle-verified: the primary step is (+1,+1) for British units and
+    (-1,+1) for Axis (south-east / south-west -- away from the coast,
+    toward home); when terrain blocks it, the mirrored diagonal
+    (-side_dx,+1) is taken. UNIT OCCUPANCY DOES NOT BLOCK RETREAT (the
+    original happily stacks; only terrain passability matters). The
+    northward diagonals as further fallbacks are inferred (not yet
+    exercised by the harness).
     """
-    enemies = _adjacent_enemies(unit, all_units)
-    if enemies:
-        e = min(enemies, key=lambda u: u.oob_index)
-        dx = 0 if unit.x == e.x else (1 if unit.x > e.x else -1)
-        dy = 0 if unit.y == e.y else (1 if unit.y > e.y else -1)
-        directions = [(dx, 0), (0, dy), (0, -dy), (-dx, 0)]
-        directions = [d for d in directions if d != (0, 0)]
-        directions += [d for d in ((1, 0), (-1, 0), (0, 1), (0, -1)) if d not in directions]
-    else:
-        directions = [(1, 0), (-1, 0), (0, 1), (0, -1)]
+    from .data import Side
 
-    occupied = set()
-    for other in all_units:
-        if other is unit or other.is_destroyed:
-            continue
-        occupied.update(other.footprint_cells())
-
+    dx = 1 if unit.side is Side.BRITISH else -1
+    candidates = [(dx, 1), (-dx, 1), (dx, -1), (-dx, -1)]
     size = unit.footprint_size
-    for dx, dy in directions:
-        nx, ny = unit.x + dx, unit.y + dy
-        if not board.footprint_passable(nx, ny, size):
-            continue
-        cells = set(Board.footprint_cells(nx, ny, size))
-        if cells & occupied:
-            continue
-        unit.x, unit.y = nx, ny
-        return True
+    for cdx, cdy in candidates:
+        nx, ny = unit.x + cdx, unit.y + cdy
+        if board.footprint_passable(nx, ny, size):
+            unit.x, unit.y = nx, ny
+            return True
     return False
 
 
 def resolve_pressure(unit: Unit, all_units: List[Unit], board: Board) -> bool:
-    """Run the recovered per-unit combat test; returns True if the unit
-    cracked (took the loss) this resolution.
+    """The oracle-verified per-unit combat test; returns True if the unit
+    cracked (or broke) this resolution.
+
+    Verified against the original resolver executing under emulation
+    (reference/diff_harness/): pressure >= strength destroys the unit
+    outright (strength := 0); otherwise value = pressure*100//strength is
+    tested against the threshold; at/above it the unit takes a flat -10
+    efficiency (the spec's -20 caught-on-road doubling is FALSIFIED --
+    travelling units take -10 like everyone else), is forced to HOLD, and
+    retreats one diagonal cell toward its own map edge; if terrain blocks
+    every candidate, pressure escalates by half again (cap 255), and if
+    that reaches strength the unit is destroyed.
     """
     if unit.is_destroyed or unit.pressure == 0 or unit.strength <= 0:
         return False
-    value = unit.pressure * 100 // unit.strength
-    if value < pressure_threshold(unit):
+    if unit.pressure >= unit.strength:
+        unit.strength = 0
+        unit.pressure = 0
+        return True
+    threshold = pressure_threshold(unit)
+    if threshold is None:
         return False
-    loss = CAUGHT_ON_ROAD_LOSS if unit.caught else COMBAT_LOSS
-    apply_efficiency_loss(unit, loss)
+    value = unit.pressure * 100 // unit.strength
+    if value < threshold:
+        return False
+    apply_efficiency_loss(unit, COMBAT_LOSS)
     unit.order = Order.HOLD
     if not _try_retreat(unit, all_units, board):
         unit.pressure = min(PRESSURE_CAP, unit.pressure + unit.pressure // 2)
+        if unit.pressure >= unit.strength:
+            unit.strength = 0
+            unit.pressure = 0
     return True
 
 

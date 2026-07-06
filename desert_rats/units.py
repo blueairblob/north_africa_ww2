@@ -105,6 +105,8 @@ class Unit:
     # Combat-pressure accumulator (recovered model -- BUILD_SPEC.md §5.5
     # addendum): starts 0, fed by adjacent enemies, tested against morale.
     pressure: int = 0
+    # Combat class (oracle-identified OOB byte -- see data.Unit.combat_class)
+    combat_class: int = 0
     supply: Optional[int] = None
     order: Order = Order.HOLD
     travel: bool = False
@@ -133,8 +135,11 @@ class Unit:
 
     @property
     def is_destroyed(self) -> bool:
-        """BUILD_SPEC.md §5.5: a unit reduced to 0 efficiency is destroyed."""
-        return self.efficiency <= 0
+        """A unit at 0 efficiency is destroyed (BUILD_SPEC.md §5.5); the
+        oracle-verified break path also destroys by zeroing STRENGTH
+        (pressure >= strength -> strength := 0).
+        """
+        return self.efficiency <= 0 or self.strength <= 0
 
     @classmethod
     def from_oob(
@@ -167,6 +172,7 @@ class Unit:
             division=oob_unit.division,
             name=oob_unit.name,
             type=oob_unit.type,
+            combat_class=oob_unit.combat_class,
             role=oob_unit.role,
             strength=oob_unit.strength,
             morale=oob_unit.morale,

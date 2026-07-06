@@ -124,23 +124,29 @@ class TestTraceSupplyDistance(unittest.TestCase):
 
 
 class TestSupplyCurve(unittest.TestCase):
-    def test_distance_zero_is_the_top_of_the_curve(self):
-        self.assertEqual(zoc_supply.supply_level(0), 90)
+    def test_distance_zero_is_full_supply(self):
+        # Oracle-verified: distances 0-1 sit in a FULL-supply band (100)
+        # that precedes the 31-value curve entirely.
+        self.assertEqual(zoc_supply.supply_level(0), 100)
 
-    def test_indexes_by_distance_plus_two_over_four(self):
-        # Disassembly-audited: index = (distance + 2) >> 2 (NOT dist >> 2).
-        self.assertEqual(zoc_supply.supply_level(0), 90)   # (0+2)//4 = 0
-        self.assertEqual(zoc_supply.supply_level(1), 90)
-        self.assertEqual(zoc_supply.supply_level(2), 80)   # (2+2)//4 = 1
-        self.assertEqual(zoc_supply.supply_level(5), 80)
-        self.assertEqual(zoc_supply.supply_level(6), 75)   # (6+2)//4 = 2
-        self.assertEqual(zoc_supply.supply_level(9), 75)
-        self.assertEqual(zoc_supply.supply_level(10), 70)  # (10+2)//4 = 3
+    def test_supply_bands_oracle_verified(self):
+        # Verified against the original routine under emulation:
+        # a = min(d+2,127)>>2; a==0 -> 100 (full); else curve[a-1].
+        self.assertEqual(zoc_supply.supply_level(0), 100)
+        self.assertEqual(zoc_supply.supply_level(1), 100)
+        self.assertEqual(zoc_supply.supply_level(2), 90)
+        self.assertEqual(zoc_supply.supply_level(5), 90)
+        self.assertEqual(zoc_supply.supply_level(6), 80)
+        self.assertEqual(zoc_supply.supply_level(10), 75)
+        self.assertEqual(zoc_supply.supply_level(30), 50)
+        self.assertEqual(zoc_supply.supply_level(60), 43)
+        self.assertEqual(zoc_supply.supply_level(127), 35)
+        self.assertEqual(zoc_supply.supply_level(500), 35)
 
     def test_clamps_to_the_last_entry_for_far_distances(self):
         far = zoc_supply.supply_level(1000)
         self.assertEqual(far, zoc_supply.SUPPLY_CURVE[-1])
-        self.assertEqual(zoc_supply.supply_level(116), far)
+        self.assertEqual(zoc_supply.supply_level(122), far)  # saturation begins at d=122 (oracle-verified band arithmetic)
 
 
 class TestSupplyBand(unittest.TestCase):
