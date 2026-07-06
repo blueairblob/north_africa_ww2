@@ -1,4 +1,5 @@
 import unittest
+from pathlib import Path
 
 from desert_rats import board, data, packs
 
@@ -135,39 +136,48 @@ class TestMapImageSkin(unittest.TestCase):
     def tearDown(self):
         packs.set_active_pack(packs.DEFAULT_PACK)
 
-    def test_default_pack_provides_a_calibrated_map_image(self):
+    def test_image_skin_loads_when_a_pack_provides_one(self):
+        # The vector map was parked (see NOTES.md) so no committed pack
+        # currently ships map.png; exercise the loader with a synthetic
+        # pack to keep the architecture covered.
+        import json, tempfile, shutil
         from desert_rats.render import image
-        packs.set_active_pack("default")
-        mi = image._map_image()
-        self.assertIsNotNone(mi)
-        path, calx, caly = mi
-        self.assertTrue(path.name == "map.png")
-        self.assertEqual(len(calx), 2)
+        tmp = Path(tempfile.mkdtemp()) / "skintest"
+        tmp.mkdir()
+        try:
+            (tmp / "pack.json").write_text(json.dumps({"name": "skintest", "legacy_data": True}))
+            (tmp / "terrain_logic.json").write_text(
+                (packs.LEGACY_DATA_DIR / "terrain_logic.json").read_text())
+            from PIL import Image
+            Image.new("RGB", (3200, 1024), (200, 200, 200)).save(tmp / "map.png")
+            (tmp / "map_calibration.json").write_text(json.dumps(
+                {"cell_to_px_x": [32, 0], "cell_to_px_y": [32, 0]}))
+            pack = packs.Pack(name="skintest", title="t", root=tmp, legacy_data=True)
+            packs._active = pack
+            image._map_image_cache.pop("skintest", None)
+            mi = image._map_image()
+            self.assertIsNotNone(mi)
+            self.assertEqual(mi[0].name, "map.png")
+        finally:
+            shutil.rmtree(tmp.parent, ignore_errors=True)
+            packs.set_active_pack(packs.DEFAULT_PACK)
 
     def test_og_pack_has_no_map_image(self):
         from desert_rats.render import image
         packs.set_active_pack("og")
         self.assertIsNone(image._map_image())
 
-    def test_image_skin_renders_and_viewport_crops_consistently(self):
+    def test_default_pack_renders_without_a_map_image(self):
+        # With the vector map parked, the default pack falls back to the
+        # live atlas layer and must still render coherently.
         try:
             from PIL import Image  # noqa: F401
         except ImportError:
             self.skipTest("Pillow not installed")
         from desert_rats.render import image
         packs.set_active_pack("default")
+        image._map_image_cache.pop("default", None)
         b = board.load_board()
-        full = image.render_board_image([], b, cell_px=8)
-        self.assertEqual(full.size, (b.width * 8, b.height * 8))
-        # a viewport render of cells (10..20, 5..15) must equal the same
-        # region of the full render (identity calibration, same scale)
-        view = image.render_board_image([], b, origin=(10, 5), size=10, cell_px=8)
-        crop = full.crop((10 * 8, 5 * 8, 20 * 8, 15 * 8))
-        # allow resampling tolerance: compare average colour closely
-        import math
-        def avg(im):
-            data = list(im.getdata())
-            n = len(data)
-            return tuple(sum(px[i] for px in data) / n for i in range(3))
-        a, c = avg(view), avg(crop)
-        self.assertLess(max(abs(x - y) for x, y in zip(a, c)), 3.0)
+        img = image.render_board_image([], b, cell_px=8)
+        self.assertEqual(img.size, (b.width * 8, b.height * 8))
+        self.assertIn(image.ATLAS_ROAD, set(img.getdata()))

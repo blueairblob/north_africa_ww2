@@ -17,3 +17,4 @@ desert_rats.log
 # Claude Code local-machine settings (permissions allowlist etc.)
 .claude/settings.local.json
 data/tiles_original.json
+data/font_original.json

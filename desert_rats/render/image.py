@@ -533,7 +533,10 @@ def render_board_image(
                     _draw_escarpment_tile(draw, px0, py0, cell_px)
                 if terrain_type == ROAD:
                     draw.line([px0, py0 + cell_px // 2, px1, py0 + cell_px // 2], fill=ROAD_LINE, width=max(1, cell_px // 6))
-            draw.rectangle([px0, py0, px1, py1], outline=GRID_LINE, width=1)
+                # debug cell grid: legacy flat path only -- the original
+                # screen has no grid (1:1 fidelity), atlas/image modes
+                # draw their own cartography
+                draw.rectangle([px0, py0, px1, py1], outline=GRID_LINE, width=1)
 
     if features is not None:
         _draw_atlas_terrain_extras(draw, board, origin_x, origin_y, width, height, cell_px)

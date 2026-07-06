@@ -183,6 +183,21 @@ def main() -> None:
     }
     (DATA / "render_model.json").write_text(json.dumps(render_model, indent=1))
 
+    # The game's own text font: 96 ASCII glyphs (32..127), 8 bytes each,
+    # at 0xFD00 (located by reverse-searching screenshot glyph bitmaps in
+    # memory; NOT the ZX ROM font). Original pixel art => local-only,
+    # same policy as the tile bitmaps.
+    font = [list(mem[0xFD00 + i * 8 : 0xFD00 + (i + 1) * 8]) for i in range(96)]
+    (DATA / "font_original.json").write_text(json.dumps({
+        "_warning": (
+            "ORIGINAL PIXEL ART -- do not commit to a public repository. "
+            "Gitignored; regenerate locally with this script from your own tape."
+        ),
+        "font_base": 0xFD00,
+        "first_char": 32,
+        "glyphs": font,
+    }))
+
     tiles_out = {
         "_warning": (
             "ORIGINAL PIXEL ART -- do not commit to a public repository. "
@@ -195,8 +210,8 @@ def main() -> None:
     }
     (DATA / "tiles_original.json").write_text(json.dumps(tiles_out))
 
-    print(f"wrote {DATA/'render_model.json'} (committed) and "
-          f"{DATA/'tiles_original.json'} (gitignored, local only)")
+    print(f"wrote {DATA/'render_model.json'} (committed), "
+          f"{DATA/'tiles_original.json'} and {DATA/'font_original.json'} (gitignored, local only)")
 
 
 if __name__ == "__main__":

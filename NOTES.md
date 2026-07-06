@@ -562,3 +562,42 @@ with LANCZOS: ~6,800 distinct colours in a 1000px view vs ~40 for the
 old grid render. The image remains ORIGINAL work drawn with generic
 period-atlas conventions; it reproduces no published map's artwork
 (user-supplied scans remain the local-only route for that look).
+
+## Refocus: vector map parked; authentic OG screen recovered
+
+Per the person's direction the vector atlas map is ABANDONED (hand-
+authored polylines are not survey-accurate geography) and effort
+refocuses on a 1:1 original game skin. The pack seam, the image-skin
+architecture (map.png + calibration) and the calibration tool all REMAIN
+-- they are the delivery mechanism for a future geographically-real map
+skin; only the committed vector-drawn map.png/map_calibration.json were
+removed from the default pack. The default pack falls back to its live
+atlas layer.
+
+The 1:1 OG experience gained its missing piece -- the AUTHENTIC SCREEN:
+
+- The game's own text FONT was located at 0xFD00 (96 ASCII glyphs, 8
+  bytes each; NOT the ZX ROM font -- the ROM 'A' bitmap is absent from
+  memory, and the base was pinned by reverse-searching screenshot glyph
+  bitmaps). Extracted by extract_render_tables.py to
+  data/font_original.json -- GITIGNORED original pixel art, same policy
+  as the tiles.
+- The original 256x192 screen layout was recovered by OCR'ing the real
+  gameplay screenshot WITH that font: 22x22-cell map viewport top-left;
+  an 80px black side panel carrying the date in yellow ("MAY 27th" /
+  "1942") and the order menu in white (R REPORT / M MOVE / A ASSAULT /
+  H HOLD / F FORTIFY / ENTER TO END) with the SELECTED order in inverse
+  video on red paper; and a two-row red bottom band showing the selected
+  unit's designation in white ("201st Guards Brigade" in the reference
+  scene).
+- render/screen.py composes that screen 1:1 from game state (pixel-exact
+  viewport via the recovered tiles, panel text in the recovered font,
+  selection inverse video, red status band), with integer scaling.
+  It requires the local-only art files and says so clearly when absent.
+- Fidelity fix: the debug cell grid is now confined to the legacy flat
+  render path -- the original screen has no grid, so the authentic tile
+  path (and atlas/image modes) no longer draw it.
+- Open for full screen fidelity: the clock->calendar-date mapping (the
+  original shows "MAY 27th 1942" at the Gazala start; the formula is not
+  yet recovered -- render_screen takes the date as input meanwhile), and
+  the right-hand end of the status band (cursor/extra info glyphs).
