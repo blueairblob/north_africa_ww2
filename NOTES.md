@@ -738,3 +738,22 @@ data/combat_tables.json (extract_combat_tables.py). Fortification
 surfaces as unit.fortify_tenths (default 10) -- wiring the FORTIFY order
 to it is noted as follow-up. Out-of-contact decay remains the last
 inferred combat behaviour.
+
+## Clock -> calendar: recovered
+
+The side-panel date drawer is at 0x97E3 (found among the
+LD HL,(0xCB0F) clock readers by calling each under emulation and
+OCR'ing the rendered screen with the game's own font). The clock was
+then swept 1..730 and every rendered date read back: ZERO mismatches
+against the real Gregorian calendar across days 1..640 (the campaign's
+span). The rule is simply
+
+    clock day N = April 1, 1941 + (N - 1)
+
+with the game's month forms (JAN FEB MAR APR MAY JUNE JULY AUG SEPT OCT
+NOV DEC -- table at 0xE793, 4-byte entries) and standard English
+ordinals. Anchor: clock 422 = "MAY 27th 1942" (Gazala start), matching
+the reference screenshot glyph-for-glyph. Implemented in
+desert_rats/game_calendar.py; render_screen now takes clock= and
+formats the panel date itself. The authentic screen no longer needs any
+hand-fed inputs.

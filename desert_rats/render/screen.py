@@ -86,7 +86,8 @@ def render_screen(
     units,
     board: Board,
     viewport_origin=(0, 0),
-    date_lines=("", ""),
+    date_lines=None,
+    clock=None,
     selected_order: Optional[Order] = None,
     status_line: str = "",
     scale: int = 1,
@@ -96,6 +97,12 @@ def render_screen(
     """
     if not PIL_AVAILABLE:
         raise RuntimeError("Pillow is required for screen rendering")
+    if date_lines is None:
+        if clock is not None:
+            from ..game_calendar import format_date_lines
+            date_lines = format_date_lines(clock)
+        else:
+            date_lines = ("", "")
     glyphs = _load_font()
     if glyphs is None:
         raise FileNotFoundError(
