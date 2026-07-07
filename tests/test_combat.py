@@ -64,10 +64,34 @@ class TestPressureModel(unittest.TestCase):
     """
 
     def test_pressure_accumulates_from_adjacent_enemy(self):
-        u = make_unit(data.Nationality.BRITISH, 0, 0)
-        e = make_unit(data.Nationality.GERMAN, 2, 0, strength=100, efficiency=100)
+        # Recovered projection model: a holding class-12 enemy at full
+        # strength/efficiency projects 100 x class_pct(50%)/100 = 50 onto
+        # a lone unsupplied defender.
+        u = make_unit(data.Nationality.BRITISH, 5, 5, order=units.Order.HOLD)
+        e = make_unit(data.Nationality.GERMAN, 7, 5, index=1, order=units.Order.HOLD)
+        e.combat_class = 12
         combat.apply_combat_pressure([u], [u, e])
-        self.assertEqual(u.pressure, 100 // combat.PRESSURE_INFLOW_DIVISOR)
+        self.assertEqual(u.pressure, 50)
+
+    def test_stacked_defenders_split_by_role_weight(self):
+        # weight = 1 << role_bit0: role-1 defender takes 2/3 of the inflow.
+        a = make_unit(data.Nationality.BRITISH, 5, 5, order=units.Order.HOLD)
+        b = make_unit(data.Nationality.BRITISH, 5, 5, index=1, order=units.Order.HOLD)
+        b.role = 1
+        e = make_unit(data.Nationality.GERMAN, 7, 5, index=2, order=units.Order.HOLD)
+        e.combat_class = 12
+        combat.apply_combat_pressure([a, b], [a, b, e])
+        self.assertEqual((a.pressure, b.pressure), (16, 33))
+
+    def test_supplied_defender_is_protected(self):
+        # Supplied: x tenths[row10]/10 (x0.5 for class 12) x band%/100.
+        u = make_unit(data.Nationality.BRITISH, 5, 5, order=units.Order.HOLD)
+        u.combat_class = 12
+        u.supply = 90
+        e = make_unit(data.Nationality.GERMAN, 7, 5, index=1, order=units.Order.HOLD)
+        e.combat_class = 12
+        combat.apply_combat_pressure([u], [u, e])
+        self.assertEqual(u.pressure, int(50 * 0.5 * 0.9))
 
     def test_pressure_resets_out_of_contact(self):
         u = make_unit(data.Nationality.BRITISH, 0, 0)

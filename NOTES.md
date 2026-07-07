@@ -701,3 +701,40 @@ tested against the oracle values), wired into ai.plan_turn; regions
 committed as data/ai_regions.json. Remaining inferred: ladder-walk
 tie-breaking beyond side direction, and the 0xCB27/0xCB28 frontier
 maintenance (currently permissive defaults).
+
+## Pressure inflow: RECOVERED (0xCAFF pinned; projection model implemented)
+
+The follow-up above is closed. Key steps: the 0xCAFF writer is 0x816E
+(inside the 0x8130 averager): the threshold is the AVERAGE class/terrain
+value of the pressed cell's occupants -- and since both the per-occupant
+value and the average use the SUBJECT's class and the SAME cell terrain,
+the comparison is constant-vs-own-average and never doubles; the
+effective split weight is 1 << role_bit0 only. The full chain
+(prologue 0x834F + tail, helpers 0x8286/0x82B2/0x82C9/0x82DF/0x82F0/
+0x841B/0x8424/0x6454/0x6C8C) was disassembled, and the composed formula
+END-TO-END ORACLE-VERIFIED (signature: A=count, B=direction, D/E=y/x,
+HL=slot list; 0xCB02 = pressed-cell divisor):
+
+  outgoing = strength x1.5(assault)
+             x tenths[terr(subject)][class]/10   (0xDD94: 11-byte blocks
+               PER CLASS-COLUMN indexed by terrain row -- 0x6C8C is
+               11*col + row; class->column at 0xDB8F)
+             x fortify_tenths/10                  (record +0x1E, default 10)
+             x efficiency/100  / pressed_cells    (0xCB02)
+  per defender:
+             x class_pct[subject_class]/100       (0x8286)
+             x tenths[class][row 10]/10 x band%/100  ONLY when supplied
+               (out-of-supply defenders take ~x2.2 -- verified 15 -> 33)
+             x1.5 if the defender assaults
+             x1.0 net if travelling (the x0.5 mode and x2 caught bits
+               CANCEL: "caught on road" = loss of protection, not double)
+             x2 if immobile (mps == 0)
+             x (1 << role_bit0) / total_weights, capped 255;
+             also accumulated at +0x17 with the max tracked at 0xCB04.
+
+Engine: apply_combat_pressure rewritten to this projection model;
+PRESSURE_INFLOW_DIVISOR removed; tables committed as
+data/combat_tables.json (extract_combat_tables.py). Fortification
+surfaces as unit.fortify_tenths (default 10) -- wiring the FORTIFY order
+to it is noted as follow-up. Out-of-contact decay remains the last
+inferred combat behaviour.

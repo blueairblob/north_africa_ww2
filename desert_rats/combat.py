@@ -45,8 +45,38 @@ FIXED_THRESHOLD = 20               # oracle-verified (these units crack sooner)
 PRESSURE_EXEMPT_CLASS = 13         # oracle-verified via the class-derive routine
                                    # (bit-3 gate); unused by this game's roster
 # Inferred, tunable (see module docstring):
-PRESSURE_INFLOW_DIVISOR = 10       # inflow = adjacent enemy effective power // this
 PRESSURE_DECAY_OUT_OF_CONTACT = True  # pressure resets when no enemy is adjacent
+
+# --- Recovered pressure-projection tables (data/combat_tables.json;
+#     disassembled + oracle-verified end to end, see NOTES.md) ---
+import json as _json
+from pathlib import Path as _Path
+
+from . import packs as _packs
+
+SUPPLIED_DEFENDER_ROW = 10
+
+
+def _load_combat_tables():
+    path = _packs.active_pack().resolve("combat_tables.json")
+    if path is None:
+        return None
+    return _json.loads(_Path(path).read_text())
+
+
+_tables_cache = {}
+
+
+def combat_tables():
+    key = _packs.active_pack().name
+    if key not in _tables_cache:
+        _tables_cache[key] = _load_combat_tables()
+    return _tables_cache[key]
+
+
+def _tenths(klass: int, row: int, tables) -> int:
+    col = tables["class_to_column"][min(klass, 13)]
+    return tables["tenths_by_column"][col][row]
 
 
 def effective_power(unit: Unit) -> float:
@@ -74,25 +104,76 @@ def _adjacent_enemies(unit: Unit, units: List[Unit]) -> List[Unit]:
     return out
 
 
-def apply_combat_pressure(side_units: List[Unit], all_units: List[Unit]) -> None:
-    """Accumulate combat pressure on `side_units` from adjacent enemies.
+def apply_combat_pressure(side_units: List[Unit], all_units: List[Unit],
+                          board=None) -> None:
+    """Accumulate combat pressure on `side_units` -- the RECOVERED
+    projection model (oracle-verified end to end; NOTES.md "Pressure
+    inflow: recovered"):
 
-    Inflow rate is INFERRED (PRESSURE_INFLOW_DIVISOR): the original's scan
-    loop adds an enemy-derived, saturating amount per pass; the exact
-    scaling awaits the diff harness. Out of contact, pressure resets
-    (PRESSURE_DECAY_OUT_OF_CONTACT -- also inferred).
+    Each adjacent ENEMY projects
+        strength x1.5(assault) x tenths[terr(enemy)][class]/10
+                 x fortify/10 x efficiency/100 / pressed_cells
+    onto the cells it presses; each defender in a pressed cell receives
+        x class_pct[enemy_class]/100
+        x (tenths[SUPPLIED_ROW][class]/10 and x band%/100 when supplied)
+        x1.5 if the defender assaults; travellers net x1.0 ("caught on
+          road" = no supplied protection cancellation drama, the x0.5
+          mode and x2 caught bits cancel exactly)
+        x2 if immobile (mps == 0)
+        x weight_i / total_weight, weight_i = 1 << role_bit0
+    capped at 255 per turn. Out of contact, pressure resets
+    (PRESSURE_DECAY_OUT_OF_CONTACT -- still inferred).
     """
-    for unit in side_units:
-        if unit.is_destroyed:
-            continue
-        enemies = _adjacent_enemies(unit, all_units)
-        if not enemies:
-            if PRESSURE_DECAY_OUT_OF_CONTACT:
-                unit.pressure = 0
-            continue
-        inflow = sum(int(effective_power(e)) // PRESSURE_INFLOW_DIVISOR for e in enemies)
-        unit.pressure = min(PRESSURE_CAP, unit.pressure + inflow)
+    tables = combat_tables()
+    incoming = {id(u): 0.0 for u in side_units}
 
+    for enemy in all_units:
+        if enemy.is_destroyed or (side_units and enemy.side is side_units[0].side):
+            continue
+        defenders = [u for u in side_units
+                     if not u.is_destroyed
+                     and abs(u.x - enemy.x) <= 2 and abs(u.y - enemy.y) <= 2]
+        if not defenders:
+            continue
+        base = float(enemy.strength)
+        if enemy.order is Order.ASSAULT:
+            base *= 1.5
+        if tables is not None:
+            base = base * _tenths(enemy.combat_class, 0, tables) / 10.0
+        fort = getattr(enemy, "fortify_tenths", 10)
+        base = base * fort / 10.0
+        base = base * enemy.efficiency / 100.0
+        # pressed_cells: the distinct defender cells this enemy touches
+        cells = {(u.x, u.y) for u in defenders}
+        base /= max(1, len(cells))
+
+        weights = {id(u): 1 << (u.role & 1) for u in defenders}
+        total_w = sum(weights.values())
+        for u in defenders:
+            v = base
+            if tables is not None:
+                v = v * tables["class_pct"].get(str(enemy.combat_class),
+                                                tables["class_pct"].get(enemy.combat_class, 50)) / 100.0
+            if u.supply is not None and u.supply > 0:
+                if tables is not None:
+                    v = v * _tenths(u.combat_class, SUPPLIED_DEFENDER_ROW, tables) / 10.0
+                v = v * u.supply / 100.0
+            if u.order is Order.ASSAULT:
+                v *= 1.5
+            if u.mps == 0:
+                v *= 2.0
+            v = v * weights[id(u)] / total_w
+            incoming[id(u)] += v
+
+    for u in side_units:
+        if u.is_destroyed:
+            continue
+        amount = int(incoming.get(id(u), 0.0))
+        if amount == 0:
+            if PRESSURE_DECAY_OUT_OF_CONTACT and not _adjacent_enemies(u, all_units):
+                u.pressure = 0
+            continue
+        u.pressure = min(PRESSURE_CAP, u.pressure + min(255, amount))
 
 def pressure_threshold(unit: Unit) -> Optional[int]:
     """Morale, or the fixed 20 for combat-class-10 units; None for the
