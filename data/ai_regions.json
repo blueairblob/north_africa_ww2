@@ -1,0 +1,528 @@
+{
+ "_provenance": "Recovered from the original's AI data by analysis (reference/extraction_tools/extract_ai_tables.py): region strength-map table at 0xD6F1 and the objective ladder at 0xE07F. Semantics oracle-verified/disassembled -- see reference/engine-map.md section 15.",
+ "regions": [
+  {
+   "index": 0,
+   "anchor_a": [
+    0,
+    0
+   ],
+   "anchor_b": [
+    0,
+    0
+   ],
+   "importance": 0
+  },
+  {
+   "index": 1,
+   "anchor_a": [
+    14,
+    8
+   ],
+   "anchor_b": [
+    14,
+    8
+   ],
+   "importance": 3
+  },
+  {
+   "index": 2,
+   "anchor_a": [
+    24,
+    2
+   ],
+   "anchor_b": [
+    24,
+    2
+   ],
+   "importance": 2
+  },
+  {
+   "index": 3,
+   "anchor_a": [
+    37,
+    8
+   ],
+   "anchor_b": [
+    31,
+    3
+   ],
+   "importance": 3
+  },
+  {
+   "index": 4,
+   "anchor_a": [
+    0,
+    0
+   ],
+   "anchor_b": [
+    41,
+    10
+   ],
+   "importance": 1
+  },
+  {
+   "index": 5,
+   "anchor_a": [
+    0,
+    0
+   ],
+   "anchor_b": [
+    51,
+    9
+   ],
+   "importance": 1
+  },
+  {
+   "index": 6,
+   "anchor_a": [
+    0,
+    0
+   ],
+   "anchor_b": [
+    0,
+    0
+   ],
+   "importance": 0
+  },
+  {
+   "index": 7,
+   "anchor_a": [
+    0,
+    0
+   ],
+   "anchor_b": [
+    0,
+    0
+   ],
+   "importance": 0
+  },
+  {
+   "index": 8,
+   "anchor_a": [
+    0,
+    0
+   ],
+   "anchor_b": [
+    0,
+    0
+   ],
+   "importance": 0
+  },
+  {
+   "index": 9,
+   "anchor_a": [
+    0,
+    0
+   ],
+   "anchor_b": [
+    0,
+    0
+   ],
+   "importance": 0
+  },
+  {
+   "index": 10,
+   "anchor_a": [
+    0,
+    0
+   ],
+   "anchor_b": [
+    0,
+    0
+   ],
+   "importance": 0
+  },
+  {
+   "index": 11,
+   "anchor_a": [
+    16,
+    19
+   ],
+   "anchor_b": [
+    14,
+    10
+   ],
+   "importance": 3
+  },
+  {
+   "index": 12,
+   "anchor_a": [
+    153,
+    12
+   ],
+   "anchor_b": [
+    22,
+    11
+   ],
+   "importance": 4
+  },
+  {
+   "index": 13,
+   "anchor_a": [
+    149,
+    11
+   ],
+   "anchor_b": [
+    21,
+    9
+   ],
+   "importance": 4
+  },
+  {
+   "index": 14,
+   "anchor_a": [
+    41,
+    10
+   ],
+   "anchor_b": [
+    41,
+    10
+   ],
+   "importance": 7
+  },
+  {
+   "index": 15,
+   "anchor_a": [
+    59,
+    14
+   ],
+   "anchor_b": [
+    55,
+    11
+   ],
+   "importance": 7
+  },
+  {
+   "index": 16,
+   "anchor_a": [
+    62,
+    13
+   ],
+   "anchor_b": [
+    62,
+    13
+   ],
+   "importance": 2
+  },
+  {
+   "index": 17,
+   "anchor_a": [
+    74,
+    12
+   ],
+   "anchor_b": [
+    74,
+    12
+   ],
+   "importance": 5
+  },
+  {
+   "index": 18,
+   "anchor_a": [
+    81,
+    14
+   ],
+   "anchor_b": [
+    87,
+    15
+   ],
+   "importance": 6
+  },
+  {
+   "index": 19,
+   "anchor_a": [
+    92,
+    16
+   ],
+   "anchor_b": [
+    92,
+    16
+   ],
+   "importance": 4
+  },
+  {
+   "index": 20,
+   "anchor_a": [
+    6,
+    25
+   ],
+   "anchor_b": [
+    6,
+    25
+   ],
+   "importance": 4
+  },
+  {
+   "index": 21,
+   "anchor_a": [
+    15,
+    21
+   ],
+   "anchor_b": [
+    15,
+    21
+   ],
+   "importance": 4
+  },
+  {
+   "index": 22,
+   "anchor_a": [
+    0,
+    0
+   ],
+   "anchor_b": [
+    23,
+    20
+   ],
+   "importance": 2
+  },
+  {
+   "index": 23,
+   "anchor_a": [
+    0,
+    0
+   ],
+   "anchor_b": [
+    38,
+    20
+   ],
+   "importance": 1
+  },
+  {
+   "index": 24,
+   "anchor_a": [
+    0,
+    0
+   ],
+   "anchor_b": [
+    48,
+    20
+   ],
+   "importance": 1
+  },
+  {
+   "index": 25,
+   "anchor_a": [
+    0,
+    0
+   ],
+   "anchor_b": [
+    58,
+    20
+   ],
+   "importance": 1
+  },
+  {
+   "index": 26,
+   "anchor_a": [
+    0,
+    0
+   ],
+   "anchor_b": [
+    68,
+    20
+   ],
+   "importance": 1
+  },
+  {
+   "index": 27,
+   "anchor_a": [
+    206,
+    21
+   ],
+   "anchor_b": [
+    78,
+    21
+   ],
+   "importance": 2
+  },
+  {
+   "index": 28,
+   "anchor_a": [
+    88,
+    20
+   ],
+   "anchor_b": [
+    88,
+    20
+   ],
+   "importance": 3
+  },
+  {
+   "index": 29,
+   "anchor_a": [
+    93,
+    20
+   ],
+   "anchor_b": [
+    93,
+    20
+   ],
+   "importance": 2
+  }
+ ],
+ "objective_ladder": [
+  161,
+  0,
+  22,
+  6,
+  1,
+  2,
+  1,
+  2,
+  1,
+  1,
+  1,
+  2,
+  1,
+  1,
+  1,
+  1,
+  1,
+  0,
+  1,
+  1,
+  1,
+  0,
+  1,
+  0,
+  1,
+  0,
+  1,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  3,
+  0,
+  3,
+  0,
+  0,
+  0,
+  0,
+  0,
+  1,
+  0,
+  1,
+  0,
+  1,
+  0,
+  1,
+  1,
+  1,
+  0,
+  1,
+  1,
+  1,
+  1,
+  0,
+  1,
+  1,
+  1,
+  2,
+  1,
+  1,
+  1,
+  1,
+  2,
+  1,
+  2,
+  1,
+  2,
+  1,
+  2,
+  1,
+  2,
+  1,
+  1,
+  2,
+  2,
+  1,
+  1,
+  1,
+  1,
+  1,
+  1,
+  2,
+  1,
+  1,
+  1,
+  1,
+  1,
+  1,
+  1,
+  1,
+  0,
+  1,
+  1,
+  1,
+  1,
+  2,
+  2,
+  1,
+  2,
+  2,
+  1,
+  1,
+  1,
+  1,
+  1,
+  0,
+  1,
+  0,
+  1,
+  0,
+  1,
+  1,
+  1,
+  1,
+  1,
+  1,
+  2,
+  1,
+  1,
+  1,
+  1,
+  1,
+  1,
+  2,
+  1,
+  2,
+  1,
+  1,
+  1,
+  1,
+  1,
+  1,
+  1,
+  1,
+  1,
+  1,
+  2,
+  1,
+  1,
+  2,
+  1,
+  1,
+  1,
+  1,
+  1,
+  0,
+  1,
+  1,
+  0,
+  1,
+  0,
+  1,
+  0,
+  1,
+  0,
+  1,
+  5
+ ]
+}

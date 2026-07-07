@@ -685,3 +685,19 @@ the 0xCAFF threshold source pinned (it is cold-zero at rest, so it is
 set per-resolution from the subject -- suspected strength or strength
 x1.5 under assault). Flagged here so the model is corrected from a
 known shape rather than re-guessed.
+
+## The AI's decision layer: recovered and implemented
+
+The last major 1:1 gap. Combined disassembly (0xA9EA builder,
+0xAAE7-0xAB44 scoring, 0xA510/0xA537 chooser) with oracle sweeps; full
+detail in reference/engine-map.md §15. Highlights: the 0xD6F1 table is
+STATIC data (30 strategic regions with anchors at the theatre's
+well-known locations and importance 0-7); unit weight = strength >> 5
+(halved when MPS < 5); scoring tiers 96/60/50 + importance with per-side
+reach windows; side-directional objective-ladder walk. The original has
+a store-instead-of-accumulate bug on the friendly weight -- reproduced
+deliberately for 1:1. Strategic core in desert_rats/ai_og.py (unit
+tested against the oracle values), wired into ai.plan_turn; regions
+committed as data/ai_regions.json. Remaining inferred: ladder-walk
+tie-breaking beyond side direction, and the 0xCB27/0xCB28 frontier
+maintenance (currently permissive defaults).

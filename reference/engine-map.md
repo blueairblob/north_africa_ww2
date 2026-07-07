@@ -510,10 +510,32 @@ midpoint = `(easternmost Axis x + westernmost British x) / 2` (front line from 0
 The in-band test (0x9E7F) then treats a unit as **offensive when it lies within the
 50-column window centred on the front** (≈ ±25 columns of the midpoint) and
 **defensive** otherwise. Strategic targeting is driven by a **30-slot regional
-strength map** (table at 0xD6F1, 7 bytes/slot) built by 0xA9EA, which tallies each
-unit's weighted strength (MPS-derived, type-adjusted) per side; the chosen target is
-written to 0xCB32 (at 0xA54F). Still fuzzy: the precise weighting that selects *which*
-region becomes the target.
+strength map** (table at 0xD6F1, 7 bytes/slot) built by 0xA9EA. **[RECOVERED --
+disassembly + oracle, see reference/diff_harness/ and data/ai_regions.json]:**
+
+- The table is STATIC data: 30 strategic regions, each 7 bytes -- two anchor
+  coordinate pairs (well-known locations: (41,10) Tobruk imp 7, (92,16) Alamein
+  imp 4, (24,2) Derna, (14,8) Benghazi, ...), importance 0-7 in the low 3 bits
+  of byte 4 (upper bits are runtime flags), two runtime accumulators.
+- Builder (0xA9EA): resets accumulators and flag bits; per unit, weight =
+  strength >> 5, halved again when MPS (+12) < 5; friendly weight goes to
+  byte 5 (NOTE: `LD (IY+5),D` -- the original STORES the last friendly weight
+  instead of accumulating; enemies at byte 6 accumulate correctly), presence
+  flags bit6/bit7, enemy-assaulting flag bit5. H counts friendly units,
+  L counts those with MPS >= 36; the mobile-posture bit (0xCB31 bit 2) is set
+  when L > 3H/4 (or H/2 with hysteresis when already mobile).
+- Region scoring (0xAAE7-0xAB44, exact): no enemy -> 0; enemy with no friendly
+  -> 0x60 + importance, gated to the side's reach window (Axis: region index
+  <= (0xCB28); British: index > (0xCB27) - 10); enemy >= friendly (contested)
+  -> 0x3C + importance; friendly > 2x enemy -> 0x32 + importance (mop-up);
+  else 0. Scores are written back into byte 5.
+- Target choice (0xA510/0xA537): each side walks the objective ladder at
+  0xE07F DIRECTIONALLY (Axis forward/west-to-east, British backward), the
+  winner's anchor going to 0xCB32.
+
+Implemented 1:1 in desert_rats/ai_og.py (strategic core, including the
+store-bug) wired into ai.plan_turn; region data committed as
+data/ai_regions.json via reference/extraction_tools/extract_ai_tables.py.
 
 ---
 

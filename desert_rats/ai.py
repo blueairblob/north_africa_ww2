@@ -214,11 +214,19 @@ def plan_turn(state: GameState, side: Side, flags: FlagGrid) -> None:
     doesn't change mid-sweep, so repeated passes would be no-ops here --
     one pass is used, with the budget constants kept above for fidelity.
     """
-    strength_map = build_regional_strength_map(state.units, state.board)
+    # Strategic target from the RECOVERED original decision layer
+    # (ai_og: 30-region table, oracle-verified weights, exact 0xAAE7
+    # scoring, side-directional choice). The previous stand-in
+    # (build_regional_strength_map / pick_target_region) is retained
+    # below for reference but no longer drives decisions.
+    from . import ai_og
     midpoint = victory.front_line_midpoint(state.units)
-    band = _band_regions(midpoint, state.board.width)
-    target_region = pick_target_region(strength_map, side, band, midpoint, state.board.width)
-    target = _region_target_xy(target_region, side, state.units, state.board)
+    target = ai_og.choose_target(state.units, side)
+    if target is None:
+        strength_map = build_regional_strength_map(state.units, state.board)
+        band = _band_regions(midpoint, state.board.width)
+        target_region = pick_target_region(strength_map, side, band, midpoint, state.board.width)
+        target = _region_target_xy(target_region, side, state.units, state.board)
 
     for unit in state.units:
         if unit.side is side and not unit.is_destroyed:
