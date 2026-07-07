@@ -785,3 +785,32 @@ real system, disassembled and end-to-end oracle-verified:
 - Engine: reinforce.replacement_phase wired into the daily turn tick;
   GameState gains malta_status and per-nationality pools; caps/rates as
   constants; six oracle-anchored tests.
+
+## Closing sweep: the last inferred behaviours resolved
+
+- FORTIFY FIELD: the +0x1E outgoing-pressure multiplier's ONLY writer is
+  the record unpacker (0x9C94), copying OOB byte 9 -- the 'type' field.
+  It is a static per-unit stat (distribution centred on 10 = x1.0, up to
+  14 = x1.4); the FORTIFY order never touches it. Engine:
+  Unit.fortify_tenths is set from oob.type at from_oob.
+- OUT-OF-CONTACT DECAY: FALSIFIED. Audit of every pressure write found
+  no ambient reset; pressure persists and is cleared only by the
+  retreat-step executor (0x89A9 -- the engine now zeroes pressure on a
+  successful crack-retreat), the break path, and rebuild arrival.
+- REBUILD ARRIVAL CONFIRMED at 0x93D7: strength := the in-transit +3
+  value, pressure cleared, unit set on-map and in-supply -- exactly the
+  transfer the economy implementation inferred. Scheduled (non-rebuild)
+  arrivals init at 0x80A5: efficiency 100, cap strength in transit.
+  A timeout loop at 0x945E clears units whose counter passes +0x13
+  (recorded; edge case, not modelled).
+- ROAD-DIRECTION ARITHMETIC DECODED: 0xDA0E is the third per-cell byte
+  table (sibling of attrs/types): a direction bitmask (low nibble =
+  pathing connectivity used by the mover at 0x6BA7/0x6BC3; high nibble
+  gates the road factor). 0x8592 -- whose ONLY caller is the pressure
+  prologue -- applies tenths[class][row 9]/10 when the unit sits on a
+  road connected in the direction it presses: a PRESSURE mechanic, not
+  movement cost. Extracted to data/road_masks.json; applied in
+  apply_combat_pressure with the dominant-axis direction code.
+- AI LADDER TIE-BREAKING: remains the project's ONE inferred detail
+  (side-directional walk implemented; the exact 0xA46D/0xA4D3 evaluator
+  internals undecoded). Documented as such.

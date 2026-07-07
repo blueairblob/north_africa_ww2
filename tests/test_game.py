@@ -182,7 +182,8 @@ class TestPlayTurn(unittest.TestCase):
             if weak.efficiency < start_eff:
                 break
         self.assertLess(weak.efficiency, start_eff)
-        self.assertGreater(weak.pressure, 0)
+        # oracle behaviour: a successful crack-retreat zeroes pressure
+        self.assertEqual(weak.pressure, 0)
 
     def test_attrition_and_recovery_apply_after_movement(self):
         safe_unit = make_unit(data.Nationality.BRITISH, 5, 5, efficiency=50)

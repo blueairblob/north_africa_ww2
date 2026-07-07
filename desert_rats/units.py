@@ -107,6 +107,9 @@ class Unit:
     pressure: int = 0
     # Combat class (oracle-identified OOB byte -- see data.Unit.combat_class)
     combat_class: int = 0
+    fortify_tenths: int = 10   # outgoing-pressure multiplier in tenths:
+                               # the OOB 'type' byte, set once at unpack
+                               # (0x9C94); the FORTIFY order never touches it
     rebuild_cooldown: int = 0
     rebuild_strength: int = 0
     supply: Optional[int] = None
@@ -186,6 +189,7 @@ class Unit:
             name=oob_unit.name,
             type=oob_unit.type,
             combat_class=oob_unit.combat_class,
+            fortify_tenths=oob_unit.type,
             role=oob_unit.role,
             strength=oob_unit.strength,
             morale=oob_unit.morale,

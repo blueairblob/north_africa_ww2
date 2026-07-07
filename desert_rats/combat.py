@@ -45,7 +45,9 @@ FIXED_THRESHOLD = 20               # oracle-verified (these units crack sooner)
 PRESSURE_EXEMPT_CLASS = 13         # oracle-verified via the class-derive routine
                                    # (bit-3 gate); unused by this game's roster
 # Inferred, tunable (see module docstring):
-PRESSURE_DECAY_OUT_OF_CONTACT = True  # pressure resets when no enemy is adjacent
+# OUT-OF-CONTACT DECAY: FALSIFIED. No per-turn reset exists in the
+# original; pressure persists and is cleared only by the retreat-step
+# executor (0x89A9), the break path, and rebuild arrival (0x93D7).
 
 # --- Recovered pressure-projection tables (data/combat_tables.json;
 #     disassembled + oracle-verified end to end, see NOTES.md) ---
@@ -55,6 +57,33 @@ from pathlib import Path as _Path
 from . import packs as _packs
 
 SUPPLIED_DEFENDER_ROW = 10
+
+
+ROAD_ROW = 9  # tenths row: the road-speed/pressure factor (0x8592)
+
+
+def _load_road_masks():
+    path = _packs.active_pack().resolve("road_masks.json")
+    if path is None:
+        return None
+    return _json.loads(_Path(path).read_text())["mask_by_cell_byte"]
+
+
+_road_masks_cache = {}
+
+
+def road_masks():
+    key = _packs.active_pack().name
+    if key not in _road_masks_cache:
+        _road_masks_cache[key] = _load_road_masks()
+    return _road_masks_cache[key]
+
+
+def _press_direction(dx: int, dy: int) -> int:
+    """0x6C0A codes: 0=N(y-1) 1=E(x+1) 2=S(y+1) 3=W(x-1); dominant axis."""
+    if abs(dx) >= abs(dy):
+        return 1 if dx > 0 else 3
+    return 2 if dy > 0 else 0
 
 
 def _load_combat_tables():
@@ -140,8 +169,7 @@ def apply_combat_pressure(side_units: List[Unit], all_units: List[Unit],
             base *= 1.5
         if tables is not None:
             base = base * _tenths(enemy.combat_class, 0, tables) / 10.0
-        fort = getattr(enemy, "fortify_tenths", 10)
-        base = base * fort / 10.0
+        base = base * enemy.fortify_tenths / 10.0
         base = base * enemy.efficiency / 100.0
         # pressed_cells: the distinct defender cells this enemy touches
         cells = {(u.x, u.y) for u in defenders}
@@ -149,8 +177,17 @@ def apply_combat_pressure(side_units: List[Unit], all_units: List[Unit],
 
         weights = {id(u): 1 << (u.role & 1) for u in defenders}
         total_w = sum(weights.values())
+        masks = road_masks()
+        on_road = board is not None and board.terrain_at(enemy.x, enemy.y) == 5 \
+            if board is not None else False
         for u in defenders:
             v = base
+            if on_road and masks is not None and tables is not None:
+                d = _press_direction(u.x - enemy.x, u.y - enemy.y)
+                cell = board.raw_cell(enemy.x, enemy.y) if hasattr(board, "raw_cell") else None
+                mask = masks[cell] if cell is not None else 0
+                if mask & (1 << (d + 4)):
+                    v = v * _tenths(enemy.combat_class, ROAD_ROW, tables) / 10.0
             if tables is not None:
                 v = v * tables["class_pct"].get(str(enemy.combat_class),
                                                 tables["class_pct"].get(enemy.combat_class, 50)) / 100.0
@@ -170,8 +207,6 @@ def apply_combat_pressure(side_units: List[Unit], all_units: List[Unit],
             continue
         amount = int(incoming.get(id(u), 0.0))
         if amount == 0:
-            if PRESSURE_DECAY_OUT_OF_CONTACT and not _adjacent_enemies(u, all_units):
-                u.pressure = 0
             continue
         u.pressure = min(PRESSURE_CAP, u.pressure + min(255, amount))
 
@@ -239,7 +274,11 @@ def resolve_pressure(unit: Unit, all_units: List[Unit], board: Board) -> bool:
         return False
     apply_efficiency_loss(unit, COMBAT_LOSS)
     unit.order = Order.HOLD
-    if not _try_retreat(unit, all_units, board):
+    if _try_retreat(unit, all_units, board):
+        # 0x89A9: the retreat-step executor zeroes pressure -- this is
+        # the pressure-relief mechanism (there is no ambient decay).
+        unit.pressure = 0
+    else:
         unit.pressure = min(PRESSURE_CAP, unit.pressure + unit.pressure // 2)
         if unit.pressure >= unit.strength:
             unit.strength = 0

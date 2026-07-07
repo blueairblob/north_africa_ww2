@@ -93,11 +93,20 @@ class TestPressureModel(unittest.TestCase):
         combat.apply_combat_pressure([u], [u, e])
         self.assertEqual(u.pressure, int(50 * 0.5 * 0.9))
 
-    def test_pressure_resets_out_of_contact(self):
-        u = make_unit(data.Nationality.BRITISH, 0, 0)
-        u.pressure = 40
-        combat.apply_combat_pressure([u], [u])
-        self.assertEqual(u.pressure, 0)
+    def test_pressure_persists_out_of_contact_and_clears_on_retreat(self):
+        # FALSIFIED former model: there is no ambient decay. Pressure
+        # persists between contacts; the relief mechanism is the
+        # retreat-step executor zeroing it (0x89A9).
+        u = make_unit(data.Nationality.BRITISH, 5, 5, order=units.Order.HOLD)
+        u.pressure = 30
+        combat.apply_combat_pressure([u], [u])   # no enemies anywhere
+        self.assertEqual(u.pressure, 30)          # persists
+        u.type = 12
+        u.morale = 10
+        u.pressure = 50
+        cracked = combat.resolve_pressure(u, [u], make_board())
+        self.assertTrue(cracked)
+        self.assertEqual(u.pressure, 0)           # retreat cleared it
 
     def test_pressure_caps_at_255(self):
         u = make_unit(data.Nationality.BRITISH, 0, 0)
