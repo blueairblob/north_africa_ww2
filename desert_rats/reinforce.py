@@ -135,3 +135,118 @@ def scripted_deployment(entries, oob: OrderOfBattle, board: Board) -> list:
             Unit.from_oob(oob_unit, x=entry["x"], y=entry["y"], mps=oob_unit.mps)
         )
     return units
+
+
+# ---------------------------------------------------------------------------
+# The replacement economy -- RECOVERED from the original (weekly phase at
+# 0x953F, monthly income at 0x978E, appliers 0x9567/0x95CA/0x95E6, caps at
+# 0x9520, premium condition 0x96C6; disassembled and END-TO-END
+# ORACLE-VERIFIED, see NOTES.md "Replacement economy: recovered").
+#
+# - MONTHLY (clock % 30 == 0): each nationality banks two pools from the
+#   0xDEFC monthly-group table x10 x Malta (Axis only, statuses 1/2).
+#   Pool A = general replacements; Pool B = armour replacements.
+# - WEEKLY (clock % 7 == 0), per nationality:
+#     Replacements: units of the side whose ORDER IS HOLD gain
+#       min((cap - strength + 1) // 2, rate, pool):
+#       premium classes {1, 2, 12} -> cap 170, rate 30, from POOL B;
+#       everyone else -> cap by 0x9520 (class 9 -> 100; else role 0/1/2+
+#       -> 40/100/200), rate 10, from POOL A.
+#     Rebuilds: destroyed-on-map units (strength 0, cooldown clear, not
+#       class 9, not role-bit1) are bought back from pool A at their cap
+#       cost (half price accepted when the pool is short), returning
+#       after a cooldown (~8 days) at efficiency 50.
+# ---------------------------------------------------------------------------
+
+PREMIUM_CLASSES = {1, 2, 12}
+PREMIUM_CAP = 170
+PREMIUM_RATE = 30
+NORMAL_RATE = 10
+REBUILD_EFFICIENCY = 50
+REBUILD_COOLDOWN_DAYS = 8
+
+
+def strength_cap(unit) -> int:
+    """0x9520: class 9 -> 100; else by role 40/100/200."""
+    if unit.combat_class == 9:
+        return 100
+    if unit.role == 0:
+        return 40
+    if unit.role == 1:
+        return 100
+    return 200
+
+
+def monthly_pool_income(state, schedules) -> None:
+    """0x978E: pools[nat] += DEFC group x10 x Malta (Axis, status 1/2)."""
+    groups = schedules["monthly_unit_schedule"]
+    month = min(state.clock // 30, len(groups) - 1)
+    group = groups[month]
+    malta = schedules["malta_modifier"]
+    for nat_index in (1, 2, 3):
+        a = group[(nat_index - 1) * 2] * 10
+        b = group[(nat_index - 1) * 2 + 1] * 10
+        if nat_index != 1 and state.malta_status in (1, 2):
+            half = malta["half_1" if state.malta_status == 1 else "half_2"][month]
+            a = (a * half + 5) // 10
+            b = (b * half + 5) // 10
+        state.pools_a[nat_index] = state.pools_a.get(nat_index, 0) + a
+        state.pools_b[nat_index] = state.pools_b.get(nat_index, 0) + b
+
+
+def weekly_replacements(state) -> None:
+    """0x9567/0x95CA/0x95E6: replacements and rebuilds, oracle-verified."""
+    from .units import Order
+
+    for unit in state.units:
+        nat = unit.nationality_index
+        if unit.is_destroyed:
+            # rebuild path (0x95E6): strength-0, on-map, eligible
+            if (unit.strength == 0 and unit.efficiency > 0
+                    and getattr(unit, "rebuild_cooldown", 0) == 0
+                    and unit.combat_class != 9 and not (unit.role & 2)):
+                cost = strength_cap(unit)
+                pool = state.pools_a.get(nat, 0)
+                paid = cost if pool >= cost else (cost // 2 if pool >= cost // 2 else 0)
+                if paid:
+                    state.pools_a[nat] = pool - paid
+                    unit.rebuild_cooldown = REBUILD_COOLDOWN_DAYS
+                    unit.rebuild_strength = paid
+                    unit.efficiency = REBUILD_EFFICIENCY
+            continue
+        if unit.order is not Order.HOLD:
+            continue
+        premium = unit.combat_class in PREMIUM_CLASSES
+        cap = PREMIUM_CAP if premium else strength_cap(unit)
+        rate = PREMIUM_RATE if premium else NORMAL_RATE
+        deficit = cap - unit.strength
+        if deficit <= 0:
+            continue
+        gain = min((deficit + 1) // 2, rate)
+        pools = state.pools_b if premium else state.pools_a
+        pool = pools.get(nat, 0)
+        gain = min(gain, pool)
+        if gain > 0:
+            unit.strength += gain
+            pools[nat] = pool - gain
+
+
+def tick_rebuilds(state) -> None:
+    """Daily: count down rebuild cooldowns; on expiry the paid strength
+    arrives (the +3 in-transit field observed in the oracle)."""
+    for unit in state.units:
+        cd = getattr(unit, "rebuild_cooldown", 0)
+        if cd > 0:
+            unit.rebuild_cooldown = cd - 1
+            if unit.rebuild_cooldown == 0:
+                unit.strength = getattr(unit, "rebuild_strength", 0)
+                unit.rebuild_strength = 0
+
+
+def replacement_phase(state, schedules) -> None:
+    """Wire-in point: call once per game day."""
+    if state.clock % 30 == 0 and state.clock > 0:
+        monthly_pool_income(state, schedules)
+    if state.clock % 7 == 0 and state.clock > 0:
+        weekly_replacements(state)
+    tick_rebuilds(state)

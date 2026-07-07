@@ -107,6 +107,8 @@ class Unit:
     pressure: int = 0
     # Combat class (oracle-identified OOB byte -- see data.Unit.combat_class)
     combat_class: int = 0
+    rebuild_cooldown: int = 0
+    rebuild_strength: int = 0
     supply: Optional[int] = None
     order: Order = Order.HOLD
     travel: bool = False
@@ -132,6 +134,17 @@ class Unit:
 
     def footprint_cells(self) -> tuple[tuple[int, int], ...]:
         return Board.footprint_cells(self.x, self.y, self.footprint_size)
+
+    @property
+    def nationality_index(self) -> int:
+        """1=British/Commonwealth, 2=German, 3=Italian (the +0x15 byte
+        used by the replacement economy's per-nationality pools)."""
+        from .data import Nationality
+        if self.nationality in (Nationality.GERMAN,):
+            return 2
+        if self.nationality in (Nationality.ITALIAN,):
+            return 3
+        return 1
 
     @property
     def is_destroyed(self) -> bool:

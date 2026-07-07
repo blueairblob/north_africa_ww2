@@ -757,3 +757,31 @@ the reference screenshot glyph-for-glyph. Implemented in
 desert_rats/game_calendar.py; render_screen now takes clock= and
 formats the panel date itself. The authentic screen no longer needs any
 hand-fed inputs.
+
+## Replacement economy: recovered (the last systemic gap)
+
+The earlier probe failed because 0x96DD is only the RATE READER; the
+real system, disassembled and end-to-end oracle-verified:
+
+- MONTHLY tick (0x978E, clock % 30 == 0): each NATIONALITY banks two
+  pools from the 0xDEFC monthly table x10 x Malta (Axis, statuses 1/2):
+  pool A (general) at 0xCB18/1A/1C, pool B (armour) at 0xCB1E/20/22.
+  This corrects the extraction's old layout note -- all three
+  nationality pairs are read ('unread' was wrong).
+- WEEKLY phase (0x953F, clock % 7 == 0), per nationality:
+  - REPLACEMENTS (0x9567): only units whose ORDER IS HOLD qualify
+    (the gate that defeated the first probe). Gain =
+    min((cap - strength + 1)//2, rate, pool). Premium classes {1,2,12}
+    (0x96C6): cap 170, rate 30, from POOL B (oracle: 60 -> 90, pool
+    200 -> 170). Everyone else: cap from 0x9520 (class 9 -> 100; else
+    role 0/1/2+ -> 40/100/200), rate 10, POOL A (oracle: 60 -> 70,
+    pool 100 -> 90).
+  - REBUILDS (0x95E6): destroyed-on-map units (strength 0, cooldown
+    +0x13 clear, not class 9, not role-bit1, +0x1D prerequisite clear)
+    are bought back from pool A at cap cost (half price accepted);
+    oracle: pay 100 now, strength parked in-transit (+3), efficiency
+    set to 50, cooldown ~8 days -- the unit returns when it expires.
+    This also closes the arrival-efficiency gap (rebuilt arrivals: 50).
+- Engine: reinforce.replacement_phase wired into the daily turn tick;
+  GameState gains malta_status and per-nationality pools; caps/rates as
+  constants; six oracle-anchored tests.

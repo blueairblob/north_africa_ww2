@@ -240,3 +240,12 @@ def load_deployments(path: Optional[Path] = None) -> dict:
     with open(path, encoding="utf-8") as f:
         raw = json.load(f)
     return {int(k): v for k, v in raw["scenarios"].items()}
+
+
+def load_schedules(path: Optional[Path] = None) -> dict:
+    """The extracted schedule tables (data/schedules.json): monthly
+    per-side rates, the 6-byte monthly nationality groups feeding the
+    replacement pools, and the Malta modifier halves."""
+    path = Path(path) if path is not None else packs.active_pack().resolve("schedules.json")
+    import json as _json
+    return _json.loads(path.read_text())

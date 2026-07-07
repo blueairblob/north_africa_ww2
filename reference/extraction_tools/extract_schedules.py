@@ -87,7 +87,7 @@ def main() -> None:
         ),
         "index_formula": "month = turn // 30 (turn counter at 0xCB0F); values x10 on read",
         "monthly_unit_schedule": monthly_unit_schedule,
-        "monthly_unit_schedule_layout": "[side1_q0, side1_q1, side2_q0, side2_q1, unread, unread] per month",
+        "monthly_unit_schedule_layout": "[nat1_poolA, nat1_poolB, nat2_poolA, nat2_poolB, nat3_poolA, nat3_poolB] per month -- CORRECTED: the monthly economy tick (0x978E) reads all three nationality pairs into the replacement pools (the earlier 'unread' note was wrong)",
         "monthly_side_rate": monthly_side_rate,
         "malta_modifier": malta_modifier,
         "malta_selector": "0xCB25: 1 -> half_1, 2 -> half_2, 3 -> bypass; applied to side != 1 only",

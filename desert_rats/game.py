@@ -36,6 +36,9 @@ class GameState:
     admitted_indices: Set[int]
     midpoint_history: List[Optional[float]] = field(default_factory=list)
     result: Optional[victory.VictoryLevel] = None
+    malta_status: int = 3          # 1/2 = Malta halves active; 3 = bypass
+    pools_a: Optional[dict] = None  # nationality -> general replacement points
+    pools_b: Optional[dict] = None  # nationality -> armour replacement points
 
     @property
     def is_over(self) -> bool:
@@ -93,6 +96,8 @@ def new_game(
         scenario=scenario,
         turn_counter=turn_counter,
         clock=clock,
+        pools_a={1: 0, 2: 0, 3: 0},
+        pools_b={1: 0, 2: 0, 3: 0},
         units=starting_units,
         admitted_indices=admitted_indices,
     )
@@ -145,7 +150,12 @@ def play_turn(state: GameState, order_providers: Optional[Dict[Side, OrderProvid
     order_providers = order_providers or {}
 
     state.turn_counter += 1
+    prev_clock = state.clock
     state.clock = reinforce.campaign_clock(state.turn_counter)
+    if state.clock != prev_clock:
+        # a new campaign day: run the recovered replacement economy
+        from .data import load_schedules
+        reinforce.replacement_phase(state, load_schedules())
 
     newly_admitted = reinforce.admit_reinforcements(
         state.oob, state.admitted_indices, state.units, state.clock, state.board
