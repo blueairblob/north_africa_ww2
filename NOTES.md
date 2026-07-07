@@ -657,3 +657,31 @@ Confirmed live but not yet pinned to formulas (next harness targets):
   conditions or a breakpoint before the report.
 - The pressure INFLOW loop (scaling of enemy-derived amounts) and the
   clock->calendar date mapping remain open.
+
+## Pressure inflow: decoded shape (harness follow-up)
+
+Partial decode of the pressure-inflow chain (fed into the resolver we
+oracle-verified above), captured for the next harness round:
+
+- The neighbour ring-walk at 0x84CC-0x84E0 visits adjacent cells (a
+  direction bitmask in A, shifted per step); for each occupied cell it
+  resolves the occupant record and calls the contribution routine.
+- Per-adjacent-enemy contribution (0x82FD), oracle-verified: returns
+  A := 1, doubled if the subject's role byte (IX+0x16) bit 0 is set, and
+  doubled AGAIN if a class/terrain-derived value (HL, seeded 100 then
+  scaled by the class table at 0x8286 and the terrain adjuster at
+  0x82B2) is below a threshold held at 0xCAFF. Net: 1, 2, or 4 per
+  adjacent enemy -- a small COUNT-like amount.
+- Class multiplier table (0x8286), % of input:
+  {1:60,2:60,3:30,4:30,5:50,6:50,7:70,8:50,9:30,10:20,11:50,12:50,13:0}.
+- Terrain adjuster (0x82B2) is the identity for logic types 0-8 at
+  HL=100 (may differ for raw cell bytes -- untested).
+
+IMPLICATION: the engine's inferred PRESSURE_INFLOW_DIVISOR=10
+(inflow = adjacent effective power // 10) is wrong in kind -- the
+original accumulates a small 1/2/4 count per adjacent enemy, not a
+power fraction. NOT yet changed in combat.py: doing so correctly needs
+the 0xCAFF threshold source pinned (it is cold-zero at rest, so it is
+set per-resolution from the subject -- suspected strength or strength
+x1.5 under assault). Flagged here so the model is corrected from a
+known shape rather than re-guessed.
