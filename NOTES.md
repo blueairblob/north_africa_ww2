@@ -814,3 +814,18 @@ real system, disassembled and end-to-end oracle-verified:
 - AI LADDER TIE-BREAKING: remains the project's ONE inferred detail
   (side-directional walk implemented; the exact 0xA46D/0xA4D3 evaluator
   internals undecoded). Documented as such.
+
+## AI ladder tie-breaking: RECOVERED (no inferred behaviours remain)
+
+The project's last inferred detail is closed. The ladder evaluators
+0xA46D (British, ascending IX) and 0xA4D3 (Axis, descending IX)
+flood-walk the objective ladder, and the "tie-break" is the column-band
+gate 0x9E7F: an objective qualifies iff its column x satisfies
+frontier <= x < frontier + 50 (frontier = 0xCB2F), i.e. a 50-cell window
+ahead of the front. Gate boundaries oracle-verified exactly (inclusive
+low, exclusive high, via the routine's INC C). choose_target now walks
+the ladder in the side's direction and returns the first in-band,
+enemy-held region's anchor, with the earlier scoring model retained only
+as an early-game fallback (no frontier contact). The ENTIRE engine is
+now free of inferred mechanics -- every behaviour is disassembly-read or
+oracle-verified against the original.

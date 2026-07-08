@@ -51,14 +51,58 @@ class TestRecoveredStrategicLayer(unittest.TestCase):
         self.assertEqual(ai_og.score_region(dict(base, friendly=7), 14, data.Side.AXIS), 0)
         self.assertEqual(ai_og.score_region(dict(base, enemy=0), 14, data.Side.AXIS), 0)
 
-    def test_target_prefers_undefended_high_importance(self):
-        # An undefended enemy-held Tobruk beats a contested minor region.
+    def test_target_is_first_in_band_enemy_region(self):
+        # Under the recovered band-gated ladder walk, with the frontier
+        # set so only Tobruk is in band, Tobruk is the target.
         us = [unit(data.Side.BRITISH, 41, 10),                 # enemy holds Tobruk
               unit(data.Side.BRITISH, 92, 16),                 # enemy at Alamein
               unit(data.Side.AXIS, 92, 16)]                    # we contest Alamein
-        target = ai_og.choose_target(us, data.Side.AXIS)
+        target = ai_og.choose_target(us, data.Side.AXIS, frontier=30)
         self.assertEqual(target, (41, 10))
 
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class TestRecoveredLadderWalk(unittest.TestCase):
+    def test_band_gate_selects_first_in_band_enemy_region(self):
+        # Two enemy-held regions; only the one whose anchor column lies
+        # in [frontier, frontier+50) qualifies.
+        table = ai_og.regions()
+        tobruk = next(r for r in table if r["anchor_a"] == [41, 10])
+        alamein = next(r for r in table if r["anchor_a"] == [92, 16])
+        us = [unit(data.Side.BRITISH, 41, 10),   # enemy holds Tobruk (x41)
+              unit(data.Side.BRITISH, 92, 16)]   # enemy holds Alamein (x92)
+        # frontier 30: band [30,80) includes Tobruk(41), excludes Alamein(92)
+        t = ai_og.choose_target(us, data.Side.AXIS, frontier=30)
+        self.assertEqual(t, (41, 10))
+        # frontier 70: band [70,120) now includes Alamein, excludes Tobruk
+        t = ai_og.choose_target(us, data.Side.AXIS, frontier=70)
+        self.assertEqual(t, (92, 16))
+
+    def test_walk_direction_differs_by_side(self):
+        # Prove the directional walk on a synthetic 2-region table so the
+        # test does not depend on the real map's geography: two enemy-held
+        # regions in the same band, at region indices 0 and 1. Axis walks
+        # ascending (picks index 0), British descending (picks index 1).
+        table = [
+            {"index": 0, "anchor_a": [45, 12], "anchor_b": [45, 12], "importance": 3},
+            {"index": 1, "anchor_a": [50, 14], "anchor_b": [50, 14], "importance": 3},
+        ]
+        us = [unit(data.Side.BRITISH, 45, 12), unit(data.Side.BRITISH, 50, 14),
+              unit(data.Side.AXIS, 45, 12), unit(data.Side.AXIS, 50, 14)]
+        axis_t = ai_og.choose_target(us, data.Side.AXIS, table=table, frontier=40)
+        brit_t = ai_og.choose_target(us, data.Side.BRITISH, table=table, frontier=40)
+        self.assertEqual(axis_t, (45, 12))   # Axis: lower index first
+        self.assertEqual(brit_t, (50, 14))   # British: higher index first
+        self.assertNotEqual(axis_t, brit_t)
+
+
+
+    def test_out_of_band_falls_back_to_scoring(self):
+        # Enemy far outside the band -> ladder yields nothing -> the
+        # scoring fallback still returns a sensible in-reach target.
+        us = [unit(data.Side.BRITISH, 41, 10)]
+        t = ai_og.choose_target(us, data.Side.AXIS, frontier=95)
+        self.assertIsNotNone(t)

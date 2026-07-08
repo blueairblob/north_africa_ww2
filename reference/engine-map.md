@@ -529,13 +529,23 @@ disassembly + oracle, see reference/diff_harness/ and data/ai_regions.json]:**
   <= (0xCB28); British: index > (0xCB27) - 10); enemy >= friendly (contested)
   -> 0x3C + importance; friendly > 2x enemy -> 0x32 + importance (mop-up);
   else 0. Scores are written back into byte 5.
-- Target choice (0xA510/0xA537): each side walks the objective ladder at
-  0xE07F DIRECTIONALLY (Axis forward/west-to-east, British backward), the
-  winner's anchor going to 0xCB32.
+- Target choice (0xA510/0xA537 -> evaluators 0xA46D British / 0xA4D3
+  Axis): each side FLOOD-WALKS the objective ladder at 0xE07F in its own
+  direction (British ascending IX, Axis descending IX, sentinel 5/6),
+  testing each objective's cell with the column-band gate 0x9E7F. That
+  gate (oracle-verified) passes when the objective column x satisfies
+  frontier <= x < frontier + 50, where frontier = 0xCB2F: a 50-cell
+  moving window ahead of the front. The FIRST objective in walk order
+  that is both in-band and enemy-held becomes the target (0xCB32/0xCB34).
+  This is the tie-break that was previously the project's one inferred
+  detail -- now RECOVERED. (0x9E95 selects the per-objective context row
+  in the 0xAEA1 table; 0x9EB5 steps the pointer.)
 
-Implemented 1:1 in desert_rats/ai_og.py (strategic core, including the
-store-bug) wired into ai.plan_turn; region data committed as
+Implemented 1:1 in desert_rats/ai_og.py (strategic core with the
+store-bug AND the band-gated directional ladder walk) wired into
+ai.plan_turn; region data + objective ladder committed as
 data/ai_regions.json via reference/extraction_tools/extract_ai_tables.py.
+The AI decision layer now carries NO inferred behaviours.
 
 ---
 

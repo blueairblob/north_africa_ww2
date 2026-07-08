@@ -144,31 +144,72 @@ def score_region(t: dict, index: int, side: Side,
     return SCORE_CONTESTED + t["importance"]
 
 
-def choose_target(units: List[Unit], side: Side,
-                  table: Optional[List[dict]] = None) -> Optional[Tuple[int, int]]:
-    """Score all regions and return the best region's primary anchor;
-    ties broken in the side's advance direction (Axis prefers the
-    western/earlier region, British the eastern/later -- the
-    directional ladder walk)."""
+def front_line_midpoint(units) -> int:
+    """(easternmost Axis x + westernmost British x) // 2 (0x9896)."""
+    axis_x = [u.x for u in units if not u.is_destroyed and u.side is Side.AXIS]
+    brit_x = [u.x for u in units if not u.is_destroyed and u.side is Side.BRITISH]
+    if not axis_x or not brit_x:
+        return 50
+    return (max(axis_x) + min(brit_x)) // 2
+
+
+BAND_WIDTH = 50  # the moving objective window ahead of the frontier (0x9E7F)
+
+
+def choose_target(units, side, table=None, frontier=None):
+    """Pick the side's strategic target -- the RECOVERED ladder walk
+    (0xA46D British / 0xA4D3 Axis, gate 0x9E7F, all oracle-verified).
+
+    The objective ladder (data/ai_regions.json objective_ladder) is
+    walked in the side's advance direction. A candidate objective
+    qualifies when its column x lies in the moving band
+    [frontier, frontier + 50) AND the region it anchors is enemy-held
+    (has enemy weight). The FIRST qualifying objective in walk order is
+    the target -- this is the tie-break that was previously inferred.
+    Falls back to the highest-scoring in-reach region when the ladder
+    yields nothing (early game, no frontier contact).
+    """
     table = table if table is not None else regions()
     if not table:
         return None
     tallies = build_region_tallies(units, side, table)
+    if frontier is None:
+        frontier = front_line_midpoint(units)
+
+    def in_band(x):
+        return frontier <= x < frontier + BAND_WIDTH
+
     order = sorted(tallies.keys())
     if side is Side.BRITISH:
-        order = list(reversed(order))
+        order = list(reversed(order))  # British walk east->west
+
+    # Ladder walk: first in-band, enemy-held region in advance order.
+    for idx in order:
+        t = tallies[idx]
+        if t["enemy"] <= 0:
+            continue
+        r = next(rr for rr in table if rr["index"] == idx)
+        ax, ay = r["anchor_a"]
+        if ax == 0 and ay == 0:
+            ax, ay = r["anchor_b"]
+        if in_band(ax):
+            return ax, ay
+
+    # Fallback: best-scoring in-reach region (the earlier model).
     best_idx, best_score = None, 0
     for idx in order:
-        s = score_region(tallies[idx], idx, side)
-        if s > best_score:
-            best_idx, best_score = idx, s
+        sc = score_region(tallies[idx], idx, side)
+        if sc > best_score:
+            best_idx, best_score = idx, sc
     if best_idx is None:
         return None
-    r = next(r for r in table if r["index"] == best_idx)
+    r = next(rr for rr in table if rr["index"] == best_idx)
     ax, ay = r["anchor_a"]
     if ax == 0 and ay == 0:
         ax, ay = r["anchor_b"]
     return ax, ay
+
+
 
 
 # The per-unit layer (band test, assault-on-contact, move-to-target,
