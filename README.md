@@ -57,6 +57,8 @@ reference/            Provenance & audit trail (not required to build):
                           across 16 sections — the detective log behind the spec.
   prospects.md            Prioritised backlog of remaining/open items.
   desert_rats_arena.html  Reference implementation / mechanics sanity-check (playable).
+                          SUPERSEDED as a playable front-end by arena/ (see below);
+                          kept as a pre-oracle mechanics reference only.
   desert_rats_board.html  Map + named-units viewer.
   desert-rats-mechanics-spec.md, desert-rats-extraction-workflow.md   Earlier notes.
   extraction_tools/       Python scripts used to extract the data (for re-derivation).
@@ -77,6 +79,28 @@ archive scans work too but are often still in copyright -- keep them
 local and uncommitted (same policy as data/tiles_original.json). Long-term: the og pack is generated locally from your
 own tape by reference/extraction_tools/, and the public repo ships only the
 engine + clean packs.
+
+## The application (web arena)
+
+`arena/` is the application layer: a FastAPI server exposing the verified
+engine over HTTP, plus a single-page browser client rendering the
+full-theatre overview surface (the pubmap-style legend map: terrain
+colours, nationality unit markers, approximate town labels). The client
+holds **no rules** — every mechanic runs in `desert_rats/`, so the arena
+can never drift from the oracle-verified engine the way the old embedded-JS
+prototype did.
+
+```
+pip install .[web]
+python -m arena          # then open http://127.0.0.1:8000/
+```
+
+Pick a scenario and side modes (human/AI per side); click a unit for its
+report, issue orders (MOVE / ASSAULT / HOLD / TRAVEL / FORTIFY — destination
+orders take a map click), then END TURN. AI sides are played by
+`ai.plan_turn` (the recovered original planner). The map payload
+(`/api/map`) is the content-pack seam for future surfaces — swapping the
+legend/backdrop swaps the skin without touching rules.
 
 ## How to use
 1. **Read** `CLEANROOM_BRIEF.md` then `BUILD_SPEC.md`.

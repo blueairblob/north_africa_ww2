@@ -16,15 +16,18 @@ dev = ["pytest>=7"]
 # Only render/image.py needs this; the terminal renderer and the rest of
 # the engine have zero third-party dependencies.
 image = ["Pillow>=10"]
+# The web arena application layer (arena/): engine-backed HTTP API + client.
+web = ["fastapi>=0.110", "uvicorn>=0.29", "Pillow>=10"]
 
 [project.scripts]
 desert-rats = "desert_rats.main:main"
 
 [tool.setuptools.packages.find]
-include = ["desert_rats*"]
+include = ["desert_rats*", "arena*"]
 
 [tool.setuptools.package-data]
 desert_rats = ["py.typed"]
+arena = ["static/*.html"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

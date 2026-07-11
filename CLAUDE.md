@@ -110,8 +110,9 @@ Load these, do not hand-transcribe rules from them beyond what BUILD_SPEC.md §9
 
 ## Reference material (not build inputs)
 
-- `reference/desert_rats_arena.html` — a playable partial reference implementation; useful
-  as a mechanics sanity-check before validating against emulator traces.
+- `reference/desert_rats_arena.html` — the pre-oracle playable JS prototype, SUPERSEDED
+  as a front-end by `arena/` (engine-backed web application; see README "The application").
+  Keep it only as a historical mechanics reference; never update its embedded JS engine.
 - `reference/desert_rats_board.html` — map + named-units viewer.
 - `reference/extraction_tools/*.py` — the SkoolKit-based scripts used to originally extract
   `data/*` from ZX Spectrum snapshots (diff snapshots, extract OOB, digitize map, etc). Only
