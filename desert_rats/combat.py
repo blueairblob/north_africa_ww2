@@ -44,7 +44,6 @@ FIXED_THRESHOLD_CLASS = 10         # oracle-verified: combat CLASS 10 (an OOB by
 FIXED_THRESHOLD = 20               # oracle-verified (these units crack sooner)
 PRESSURE_EXEMPT_CLASS = 13         # oracle-verified via the class-derive routine
                                    # (bit-3 gate); unused by this game's roster
-# Inferred, tunable (see module docstring):
 # OUT-OF-CONTACT DECAY: FALSIFIED. No per-turn reset exists in the
 # original; pressure persists and is cleared only by the retreat-step
 # executor (0x89A9), the break path, and rebuild arrival (0x93D7).
@@ -150,8 +149,9 @@ def apply_combat_pressure(side_units: List[Unit], all_units: List[Unit],
           mode and x2 caught bits cancel exactly)
         x2 if immobile (mps == 0)
         x weight_i / total_weight, weight_i = 1 << role_bit0
-    capped at 255 per turn. Out of contact, pressure resets
-    (PRESSURE_DECAY_OUT_OF_CONTACT -- still inferred).
+    capped at 255 per turn. Pressure PERSISTS out of contact (ambient
+    decay was falsified); it is cleared by the retreat-step executor,
+    the break path, and rebuild arrival.
     """
     tables = combat_tables()
     incoming = {id(u): 0.0 for u in side_units}

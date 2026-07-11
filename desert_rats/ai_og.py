@@ -36,9 +36,11 @@ PER-UNIT LAYER (recovered earlier, engine-map §15):
   assault an adjacent enemy if any, else move toward the target;
   a unit whose target is the board edge (x = 98) is sent to port.
 
-Everything labelled "exact" above is disassembled/oracle-verified; the
-ladder-walk tie-breaking beyond side direction is inferred (documented
-in NOTES.md).
+Everything above is disassembled and/or oracle-verified, including the
+ladder walk: the evaluators (0xA46D British ascending / 0xA4D3 Axis
+descending) gate each objective on the column band 0x9E7F --
+frontier <= x < frontier + 50 -- and take the first in-band, enemy-held
+objective. This module contains no inferred behaviour.
 """
 from __future__ import annotations
 

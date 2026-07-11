@@ -826,6 +826,21 @@ ahead of the front. Gate boundaries oracle-verified exactly (inclusive
 low, exclusive high, via the routine's INC C). choose_target now walks
 the ladder in the side's direction and returns the first in-band,
 enemy-held region's anchor, with the earlier scoring model retained only
-as an early-game fallback (no frontier contact). The ENTIRE engine is
-now free of inferred mechanics -- every behaviour is disassembly-read or
-oracle-verified against the original.
+as an early-game fallback (no frontier contact). The AI decision layer is now free of inferred mechanics.
+
+CORRECTION to an over-broad earlier claim: the AI, combat, supply
+banding, movement, the replacement economy, the calendar and the render
+model are fully recovered, but TWO subsystems remain genuinely
+unrecovered and are still spec-shaped implementations, clearly marked in
+their modules:
+
+1. victory.py -- objective type-code semantics and the exact
+   scoring/threshold formulas for the 7-way victory ladder
+   (BUILD_SPEC.md §10). We implement the spec's described SHAPE with
+   deterministic documented choices.
+2. zoc_supply.supply_band() -- the DISPLAY band thresholds (the band
+   names are confirmed from ui_strings; the numeric cutoffs are inferred
+   from the curve's breakpoints). Note the supply CURVE itself is
+   oracle-verified; only the cosmetic banding is inferred.
+
+These are the honest remaining gaps and the natural next targets.
