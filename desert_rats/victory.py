@@ -1,11 +1,22 @@
 """Front line, objective scoring, tactical/major/decisive victory ladder.
 
-See BUILD_SPEC.md §5.7. The objective type-code semantics and the exact
-scoring/threshold formulas are unrecovered (BUILD_SPEC.md §10 -- "type-code
-semantics are partly inferred"); this module implements the spec's own
-described *shape* (objective control + unit-count thresholds -> a signed
-7-way ladder) with simple, deterministic, documented choices everywhere
-the exact formula isn't recovered.
+RECOVERED from the original (scorer 0x9925, ladder 0x9A07, objective
+handlers 0x9970; conditions in data/victory_conditions.json). This
+replaces the earlier spec-shaped guess, which was structurally wrong: the
+ladder is NOT margin-based, and the unit threshold ADDS nothing -- it
+ZEROES a side's score when its surviving-unit count falls below it.
+
+Per side (0-3 points):
+  +1 for each of its TWO objectives met (type codes below);
+  score := 3 outright if the enemy has been annihilated;
+  score := 0 if own surviving units < the side's threshold.
+Ladder (0x9A07): equal scores -> DRAW; otherwise the WINNER'S OWN SCORE
+gives the magnitude -- 1 tactical, 2 major, 3 decisive.
+
+Objective type codes:
+  0 none; 1 reach the far map edge; 3 hold the front line at/beyond
+  column V; 4 hold the ENEMY's front line no further than column V;
+  5 keep more than V units on the map.
 """
 from __future__ import annotations
 
@@ -92,45 +103,79 @@ def controls_column(units: Iterable[Unit], column: int) -> Optional[Side]:
     return best_side
 
 
-def count_controlled_objectives(
-    units: Iterable[Unit], objectives: Iterable[tuple[int, int]], side: Side
-) -> int:
+def _front_column(units, side: Side) -> Optional[int]:
+    """The side's front-line column (0xCB07/0xCB08): the easternmost Axis
+    unit / the westernmost British unit."""
+    xs = [u.x for u in units if not u.is_destroyed and u.side is side]
+    if not xs:
+        return None
+    return max(xs) if side is Side.AXIS else min(xs)
+
+
+def objective_met(units, objective, side: Side, board_width: int = 100) -> bool:
+    """One recovered objective test (handlers dispatched at 0x9970)."""
+    code, value = objective
     units = list(units)
-    return sum(1 for column, _type in objectives if controls_column(units, column) is side)
+    if code == 0:
+        return False
+    if code == 1:
+        # reach the far map edge (the side's advance edge)
+        edge = board_width - 1
+        return any(not u.is_destroyed and u.side is side
+                   and (u.x >= edge - 2 if side is Side.BRITISH else u.x <= 2)
+                   for u in units)
+    if code == 3:
+        front = _front_column(units, side)
+        if front is None:
+            return False
+        # British push west (front <= V); Axis push east (front >= V)
+        return front <= value if side is Side.BRITISH else front >= value
+    if code == 4:
+        enemy = Side.AXIS if side is Side.BRITISH else Side.BRITISH
+        front = _front_column(units, enemy)
+        if front is None:
+            return True   # no enemy left: trivially contained
+        return front >= value if side is Side.BRITISH else front <= value
+    if code == 5:
+        alive = sum(1 for u in units if not u.is_destroyed and u.side is side)
+        return alive > value
+    return False
 
 
-def score_side(units: Iterable[Unit], scenario: Scenario, side: Side) -> int:
-    """Objective control points + a unit-count-threshold point (§5.7)."""
+def score_side(units, scenario, side: Side) -> int:
+    """0-3 points, per the recovered scorer (0x9925)."""
     units = list(units)
-    objectives = scenario.british_objectives if side is Side.BRITISH else scenario.axis_objectives
-    threshold_key = "british" if side is Side.BRITISH else "axis"
+    conditions = scenario.victory_conditions
+    objectives = (conditions["british_objectives"] if side is Side.BRITISH
+                  else conditions["axis_objectives"])
+    threshold = (conditions["british_unit_threshold"] if side is Side.BRITISH
+                 else conditions["axis_unit_threshold"])
 
-    points = count_controlled_objectives(units, objectives, side)
+    enemy = Side.AXIS if side is Side.BRITISH else Side.BRITISH
+    enemy_alive = sum(1 for u in units if not u.is_destroyed and u.side is enemy)
+    own_alive = sum(1 for u in units if not u.is_destroyed and u.side is side)
 
-    surviving = sum(1 for u in units if not u.is_destroyed and u.side is side)
-    threshold = scenario.unit_thresholds.get(threshold_key, 0)
-    if surviving >= threshold:
-        points += 1
+    if enemy_alive == 0:
+        points = 3                                  # annihilation
+    else:
+        points = sum(1 for o in objectives if objective_met(units, o, side))
 
-    return points
+    if own_alive < threshold:                       # ZEROED, not bonused
+        return 0
+    return min(points, 3)
 
-
-def victory_result(units: Iterable[Unit], scenario: Scenario) -> VictoryLevel:
-    """BUILD_SPEC.md §5.7: compare both sides' scores into the 7-way ladder."""
+def victory_result(units, scenario) -> VictoryLevel:
+    """The recovered ladder (0x9A07): equal -> DRAW; else the WINNER'S OWN
+    score is the magnitude (1 tactical / 2 major / 3 decisive)."""
     units = list(units)
-    margin = score_side(units, scenario, Side.BRITISH) - score_side(units, scenario, Side.AXIS)
-
-    if margin == 0:
+    brit = score_side(units, scenario, Side.BRITISH)
+    axis = score_side(units, scenario, Side.AXIS)
+    if brit == axis:
         return VictoryLevel.DRAW
-    if margin > 0:
-        if margin >= _MAJOR_MARGIN + 1:
-            return VictoryLevel.BRITISH_DECISIVE
-        if margin >= _MAJOR_MARGIN:
-            return VictoryLevel.BRITISH_MAJOR
-        return VictoryLevel.BRITISH_TACTICAL
-    magnitude = -margin
-    if magnitude >= _MAJOR_MARGIN + 1:
-        return VictoryLevel.AXIS_DECISIVE
-    if magnitude >= _MAJOR_MARGIN:
-        return VictoryLevel.AXIS_MAJOR
-    return VictoryLevel.AXIS_TACTICAL
+    if brit > axis:
+        return {1: VictoryLevel.BRITISH_TACTICAL,
+                2: VictoryLevel.BRITISH_MAJOR,
+                3: VictoryLevel.BRITISH_DECISIVE}[max(1, min(brit, 3))]
+    return {1: VictoryLevel.AXIS_TACTICAL,
+            2: VictoryLevel.AXIS_MAJOR,
+            3: VictoryLevel.AXIS_DECISIVE}[max(1, min(axis, 3))]

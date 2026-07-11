@@ -188,10 +188,10 @@ def load_master_oob(
 class Scenario:
     """One of the 6 day-windows into the 624-day campaign (data/scenarios.json).
 
-    `british_objectives`/`axis_objectives` are (column, type) pairs -- map
-    x-columns that side is expected to hold. The `type` code's exact
-    semantics are partly inferred (BUILD_SPEC.md §10); victory.py treats
-    every objective as equally weighted.
+    The legacy `british_objectives`/`axis_objectives`/`unit_thresholds`
+    fields are the spec-era approximation; the RECOVERED conditions are
+    exposed by `victory_conditions` (see victory.py) and are what the
+    engine scores against.
     """
 
     index: int
@@ -201,6 +201,18 @@ class Scenario:
     british_objectives: tuple[tuple[int, int], ...]
     axis_objectives: tuple[tuple[int, int], ...]
     unit_thresholds: dict
+
+    @property
+    def victory_conditions(self) -> dict:
+        """The RECOVERED per-scenario victory record (0xDE53), from
+        data/victory_conditions.json: two (type, value) objectives per
+        side plus the surviving-unit thresholds. See victory.py."""
+        import json as _json
+        from pathlib import Path as _Path
+        from . import packs as _packs
+        path = _packs.active_pack().resolve("victory_conditions.json")
+        rec = _json.loads(_Path(path).read_text())["scenarios"]
+        return rec[max(0, self.index - 1)]
 
 
 def load_scenarios(path: Optional[Path] = None) -> tuple[Scenario, ...]:
@@ -249,3 +261,4 @@ def load_schedules(path: Optional[Path] = None) -> dict:
     path = Path(path) if path is not None else packs.active_pack().resolve("schedules.json")
     import json as _json
     return _json.loads(path.read_text())
+

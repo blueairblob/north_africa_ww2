@@ -110,64 +110,94 @@ class TestControlsColumn(unittest.TestCase):
         self.assertIsNone(victory.controls_column([], 50))
 
 
-class TestScoring(unittest.TestCase):
-    def test_objective_points_awarded_to_controlling_side(self):
-        scenario = make_scenario(british_objectives=((50, 3), (76, 3)))
-        u = [make_unit(data.Nationality.BRITISH, 50, index=0), make_unit(data.Nationality.BRITISH, 76, index=1)]
-        self.assertEqual(victory.count_controlled_objectives(u, scenario.british_objectives, data.Side.BRITISH), 2)
+class FakeScenario:
+    """A scenario carrying explicit recovered victory conditions."""
+    def __init__(self, brit_obj, axis_obj, brit_thr=0, axis_thr=0):
+        self._c = {
+            "british_objectives": brit_obj,
+            "axis_objectives": axis_obj,
+            "british_unit_threshold": brit_thr,
+            "axis_unit_threshold": axis_thr,
+        }
 
-    def test_unit_threshold_bonus(self):
-        scenario = make_scenario(thresholds={"british": 2, "axis": 0})
-        below = [make_unit(data.Nationality.BRITISH, 50, index=0)]
-        at_threshold = [
-            make_unit(data.Nationality.BRITISH, 50, index=0),
-            make_unit(data.Nationality.BRITISH, 51, index=1),
-        ]
-        self.assertEqual(victory.score_side(below, scenario, data.Side.BRITISH), 0)
-        self.assertEqual(victory.score_side(at_threshold, scenario, data.Side.BRITISH), 1)
+    @property
+    def victory_conditions(self):
+        return self._c
 
 
-class TestVictoryResult(unittest.TestCase):
-    def test_draw_on_equal_score(self):
-        scenario = make_scenario()
-        u = [make_unit(data.Nationality.GERMAN, 10, index=0), make_unit(data.Nationality.BRITISH, 90, index=1)]
-        self.assertEqual(victory.victory_result(u, scenario), victory.VictoryLevel.DRAW)
+class TestRecoveredObjectives(unittest.TestCase):
+    def test_type5_keeps_more_than_v_units(self):
+        us = [make_unit(data.Nationality.BRITISH, 10, 10, index=i) for i in range(4)]
+        self.assertTrue(victory.objective_met(us, [5, 3], data.Side.BRITISH))   # 4 > 3
+        self.assertFalse(victory.objective_met(us, [5, 4], data.Side.BRITISH))  # 4 > 4 false
 
-    def test_british_tactical_victory(self):
-        scenario = make_scenario(british_objectives=((50, 3),))
-        u = [
-            make_unit(data.Nationality.BRITISH, 50, index=0),
-            make_unit(data.Nationality.GERMAN, 10, index=1),
-        ]
-        self.assertEqual(victory.victory_result(u, scenario), victory.VictoryLevel.BRITISH_TACTICAL)
+    def test_type3_front_line_position(self):
+        # British push west: front (their westernmost x) must be <= V.
+        us = [make_unit(data.Nationality.BRITISH, 40, 10)]
+        self.assertTrue(victory.objective_met(us, [3, 76], data.Side.BRITISH))
+        self.assertFalse(victory.objective_met(us, [3, 20], data.Side.BRITISH))
+        # Axis push east: front (their easternmost x) must be >= V.
+        them = [make_unit(data.Nationality.GERMAN, 90, 10)]
+        self.assertTrue(victory.objective_met(them, [3, 76], data.Side.AXIS))
+        self.assertFalse(victory.objective_met(them, [3, 95], data.Side.AXIS))
 
-    def test_british_major_victory(self):
-        scenario = make_scenario(british_objectives=((50, 3), (60, 3)))
-        u = [
-            make_unit(data.Nationality.BRITISH, 50, index=0),
-            make_unit(data.Nationality.BRITISH, 60, index=1),
-            make_unit(data.Nationality.GERMAN, 10, index=2),
-        ]
-        self.assertEqual(victory.victory_result(u, scenario), victory.VictoryLevel.BRITISH_MAJOR)
+    def test_type4_contains_the_enemy(self):
+        # British hold the Axis front no further east than V.
+        us = [make_unit(data.Nationality.BRITISH, 80, 10),
+              make_unit(data.Nationality.GERMAN, 30, 10, index=1)]
+        self.assertTrue(victory.objective_met(us, [4, 20], data.Side.BRITISH))
+        self.assertFalse(victory.objective_met(us, [4, 50], data.Side.BRITISH))
 
-    def test_british_decisive_victory(self):
-        scenario = make_scenario(
-            british_objectives=((50, 3), (60, 3)), thresholds={"british": 1, "axis": 99}
-        )
-        u = [
-            make_unit(data.Nationality.BRITISH, 50, index=0),
-            make_unit(data.Nationality.BRITISH, 60, index=1),
-            make_unit(data.Nationality.GERMAN, 10, index=2),
-        ]
-        self.assertEqual(victory.victory_result(u, scenario), victory.VictoryLevel.BRITISH_DECISIVE)
 
-    def test_axis_tactical_victory_mirrors_british(self):
-        scenario = make_scenario(axis_objectives=((10, 3),))
-        u = [
-            make_unit(data.Nationality.GERMAN, 10, index=0),
-            make_unit(data.Nationality.BRITISH, 90, index=1),
-        ]
-        self.assertEqual(victory.victory_result(u, scenario), victory.VictoryLevel.AXIS_TACTICAL)
+class TestRecoveredScoring(unittest.TestCase):
+    def test_each_met_objective_scores_one(self):
+        us = [make_unit(data.Nationality.BRITISH, 40, 10, index=i) for i in range(5)]
+        us.append(make_unit(data.Nationality.GERMAN, 90, 10, index=9))
+        sc = FakeScenario([[3, 76], [5, 3]], [[0, 0], [0, 0]])
+        self.assertEqual(victory.score_side(us, sc, data.Side.BRITISH), 2)
+
+    def test_threshold_zeroes_the_score(self):
+        # Oracle semantics: falling below the threshold ZEROES the score
+        # (it is not a bonus point).
+        us = [make_unit(data.Nationality.BRITISH, 40, 10)]
+        us.append(make_unit(data.Nationality.GERMAN, 90, 10, index=9))
+        sc = FakeScenario([[3, 76], [0, 0]], [[0, 0], [0, 0]], brit_thr=5)
+        self.assertEqual(victory.score_side(us, sc, data.Side.BRITISH), 0)
+
+    def test_annihilation_scores_three(self):
+        us = [make_unit(data.Nationality.BRITISH, 40, 10)]
+        sc = FakeScenario([[0, 0], [0, 0]], [[0, 0], [0, 0]])
+        self.assertEqual(victory.score_side(us, sc, data.Side.BRITISH), 3)
+
+
+class TestRecoveredLadder(unittest.TestCase):
+    def _units(self, brit=1, axis=1):
+        us = [make_unit(data.Nationality.BRITISH, 40, 10, index=i) for i in range(brit)]
+        us += [make_unit(data.Nationality.GERMAN, 90, 10, index=50 + i) for i in range(axis)]
+        return us
+
+    def test_equal_scores_draw(self):
+        sc = FakeScenario([[0, 0], [0, 0]], [[0, 0], [0, 0]])
+        self.assertIs(victory.victory_result(self._units(), sc), victory.VictoryLevel.DRAW)
+
+    def test_winner_score_sets_the_magnitude(self):
+        us = self._units(brit=5, axis=1)
+        # British meet both objectives (front <= 76; > 3 units) -> score 2
+        sc = FakeScenario([[3, 76], [5, 3]], [[0, 0], [0, 0]])
+        self.assertIs(victory.victory_result(us, sc), victory.VictoryLevel.BRITISH_MAJOR)
+        # One objective only -> tactical
+        sc1 = FakeScenario([[3, 76], [5, 9]], [[0, 0], [0, 0]])
+        self.assertIs(victory.victory_result(us, sc1), victory.VictoryLevel.BRITISH_TACTICAL)
+
+    def test_annihilation_is_decisive(self):
+        us = [make_unit(data.Nationality.BRITISH, 40, 10)]
+        sc = FakeScenario([[0, 0], [0, 0]], [[0, 0], [0, 0]])
+        self.assertIs(victory.victory_result(us, sc), victory.VictoryLevel.BRITISH_DECISIVE)
+
+    def test_axis_mirrors(self):
+        us = self._units(brit=1, axis=5)
+        sc = FakeScenario([[0, 0], [0, 0]], [[3, 76], [5, 3]])
+        self.assertIs(victory.victory_result(us, sc), victory.VictoryLevel.AXIS_MAJOR)
 
 
 if __name__ == "__main__":

@@ -844,3 +844,38 @@ their modules:
    oracle-verified; only the cosmetic banding is inferred.
 
 These are the honest remaining gaps and the natural next targets.
+
+## Victory conditions: RECOVERED
+
+The larger of the two remaining gaps is closed -- and the spec-shaped
+implementation it replaces was structurally WRONG.
+
+- Per-scenario victory records live in the scenario blocks
+  (0xDE53 + scenario*0x19): TWO (type, value) objectives per side
+  (British +8/+10, Axis +12/+14) plus per-side surviving-unit thresholds
+  (+0x15/+0x16). Extracted to data/victory_conditions.json.
+- Scorer (0x9925): a side scores 0-3 = one point per objective met;
+  3 outright if the enemy is annihilated; and the score is ZEROED if the
+  side's own surviving-unit count drops below its threshold. (The old
+  spec model ADDED a point for meeting the threshold -- backwards.)
+- Objective type codes (dispatch 0x9970): 0 none; 1 reach the far map
+  edge; 3 hold own front line at/beyond column V; 4 hold the ENEMY's
+  front no further than column V; 5 keep more than V units on the map.
+- Ladder (0x9A07): equal scores -> DRAW; otherwise the WINNER'S OWN
+  SCORE is the magnitude (1 tactical, 2 major, 3 decisive) -- NOT the
+  margin between sides, as the spec model assumed. Message indices 51-57
+  confirm the 7-way ladder.
+- victory.py rewritten to these semantics; Scenario.victory_conditions
+  exposes the recovered record; tests rewritten (23 in the module).
+
+## Supply display bands: honest status (NOT recovered)
+
+Searched specifically. The six strings (V LOW ... V GOOD) exist in the
+message table, but there is NO band-selection code: no base+offset
+computation onto their indices anywhere in the binary. The only
+"SUPPLY LOW" warning the game emits (0x8CC4) tests MPS < 10, not a
+supply percentage. Even the "supply_bands" grouping in ui_strings.json
+is an earlier extraction pass's inference, not a recovered fact.
+supply_band() therefore keeps OUR thresholds, now clearly labelled as
+ours. This is display-only: the supply curve and its banding arithmetic
+are oracle-verified, and no engine mechanic depends on the labels.

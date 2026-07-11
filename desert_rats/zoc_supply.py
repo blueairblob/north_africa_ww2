@@ -132,12 +132,21 @@ def supply_level(distance: int) -> int:
 def supply_band(level: int) -> str:
     """Display band for a supply level.
 
-    The band *names* are confirmed (data/ui_strings.json:supply_bands); the
-    numeric thresholds are not recovered from the original and are inferred
-    here from the curve's own breakpoints (BUILD_SPEC.md §10) — it steps by
-    5 every curve entry down to 50, then flattens through the 35-49 tail:
-    >=80 V GOOD, 70-79 GOOD, 60-69 FAIR, 50-59 Q LOW, 40-49 LOW, 1-39 V LOW,
-    0 (no path) NONE.
+    DISPLAY ONLY -- not a game mechanic. Status after a dedicated search
+    of the original (see NOTES.md "Supply display bands"): the six strings
+    V LOW / LOW / Q LOW / FAIR / GOOD / V GOOD exist in the message table,
+    but NO band-selection code was found -- there is no base+offset
+    computation onto their message indices anywhere in the binary, and the
+    only "supply" warning the code emits (0x8CC4) actually tests MPS < 10,
+    not a supply percentage. Even the grouping of these six strings as
+    "supply bands" is an inference by an earlier extraction pass, not a
+    recovered fact.
+
+    The thresholds below are therefore OURS, chosen from the (oracle-
+    verified) curve's own breakpoints. The supply CURVE and its banding
+    arithmetic are recovered exactly (supply_level above); only this
+    cosmetic label mapping is invented, and nothing in the engine's
+    mechanics depends on it.
     """
     if level <= 0:
         return NONE

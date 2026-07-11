@@ -1,0 +1,168 @@
+{
+ "_provenance": "Recovered per-scenario victory conditions (0xDE53 records); scorer 0x9925, ladder 0x9A07. See NOTES.md.",
+ "type_codes": {
+  "0": "none",
+  "1": "reach map edge",
+  "3": "hold front line at/beyond column V",
+  "4": "enemy front line not beyond column V",
+  "5": "keep more than V units on map"
+ },
+ "ladder": {
+  "0": "draw (equal scores)",
+  "1": "tactical",
+  "2": "major",
+  "3": "decisive"
+ },
+ "scenarios": [
+  {
+   "index": 0,
+   "british_objectives": [
+    [
+     0,
+     0
+    ],
+    [
+     0,
+     0
+    ]
+   ],
+   "axis_objectives": [
+    [
+     0,
+     0
+    ],
+    [
+     0,
+     1
+    ]
+   ],
+   "british_unit_threshold": 22,
+   "axis_unit_threshold": 35
+  },
+  {
+   "index": 1,
+   "british_objectives": [
+    [
+     3,
+     76
+    ],
+    [
+     3,
+     95
+    ]
+   ],
+   "axis_objectives": [
+    [
+     4,
+     76
+    ],
+    [
+     1,
+     0
+    ]
+   ],
+   "british_unit_threshold": 10,
+   "axis_unit_threshold": 10
+  },
+  {
+   "index": 2,
+   "british_objectives": [
+    [
+     3,
+     76
+    ],
+    [
+     3,
+     76
+    ]
+   ],
+   "axis_objectives": [
+    [
+     4,
+     76
+    ],
+    [
+     5,
+     9
+    ]
+   ],
+   "british_unit_threshold": 11,
+   "axis_unit_threshold": 16
+  },
+  {
+   "index": 3,
+   "british_objectives": [
+    [
+     3,
+     76
+    ],
+    [
+     5,
+     20
+    ]
+   ],
+   "axis_objectives": [
+    [
+     4,
+     76
+    ],
+    [
+     3,
+     101
+    ]
+   ],
+   "british_unit_threshold": 24,
+   "axis_unit_threshold": 24
+  },
+  {
+   "index": 4,
+   "british_objectives": [
+    [
+     3,
+     80
+    ],
+    [
+     5,
+     20
+    ]
+   ],
+   "axis_objectives": [
+    [
+     1,
+     0
+    ],
+    [
+     3,
+     123
+    ]
+   ],
+   "british_unit_threshold": 20,
+   "axis_unit_threshold": 25
+  },
+  {
+   "index": 5,
+   "british_objectives": [
+    [
+     3,
+     57
+    ],
+    [
+     5,
+     15
+    ]
+   ],
+   "axis_objectives": [
+    [
+     3,
+     112
+    ],
+    [
+     3,
+     130
+    ]
+   ],
+   "british_unit_threshold": 40,
+   "axis_unit_threshold": 20
+  }
+ ]
+}
