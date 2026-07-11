@@ -4,64 +4,63 @@
 <meta charset="utf-8">
 <title>Desert Rats — Arena</title>
 <style>
-  :root{
-    --paper:#d6c56e; --sea:#0c32c8; --panel:#000; --ink:#e8e8e8;
-    --brit:#1e3cff; --ger:#141414; --ita:#e61ec8; --hl:#00e0e0;
-  }
   *{box-sizing:border-box}
-  body{margin:0;background:#000;color:var(--ink);
+  body{margin:0;background:#000;color:#e8e8e8;
        font-family:"Courier New",ui-monospace,monospace;font-size:14px}
   header{display:flex;gap:24px;align-items:baseline;padding:8px 14px;
          border-bottom:2px solid #333}
   header h1{font-size:16px;margin:0;color:#ffd400;letter-spacing:2px}
-  header .date{color:var(--hl)}
   header .result{color:#ff4040;font-weight:bold}
-  #layout{display:flex;gap:10px;padding:10px}
-  #mapwrap{overflow:auto;border:2px solid #333;background:#000;flex:1}
-  canvas{display:block;image-rendering:pixelated;cursor:crosshair}
-  #side{width:340px;flex:none;display:flex;flex-direction:column;gap:10px}
+  #layout{display:flex;gap:12px;padding:12px;align-items:flex-start}
+  #screenwrap{flex:none}
+  /* the authentic 256x192 screen, integer-scaled, hard pixels */
+  #screen{width:768px;height:576px;image-rendering:pixelated;display:block;
+          border:2px solid #333;cursor:crosshair;background:#000}
+  #minimap{display:block;image-rendering:pixelated;border:2px solid #333;
+           margin-top:8px;cursor:pointer}
+  #side{width:330px;flex:none;display:flex;flex-direction:column;gap:10px}
   .box{border:2px solid #333;padding:8px;background:#050505}
   .box h2{margin:0 0 6px;font-size:13px;color:#ffd400;letter-spacing:1px}
   .kv{display:grid;grid-template-columns:auto 1fr;gap:2px 10px}
   .kv b{color:#9a9a9a;font-weight:normal}
-  button{background:#111;color:var(--ink);border:1px solid #555;
+  button{background:#111;color:#e8e8e8;border:1px solid #555;
          font-family:inherit;font-size:13px;padding:4px 8px;cursor:pointer}
-  button:hover{border-color:var(--hl);color:var(--hl)}
-  button.active{background:#ffd400;color:#000;border-color:#ffd400}
-  button:disabled{opacity:.35;cursor:default}
-  #orders{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
-  #log{height:150px;overflow-y:auto;font-size:12px;color:#8fd08f;white-space:pre-wrap}
+  button:hover{border-color:#00e0e0;color:#00e0e0}
+  #log{height:170px;overflow-y:auto;font-size:12px;color:#8fd08f;white-space:pre-wrap}
   #newgame{position:fixed;inset:0;background:rgba(0,0,0,.85);
            display:flex;align-items:center;justify-content:center}
   #newgame .box{width:420px}
-  select{background:#111;color:var(--ink);border:1px solid #555;
+  select{background:#111;color:#e8e8e8;border:1px solid #555;
          font-family:inherit;font-size:13px;padding:3px;width:100%}
   .row{display:flex;gap:8px;margin:6px 0;align-items:center}
   .row label{width:80px;color:#9a9a9a}
   .hint{color:#777;font-size:12px;margin-top:4px}
-  #endturn{width:100%;padding:8px;font-size:15px;letter-spacing:2px}
+  #artwarn{color:#ffb000;font-size:12px}
 </style>
 </head>
 <body>
 <header>
   <h1>DESERT RATS</h1>
   <span id="scen"></span>
-  <span class="date" id="date"></span>
   <span id="turn"></span>
   <span class="result" id="result"></span>
+  <span id="artwarn"></span>
   <span style="margin-left:auto"><button onclick="showNewGame()">NEW GAME</button></span>
 </header>
 
 <div id="layout">
-  <div id="mapwrap"><canvas id="map"></canvas></div>
+  <div id="screenwrap">
+    <img id="screen" alt="game screen">
+    <canvas id="minimap"></canvas>
+    <div class="hint">Arrows scroll &middot; click map: select / set destination &middot; click panel: orders &middot;
+      keys M A H F T &middot; ENTER ends turn</div>
+  </div>
   <div id="side">
     <div class="box">
       <h2>UNIT REPORT</h2>
       <div id="report" class="kv"><b>—</b><span>select a unit</span></div>
-      <div id="orders"></div>
       <div class="hint" id="orderhint"></div>
     </div>
-    <div class="box"><button id="endturn" onclick="endTurn()">END TURN ▸</button></div>
     <div class="box"><h2>SIGNALS LOG</h2><div id="log"></div></div>
   </div>
 </div>
@@ -73,24 +72,26 @@
     <div class="row"><label>British</label><select id="ng-brit"><option>human</option><option>ai</option></select></div>
     <div class="row"><label>Axis</label><select id="ng-axis"><option selected>ai</option><option>human</option></select></div>
     <div class="row"><button onclick="startGame()">BEGIN ▸</button></div>
-    <div class="hint">Engine: oracle-verified desert_rats/ — the browser holds no rules.</div>
+    <div class="hint">Engine and screen both render server-side — the browser holds no rules and no art.</div>
   </div>
 </div>
 
 <script>
 "use strict";
-// The client is a pure skin: render state JSON, stage orders, end turn.
-const CELL = 12;
-const ORDERS = [[1,"MOVE"],[2,"ASSAULT"],[3,"HOLD"],[4,"TRAVEL"],[7,"FORTIFY"]];
+// The client is the authentic screen plus chrome: it maps clicks/keys to
+// engine calls and displays server-rendered pixels. No rules, no art here.
+const SCALE = 3;                       // 256x192 -> 768x576
+const KEY_ORDERS = {m:1, a:2, h:3, t:4, f:7};
 const NEEDS_DEST = new Set([1,2,4]);
+const MINI_CELL = 4;
 
-let MAP=null, STATE=null, GAME_ID=null;
-let selected=null;          // oob_index
-let pendingOrder=null;      // order code awaiting a destination click
-let staged={};              // oob_index -> {order, dest_x, dest_y}
+let UI=null, MAP=null, STATE=null, GAME_ID=null;
+let ox=0, oy=0;            // viewport origin (cells)
+let selected=null;         // oob_index
+let pendingOrder=null;     // order code awaiting a destination click
 
 const $=id=>document.getElementById(id);
-const cv=$("map"), cx=cv.getContext("2d");
+const scr=$("screen"), mini=$("minimap"), mctx=mini.getContext("2d");
 
 async function api(path, body){
   const r=await fetch(path, body?{method:"POST",headers:{"Content-Type":"application/json"},
@@ -101,87 +102,74 @@ async function api(path, body){
 
 // ── boot ────────────────────────────────────────────────────────────────
 async function boot(){
-  MAP=await api("/api/map");
-  cv.width=MAP.width*CELL; cv.height=MAP.height*CELL;
+  [UI, MAP]=await Promise.all([api("/api/ui"), api("/api/map")]);
+  if(!UI.og_art) $("artwarn").textContent=
+    "⚠ local og art not found — degraded screen (see README: extract_render_tables.py)";
+  mini.width=MAP.width*MINI_CELL; mini.height=MAP.height*MINI_CELL;
   const scens=await api("/api/scenarios");
   $("ng-scen").innerHTML=scens.map(s=>
     `<option value="${s.index}">${s.name} — ${s.start_date}</option>`).join("");
-  drawTerrain();
 }
 function showNewGame(){ $("newgame").style.display="flex"; }
 async function startGame(){
   const req={scenario_index:+$("ng-scen").value,
              british:$("ng-brit").value, axis:$("ng-axis").value};
   STATE=await api("/api/games",req); GAME_ID=STATE.game_id;
-  selected=null; pendingOrder=null; staged={};
+  selected=null; pendingOrder=null;
   $("newgame").style.display="none";
+  centerOnAction();
   refresh();
 }
+function centerOnAction(){
+  // open the viewport on the front (midpoint) or first human unit
+  const mid=STATE.midpoint;
+  let cx = mid!=null ? mid : 50;
+  const humanSides=Object.entries(STATE.modes).filter(([,m])=>m==="human").map(([s])=>s.toUpperCase());
+  const mine=STATE.units.filter(u=>humanSides.includes(u.side));
+  let cy = mine.length ? mine.reduce((a,u)=>a+u.y,0)/mine.length : MAP.height/2;
+  ox=clampOx(Math.round(cx-UI.view_cells/2));
+  oy=clampOy(Math.round(cy-UI.view_cells/2));
+}
+const clampOx=v=>Math.min(Math.max(v,0),Math.max(0,MAP.width-UI.view_cells));
+const clampOy=v=>Math.min(Math.max(v,0),Math.max(0,MAP.height-UI.view_cells));
 
-// ── rendering ───────────────────────────────────────────────────────────
-let terrainLayer=null;
-function drawTerrain(){
-  terrainLayer=document.createElement("canvas");
-  terrainLayer.width=cv.width; terrainLayer.height=cv.height;
-  const t=terrainLayer.getContext("2d");
+// ── screen + minimap ────────────────────────────────────────────────────
+function drawScreen(){
+  if(!GAME_ID) return;
+  const q=new URLSearchParams({ox,oy,t:Date.now()});
+  if(selected!=null) q.set("sel",selected);
+  scr.src=`/api/games/${GAME_ID}/screen?`+q;
+}
+function drawMini(){
   for(let y=0;y<MAP.height;y++) for(let x=0;x<MAP.width;x++){
     const c=MAP.legend[String(MAP.terrain[y][x])]||MAP.legend["0"];
-    t.fillStyle=`rgb(${c[0]},${c[1]},${c[2]})`;
-    t.fillRect(x*CELL,y*CELL,CELL,CELL);
+    mctx.fillStyle=`rgb(${c[0]},${c[1]},${c[2]})`;
+    mctx.fillRect(x*MINI_CELL,y*MINI_CELL,MINI_CELL,MINI_CELL);
   }
-  // town labels (approximate columns — orientation aid, not game data)
-  t.font=`bold ${CELL+1}px "Courier New",monospace`;
-  t.textBaseline="top"; t.lineWidth=3; t.strokeStyle="#000"; t.fillStyle="#fff";
-  for(const [name,col] of Object.entries(MAP.towns)){
-    const px=Math.min(col,MAP.width-1)*CELL, py=2*CELL;
-    t.strokeText(name.toUpperCase(),px,py); t.fillText(name.toUpperCase(),px,py);
+  if(STATE) for(const u of STATE.units){
+    const c=MAP.nation_colours[u.nationality]||[255,255,255];
+    mctx.fillStyle=`rgb(${c[0]},${c[1]},${c[2]})`;
+    mctx.fillRect(u.x*MINI_CELL,u.y*MINI_CELL,MINI_CELL*u.footprint,MINI_CELL*u.footprint);
   }
-  render();
-}
-function unitColour(u){
-  const c=MAP.nation_colours[u.nationality]||[255,255,255];
-  return `rgb(${c[0]},${c[1]},${c[2]})`;
-}
-function render(){
-  cx.drawImage(terrainLayer,0,0);
-  if(!STATE) return;
-  for(const u of STATE.units){
-    const f=u.footprint, px=(u.x+f/2)*CELL, py=(u.y+f/2)*CELL, r=CELL*0.42;
-    // staged destination arrow
-    const st=staged[u.oob_index];
-    const dx=st?st.dest_x:u.dest_x, dy=st?st.dest_y:u.dest_y;
-    if(dx!=null && (dx!==u.x||dy!==u.y)){
-      cx.strokeStyle="rgba(255,255,255,.55)"; cx.setLineDash([4,3]); cx.lineWidth=1.5;
-      cx.beginPath(); cx.moveTo(px,py); cx.lineTo((dx+f/2)*CELL,(dy+f/2)*CELL); cx.stroke();
-      cx.setLineDash([]);
-    }
-    cx.beginPath(); cx.arc(px,py,r,0,7);
-    cx.fillStyle=unitColour(u); cx.fill();
-    cx.lineWidth=u.oob_index===selected?3:1.5;
-    cx.strokeStyle=u.oob_index===selected?"#00e0e0":"#fff";
-    cx.stroke();
-    if(u.travel){ cx.fillStyle="#fff"; cx.fillRect(px-1.5,py-1.5,3,3); }
-  }
+  mctx.strokeStyle="#fff"; mctx.lineWidth=1.5;
+  mctx.strokeRect(ox*MINI_CELL,oy*MINI_CELL,UI.view_cells*MINI_CELL,UI.view_cells*MINI_CELL);
 }
 
 // ── HUD / report ────────────────────────────────────────────────────────
 function refresh(){
-  $("scen").textContent=STATE.scenario.name.toUpperCase();
-  $("date").textContent=STATE.date.join(" ");
+  $("scen").textContent=STATE.scenario.name.toUpperCase()+"  "+STATE.date.join(" ");
   $("turn").textContent="TURN "+STATE.turn;
   $("result").textContent=STATE.result?("★ "+STATE.result.replaceAll("_"," ")):"";
-  $("endturn").disabled=!!STATE.result;
   $("log").textContent=STATE.log.join("\n");
   $("log").scrollTop=1e9;
-  report(); render();
+  report(); drawScreen(); drawMini();
 }
 function humanSide(side){ return STATE.modes[side==="BRITISH"?"british":"axis"]==="human"; }
+function selUnit(){ return STATE&&STATE.units.find(u=>u.oob_index===selected); }
 function report(){
-  const u=STATE&&STATE.units.find(u=>u.oob_index===selected);
-  const box=$("report"), ob=$("orders"), hint=$("orderhint");
-  ob.innerHTML=""; hint.textContent="";
+  const u=selUnit(), box=$("report"), hint=$("orderhint");
+  hint.textContent=pendingOrder!=null?"Click the map to set a destination.":"";
   if(!u){ box.innerHTML="<b>—</b><span>select a unit</span>"; return; }
-  const st=staged[u.oob_index];
   box.innerHTML=`
     <b>Unit</b><span>${u.name}</span>
     <b>Nat.</b><span>${u.nationality} (${u.branch})</span>
@@ -189,56 +177,70 @@ function report(){
     <b>Efficiency</b><span>${u.efficiency}%</span>
     <b>Morale</b><span>${u.morale}</span>
     <b>Supply</b><span>${u.supply_band??"—"}${u.supply!=null?` (${u.supply})`:""}</span>
-    <b>Order</b><span>${st?ORDERS.find(o=>o[0]===st.order)[1]+" (staged)":u.order_name}</span>`;
-  if(humanSide(u.side)&&!STATE.result){
-    for(const [code,label] of ORDERS){
-      const b=document.createElement("button");
-      b.textContent=label;
-      const active=(st?st.order:u.order)===code;
-      if(active) b.className="active";
-      b.onclick=()=>chooseOrder(u,code);
-      ob.appendChild(b);
-    }
-    if(pendingOrder) hint.textContent="Click the map to set a destination.";
-  } else {
-    hint.textContent=humanSide(u.side)?"":"AI-controlled unit.";
-  }
-}
-function chooseOrder(u,code){
-  if(NEEDS_DEST.has(code)){ pendingOrder=code; }
-  else { staged[u.oob_index]={order:code,dest_x:u.x,dest_y:u.y}; pendingOrder=null; }
-  report(); render();
+    <b>Order</b><span>${u.order_name}${u.travel?" (travelling)":""}</span>
+    <b>Pos</b><span>${u.x},${u.y}${u.dest_x!=null?` → ${u.dest_x},${u.dest_y}`:""}</span>`;
+  if(!humanSide(u.side)) hint.textContent="AI-controlled unit.";
 }
 
-// ── interaction ─────────────────────────────────────────────────────────
-cv.addEventListener("click",ev=>{
-  if(!STATE) return;
-  const rect=cv.getBoundingClientRect();
-  const x=Math.floor((ev.clientX-rect.left)/CELL), y=Math.floor((ev.clientY-rect.top)/CELL);
-  if(pendingOrder!=null&&selected!=null){
-    staged[selected]={order:pendingOrder,dest_x:x,dest_y:y};
-    pendingOrder=null; report(); render(); return;
-  }
-  // nearest unit whose footprint covers/abuts the click
-  let hit=null,best=1.5;
-  for(const u of STATE.units){
-    const f=u.footprint,d=Math.hypot(u.x+f/2-(x+0.5),u.y+f/2-(y+0.5));
-    if(d<best){best=d;hit=u;}
-  }
-  selected=hit?hit.oob_index:null; pendingOrder=null;
-  report(); render();
-});
-
+// ── orders ──────────────────────────────────────────────────────────────
+async function issueOrder(code, dx, dy){
+  const u=selUnit();
+  if(!u||!humanSide(u.side)||STATE.result) return;
+  if(NEEDS_DEST.has(code)&&dx==null){ pendingOrder=code; report(); return; }
+  const o={oob_index:u.oob_index,order:code};
+  if(dx!=null){ o.dest_x=dx; o.dest_y=dy; }
+  try{ STATE=await api(`/api/games/${GAME_ID}/orders`,{orders:[o]}); }
+  catch(e){ alert(e.message); }
+  pendingOrder=null;
+  refresh();
+}
 async function endTurn(){
-  if(!GAME_ID) return;
-  try{
-    const orders=Object.entries(staged).map(([i,o])=>({oob_index:+i,...o}));
-    if(orders.length) STATE=await api(`/api/games/${GAME_ID}/orders`,{orders});
-    STATE=await api(`/api/games/${GAME_ID}/end-turn`,{});
-    staged={}; pendingOrder=null;
-    refresh();
-  }catch(e){ alert(e.message); }
+  if(!GAME_ID||STATE.result) return;
+  try{ STATE=await api(`/api/games/${GAME_ID}/end-turn`,{}); }
+  catch(e){ alert(e.message); }
+  pendingOrder=null;
+  refresh();
 }
+
+// ── interaction: the screen itself ──────────────────────────────────────
+scr.addEventListener("click",ev=>{
+  if(!STATE) return;
+  const r=scr.getBoundingClientRect();
+  const sx=Math.floor((ev.clientX-r.left)/SCALE), sy=Math.floor((ev.clientY-r.top)/SCALE);
+  if(sx<UI.panel_x&&sy<UI.bottom_y){                    // map viewport
+    const x=ox+(sx>>3), y=oy+(sy>>3);
+    if(pendingOrder!=null&&selected!=null){ issueOrder(pendingOrder,x,y); return; }
+    const hit=STATE.units.find(u=>
+      x>=u.x&&x<u.x+u.footprint&&y>=u.y&&y<u.y+u.footprint);
+    selected=hit?hit.oob_index:null;
+    report(); drawScreen();
+  } else if(sx>=UI.panel_x){                            // order panel
+    const row=sy>>3;
+    const item=UI.menu.find(m=>m.row===row);
+    if(!item) return;
+    if(item.order!=null) issueOrder(item.order);
+    else if(item.label.includes("END")) endTurn();
+    // REPORT row: the HTML report panel is always live
+  }
+});
+document.addEventListener("keydown",ev=>{
+  if(!STATE||$("newgame").style.display==="flex") return;
+  const k=ev.key;
+  if(k==="ArrowLeft"){ ox=clampOx(ox-2); drawScreen(); drawMini(); }
+  else if(k==="ArrowRight"){ ox=clampOx(ox+2); drawScreen(); drawMini(); }
+  else if(k==="ArrowUp"){ oy=clampOy(oy-2); drawScreen(); drawMini(); }
+  else if(k==="ArrowDown"){ oy=clampOy(oy+2); drawScreen(); drawMini(); }
+  else if(k==="Enter"){ endTurn(); }
+  else if(KEY_ORDERS[k.toLowerCase()]!=null){ issueOrder(KEY_ORDERS[k.toLowerCase()]); }
+  else return;
+  ev.preventDefault();
+});
+mini.addEventListener("click",ev=>{
+  const r=mini.getBoundingClientRect();
+  ox=clampOx(Math.floor((ev.clientX-r.left)/MINI_CELL)-(UI.view_cells>>1));
+  oy=clampOy(Math.floor((ev.clientY-r.top)/MINI_CELL)-(UI.view_cells>>1));
+  drawScreen(); drawMini();
+});
 
 boot();
 </script>

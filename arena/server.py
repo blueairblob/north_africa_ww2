@@ -31,9 +31,15 @@ from desert_rats.render.overview import (
     NATION_DOT_COLOUR,
     TERRAIN_LEGEND_COLOUR,
 )
+from desert_rats.render import screen as og_screen
+from desert_rats.render.image import render_board_image
 from desert_rats.units import Order, Unit
 from desert_rats.victory import front_line_midpoint
 from desert_rats.zoc_supply import supply_band
+
+import io
+
+from fastapi import Response
 
 app = FastAPI(title="Desert Rats Arena", version="2.0")
 
@@ -223,6 +229,100 @@ def end_turn(game_id: int) -> dict:
     if state.result is not None:
         session.log.append(f"GAME OVER: {state.result.name}")
     return _state_json(session, game_id)
+
+
+# ── Authentic screen ────────────────────────────────────────────────────
+def _og_art_available() -> bool:
+    """Whether the local-only original art (font/tiles) is present. These
+    are gitignored by design (private extractions, never redistributed);
+    without them the screen endpoint degrades to the attribute-blend
+    viewport + a plain-font panel with identical geometry."""
+    try:
+        return og_screen._load_font() is not None
+    except Exception:
+        return False
+
+
+@app.get("/api/ui")
+def ui_layout() -> dict:
+    """Screen geometry + panel menu for the client's click mapping. The
+    client stays rule-free: even the menu rows come from the renderer."""
+    return {
+        "screen_w": og_screen.SCREEN_W,
+        "screen_h": og_screen.SCREEN_H,
+        "view_cells": og_screen.VIEW_CELLS,
+        "panel_x": og_screen.PANEL_X,
+        "bottom_y": og_screen.BOTTOM_Y,
+        "menu": [
+            {"row": row, "label": label, "order": (int(order) if order is not None else None)}
+            for row, label, order in og_screen.MENU_LAYOUT
+        ],
+        "og_art": _og_art_available(),
+    }
+
+
+def _fallback_screen(state: game.GameState, origin, selected_order, status_line):
+    """Same 256x192 composition as render_screen, PIL default font --
+    used only when the local og art files are absent."""
+    from PIL import Image, ImageDraw
+
+    img = Image.new("RGB", (og_screen.SCREEN_W, og_screen.SCREEN_H), og_screen.BLACK)
+    view = render_board_image(state.units, state.board, origin=origin,
+                              size=og_screen.VIEW_CELLS, cell_px=8)
+    img.paste(view.crop((0, 0, og_screen.PANEL_X, og_screen.PANEL_X)), (0, 0))
+    draw = ImageDraw.Draw(img)
+    line1, line2 = game_calendar.format_date_lines(state.clock)
+    draw.text((og_screen.PANEL_X + 8, 0), line1[:10], fill=og_screen.YELLOW)
+    draw.text((og_screen.PANEL_X + 8, 8), line2[:10], fill=og_screen.YELLOW)
+    for row, label, order in og_screen.MENU_LAYOUT:
+        if order is not None and order is selected_order:
+            draw.rectangle([og_screen.PANEL_X, row * 8, og_screen.SCREEN_W - 1, row * 8 + 7],
+                           fill=og_screen.RED)
+            draw.text((og_screen.PANEL_X, row * 8), label[:10], fill=og_screen.BLACK)
+        else:
+            draw.text((og_screen.PANEL_X, row * 8), label[:10], fill=og_screen.WHITE)
+    draw.rectangle([0, og_screen.BOTTOM_Y, og_screen.SCREEN_W - 1, og_screen.SCREEN_H - 1],
+                   fill=og_screen.RED)
+    draw.text((0, og_screen.BOTTOM_Y), status_line[:32], fill=og_screen.WHITE)
+    return img
+
+
+@app.get("/api/games/{game_id}/screen")
+def screen_png(game_id: int, ox: int = 0, oy: int = 0,
+               sel: Optional[int] = None) -> Response:
+    """The authentic 256x192 screen as PNG: viewport at (ox, oy), the
+    selected unit's order in inverse video, its name on the status band --
+    rendered by desert_rats.render.screen (pixel-exact with the local og
+    art present)."""
+    session = _get(game_id)
+    state = session.state
+    max_ox = max(0, _BOARD.width - og_screen.VIEW_CELLS)
+    max_oy = max(0, _BOARD.height - og_screen.VIEW_CELLS)
+    ox = min(max(ox, 0), max_ox)
+    oy = min(max(oy, 0), max_oy)
+
+    selected = next((u for u in state.units if u.oob_index == sel), None) if sel is not None else None
+    selected_order = selected.order if selected is not None else None
+    if state.result is not None:
+        status = f"GAME OVER {state.result.name.replace('_', ' ')}"
+    elif selected is not None:
+        status = selected.name
+    else:
+        status = ""
+
+    try:
+        img = og_screen.render_screen(
+            state.units, state.board, viewport_origin=(ox, oy),
+            clock=state.clock, selected_order=selected_order,
+            status_line=status,
+        )
+    except FileNotFoundError:
+        img = _fallback_screen(state, (ox, oy), selected_order, status)
+
+    buf = io.BytesIO()
+    img.save(buf, format="PNG")
+    return Response(content=buf.getvalue(), media_type="image/png",
+                    headers={"Cache-Control": "no-store"})
 
 
 # ── Client ──────────────────────────────────────────────────────────────

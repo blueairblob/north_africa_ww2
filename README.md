@@ -83,24 +83,36 @@ engine + clean packs.
 ## The application (web arena)
 
 `arena/` is the application layer: a FastAPI server exposing the verified
-engine over HTTP, plus a single-page browser client rendering the
-full-theatre overview surface (the pubmap-style legend map: terrain
-colours, nationality unit markers, approximate town labels). The client
-holds **no rules** — every mechanic runs in `desert_rats/`, so the arena
-can never drift from the oracle-verified engine the way the old embedded-JS
-prototype did.
+engine over HTTP, plus a single-page browser client whose playfield is the
+**authentic 256×192 game screen**, rendered server-side by
+`desert_rats/render/screen.py` (22×22-cell viewport at 8px cells, side
+panel with date and order menu, red status band) and displayed
+integer-scaled with hard pixels. Clicks are mapped back onto the screen:
+the viewport selects units and sets destinations, the panel rows issue
+orders, ENTER ends the turn; arrow keys scroll the viewport and a small
+overview minimap (navigation chrome, not part of the screen) jumps it.
+The client holds **no rules and no art** — every mechanic runs in
+`desert_rats/`, so the arena can never drift from the oracle-verified
+engine the way the old embedded-JS prototype did.
+
+Pixel authenticity follows the pack rules: with the local-only og art
+present (`data/tiles_original.json`, `data/font_original.json` — private
+extractions from your own tape via
+`reference/extraction_tools/extract_render_tables.py`, gitignored, never
+redistributed) the screen is pixel-exact; without them the server
+degrades to the attribute-blend viewport and a plain-font panel with
+identical geometry, and the client shows a warning.
 
 ```
 pip install .[web]
 python -m arena          # then open http://127.0.0.1:8000/
 ```
 
-Pick a scenario and side modes (human/AI per side); click a unit for its
-report, issue orders (MOVE / ASSAULT / HOLD / TRAVEL / FORTIFY — destination
-orders take a map click), then END TURN. AI sides are played by
-`ai.plan_turn` (the recovered original planner). The map payload
-(`/api/map`) is the content-pack seam for future surfaces — swapping the
-legend/backdrop swaps the skin without touching rules.
+Pick a scenario and side modes (human/AI per side). AI seats are played
+by `ai.plan_turn` (the recovered original planner). The screen endpoint
+(`/api/games/{id}/screen`) plus the map payload (`/api/map`) are the
+content-pack seam for future surfaces — a War Office skin is just a
+different render behind the same API, no rule changes.
 
 ## How to use
 1. **Read** `CLEANROOM_BRIEF.md` then `BUILD_SPEC.md`.

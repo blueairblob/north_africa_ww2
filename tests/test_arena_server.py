@@ -87,5 +87,21 @@ def test_end_turn_advances_engine_turn(client):
     assert s["turn"] == t0 + 2
 
 
+def test_ui_layout_comes_from_the_renderer(client):
+    ui = client.get("/api/ui").json()
+    assert ui["view_cells"] == 22 and ui["panel_x"] == 176
+    labels = [m["label"] for m in ui["menu"]]
+    assert "M MOVE" in labels and "ENTER TO END" in labels
+
+
+def test_screen_endpoint_serves_png_and_clamps(client):
+    g = _new_game(client)
+    gid = g["game_id"]
+    r = client.get(f"/api/games/{gid}/screen", params={"ox": 9999, "oy": -5})
+    assert r.status_code == 200
+    assert r.headers["content-type"] == "image/png"
+    assert r.content[:4] == b"\x89PNG"
+
+
 def test_unknown_game_is_404(client):
     assert client.get("/api/games/99999").status_code == 404
