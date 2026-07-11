@@ -870,12 +870,19 @@ implementation it replaces was structurally WRONG.
 
 ## Supply display bands: honest status (NOT recovered)
 
-Searched specifically. The six strings (V LOW ... V GOOD) exist in the
-message table, but there is NO band-selection code: no base+offset
-computation onto their indices anywhere in the binary. The only
-"SUPPLY LOW" warning the game emits (0x8CC4) tests MPS < 10, not a
-supply percentage. Even the "supply_bands" grouping in ui_strings.json
-is an earlier extraction pass's inference, not a recovered fact.
-supply_band() therefore keeps OUR thresholds, now clearly labelled as
-ours. This is display-only: the supply curve and its banding arithmetic
-are oracle-verified, and no engine mechanic depends on the labels.
+CONFIRMED (correcting an over-cautious earlier note): these six labels
+ARE supply bands -- the unit report prints a SUP field (message 14,
+beside STR/MPS/MOR/EFF/FRT) and a real gameplay screenshot shows "FAIR"
+in it. An early project session also invented cutoffs for a JS viewer,
+so this has always been guessed, never recovered.
+
+NOT RECOVERED: the numeric cutoffs. Several searches have failed to find
+the selector -- no base+offset computation onto the labels' message
+indices exists, and the "SUPPLY LOW" warning (0x8CC4) tests MPS < 10, a
+different mechanism entirely. The selector presumably lives in the report
+renderer against a string table we have not yet tied to these indices;
+that is the specific lead for anyone picking this up.
+
+supply_band() keeps OUR thresholds, clearly labelled as ours. Display-
+only: the supply curve and banding arithmetic are oracle-verified and no
+mechanic depends on the labels. THIS IS THE PROJECT'S LAST OPEN ITEM.

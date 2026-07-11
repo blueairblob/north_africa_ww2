@@ -132,21 +132,24 @@ def supply_level(distance: int) -> int:
 def supply_band(level: int) -> str:
     """Display band for a supply level.
 
-    DISPLAY ONLY -- not a game mechanic. Status after a dedicated search
-    of the original (see NOTES.md "Supply display bands"): the six strings
-    V LOW / LOW / Q LOW / FAIR / GOOD / V GOOD exist in the message table,
-    but NO band-selection code was found -- there is no base+offset
-    computation onto their message indices anywhere in the binary, and the
-    only "supply" warning the code emits (0x8CC4) actually tests MPS < 10,
-    not a supply percentage. Even the grouping of these six strings as
-    "supply bands" is an inference by an earlier extraction pass, not a
-    recovered fact.
+    DISPLAY ONLY -- not a game mechanic.
 
-    The thresholds below are therefore OURS, chosen from the (oracle-
+    CONFIRMED: these six labels really are supply bands. The unit report
+    prints a SUP field (message 14, alongside STR/MPS/MOR/EFF/FRT), and a
+    real gameplay screenshot shows "FAIR" in it.
+
+    NOT RECOVERED: the numeric cutoffs. The band-selection code has
+    resisted several searches -- there is no base+offset computation onto
+    the labels' message indices, and the "SUPPLY LOW" warning the game
+    emits (0x8CC4) tests MPS < 10, not a supply percentage, so it is a
+    different mechanism. The selector presumably lives in the report
+    renderer using a string table we have not yet tied to these indices.
+
+    The thresholds below are therefore OURS, taken from the (oracle-
     verified) curve's own breakpoints. The supply CURVE and its banding
-    arithmetic are recovered exactly (supply_level above); only this
-    cosmetic label mapping is invented, and nothing in the engine's
-    mechanics depends on it.
+    arithmetic are exact (see supply_level); only this cosmetic label
+    mapping is invented, and no engine mechanic depends on it. This is
+    the project's LAST open item.
     """
     if level <= 0:
         return NONE
