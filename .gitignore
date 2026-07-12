@@ -18,3 +18,7 @@ desert_rats.log
 .claude/settings.local.json
 data/tiles_original.json
 data/font_original.json
+*.egg-info/
+terrain_exact.png
+terrain_approx.png
+data/preview.webp
