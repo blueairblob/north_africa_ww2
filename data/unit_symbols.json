@@ -1,0 +1,7 @@
+{
+ "_note": "Committable mapping data (factual indices, no pixel art): unit type code -> symbol_code for the 0x694B draw formula glyph = symbol_code + hi*4 - 1 (engine-map.md #16). Quadrant reading hi=0..3 (TL,TR,BL,BR) for 2x2 counters and 'travel_symbol' for the 1x1 travelling counter are INFERRED, tracked per NOTES.md deliverable format. Fill symbol codes by inspecting glyph_sheet_local.png (extract_unit_glyphs.py) against a real gameplay screenshot; until then the renderer keeps its rectangle fallback.",
+ "status": "unpinned",
+ "quadrant_his": [0, 1, 2, 3],
+ "symbols_by_type": {},
+ "travel_symbol_by_type": {}
+}

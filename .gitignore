@@ -22,3 +22,5 @@ data/font_original.json
 terrain_exact.png
 terrain_approx.png
 data/preview.webp
+data/glyphs_original.json
+glyph_sheet_local.png

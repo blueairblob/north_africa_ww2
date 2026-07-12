@@ -225,6 +225,47 @@ def _render_model():
     return _render_model_cache[key]
 
 
+def _load_unit_glyphs():
+    """Authentic unit-counter symbols (engine-map.md #16): the local-only
+    glyph bitmaps (data/glyphs_original.json, extract_unit_glyphs.py --
+    original pixel art, same policy as tiles_original.json) plus the
+    committable index mapping (unit_symbols.json). Returns
+    (glyphs, symbols_by_type, travel_by_type) or None; None keeps the
+    rectangle-counter fallback. Same pack-level scoping rule as the
+    render model.
+    """
+    from .. import packs
+
+    gp = packs.active_pack().resolve("glyphs_original.json")
+    mp = packs.active_pack().resolve("unit_symbols.json")
+    if gp is None or mp is None:
+        return None
+    mapping = json.loads(mp.read_text())
+    symbols = {int(k): v for k, v in mapping.get("symbols_by_type", {}).items()}
+    travel = {int(k): v for k, v in mapping.get("travel_symbol_by_type", {}).items()}
+    if not symbols:
+        return None
+    glyphs = json.loads(gp.read_text())["glyphs"]
+    return glyphs, symbols, travel
+
+
+_unit_glyphs_cache = {}  # pack name -> tuple or None
+
+
+def _unit_glyphs():
+    from .. import packs
+
+    key = packs.active_pack().name
+    if key not in _unit_glyphs_cache:
+        _unit_glyphs_cache[key] = _load_unit_glyphs()
+    return _unit_glyphs_cache[key]
+
+
+def _glyph_index(symbol_code: int, hi: int) -> int:
+    """0x694B fetch formula (engine-map.md #16): glyph = symbol + hi*4 - 1."""
+    return symbol_code + hi * 4 - 1
+
+
 def _attr_colours(attr: int) -> tuple:
     """ZX attribute byte -> (paper_rgb, ink_rgb)."""
     return _ZX_ATTR_RGB[(attr >> 3) & 7], _ZX_ATTR_RGB[attr & 7]
@@ -559,15 +600,50 @@ def render_board_image(
             px1 = (max(xs) - origin_x + 1) * cell_px
             py1 = (max(ys) - origin_y + 1) * cell_px
             colour = NATION_COLOUR[unit.nationality]
-            draw.rectangle([px0 + 1, py0 + 1, px1 - 1, py1 - 1], fill=colour, outline=(0, 0, 0))
-            label = str(unit.strength)
-            tw = draw.textlength(label, font=font) if hasattr(draw, "textlength") else font.getsize(label)[0]
-            draw.text(
-                (px0 + (px1 - px0 - tw) / 2, py0 + (py1 - py0) / 2 - font.size / 2),
-                label,
-                fill=(255, 255, 255),
-                font=font,
-            )
+
+            glyph_model = _unit_glyphs()
+            drew_glyphs = False
+            if glyph_model is not None:
+                glyphs, symbols, travel = glyph_model
+                # Authentic counter (engine-map.md #16): side-ink symbol
+                # over the terrain's own paper -- 2x2 quadrant glyphs, or
+                # the single travel glyph for a 1x1 travelling footprint.
+                model = _render_model()
+                if unit.footprint_size == 1 and unit.type in travel:
+                    quads = [(travel[unit.type], 0, 0, 0)]
+                elif unit.type in symbols:
+                    s = symbols[unit.type]
+                    quads = [(s, 0, 0, 0), (s, 1, 1, 0), (s, 2, 0, 1), (s, 3, 1, 1)]
+                else:
+                    quads = None
+                if quads is not None:
+                    for s, hi, qx, qy in quads:
+                        gi = _glyph_index(s, hi)
+                        if not (0 <= gi < len(glyphs)):
+                            continue
+                        cx, cy = min(xs) + qx, min(ys) + qy
+                        if model is not None:
+                            attrs, grid = model[0], model[1]
+                            paper, _ = _attr_colours(attrs[grid[cy][cx]])
+                        else:
+                            paper = _zx(6)  # desert yellow default
+                        _draw_tile_bitmap(
+                            draw, glyphs[gi],
+                            (cx - origin_x) * cell_px, (cy - origin_y) * cell_px,
+                            cell_px, paper, colour,
+                        )
+                    drew_glyphs = True
+
+            if not drew_glyphs:
+                draw.rectangle([px0 + 1, py0 + 1, px1 - 1, py1 - 1], fill=colour, outline=(0, 0, 0))
+                label = str(unit.strength)
+                tw = draw.textlength(label, font=font) if hasattr(draw, "textlength") else font.getsize(label)[0]
+                draw.text(
+                    (px0 + (px1 - px0 - tw) / 2, py0 + (py1 - py0) / 2 - font.size / 2),
+                    label,
+                    fill=(255, 255, 255),
+                    font=font,
+                )
 
     return img
 
