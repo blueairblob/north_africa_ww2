@@ -25,11 +25,11 @@ data/                 Extracted game data — the build inputs:
                           arrival day, type) — the single source of all units.
   scenarios.json          6 scenarios: day-window, objectives, unit thresholds.
   terrain_authentic.json  100x32 terrain grid (low-nibble type) + graded legend.
-  terrain_authentic.png   Colour render of the map (reference).
   ui_strings.json         All UI text (menus, orders, bands, victory ladder, calendar).
   unit_name_tables.json   Designation/division tables + token encoding.
   graphics.json           Tile base/format, colour tables (decoded), draw model, palette.
-  tiles_sheet.png         Rendered 8x8 tile/sprite/glyph sheet (source art).
+                          (Original pixel art is NOT committed -- see "Original art",
+                          below. Tools ship; art regenerates from your own tape.)
   unit_mps.json            Per-unit movement points, derived (not part of the original
                           10-byte OOB table) -- see NOTES.md and
                           reference/extraction_tools/derive_unit_mps.py.
@@ -63,6 +63,40 @@ reference/            Provenance & audit trail (not required to build):
   desert-rats-mechanics-spec.md, desert-rats-extraction-workflow.md   Earlier notes.
   extraction_tools/       Python scripts used to extract the data (for re-derivation).
 ```
+
+## Original art
+
+The engine, the tools and all *factual* extracted data (grids, tables, index
+mappings) live in this repo. The original 1985 **pixel art does not** — it is
+not ours to redistribute. The rule is simple:
+
+> **Tools ship. Art regenerates.**
+
+Everything the docs refer to as "source art" is reproducible on demand from
+your own copy of the tape, and every one of these outputs is gitignored:
+
+| File | Produced by |
+|------|-------------|
+| `data/tiles_original.json`  | `extract_render_tables.py TAPE.tzx` |
+| `data/glyphs_original.json` | `extract_unit_glyphs.py TAPE.tzx` |
+| `data/font_original.json`   | `extract_render_tables.py TAPE.tzx` |
+| `data/tiles_sheet.png`      | `export_art.py --tiles` |
+| `glyph_sheet_local.png`     | `export_art.py --glyphs` |
+| `data/font_sheet.png`       | `export_art.py --font` |
+| `terrain_exact.png`         | `export_art.py --map` |
+
+```sh
+# one-time, from your own tape image
+python3 reference/extraction_tools/extract_render_tables.py path/to/Desert_Rats_-_Side_1.tzx
+python3 reference/extraction_tools/extract_unit_glyphs.py  path/to/Desert_Rats_-_Side_1.tzx
+
+# thereafter, regenerate any/all art sheets at will
+python3 reference/extraction_tools/export_art.py --all --scale 4
+```
+
+Without these files the engine still runs and every test passes: renderers fall
+back to an approximate (ordered-dither) skin, and unit counters to labelled
+rectangles. With them, rendering is pixel-exact — the authentic game screen.
 
 ## Content packs
 The engine is generic; everything expressive lives in swappable packs under

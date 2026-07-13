@@ -100,11 +100,12 @@ extra mechanics or randomness to fill these gaps.
 Load these, do not hand-transcribe rules from them beyond what BUILD_SPEC.md §9 documents:
 - `master_oob.json` — the 128-unit order of battle (single source of all units).
 - `scenarios.json` — the 6 scenario day-windows, objectives, thresholds.
-- `terrain_authentic.json` / `.png` — the 100×32 terrain grid + reference render.
+- `terrain_authentic.json` — the 100×32 terrain grid (legacy; `terrain_logic.json` supersedes it for game logic).
 - `ui_strings.json` — all UI text; reuse verbatim for authenticity (menus, orders, supply
   bands, victory ladder, calendar).
 - `unit_name_tables.json` — designation/division name tables.
-- `graphics.json` / `tiles_sheet.png` — tile/colour/draw model and source art.
+- `graphics.json` — tile/colour/draw model. The source ART is **not committed**:
+  regenerate it locally from your own tape (see "Original art" in README.md).
 - `units_scenario_*.json`, `terrain_map.json`, `strings_table.json` are **superseded**
   legacy extracts, kept only for cross-checking — don't build against them.
 

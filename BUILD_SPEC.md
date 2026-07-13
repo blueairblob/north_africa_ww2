@@ -294,8 +294,9 @@ partly labelled; see the file.)
 
 ## 8. Presentation
 
-Recovered colour/graphics model (spec in `data/graphics.json`, art in
-`data/tiles_sheet.png`):
+Recovered colour/graphics model (spec in `data/graphics.json`; the art itself is
+local-only -- regenerate `data/tiles_sheet.png` with
+`reference/extraction_tools/export_art.py`, see README.md "Original art"):
 
 - **Tiles:** 8×8 monochrome cells (8 bytes each, MSB = leftmost pixel) — terrain tiles,
   unit-counter symbols and glyphs. Use `tiles_sheet.png` as the source art; the
