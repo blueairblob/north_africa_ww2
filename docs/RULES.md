@@ -1451,3 +1451,131 @@ adjacent, and each is the other's target: two battles (10.8.2).
 - Recovery (11.1): each side holds the field of the battle it defended, and
   gets back half of the 1 step it lost there, which rounds down to none.
 
+
+---
+
+## 20. Agreed, not yet in the engine
+
+Decided by the owner on 3 October 2026. These rules are not built: the engine
+and its tests still follow sections 1 to 19. When they are built they move
+into the sections they change, and this section goes.
+
+### 20.1 Formations and their units
+
+**20.1.1** A counter is no longer a whole division. A division is shown as the
+units that fought within it: its tank regiment, its infantry regiments, its
+guns, its reconnaissance, and its HQ. The player can then mass the armour of
+several divisions, or leave the infantry to hold while the tanks go on.
+
+**20.1.2** A unit may name a **parent**: the HQ of its division. A
+**formation** is an HQ and the units that name it. A unit with no parent, and
+an HQ that no unit names (a corps or army HQ), is **independent**, and counts
+as a formation of its own.
+
+**20.1.3** Two units are **related** if they are in the same formation.
+
+**20.1.4 Stacking** (in place of 4.3.1). A hex may hold the units of at most
+`STACK_FORMATIONS` formations, all of one side. There is no limit on the
+units of one formation in a hex.
+
+### 20.2 Groups
+
+**20.2.1** Related units in one hex may be a **group**. A group has one order
+and moves as one. Its **leader** is its member with the lowest id.
+
+**20.2.2 Join** is a seventh order. It names a related unit that is on the
+map. If the two are in the same hex, they are grouped at once, in the Orders
+phase, and the group then carries out the order of the unit joined.
+Otherwise the unit moves as under `move` towards the hex the other is in at
+the start of the Movement phase, and is grouped with it if they are in the
+same hex when the phase ends. Joining a unit that is in a group joins the
+group.
+
+**20.2.3** A join order naming a unit that is not related, not on the map, or
+the unit itself is rejected with `E_JOIN` ("That unit cannot join that
+one.").
+
+**20.2.4 Split.** Any order may be marked `alone`. A unit given such an order
+leaves its group in the Orders phase and carries the order out by itself. A
+group left with one member is no longer a group.
+
+**20.2.5** An order for a member of a group other than its leader, not marked
+`alone`, is rejected with `E_GROUPED` ("That unit is in a group; order the
+group, or split the unit from it."). A group's members all have the leader's
+order.
+
+| Code | Sentence |
+| --- | --- |
+| `E_JOIN` | That unit cannot join that one. |
+| `E_GROUPED` | That unit is in a group; order the group, or split the unit from it. |
+
+**20.2.6 A group moving.** Its allowance is the least of its members'. The
+cost of a step is the greatest of its members' costs for it, and a step any
+member cannot make the group cannot make. It may road march only if every
+member is a vehicle. Each vehicle pays its own fuel; if any member cannot pay
+for a step, the group stops (out of fuel). For stacking it counts as its
+units: it enters a hex whole or is refused whole.
+
+**20.2.7 A group fighting.** Its members fight as units in one hex already do
+(10.1.1): they attack the same hex and defend together. A group retreats as
+one: the hex is chosen for its leader; if any member would go two hexes, all
+do; if there is no hex, all surrender.
+
+**20.2.8** A member destroyed or withdrawn leaves the group; the rest stay
+grouped.
+
+**20.2.9 Recall** is not an order in the rules. It is the screen giving every
+unit of an HQ's formation a join order naming that HQ.
+
+### 20.3 Morale
+
+**20.3.1** Cohesion is called **morale** to the player and shown in nine
+levels: `1 + floor(cohesion × 9 / 101)`, named Very poor, Poor, Very low, Low,
+Fair, Normal, Good, Very good, Excellent. The rules go on counting 0 to 100.
+
+**20.3.2 Ceiling.** At the end of each Supply phase every unit has a ceiling:
+100 less
+
+- `MORALE_UNSUPPLIED` if it is not traced (6.6.4);
+- otherwise `floor(MORALE_THIN × (100 − fill) / 50)`, with the fill of its
+  first depot (6.6.5): nothing close to its depot or its road, `MORALE_THIN`
+  at the limit of reach;
+- `MORALE_ORPHAN` if it has a parent and that HQ is not on the map, or the
+  haul distance from that HQ to the unit is more than `REACH`;
+- `floor(MORALE_WEAK × (maximum steps − steps) / maximum steps)`.
+
+**20.3.3** A unit whose cohesion is above its ceiling loses `MORALE_FALL`, but
+not to below the ceiling. This is as well as 6.10.2.
+
+**20.3.4** Rest and holding (11.2.1) never raise cohesion above the ceiling.
+
+### 20.4 Strength in real terms
+
+**20.4.1** Each unit in a scenario carries its real strength on the scenario's
+first day (men, tanks or guns) with the source of the figure. Steps are
+worked out from it: a step is `MEN_STEP` men, `TANKS_STEP` tanks or
+`GUNS_STEP` guns, rounded to the nearest, and at least one.
+
+**20.4.2** The player is shown the real figure, scaled by the steps the unit
+has left, and never the steps.
+
+### 20.5 Supply: a port's reserve (proposed, not yet decided)
+
+**20.5.1** A port keeps back, from hauls to HQs, `RESERVE_TURNS` turns of
+upkeep (6.9.1) for the units whose first depot it is. Those units draw from
+all of its stock; an HQ may be hauled only what is above the reserve.
+
+### 20.6 Constants
+
+| Name | Value | Meaning | Status |
+| --- | --- | --- | --- |
+| `STACK_FORMATIONS` | 2 | formations in a hex | to be tuned |
+| `MORALE_UNSUPPLIED` | 30 | off the ceiling of a unit with no depot in reach | to be tuned |
+| `MORALE_THIN` | 20 | off the ceiling of a unit at the limit of its depot's reach | to be tuned |
+| `MORALE_ORPHAN` | 20 | off the ceiling of a unit out of reach of its own HQ | to be tuned |
+| `MORALE_WEAK` | 40 | off the ceiling of a unit with no strength left; in proportion before that | to be tuned |
+| `MORALE_FALL` | 10 | cohesion lost per turn above the ceiling | to be tuned |
+| `MEN_STEP` | 800 | men in a step: about a battalion | derived; to be checked against establishments |
+| `TANKS_STEP` | 10 | tanks in a step | from 4.2.1 |
+| `GUNS_STEP` | 12 | guns in a step: about a regiment's battery group | to be tuned |
+| `RESERVE_TURNS` | 10 | turns of upkeep a port keeps for the units that draw from it | proposed; to be tuned |

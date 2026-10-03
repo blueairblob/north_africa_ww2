@@ -113,7 +113,8 @@ class Session:
                 break
             mp, reach, here = mp + cost, reach + 1, nxt
         fuel = reach * U.step_fuel(u) if U.is_vehicle(u) else 0
-        return {"path": way, "reach": reach, "mp": mp, "fuel": fuel, "enough_fuel": fuel <= u["fuel"]}
+        return {"path": way, "reach": reach, "mp": mp, "fuel": fuel, "enough_fuel": fuel <= u["fuel"],
+                "range": u["fuel"] // U.step_fuel(u) if U.is_vehicle(u) else None}     # hexes its fuel will take it
 
     def playback(self, span=None):
         """The last turn as this side saw it, once (screen/replay.py); None if there is none.

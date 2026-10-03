@@ -312,7 +312,10 @@ lopsided, and situations the rules do not cover.
   original 8-bit screens.
 - Flat, clear hex tiles: sand, hatched rough, a bold escarpment edge with pass
   gaps, a strong road line, dashed tracks.
-- NATO-style unit symbols, generated (no hand-drawn art needed); nation colours.
+- Counters show a picture of the arm (tank, lorry, soldier, gun, armoured car,
+  flag for an HQ); NATO-style symbols are an option. Commonwealth blue, German
+  dark grey, Italian green. Strength is told in real terms (tanks, men), and
+  cohesion as morale in nine named levels.
 - Overlays: **S** supply, **Z** zones of control and fog of war, **F** the front
   line history.
 - Mouse: click a unit, click a destination. Keyboard for everything too: an
@@ -393,13 +396,21 @@ Every later milestone is held to this budget:
 | | Limit |
 | --- | --- |
 | What the player must learn | explained on one page; the tutorial takes ten minutes. (The full rules specification the engine follows is as long as it needs to be) |
-| Orders | six (§8), and no more |
-| Counters | the division is the normal counter; a brigade or regiment gets its own only where it fought on its own. No more than about 30 a side |
+| Orders | six (§8), and Join for grouping a division's units. Recall and Split are not orders (see below) |
+| Counters | a division is shown as the units that fought within it (tank regiment, infantry regiments, guns, reconnaissance, HQ), which the player may group and order as one. About 60 a side at most; grouped, far fewer on the map |
 | A counter | a symbol, a name and at most three numbers |
 | Terrain the player must know | six kinds of hex, plus escarpment and pass |
 | A turn | every formation ordered in a couple of minutes |
 | Scenarios | under ten, plus the campaign |
 | Editors, sub-maps, optional rules | none |
+
+**Changed by the owner, October 2026.** The first budget kept the division as
+the counter and the orders at six. The owner chose to show a division's units
+separately, so that armour can be massed and a division can be split, with
+grouping to keep the map clear: units of one division in one hex can be
+joined into a stack that is ordered, moves and fights as one; an HQ can
+recall its units to it; a unit can be split off again. The rules for this are
+agreed in `docs/RULES.md` §20 and not yet built.
 
 Under the hood is another matter: the map, supply, movement, combat and
 recovery may be as thorough as the history and the data allow, because the

@@ -165,6 +165,15 @@ The screen would load a sprite from `art/counters/` when one exists and draw a
 NATO-style symbol when it does not, so the game is playable before the art is
 complete.
 
+## Decided since (October 2026)
+
+- **Pictures are the default**, NATO-style symbols the option (F3). Until
+  there is art, the screen draws its own simple pictures (`screen/pictures.py`).
+- **Contrast comes from the counter face:** Commonwealth blue, German dark
+  grey with pale marks, Italian green. These are this game's own colours.
+- A sprite file in `art/counters/<nation>_<type>.png` replaces the drawn
+  picture for that nation and arm.
+
 ## Open decisions
 
 - **Sprites or NATO symbols.** `DESIGN.md` §4.2 and §12 say NATO-style

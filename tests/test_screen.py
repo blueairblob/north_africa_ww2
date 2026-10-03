@@ -652,3 +652,54 @@ def test_the_end_of_a_game_says_how_the_result_was_reached():        # C, E
     app.paint(surface)                                               # the panel draws the breakdown and the losses
     assert s.view["par"] == small()["par"] and set(s.view["kills"]) == {"axis", "cw"}
     assert all(u["fate"] for u in s.view["units"] if u["status"] in ("destroyed", "withdrawn"))
+
+
+# ---- the owner's notes on the screen -----------------------------------------------------
+
+def test_morale_is_told_in_nine_named_levels_and_strength_in_real_terms():
+    assert [theme.morale(c)[0] for c in (0, 11, 12, 39, 40, 50, 99, 100)] == [1, 1, 2, 4, 4, 5, 9, 9]
+    assert theme.morale(0)[1] == "Very poor" and theme.morale(60)[1] == "Normal" and theme.morale(100)[1] == "Excellent"
+    assert len(theme.MORALE) == 9
+    assert theme.strength({"type": "armour", "steps": 13}) == "about 130 tanks"
+    assert theme.strength({"type": "foot", "steps": 9}) == "about 7,200 men"
+    assert theme.strength({"type": "hq", "steps": 1}) == "" and theme.strength({"type": "foot"}) == ""   # an enemy unseen
+
+
+def test_the_orders_are_in_the_panel_and_travel_is_the_road_march():
+    area, where = layout.areas(theme.WINDOW), layout.buttons(theme.WINDOW)
+    assert len(where) == 9 and all(area["panel"].contains(r) for r in where.values())
+    assert not any(a.colliderect(b) for n, a in where.items() for m, b in where.items() if n < m)
+    assert theme.ORDER_NAME["road_march"] == "Travel" and ("road_march", "Travel", "R") in theme.BUTTONS
+    pygame.init()
+    app = App(Session(crusader(), GMAP, humans=["axis"], scripted={"cw": players.DoNothing(GMAP)}))
+    app.click(where["road_march"].center)
+    assert app.ui.mode == "road_march"
+
+
+def test_counters_show_pictures_unless_nato_symbols_are_chosen():
+    pygame.init()
+    app = App(Session(crusader(), GMAP, humans=["cw"], scripted={"axis": players.DoNothing(GMAP)}))
+    app.ui.zoom = 1.5
+    app.centre_on((64, 22))
+    frames = []
+    for _ in range(2):
+        surface = pygame.Surface(theme.WINDOW)
+        app.paint(surface)
+        frames.append(pygame.image.tostring(surface.subsurface(layout.areas(theme.WINDOW)["map"]), "RGB"))
+        keys(app, "F3")
+    assert app.ui.symbols == "pictures" and frames[0] != frames[1]              # F3 changed what the counters show
+    assert "pictures" in app.ui.message
+
+
+def test_the_way_shows_how_far_the_fuel_goes():
+    from helpers import scenario, unit
+    s = Session(scenario([unit(101, "axis", "armour", [66, 24], fuel=20), unit(201, "cw", "foot", "Alexandria")]),
+                GMAP, humans=["axis"])
+    p = s.preview(101, "move", (76, 24))
+    assert p["range"] == 5 and len(p["path"]) == 10 and p["reach"] == 8          # five hexes of fuel, ten to go
+    pygame.init()
+    app = App(s)
+    app.ui.hover = (76, 24)
+    app.paint(pygame.Surface(theme.WINDOW))
+    assert "about 2 turns" in app.ui.message and "fuel gives out after 5 hexes" in app.ui.message
+    assert s.preview(101, "move", (68, 24))["range"] == 5 and "foot" not in app.ui.message

@@ -12,7 +12,8 @@ from engine.supply import REACH, REACH_FULL
 from engine.view import SPOT_RANGE, SPOT_RANGE_RECON
 
 from . import theme as T
-from .layout import Layout, areas, buttons
+from .layout import EDGE, Layout, areas, buttons
+from .pictures import picture
 
 ROOT = os.path.dirname(os.path.dirname(__file__))
 ART = os.path.join(ROOT, "art", "counters")
@@ -33,6 +34,7 @@ class UI:
         self.mouse = (0, 0)
         self.message = ""
         self.cover = None               # text shown instead of the map between two players
+        self.symbols = "pictures"       # what a counter shows: "pictures", or "nato" for NATO-style symbols
 
     @property
     def layout(self):
@@ -313,11 +315,22 @@ class Painter:
             p = session.preview(u["id"], order["order"], order["to"]) if "to" in order else None
             if p:
                 pts = [at(tuple(u["hex"]))] + [at(h) for h in p["path"]]
-                if len(pts) > p["reach"] + 1:
-                    pygame.draw.lines(surface, T.PATH_FAR, False, pts[p["reach"]:], max(1, int(2 * z)))
-                if p["reach"]:
-                    pygame.draw.lines(surface, colour, False, pts[:p["reach"] + 1], max(2, int(5 * z)))
-                    pygame.draw.circle(surface, colour, pts[p["reach"]], max(4, int(8 * z)))
+                a, b = p["reach"], 2 * p["reach"]                    # this turn, the next, and beyond
+                wide = max(2, int(5 * z))
+                for ink, more in ((T.INK, 3), (colour, 0)):          # dark under bright, to show on sand
+                    if a:
+                        pygame.draw.lines(surface, ink, False, pts[:a + 1], wide + more)
+                        pygame.draw.circle(surface, ink, pts[a], max(4, int(8 * z)) + more // 2)
+                        broken(surface, ink, pts[a:b + 1], wide + more, 14 * z, 10 * z)          # dashes
+                        broken(surface, ink, pts[b:], wide + more, 4 * z, 10 * z)                # dots
+                    else:
+                        broken(surface, ink, pts, wide + more, 4 * z, 10 * z)
+                dry = p["range"]
+                if dry is not None and dry < len(p["path"]):         # where its fuel gives out
+                    x, y = pts[dry]
+                    r = max(5, int(9 * z))
+                    pygame.draw.line(surface, T.SHORT, (x - r, y - r), (x + r, y + r), max(2, int(4 * z)))
+                    pygame.draw.line(surface, T.SHORT, (x - r, y + r), (x + r, y - r), max(2, int(4 * z)))
                 pygame.draw.circle(surface, colour, pts[-1], max(5, int(10 * z)), max(2, int(3 * z)))
             return p
         for uid, order in sorted(session.pending[session.side].items()):
@@ -329,9 +342,11 @@ class Painter:
             name = ui.mode or guess(session, ui.hover)
             p = draw(u, {"order": name, "to": ui.hover}, T.SELECT) if name else None
             if p:
-                when = "this turn" if p["reach"] == len(p["path"]) else f"{p['reach']} of {len(p['path'])} hexes this turn"
-                short = "" if p["enough_fuel"] else "   NOT ENOUGH FUEL"
-                ui.message = f"{T.ORDER_NAME[name]} here: {when}, {p['fuel']} t of fuel.{short}   Click to order."
+                turns = -(-len(p["path"]) // p["reach"]) if p["reach"] else 0
+                when = "this turn" if turns == 1 else f"about {turns} turns" if turns else "it cannot set off"
+                dry = p["range"] is not None and p["range"] < len(p["path"])
+                fuel = f"   Its fuel gives out after {T.count(p['range'], 'hex', 'hexes')}, at the cross." if dry else ""
+                ui.message = f"{T.ORDER_NAME[name]} here: {when}.{fuel}   Click to order."
 
     # ---- a counter -----------------------------------------------------------------------
 
@@ -351,16 +366,20 @@ class Painter:
         chosen = u["id"] == ui.selected
         pygame.draw.rect(surface, (30, 26, 20), face.move(2, 2), border_radius=4)             # a little shadow
         pygame.draw.rect(surface, T.FACE[nation], face, border_radius=4)
+        mark = T.MARK[nation]
         pygame.draw.rect(surface, T.SELECT if chosen else T.INK, face, 3 if chosen else 1, border_radius=4)
         big = size >= 34
         box = pygame.Rect(x + size * 0.17, y + size * (0.1 if big else 0.2), size * 0.66, size * (0.42 if big else 0.6))
         art = self.sprite(nation, u["type"], (int(size * 0.9), int(size * 0.54)))
         if art:
             surface.blit(art, (x + size * 0.05, y + size * 0.03))
-        else:
+        elif ui.symbols == "nato":
             self.symbol(surface, u["type"], box, T.BOX[nation], 2 if size >= 30 else 1)
+        else:
+            area = pygame.Rect(x + size * 0.12, y + size * (0.08 if big else 0.2), size * 0.76, size * (0.5 if big else 0.6))
+            picture(surface, u["type"], area, mark, T.FACE[nation])
         if big:
-            self.text(surface, u.get("steps", "?"), (x + size * 0.5, y + size * 0.7), size * 0.27, bold=True, centre=True)
+            self.text(surface, u.get("steps", "?"), (x + size * 0.5, y + size * 0.7), size * 0.27, mark, True, True)
         if not own:
             return
         if big:                                                      # stores and cohesion, side by side
@@ -423,53 +442,68 @@ class Painter:
             self.text(tip, s, (7, 4 + n * (font.get_height() + 2)), 13, bold=bold)
         surface.blit(tip, (x, y))
 
-    # ---- the order bar -------------------------------------------------------------------
+    # ---- the message line and the panel --------------------------------------------------
 
     def bar(self, surface, session, ui, rect):
         pygame.draw.rect(surface, T.INK, rect)
-        self.text(surface, ui.message, (rect.x + 10, rect.y + 6), 15, T.PAPER)
-        u = session.unit(ui.selected)
-        order = session.pending[session.side].get(u["id"], {}).get("order") if u else None
+        self.text(surface, ui.message, (rect.x + 10, rect.y + 7), 14, T.PAPER)
+
+    def buttons(self, surface, session, ui):
+        """The six orders, the overlays and End turn, at the foot of the panel. The order a
+        click on the map would give now is lit."""
+        u = None if self.playing else session.unit(ui.selected)
+        would = ui.mode
+        if u and not would:                                          # a plain click moves, or attacks an enemy in sight
+            would = (guess(session, ui.hover) if ui.hover and ui.hover != tuple(u["hex"]) else None) or "move"
         for name, r in buttons(surface.get_size()).items():
             label, key = next((b[1], b[2]) for b in T.BUTTONS if b[0] == name)
-            lit = name == ui.mode or name in ui.overlays or (ui.mode is None and name == order)
+            lit = name in ui.overlays or (u is not None and name == would)
             usable = name in ("s", "z", "done") or u is not None
             colour = T.BUTTON_GO if name == "done" else T.BUTTON_ON if lit else T.BUTTON
-            pygame.draw.rect(surface, colour if usable else (150, 142, 124), r, border_radius=6)
-            self.text(surface, label, (r.centerx, r.centery - 7), 15, T.INK if usable else T.DIM, True, True)
-            self.text(surface, key, (r.centerx, r.centery + 12), 11, T.DIM if usable else (120, 112, 98), centre=True)
-
-    # ---- the panel -----------------------------------------------------------------------
+            pygame.draw.rect(surface, colour if usable else (196, 188, 168), r, border_radius=6)
+            pygame.draw.rect(surface, T.INK if usable else T.DIM, r, 1, border_radius=6)
+            self.text(surface, label, (r.centerx - 8, r.centery), 14, T.INK if usable else T.DIM, True, True)
+            self.text(surface, key, (r.right - 6 - self.font(10).size(key)[0], r.y + 3), 10, T.DIM)
 
     def panel(self, surface, session, ui, rect):
         pygame.draw.rect(surface, T.PAPER, rect)
         pygame.draw.line(surface, T.INK, rect.topleft, rect.bottomleft, 2)
         view, over = session.view, session.state["over"]
-        x, y, w = rect.x + 16, rect.y + 12, rect.w - 32
+        x, y, w = rect.x + EDGE, rect.y + 12, rect.w - 2 * EDGE
+        foot = buttons(surface.get_size())["move"].y - 12           # the text stops above the buttons
 
         def line(s="", px=14, colour=T.INK, bold=False, gap=4):
             nonlocal y
             self.text(surface, s, (x, y), px, colour, bold)
             y += self.font(px, bold).get_height() + gap
 
+        def rule():
+            nonlocal y
+            y += 6
+            pygame.draw.line(surface, T.GRID, (x, y), (x + w, y), 2)
+            y += 10
+
         def meter(label, value, top, colour, words):
             nonlocal y
             self.text(surface, label, (x, y), 13, T.DIM)
-            self.text(surface, words, (x + w - self.font(13).size(words)[0], y), 13)
-            y += 18
-            pygame.draw.rect(surface, (214, 204, 178), (x, y, w, 9), border_radius=4)
+            self.text(surface, words, (x + 78, y), 13, bold=True)
+            y += 19
+            pygame.draw.rect(surface, (214, 204, 178), (x, y, w, 7), border_radius=3)
             if top:
-                pygame.draw.rect(surface, colour, (x, y, int(w * min(1, value / top)), 9), border_radius=4)
-            y += 17
+                pygame.draw.rect(surface, colour, (x, y, int(w * max(0, min(1, value / top))), 7), border_radius=3)
+            y += 14
 
-        line(session.scenario["name"], 22, bold=True)
-        line(f"{session.day:%d %B %Y}   turn {min(view['turn'], session.scenario['turns'])} of {session.scenario['turns']}", 14, T.DIM)
-        banner = pygame.Rect(x, y + 2, w, 30)
+        line(session.scenario["name"], 21, bold=True, gap=2)
+        line(f"{session.day:%d %B %Y}   turn {min(view['turn'], session.scenario['turns'])} of {session.scenario['turns']}", 13, T.DIM, gap=6)
+        banner = pygame.Rect(x, y, w, 28)
         pygame.draw.rect(surface, T.SIDE[session.side], banner, border_radius=6)
-        self.text(surface, "Last turn: any key skips" if self.playing else "The game is over" if over
-                  else f"{T.SIDE_NAME[session.side]}: give your orders", banner.center, 15, T.PAPER, True, True)
-        y += 42
-        line(f"Points   Axis {view['vp']['axis']}    Commonwealth {view['vp']['cw']}", 14)
+        self.text(surface, "Last turn: watch and listen" if self.playing else "The game is over" if over
+                  else f"{T.SIDE_NAME[session.side]}: give your orders", banner.center, 14, T.PAPER, True, True)
+        y += 36
+        line(f"Points:  Axis {view['vp']['axis']}   Commonwealth {view['vp']['cw']}", 13, gap=0)
+        rule()
+
+        u = None if self.playing else session.unit(ui.selected)
         if over and not self.playing:                                # the result, and how it was reached
             r = session.state["result"]
             line("A draw" if r["winner"] is None else f"{T.SIDE_NAME[r['winner']]}: {r['grade']} victory", 18, T.SHORT, True)
@@ -480,74 +514,69 @@ class Painter:
                 y += 4
                 line("Your losses", 13, bold=True)
                 for m in lost[:8]:
-                    line(f"{m['name'][:24]}: {m['fate']['cause']}, turn {m['fate']['turn']}", 12, gap=2)
-        y += 8
-        pygame.draw.line(surface, T.GRID, (x, y), (x + w, y), 2)
-        y += 10
-
-        u = None if self.playing else session.unit(ui.selected)
-        if u:
-            order = session.order_of(u["id"])
-            line(u["name"], 19, bold=True)
-            line(f"{u['type'].capitalize()}, {u['xp']}.  Moves {ALLOWANCE[u['type']] // 4} hexes of desert a turn.", 12, T.DIM, gap=8)
-            meter("Strength", u["steps"], u["max"], T.INK, f"{u['steps']} of {u['max']}")
-            meter("Cohesion", u["cohesion"], 100, T.GOOD if u["cohesion"] >= 40 else T.POOR,
-                  "fresh" if u["cohesion"] >= 80 else "tired" if u["cohesion"] >= 40 else "cannot attack")
+                    line(f"{m['name'][:26]}: {m['fate']['cause']}, turn {m['fate']['turn']}", 12, gap=2)
+        elif u:
+            nation = session.nation[u["id"]]
+            card = pygame.Rect(x, y, 76, 50)                         # the unit's picture beside its name
+            pygame.draw.rect(surface, T.FACE[nation], card, border_radius=6)
+            pygame.draw.rect(surface, T.INK, card, 1, border_radius=6)
+            picture(surface, u["type"], card.inflate(-14, -12), T.MARK[nation], T.FACE[nation])
+            for n, row in enumerate(wrap(self.font(16, True), u["name"], w - 88)[:2]):
+                self.text(surface, row.strip(), (x + 88, y + n * 20), 16, bold=True)
+            self.text(surface, f"{T.TYPE_NAME[u['type']]}, {u['xp']}", (x + 88, y + 34), 12, T.DIM)
+            y += 62
+            level, word = T.morale(u["cohesion"])
+            if u["type"] != "hq":
+                meter("Strength", u["steps"], u["max"], T.INK, T.strength(u))
+            meter("Morale", level, 9, T.GOOD if u["cohesion"] >= 40 else T.POOR,
+                  word + ("" if u["cohesion"] >= 40 else ": too low to attack"))
             if U.is_vehicle(u):
-                meter("Fuel", u["fuel"], U.fuel_cap(u), T.FUEL, "enough for " + T.count(u["fuel"] // U.step_fuel(u), "hex", "hexes"))
-            meter("Stores", u["stores"], U.stores_cap(u), T.STORES, f"{u['stores']} t")
+                meter("Fuel", u["fuel"], U.fuel_cap(u), T.FUEL, "for " + T.count(u["fuel"] // U.step_fuel(u), "hex", "hexes"))
+            meter("Stores", u["stores"], U.stores_cap(u), T.STORES, f"{u['stores']} tonnes")
             if u["type"] == "hq":
                 line(f"Dump: {u['dump']['fuel']} t fuel, {u['dump']['stores']} t stores", 13)
             if not u["traced"]:
                 line("OUT OF SUPPLY: no HQ or port in reach", 13, T.SHORT, True)
             elif u["out_of_stores"]:
-                line("OUT OF STORES: losing cohesion", 13, T.SHORT, True)
+                line("OUT OF STORES: morale is falling", 13, T.SHORT, True)
             else:
                 line("In supply", 13, T.GOOD, True)
-            y += 4
             if u["id"] in session.pending[session.side]:
+                order = session.order_of(u["id"])
                 turns = session.turns_to_go(u["id"])
-                line(f"Order: {T.ORDER_NAME[order['order']]}", 16, T.PATH, True)
-                line(T.ORDER_HELP[order["order"]], 12, T.DIM, gap=2)
-                line(f"It stands until done{f': about {turns} turns' if turns and turns > 1 else ''}.", 12, T.DIM, gap=8)
+                more = f", about {turns} turns" if turns and turns > 1 else ""
+                line(f"Order: {T.ORDER_NAME[order['order']]}{more}", 15, T.PATH, True, gap=2)
+                line(T.ORDER_HELP[order["order"]], 12, T.DIM)
             else:
-                line("Waiting for an order", 16, T.ATTACK, True)
-                line("With none, it holds its ground.", 12, T.DIM, gap=8)
-            for s in ("Click a hex to move there.", "Click an enemy to attack it.",
-                      "Keys: M, A or R, arrows, then Enter.", "Space: next unit.  Right-click: let go."):
-                line(s, 12, T.DIM, gap=2)
+                line("Waiting for an order", 15, T.ATTACK, True, gap=2)
+                line("Click the map, or press a button below.", 12, T.DIM)
         elif not over and not self.playing:
             mine = [m for m in view["units"] if m["status"] == "on_map"]
-            line("What to do", 17, bold=True)
-            for s in ("1. Click one of your units.", "2. Click where it should go,", "    or an enemy to attack.",
-                      "3. Press End turn.", "An order stands until it is done.", "Units with no order hold their ground."):
-                line(s, 13, gap=3)
-            y += 6
             waiting = len(session.waiting_units())
+            line("Click one of your units,", 14, gap=2)
+            line("then click where it should go.", 14, gap=8)
             line(f"{waiting} of {T.count(len(mine), 'unit')} {'waits' if waiting == 1 else 'wait'} for orders." if waiting
                  else "All units have orders.", 13, T.PATH, True)
             short = [m for m in mine if not m["traced"] or m["out_of_stores"]]
             if short:
-                y += 6
-                line("Short of supply (press S):", 13, T.SHORT, True)
-                for m in short[:6]:
+                y += 4
+                line("Short of supply:", 13, T.SHORT, True)
+                for m in short[:5]:
                     line("  " + m["name"], 12, T.SHORT, gap=2)
-        y += 10
-        pygame.draw.line(surface, T.GRID, (x, y), (x + w, y), 2)
-        y += 8
+        rule()
         events = [e for e in view["events"] if e["event"] not in ("haul", "step")]
-        room = (rect.bottom - y) // 17 - 2
         font = self.font(12)
+        room = (foot - y) // (font.get_height() + 2) - 1
         if self.playing:                                             # nothing is given away before it is seen
-            for s in ("Watch and listen.", "", "Each formation strikes in turn.", "The units it hits burn.",
-                      "The longer the rattle,", "the harder the blow.", "", "Tanks and infantry rattle.",
-                      "Guns sweep upwards.", "", "When all have struck, see who", "falls back and who holds."):
-                line(s, 13, T.DIM if s != "Watch and listen." else T.INK, s == "Watch and listen.", 3)
-        elif events and room > 0:
-            line("Last turn", 14, bold=True)
+            for row in ("Each formation strikes in turn.", "The units it hits burn.",
+                        "The longer the rattle, the harder the blow.", "Then see who falls back and who holds.")[:max(0, room)]:
+                line(row, 12, T.DIM, gap=2)
+        elif events and room > 1:
+            line("Last turn", 13, bold=True)
             told = [row for e in events for row in wrap(font, describe(e, session), w)]
-            for row in told[-room:]:
+            for row in told[-(room - 1):]:
                 line(row, 12, gap=2)
+        self.buttons(surface, session, ui)
 
     def frame(self, surface, session, ui, stage=None):
         a = areas(surface.get_size())
@@ -559,8 +588,8 @@ class Painter:
             self.text(surface, ui.cover, a["map"].center, 26, T.PAPER, True, True)
         else:
             self.map(surface.subsurface(a["map"]), session, ui)
-        self.bar(surface, session, ui, a["bar"])
         self.panel(surface, session, ui, a["panel"])
+        self.bar(surface, session, ui, a["bar"])
 
 
 def guess(session, hx):
@@ -568,6 +597,24 @@ def guess(session, hx):
     if not session.gmap.passable(hx):
         return None
     return "attack" if any(tuple(e["hex"]) == hx for e in session.view["enemy"]) else "move"
+
+
+def broken(surface, colour, pts, width, dash, gap):
+    """A line of dashes (or, with a short dash, dots) along the points."""
+    left, on = dash, True
+    for (x0, y0), (x1, y1) in zip(pts, pts[1:]):
+        length = ((x1 - x0) ** 2 + (y1 - y0) ** 2) ** 0.5
+        done = 0.0
+        while length - done > 0.01:
+            step = min(left, length - done)
+            if on:
+                a = (x0 + (x1 - x0) * done / length, y0 + (y1 - y0) * done / length)
+                b = (x0 + (x1 - x0) * (done + step) / length, y0 + (y1 - y0) * (done + step) / length)
+                pygame.draw.line(surface, colour, a, b, int(width))
+            done, left = done + step, left - step
+            if left <= 0.01:
+                on = not on
+                left = dash if on else gap
 
 
 def score_lines(view):

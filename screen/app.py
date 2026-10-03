@@ -337,6 +337,9 @@ class App:
             self.zoom(T.ZOOM_STEP)
         elif key in (pygame.K_MINUS, pygame.K_KP_MINUS):
             self.zoom(1 / T.ZOOM_STEP)
+        elif key == pygame.K_F3:                          # counters: pictures or NATO-style symbols
+            ui.symbols = "nato" if ui.symbols == "pictures" else "pictures"
+            ui.message = "Counters show " + ("NATO-style symbols." if ui.symbols == "nato" else "pictures.")
         elif key == pygame.K_HOME:
             self.zoom(0.01)                               # the whole map
         elif key in (pygame.K_TAB, pygame.K_SPACE):
