@@ -11,14 +11,15 @@ def play(scenario, gmap, players, turns=None, check=True):
     state = S.new_game(scenario, gmap)
     record = []
     while not state["over"] and (turns is None or state["turn"] <= turns):
-        state = shown = begin_turn(state, gmap, scenario)
+        audit = [] if check else None
+        state = shown = begin_turn(state, gmap, scenario, audit)
         views = {side: view(state, gmap, scenario, side) for side in S.SIDES}
         submissions = {side: players[side].orders(views[side]) for side in S.SIDES}
         record.append(submissions)
         turn = state["turn"]
-        state, _ = finish_turn(state, gmap, scenario, submissions)
+        state, _ = finish_turn(state, gmap, scenario, submissions, audit)
         if check:
-            bad = invariants.check(state, gmap) + [f"I-17 {side} view: {x}" for side in S.SIDES
+            bad = audit + invariants.check(state, gmap) + [f"I-17 {side} view: {x}" for side in S.SIDES
                                                    for x in leaks(views[side], shown)]
             assert not bad, f"turn {turn}: {bad}"
     return state, record

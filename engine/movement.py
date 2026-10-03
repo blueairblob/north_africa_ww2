@@ -21,6 +21,8 @@ def cost_of(state, gmap, m, here, nxt):
 
 
 def movement_phase(state, gmap, ctx):
+    if sorted(ctx["orders"]) != [u["id"] for u in S.on_map(state)]:
+        ctx["audit"].append("I-15 the orders do not match the units on the map")
     movers = {}
     for u in S.on_map(state):
         order = ctx["orders"][u["id"]]
@@ -104,6 +106,8 @@ def movement_phase(state, gmap, ctx):
         m = movers[uid]
         ctx["next"][uid] = m["path"][m["i"]] if m["i"] < len(m["path"]) else None
         ctx["mp"][uid] = m["spent"]
+        if m["i"] > IMPULSES or m["spent"] > ALLOWANCE[m["u"]["type"]]:
+            ctx["audit"].append(f"I-16 unit {uid} moved {m['i']} hexes for {m['spent']} MP")
         m["u"]["cohesion"] = max(0, m["u"]["cohesion"] - m["spent"] // MOVE_COHESION_DIV)    # 9.8.1
     B.settle_owners(state, gmap)                                             # 3.4.2
 

@@ -134,7 +134,7 @@ def haul(side_totals, pool, outlet, hq, H, want):
     want["stores"] -= s
 
 
-def distribute(state, gmap, scenario, side):
+def distribute(state, gmap, scenario, side, audit):
     """Trace, haul to HQs, fill dumps and issue to units, for one side (6.4 to 6.8)."""
     totals = state["sides"][side]
     blocked = blocked_for(state, gmap, side)
@@ -175,6 +175,9 @@ def distribute(state, gmap, scenario, side):
             for H, n in reach_of(hq):
                 haul(totals, pool, outs[n], hq, H, want)
 
+    on_hand = sum(o["stock"]["fuel"] + o["stock"]["stores"] for o in outs if not o.get("rail")) \
+        + sum(hq["dump"]["fuel"] + hq["dump"]["stores"] for hq in hqs)
+    before = totals["issued"]
     for u in sorted(units, key=lambda u: (100 * u["stores"] // U.stores_cap(u), u["id"])):   # 6.8.1
         for d, is_outlet, _, depot in depots[u["id"]]:        # 6.8.2
             stock = depot["stock"] if is_outlet else depot["dump"]
@@ -186,6 +189,10 @@ def distribute(state, gmap, scenario, side):
                 stock[kind] -= n
                 u[kind] += n
                 totals["issued"] += n                         # 6.8.3
+    if pool["lift"] < 0 or pool["rail"] < 0:
+        audit.append(f"I-10 {side} used more lift or rail than it has: {pool}")
+    if totals["issued"] - before > on_hand:
+        audit.append(f"I-11 {side} units drew {totals['issued'] - before} from depots holding {on_hand}")
 
 
 def upkeep(state):
@@ -206,8 +213,8 @@ def upkeep(state):
                 u["cohesion"] = max(0, u["cohesion"] - STARVE_COHESION)
 
 
-def supply_phase(state, gmap, scenario):
+def supply_phase(state, gmap, scenario, audit):
     land(state, gmap, scenario)
     for side in S.SIDES:
-        distribute(state, gmap, scenario, side)
+        distribute(state, gmap, scenario, side, audit)
     upkeep(state)

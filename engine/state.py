@@ -3,6 +3,7 @@ import json
 from datetime import date
 
 from . import units as U
+from .gamemap import distance  # noqa: F401  (hex distance, 1.4)
 
 SIDES = ("axis", "cw")
 TOTALS = ("brought", "landed", "issued", "spent", "burnt", "lost")

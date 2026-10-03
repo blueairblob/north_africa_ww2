@@ -241,14 +241,17 @@ state listed for it; anything else is a defect in the engine.
 
 | # | Phase | May change |
 | --- | --- | --- |
-| 1 | Supply (§6) | port condition and stock, Tripoli pipeline and stock, HQ dumps, unit fuel and stores, the flags `out_of_stores` and `traced`, cohesion, steps (starvation only), supply totals |
+| 1 | Supply (§6) | port condition and stock, Tripoli pipeline and stock, HQ dumps, unit fuel and stores, the flags `out_of_stores` and `traced`, cohesion; by starvation only: steps, unit status and hex, victory points |
 | 2 | Orders (§8) | the orders and air choice for this turn; nothing else |
 | 3 | Air (§7) | each side's air effect for this turn |
 | 4 | Movement (§9) | unit hexes, fuel, cohesion, the `stationary` flag, HQ dumps (9.9), place owners, port condition and stock (on capture), fortification (on capture) |
-| 5 | Combat (§10) | steps, cohesion, stores, unit hexes (retreat, advance), unit status, HQ dumps, place owners, port condition and stock, fortification |
+| 5 | Combat (§10) | steps, cohesion, stores, unit hexes (retreat, advance), unit status, what a destroyed unit held, HQ dumps, the `stationary` flag, victory points, place owners, port condition and stock, fortification |
 | 6 | Recovery (§11) | steps (recovered tanks), cohesion, stores (digging), fortification |
-| 7 | Reinforcement and withdrawal (§12) | unit status, hexes of arriving units, steps (replacements) |
+| 7 | Reinforcement and withdrawal (§12) | unit status, hexes of arriving units, steps (replacements), what a withdrawn unit held, the `stationary` flag, an enemy fortification where a unit arrives |
 | 8 | Victory (§13) | victory points, the turn number, whether the game has ended |
+
+Any phase may also add to the event log and to the sides' running supply
+totals.
 
 **5.2** Players are shown their view (§14) once, at the start of the Orders
 phase, and give orders once. They do nothing in any other phase.
@@ -1273,6 +1276,10 @@ asserted after every turn of every test game.
   spends more MP than its allowance.
 - **I-17** A side's view contains nothing listed in 14.8.
 - **I-18** No phase changes state outside its list in 5.1.
+
+I-10, I-11, I-15, I-16 and I-18 are about what happens inside a turn, so the
+engine notes any breach as the turn runs; the rest are checked on the state
+after it.
 
 ---
 
