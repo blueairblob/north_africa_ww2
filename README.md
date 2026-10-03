@@ -8,12 +8,13 @@ real tempo of a desert battle and, above all, the real supply problem.
   combat, orders, scenarios, the computer opponent, presentation.
 - **`docs/RULES.md`** — the rules specification the engine follows, numbered, with
   every constant named and its source given.
+- **`docs/COUNTERS.md`** — hex and counter sizes, and notes on counter art.
 - **`docs/SOURCES.md`** — where the map and the orders of battle come from.
 - **`docs/CLEAN_ROOM.md`** — what this project may and may not use.
 
-Status: the **map generator**, the **rules specification** and the **engine
-core** on one scenario (Crusader). No screen yet, and no computer opponent
-beyond scripted test players.
+Status: the **map generator**, the **rules specification**, the **engine
+core** on one scenario (Crusader) and a first **screen**. No computer opponent
+yet beyond scripted test players.
 
 ## The engine
 
@@ -29,6 +30,29 @@ rule it checks.
 plays Operation Crusader (`data/scenarios/crusader.json`) between two scripted
 players (`nothing`, `attack`, `retreat`, `explore`) and asserts the rules'
 invariants after every turn.
+
+## The screen
+
+`screen/` is a pygame window on top of the engine: the map, the counters, the
+six orders, the supply overlay and the zones overlay.
+
+```
+.venv/bin/python -m screen crusader                  # two players at one screen
+.venv/bin/python -m screen crusader --axis nothing   # you are the Commonwealth
+.venv/bin/python -m screen crusader --shot frame.png # one frame to a file, no window
+```
+
+Click one of your units, then click where it should go, or an enemy to attack
+it. The order bar under the map has the six orders, the supply and zones
+overlays and End turn; each has a key. The mouse wheel zooms at the pointer,
+dragging moves the map. An order stands from turn to turn until it is done,
+and the screen steps through the units that are waiting for one. After End
+turn the turn is played back: the movement, then each formation's strike in
+turn, with the units it hits burning and a rattle as long as the damage, then
+the outcome. F plays it faster; any other key skips it. The
+map is `art/basemap.jpg`, the generated map with its relief
+(`python -m mapgen base`). `docs/COUNTERS.md` has the hex and counter sizes and the
+notes on counter art.
 
 ## The map
 

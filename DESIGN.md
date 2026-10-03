@@ -252,11 +252,18 @@ order).
 A whole corps can be ordered at once (its divisions keep formation). That is the
 complete list: six orders.
 
+**Orders stand.** An order is given once and holds from turn to turn until the
+formation arrives or can no longer carry it out; then it waits for a new one.
+The screen takes the player through the formations that are waiting, one after
+another, so a quiet turn is a glance and one key. A click on a formation and a
+click on a hex is an order: move, or attack if an enemy is seen there.
+
 ## 9. Winning
 
 Each scenario has **objectives** (towns, ports, passes) worth victory points,
 scored *every turn they are held* plus a bonus at the end, and penalties for
-units destroyed. The result is graded *tactical / major / decisive victory*, or
+units destroyed. The result is judged against what each side would have
+scored by standing still, and graded *tactical / major / decisive victory*, or
 a draw. A short debrief shows the front line over time, supply delivered, and
 the losses on both sides.
 
@@ -307,7 +314,25 @@ lopsided, and situations the rules do not cover.
 - NATO-style unit symbols, generated (no hand-drawn art needed); nation colours.
 - Overlays: **S** supply, **Z** zones of control and fog of war, **F** the front
   line history.
-- Mouse: click a unit, click a destination. Keyboard for everything too.
+- Mouse: click a unit, click a destination. Keyboard for everything too. The
+  six orders, the overlays and End turn are buttons under the map.
+- The map is the generated map with its relief; the wheel zooms at the pointer
+  from the whole theatre down to a few hexes, and dragging moves it.
+- **The turn is played back.** After the orders, the player watches what he
+  could see of the turn: the movement, hex by hex, with a column on a road
+  march drawn small until it arrives; then the strikes, one at a time. The map goes
+  to the formation striking; the units it hits burn yellow and red, a look
+  used nowhere else; and a harsh rattle of two tones plays for as long as the
+  damage was heavy, up to a limit. The length of the rattle is the result:
+  no odds are shown before and no numbers during. Every strike takes the same
+  beat at least, so the silence after a short rattle says the attack was
+  feeble. Each arm has its own pair of tones, and guns sweep upwards instead
+  of rattling, so the ear knows what is firing. When a battle's attackers have
+  struck, the defenders reply the same way. Nothing is settled until every
+  strike has been shown: then, in the outcome, the player sees who holds, a
+  formation destroyed bursts and is gone, and
+  the beaten fall back and the victors follow. Any key skips it. The sounds are
+  made by the program; with no sound device it is silent.
 - Optional retro look: a pixel palette and font, as a theme.
 
 ## 13. Technical shape

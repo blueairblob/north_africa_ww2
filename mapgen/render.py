@@ -11,6 +11,8 @@ from . import build, fetch, geo, raster
 from . import hexgrid as H
 
 OUT = os.path.join(fetch.HERE, "map.png")
+BASE = os.path.join(fetch.HERE, "art", "basemap.jpg")
+BASE_HEX = 64                   # pixels across a hex, corner to corner, in the screen's base map
 TITLE = ("Map 1", "CYRENAICA AND THE WESTERN DESERT", "1940 – 1942")
 CREDIT = ("BENGHAZI HANDICAP  ·  North Africa 1940–42",
           "Hexes of 10 km.  Coast and frontier: Natural Earth.  Relief: Terrain Tiles (SRTM and other open data).  "
@@ -147,8 +149,10 @@ def _pass(d, xy, scale):
     d.ellipse([xy[0] - s, xy[1] - s, xy[0] + s, xy[1] + s], fill=(250, 250, 250), outline=SCARP)
 
 
-def draw_map(m, scale):
-    """The map itself, to the edge of the hexes."""
+def draw_map(m, scale, lettering=None):
+    """The map itself, to the edge of the hexes. lettering sets the size of the names apart
+    from the scale of the ground (for the screen's base map, which is drawn large)."""
+    ls = lettering or scale
     cols, rows = m["cols"], m["rows"]
     w = int((H.COL_STEP * cols + H.SIZE) * scale) + 2
     h = int((H.ROW_STEP * (rows + 0.5)) * scale) + 2
@@ -186,11 +190,11 @@ def draw_map(m, scale):
     for label in m.get("labels", []):                      # under the lines and the places
         xy = at(label["lat"], label["lon"])
         if label["kind"] == "country":
-            _spaced(d, xy, label["name"], _font(10 * scale, "Serif-Bold"), 8 * scale, fill=(112, 96, 76))
+            _spaced(d, xy, label["name"], _font(10 * ls, "Serif-Bold"), 8 * ls, fill=(112, 96, 76))
         elif label["kind"] == "sea":
-            _spaced(d, xy, label["name"], _font(7.5 * scale, "Serif-Italic"), 2.5 * scale, fill=(62, 98, 130))
+            _spaced(d, xy, label["name"], _font(7.5 * ls, "Serif-Italic"), 2.5 * ls, fill=(62, 98, 130))
         else:
-            d.text(xy, label["name"], font=_font(7.5 * scale, "Serif-Italic"), fill=(96, 66, 36), anchor="mm",
+            d.text(xy, label["name"], font=_font(7.5 * ls, "Serif-Italic"), fill=(96, 66, 36), anchor="mm",
                    stroke_width=2, stroke_fill=HALO)
     if m.get("frontier"):
         _frontier(d, [at(lat, lon) for lat, lon in m["frontier"]], scale)
@@ -203,7 +207,7 @@ def draw_map(m, scale):
     for p in m["passes"]:
         a, b, _ = H.edge(p["col"], p["row"], p["side"])
         _pass(d, px(((a[0] + b[0]) / 2, (a[1] + b[1]) / 2)), scale)
-    font = _font(6.5 * scale)
+    font = _font(6.5 * ls)
     for p in m["places"]:
         x, y = px(H.centre(p["col"], p["row"]))
         _place(d, (x, y), p["kind"], scale)
@@ -316,6 +320,17 @@ def render(m, path=OUT, scale=2.0):
             if attempt == 4:
                 raise
             time.sleep(2)
+    return path
+
+
+def base(path=BASE):
+    """The screen's base map: the ground with its relief, routes and names, with no border,
+    at BASE_HEX pixels to the hex. The screen scales it to zoom and draws the counters on it."""
+    with open(build.OUT) as f:
+        m = json.load(f)
+    img = draw_map(m, BASE_HEX / (2 * H.SIZE), lettering=3.2)
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    img.save(path, format="JPEG", quality=88)
     return path
 
 
