@@ -92,5 +92,5 @@
     {"place": "Benghazi", "turn": 0, "end": 20}
   ],
   "par": 106,
-  "thresholds": [20, 60, 120]
+  "thresholds": [25, 75, 150]
 }

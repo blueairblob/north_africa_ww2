@@ -13,7 +13,7 @@ STAY = {pygame.K_h: "hold", pygame.K_d: "dig_in", pygame.K_t: "rest"}
 AIR = {pygame.K_1: "support", pygame.K_2: "interdict", pygame.K_3: "recon"}
 SCROLL = {pygame.K_LEFT: (-1, 0), pygame.K_RIGHT: (1, 0), pygame.K_UP: (0, -1), pygame.K_DOWN: (0, 1)}
 DRAG = 6                # pixels the mouse must move with the button down to drag the map
-FAST = 5                # how much faster the playback runs with F
+FAST = 3                # how much faster the playback runs with F; its rattles are as much shorter
 GLIDE_MS = 110          # how quickly the map glides to where it is going
 CURSOR_EDGE = 2.5       # hexes from the edge of the view at which the map follows the keyboard cursor
 
@@ -171,7 +171,7 @@ class App:
         """Play back the last turn as this side saw it, if it has not watched it yet."""
         self.play, self.play_t, self.fast = self.session.playback(self.span()), 0.0, False
         if self.play:
-            self.ui.message = "Last turn.   F: faster   any other key or a click: skip"
+            self.ui.message = "Last turn.   F: faster   Right arrow: next   any other key or a click: skip it all"
 
     def advance(self, ms):
         """Move the playback on by so many milliseconds: sounds, and the map following the battles."""
@@ -180,15 +180,27 @@ class App:
         ms = min(ms, 50) * (FAST if self.fast else 1)     # a long frame never skips a scene
         cues = self.play.cues(self.play_t, self.play_t + ms)
         self.play_t += ms
-        if self.sounds and not self.fast:
-            for name, amount in cues:
-                self.sounds.play(name, amount)
+        if self.sounds:
+            for name, amount in cues:                     # played fast, a rattle is as much shorter: still the result
+                if not self.fast:
+                    self.sounds.play(name, amount)
+                elif name != "tick":
+                    self.sounds.play(name, amount // FAST)
         focus = self.play.stage(self.play_t)["focus"]
         if focus:                                         # the map goes to what is happening
             self.glide_to(focus)
         if self.play.done(self.play_t):
             self.stop_watching()
             self.begin_message()                          # back to the orders: say who waits
+
+    def skip_scene(self):
+        """On to the next strike, group of movers or the outcome."""
+        if self.sounds:
+            self.sounds.stop()
+        self.play_t = self.play.next_scene(self.play_t)
+        if self.play.done(self.play_t):
+            self.stop_watching()
+            self.begin_message()
 
     def stop_watching(self):
         self.play, self.fast = None, False
@@ -345,6 +357,8 @@ class App:
         elif self.play:                                   # F goes faster; any other key or a click skips
             if event.type == pygame.KEYDOWN and event.key == pygame.K_f:
                 self.fast = not self.fast
+            elif event.type == pygame.KEYDOWN and event.key in (pygame.K_RIGHT, pygame.K_n):
+                self.skip_scene()
             elif event.type in (pygame.KEYDOWN, pygame.MOUSEBUTTONDOWN):
                 self.stop_watching()
                 self.begin_message()

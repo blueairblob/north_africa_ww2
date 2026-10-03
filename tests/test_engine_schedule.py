@@ -124,3 +124,21 @@ def test_the_result_is_judged_against_standing_still():                         
                       objectives=[{"place": "Tobruk", "turn": 2}], thresholds=[1, 15, 30])
     state = play(sc, state, 2)
     assert state["sides"]["cw"]["vp"] == 4 and state["result"] == {"winner": None, "grade": "draw", "margin": 0}
+
+
+def test_a_unit_destroyed_scores_for_the_enemy_and_its_fate_is_recorded():       # 13.4
+    from engine.turn import begin_turn
+    from helpers import GMAP
+    ring = [[70, 23], [71, 23], [71, 24], [70, 25], [69, 24], [69, 23]]
+    units = [unit(101, "axis", "foot", [70, 24], steps=3, size=3), unit(102, "axis", "foot", [60, 25], stores=0, cohesion=0, steps=1)]
+    units += [unit(201 + n, "cw", "armour", h, steps=10) for n, h in enumerate(ring)]
+    sc, state = start(units, objectives=[])
+    state = begin_turn(state, GMAP, sc)                                          # 102 starves in the Supply phase
+    state = play(sc, state, 1, cw=[{"unit": 201 + n, "order": "attack", "to": [70, 24]} for n in range(6)])
+    u = by_id(state)
+    assert u[101]["fate"] == {"cause": "surrendered", "turn": 1} and u[102]["fate"] == {"cause": "starved", "turn": 1}
+    assert u[201]["fate"] is None
+    assert state["sides"]["cw"]["kills"] == state["sides"]["cw"]["vp"] == 5 * 3 + 5 * 1
+    sc, state = start([unit(101, "axis", "foot", "Bardia")], withdrawals=[{"date": "1941-11-18", "unit": 101}], objectives=[])
+    state = play(sc, state, 1)
+    assert by_id(state)[101]["fate"] == {"cause": "withdrawn", "turn": 1} and state["sides"]["cw"]["kills"] == 0

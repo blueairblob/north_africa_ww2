@@ -174,12 +174,6 @@ def distribute(state, gmap, scenario, side, audit):
         want = {k: max(0, gross[hq["id"]][k] - hq["dump"][k]) for k in KINDS}
         for H, n in reach_of(hq):
             haul(state, pool, outs[n], hq, H, want)
-    for _, _, hq in served:                                   # 6.7.3, 6.7.4
-        if hq["stationary"]:
-            want = {k: max(0, gross[hq["id"]][k] + DUMP_CAP - hq["dump"][k]) for k in KINDS}
-            for H, n in reach_of(hq):
-                haul(state, pool, outs[n], hq, H, want)
-
     on_hand = sum(o["stock"]["fuel"] + o["stock"]["stores"] for o in outs if not o.get("rail")) \
         + sum(hq["dump"]["fuel"] + hq["dump"]["stores"] for hq in hqs)
     before = totals["issued"]
@@ -194,6 +188,13 @@ def distribute(state, gmap, scenario, side, audit):
                 stock[kind] -= n
                 u[kind] += n
                 totals["issued"] += n                         # 6.8.3
+    for _, _, hq in served:                                   # 6.7.3, 6.7.4: dumps, after the units have drawn
+        if hq["stationary"]:
+            need = {k: sum(demand(u, k, depots[u["id"]][0][0]) for u in units
+                           if depots[u["id"]] and depots[u["id"]][0][3] is hq) for k in KINDS}
+            want = {k: max(0, need[k] + DUMP_CAP - hq["dump"][k]) for k in KINDS}
+            for H, n in reach_of(hq):
+                haul(state, pool, outs[n], hq, H, want)
     if pool["lift"] < 0 or pool["rail"] < 0:
         audit.append(f"I-10 {side} used more lift or rail than it has: {pool}")
     if totals["issued"] - before > on_hand:

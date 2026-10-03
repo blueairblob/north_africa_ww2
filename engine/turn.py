@@ -12,7 +12,8 @@ from .supply import supply_phase
 from .victory import victory_phase
 
 LOG = {"log"} | {f"sides.{t}" for t in S.TOTALS}     # any phase may log and count supply (5.1)
-GONE = {"unit.status", "unit.hex", "unit.steps", "unit.fuel", "unit.stores", "unit.dump", "sides.vp"}
+GONE = {"unit.status", "unit.hex", "unit.steps", "unit.fuel", "unit.stores", "unit.dump", "unit.fate",
+        "sides.vp", "sides.kills"}
 CAPTURE = {"places", "ports", "forts"}
 MAY_CHANGE = {                                       # what each phase may change (5.1)
     "supply": {"ports", "tripoli", "unit.dump", "unit.fuel", "unit.stores", "unit.out_of_stores",
@@ -22,7 +23,7 @@ MAY_CHANGE = {                                       # what each phase may chang
     "movement": {"unit.hex", "unit.fuel", "unit.cohesion", "unit.stationary", "unit.dump"} | CAPTURE,
     "combat": {"unit.cohesion", "unit.stationary"} | GONE | CAPTURE,
     "recovery": {"unit.steps", "unit.cohesion", "unit.stores", "forts"},
-    "reinforcement": {"unit.stationary", "forts"} | GONE - {"sides.vp"},
+    "reinforcement": {"unit.stationary", "forts"} | GONE - {"sides.vp", "sides.kills"},
     "victory": {"sides.vp", "turn", "over", "result"},
 }
 

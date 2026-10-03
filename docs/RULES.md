@@ -87,8 +87,9 @@ the rules read and change, nothing else:
 - the scenario id and the turn number;
 - for each unit: id, side, name, type, size, experience, steps, maximum
   steps, hex, cohesion, fuel, stores, the flags `out_of_stores`, `traced` and
-  `stationary`, and the unit's status (`on_map`, `not_arrived`, `withdrawn`,
-  `destroyed`);
+  `stationary`, the unit's status (`on_map`, `not_arrived`, `withdrawn`,
+  `destroyed`), and its fate once it has left the map: what took it and in
+  which turn;
 - for each place: its owner;
 - for each port: its condition (0–100) and its stock (fuel, stores);
 - for each HQ: its dump stock (fuel, stores);
@@ -270,7 +271,8 @@ Supply is fuel and stores, in tonnes. It is landed at **sources**, carried by
 truck to **HQs**, and drawn by **units** from HQs and sources within reach.
 Two things limit the trucks: their total **lift**, and the **fuel they burn**.
 Both grow with distance. The Supply phase does all of this once a turn, in the
-steps of 6.3 to 6.10, in that order. The two sides do not interact in this
+steps of 6.3 to 6.10, in that order, except that the dump pass (6.7.3) comes
+after the issue to units (6.8). The two sides do not interact in this
 phase except through the positions of their units, which do not change in it.
 
 ### 6.1 Fuel and stores
@@ -433,9 +435,11 @@ hauls (6.5.4) from its connected outlets in order of haul distance, nearest
 first, then outlet order, each haul wanting what is still needed, until its
 need is met or the outlets are exhausted.
 
-**6.7.3 Dump pass.** After the needs pass, for each HQ in the same order
-whose `stationary` flag is set: it wants stores up to `DUMP_CAP` in its dump
-beyond its need in 6.7.2, and fuel likewise, and takes hauls in the same way.
+**6.7.3 Dump pass.** After the issue to units (6.8), for each HQ in the same
+order whose `stationary` flag is set: it wants stores up to `DUMP_CAP` in its
+dump beyond what the units whose first depot it is still demand, and fuel
+likewise, and takes hauls in the same way. Units draw before dumps are
+filled.
 
 **6.7.4** No haul raises a dump above its need plus `DUMP_CAP`, for fuel or
 for stores. A dump already above that (because its units' demands fell)
@@ -1184,7 +1188,9 @@ objective it owns (3.4.2).
 end points of every objective it owns.
 
 **13.4** Whenever a unit is destroyed (in combat, by surrender or by
-starvation) the enemy gains `size × LOSS_VP` points.
+starvation) the enemy gains `size × LOSS_VP` points. The state keeps these
+apart from the points for objectives, and records on the unit what destroyed
+it and in which turn.
 
 **13.5 End.** The game ends after the Victory phase of the scenario's last
 turn, or of any turn in which a side has no unit on the map and none still to
@@ -1204,7 +1210,7 @@ victory (`|d| < T3`) or a decisive victory.
 
 | Name | Value | Meaning | Status |
 | --- | --- | --- | --- |
-| `LOSS_VP` | 2 | points to the enemy per size of a unit destroyed | to be tuned |
+| `LOSS_VP` | 5 | points to the enemy per size of a unit destroyed: a division is worth 15, as much as Sidi Rezegh held for fifteen turns | to be tuned; owner's decision that losses count for more than at 2 |
 
 ---
 
@@ -1215,7 +1221,8 @@ Orders phase. Computer players get exactly this and nothing else.
 
 **14.2 Always in the view:** the map; the turn and date; everything about the
 side's own units, ports, dumps, Tripoli stock and pipeline, lift, air points
-and fortifications; the owner of every place; both sides' victory points;
+and fortifications; the owner of every place; both sides' victory points, how many of them came
+from destroying units, and the scenario's par;
 the scenario's schedule for the side's own arrivals and withdrawals; the
 objectives.
 

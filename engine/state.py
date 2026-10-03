@@ -45,7 +45,7 @@ def new_game(scenario, gmap):
         "ports": {name: {"condition": 100, "fuel": 0, "stores": 0} for _, name in gmap.ports},
         "tripoli": {"fuel": 0, "stores": 0, "pipeline": []},
         "forts": {}, "log": [],
-        "sides": {s: dict({"vp": 0, "air": "support", "interdiction": 0, "recon": 0},
+        "sides": {s: dict({"vp": 0, "kills": 0, "air": "support", "interdiction": 0, "recon": 0},
                           **{t: 0 for t in TOTALS}) for s in SIDES},
     }
     for name, stock in scenario.get("ports", {}).items():
@@ -58,7 +58,7 @@ def new_game(scenario, gmap):
              "size": spec["size"], "xp": spec.get("xp", "regular"),
              "steps": spec["steps"], "max": spec.get("max", spec["steps"]),
              "hex": None, "cohesion": spec.get("cohesion", 100), "fuel": 0, "stores": 0,
-             "out_of_stores": False, "traced": True, "status": "not_arrived"}
+             "out_of_stores": False, "traced": True, "status": "not_arrived", "fate": None}
         u["fuel"] = spec.get("fuel", U.fuel_cap(u))
         u["stores"] = spec.get("stores", U.stores_cap(u))
         if U.is_hq(u):

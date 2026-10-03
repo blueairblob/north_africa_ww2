@@ -262,8 +262,9 @@ click on a hex is an order: move, or attack if an enemy is seen there.
 
 Each scenario has **objectives** (towns, ports, passes) worth victory points,
 scored *every turn they are held* plus a bonus at the end, and penalties for
-units destroyed. The result is judged against what each side would have
-scored by standing still, and graded *tactical / major / decisive victory*, or
+units destroyed, which count heavily: a division lost is worth as much as an
+objective held for most of a battle. The result is judged against what each
+side would have scored by standing still, shown with its workings at the end, and graded *tactical / major / decisive victory*, or
 a draw. A short debrief shows the front line over time, supply delivered, and
 the losses on both sides.
 

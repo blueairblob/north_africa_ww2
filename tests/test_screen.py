@@ -293,7 +293,7 @@ def test_nothing_is_settled_until_every_strike_has_been_shown():
     ring = [[70, 23], [71, 23], [71, 24], [70, 25], [69, 24], [69, 23]]
     units = [unit(101, "axis", "foot", [70, 24], steps=3)] + [unit(201 + n, "cw", "armour", h, steps=10) for n, h in enumerate(ring)]
     play, _ = played(units, cw=[{"unit": 201 + n, "order": "attack", "to": [70, 24]} for n in range(6)])
-    assert len(scenes(play, "strike")) == 7                                     # six attackers and the reply
+    assert len(scenes(play, "strike")) == 6                                     # six attackers; the reply did the least there is
     start, end, outcome = scenes(play, "outcome")[0]
     assert outcome["gone"] == [101] and outcome["burst"] == [101] and ("boom", 0) in play.cues(0, play.length)
     assert at(play.stage(start - 10), 101) is not None and at(play.stage(start + 100), 101)[5] == 1.0   # still there
@@ -324,7 +324,7 @@ def test_the_window_plays_the_turn_back_goes_faster_with_f_and_any_other_key_end
     assert app.play_t == 30 * 50
     app.handle(pygame.event.Event(pygame.KEYDOWN, key=pygame.K_f))
     app.advance(40)
-    assert app.fast and app.play_t == 30 * 50 + 200
+    assert app.fast and app.play_t == 30 * 50 + 40 * 3
     app.handle(pygame.event.Event(pygame.KEYDOWN, key=pygame.K_SPACE))
     assert app.play is None and not app.fast and "wait for orders" in app.ui.message
     app.done()
@@ -574,3 +574,81 @@ def test_a_rejected_destination_keeps_the_order_and_the_cursor():
     assert app.ui.mode == "move" and app.ui.hover == (60, 11) and app.ui.selected == 101
     keys(app, "DOWN", "RETURN")                                    # carry on from there: (60, 12) is land
     assert app.session.pending["axis"][101] == {"unit": 101, "order": "move", "to": [60, 12]} and app.ui.mode is None
+
+
+# ---- decisions A to E --------------------------------------------------------------------
+
+class Heard:
+    """A stand-in for the sound device that notes what it was asked to play."""
+    def __init__(self):
+        self.played = []
+
+    def play(self, name, amount=0):
+        self.played.append((name, amount))
+
+    def stop(self):
+        self.played.append(("stop", 0))
+
+
+def watching():
+    pygame.init()
+    app = App(Session(crusader(), GMAP, humans=["cw"], scripted={"axis": players.AlwaysAttack(GMAP)}))
+    app.done()
+    app.sounds = Heard()
+    return app
+
+
+def test_a_key_skips_one_scene_and_leaves_the_rest_playing():       # A
+    app = watching()
+    starts = [start for start, _, _ in app.play.timeline]
+    assert "Right arrow: next" in app.ui.message
+    app.advance(40)
+    keys(app, "RIGHT")
+    assert app.play is not None and app.play_t == starts[1] and ("stop", 0) in app.sounds.played
+    keys(app, "n")
+    assert app.play_t == starts[2]
+    for _ in starts[2:]:
+        keys(app, "RIGHT")
+    assert app.play is None and "wait" in app.ui.message             # past the last scene: back to the orders
+
+
+def test_fast_playback_keeps_a_shorter_rattle():                     # A
+    from screen.app import FAST
+    from screen.replay import LEAD_MS
+    app = watching()
+    start, _, strike = next(x for x in app.play.timeline if x[2]["kind"] == "strike" and x[2]["rattle"])
+    app.play_t = start + LEAD_MS - 1
+    keys(app, "f")
+    app.advance(10)
+    assert ("fire:" + strike["arm"], strike["rattle"] // FAST) in app.sounds.played
+    assert not any(name == "tick" for name, _ in app.sounds.played)
+
+
+def test_a_reply_that_did_the_least_there_is_is_not_shown():         # A
+    from engine.combat import COH_MIN
+    from helpers import unit
+    play, s = played([unit(101, "axis", "foot", [70, 25], steps=3), unit(201, "cw", "armour", [70, 24], steps=15)],
+                     cw=[{"unit": 201, "order": "attack", "to": [70, 25]}])
+    battle = next(e for e in s.view["events"] if e["event"] == "battle")
+    assert battle["cla"] == COH_MIN and [x[2]["by"] for x in scenes(play, "strike")] == [[201]]
+    play, s = played([unit(101, "axis", "guns", [70, 25], steps=6), unit(201, "cw", "armour", [70, 24], steps=20)],
+                     cw=[{"unit": 201, "order": "attack", "to": [70, 25]}])
+    assert [x[2]["reply"] for x in scenes(play, "strike")] == [False, True]      # a reply that hurt is shown
+
+
+def test_the_end_of_a_game_says_how_the_result_was_reached():        # C, E
+    from screen.draw import score_lines
+    view = {"vp": {"axis": 252, "cw": 112}, "kills": {"axis": 90, "cw": 20}, "par": 106}
+    assert score_lines(view) == ["Axis: 162 for places + 90 for units = 252",
+                                 "Commonwealth: 92 for places + 20 for units = 112",
+                                 "Standing still, the Axis leads by 106.", "Against that: Axis by 34."]
+    pygame.init()
+    s = Session(small(), GMAP, humans=["cw"], scripted={"axis": players.AlwaysAttack(GMAP)})
+    while not s.state["over"]:
+        s.done()
+    app = App(s)
+    app.play = None
+    surface = pygame.Surface(theme.WINDOW)
+    app.paint(surface)                                               # the panel draws the breakdown and the losses
+    assert s.view["par"] == small()["par"] and set(s.view["kills"]) == {"axis", "cw"}
+    assert all(u["fate"] for u in s.view["units"] if u["status"] in ("destroyed", "withdrawn"))

@@ -470,9 +470,17 @@ class Painter:
                   else f"{T.SIDE_NAME[session.side]}: give your orders", banner.center, 15, T.PAPER, True, True)
         y += 42
         line(f"Points   Axis {view['vp']['axis']}    Commonwealth {view['vp']['cw']}", 14)
-        if over:
+        if over and not self.playing:                                # the result, and how it was reached
             r = session.state["result"]
             line("A draw" if r["winner"] is None else f"{T.SIDE_NAME[r['winner']]}: {r['grade']} victory", 18, T.SHORT, True)
+            for row in score_lines(view):
+                line(row, 12, gap=2)
+            lost = [m for m in view["units"] if m["fate"]]
+            if lost:
+                y += 4
+                line("Your losses", 13, bold=True)
+                for m in lost[:8]:
+                    line(f"{m['name'][:24]}: {m['fate']['cause']}, turn {m['fate']['turn']}", 12, gap=2)
         y += 8
         pygame.draw.line(surface, T.GRID, (x, y), (x + w, y), 2)
         y += 10
@@ -560,6 +568,21 @@ def guess(session, hx):
     if not session.gmap.passable(hx):
         return None
     return "attack" if any(tuple(e["hex"]) == hx for e in session.view["enemy"]) else "move"
+
+
+def score_lines(view):
+    """How the result was reached: each side's points for places and for units destroyed, what
+    standing still would have given, and so the margin (RULES 13.6)."""
+    out = []
+    for side in ("axis", "cw"):
+        kills, total = view["kills"][side], view["vp"][side]
+        out.append(f"{T.SIDE_NAME[side]}: {total - kills} for places + {kills} for units = {total}")
+    par, lead = view["par"], view["vp"]["axis"] - view["vp"]["cw"]
+    out.append(f"Standing still, the Axis leads by {par}." if par >= 0 else f"Standing still, the Commonwealth leads by {-par}.")
+    margin = lead - par
+    out.append("Against that: level." if margin == 0
+               else f"Against that: {T.SIDE_NAME['axis' if margin > 0 else 'cw']} by {abs(margin)}.")
+    return out
 
 
 def wrap(font, text, width):

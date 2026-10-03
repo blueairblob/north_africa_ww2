@@ -1,12 +1,14 @@
 """Objectives, losses and the result (docs/RULES.md §13)."""
 from . import state as S
 
-LOSS_VP = 2             # points to the enemy per size of a unit destroyed (13.4)
+LOSS_VP = 5             # points to the enemy per size of a unit destroyed (13.4)
 GRADES = ("tactical", "major", "decisive")
 
 
 def unit_lost(state, u):
-    state["sides"][S.enemy(u["side"])]["vp"] += u["size"] * LOSS_VP          # 13.4
+    side = state["sides"][S.enemy(u["side"])]                                # 13.4
+    side["vp"] += u["size"] * LOSS_VP
+    side["kills"] += u["size"] * LOSS_VP
 
 
 def par(scenario):

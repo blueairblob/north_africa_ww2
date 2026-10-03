@@ -14,6 +14,7 @@ a battle's attackers have all struck, the defenders reply the same way. Nothing 
 until every strike of the turn has been shown; then, in the outcome, the beaten fall back,
 the destroyed burst, and the rest are seen to have held.
 """
+from engine.combat import COH_MIN
 from engine.movement import IMPULSES
 
 IMPULSE_MS = 110        # one impulse of movement
@@ -46,8 +47,9 @@ def strikes(battle, kinds):
     out = [{"by": [a], "arm": kinds.get(a, "foot"), "on": list(defenders), "reply": False,
             "damage": max(1, battle["cld"] * av[a] // total) if av[a] else 0} for a in attackers]
     lead = max(defenders, key=lambda i: (kinds.get(i) != "hq", -i))
-    out.append({"by": list(defenders), "arm": kinds.get(lead, "foot"), "on": list(attackers),
-                "reply": True, "damage": battle["cla"]})
+    if battle["cla"] > COH_MIN:                          # a reply at the rules' least loss says nothing: left out
+        out.append({"by": list(defenders), "arm": kinds.get(lead, "foot"), "on": list(attackers),
+                    "reply": True, "damage": battle["cla"]})
     for s in out:
         s["rattle"] = rattle_ms(s["damage"])
         s["long"] = max(BEAT_MS, LEAD_MS + s["rattle"] + TAIL_MS)
@@ -153,6 +155,10 @@ class Playback:
 
     def done(self, t):
         return t >= self.length
+
+    def next_scene(self, t):
+        """The time the scene after the one playing at t begins; the end, if it is the last."""
+        return next((start for start, _, _ in self.timeline if start > t), self.length)
 
     def cues(self, t0, t1):
         """The sounds that begin in [t0, t1): (name, amount). A strike's sound is named for

@@ -108,3 +108,13 @@ def test_a_cut_made_after_the_supply_phase_changes_nothing_until_the_next():    
     before = by_id(state)[101]["stores"]
     state, _ = turn(sc, state, cw=[{"unit": 201, "order": "move", "to": PLACE["Tmimi"]}])
     assert by_id(state)[101]["stores"] == before
+
+
+def test_units_draw_before_dumps_are_filled():                                   # 6.7.3, 6.8
+    units = [unit(104, "axis", "hq", "Gazala", steps=1), unit(101, "axis", "foot", "Derna", stores=0)]
+    sc, state = start(units, ports={"Derna": {"condition": 0, "fuel": 100, "stores": 300}})
+    sc["sides"]["axis"]["sea_pct"] = [["1941-11-18", 0]]                         # nothing lands: only the 300 tonnes
+    state = begin_turn(state, GMAP, sc)
+    u = by_id(state)
+    assert u[101]["stores"] == 300 - 50                                          # the garrison had it, not the dump
+    assert u[104]["dump"]["stores"] == 0 and state["ports"]["Derna"]["stores"] == 0

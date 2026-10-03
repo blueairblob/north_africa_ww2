@@ -43,6 +43,8 @@ def view(state, gmap, scenario, side):
         "lift": S.side_value(scenario, side, "lift", state["turn"]),
         "air_points": S.side_value(scenario, side, "air", state["turn"]),
         "vp": {s: state["sides"][s]["vp"] for s in S.SIDES},
+        "kills": {s: state["sides"][s]["kills"] for s in S.SIDES},               # the part of vp for units destroyed
+        "par": scenario.get("par", 0),
         "objectives": scenario["objectives"],
         "events": [dict(e) for e in state["log"]                             # 14.6
                    if e["side"] == side or (e["side"] == "both" and side in e["sides"])],
