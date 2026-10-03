@@ -9,6 +9,8 @@ CACHE = os.path.join(HERE, "cache")
 ZOOM = 9            # about 260 m per pixel at this latitude
 TILES = "https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png"
 LAND = "https://raw.githubusercontent.com/nvkelso/natural-earth-vector/master/geojson/ne_10m_land.geojson"
+BORDERS = ("https://raw.githubusercontent.com/nvkelso/natural-earth-vector/master/geojson/"
+           "ne_10m_admin_0_boundary_lines_land.geojson")
 AGENT = {"User-Agent": "benghazi-handicap-mapgen/0.1"}
 
 
@@ -32,6 +34,10 @@ def land_path():
     return os.path.join(CACHE, "ne_10m_land.geojson")
 
 
+def borders_path():
+    return os.path.join(CACHE, "ne_10m_admin_0_boundary_lines_land.geojson")
+
+
 def fetch(log=print):
     x0, y0, x1, y1 = geo.tile_range(ZOOM)
     n = new = 0
@@ -41,3 +47,4 @@ def fetch(log=print):
             n += 1
     log(f"elevation: {n} tiles at zoom {ZOOM} ({new} downloaded)")
     log("coastline: " + ("downloaded" if _get(LAND, land_path()) else "cached"))
+    log("frontier: " + ("downloaded" if _get(BORDERS, borders_path()) else "cached"))

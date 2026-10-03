@@ -27,11 +27,12 @@ def test_a_cliff_becomes_a_line_of_escarpment_hexsides():
     h, w = raster.shape()
     elev[h // 2:, :] = 250.0                        # high ground to the south, a cliff across the map
     t = np.full((geo.COLS, geo.ROWS), build.DESERT, dtype="<U1")
-    scarps = build.escarpments(elev, t)
+    land = np.ones(raster.shape(), dtype=bool)
+    scarps = build.escarpments(elev, land, t)
     assert len(scarps) > geo.COLS                   # a line right across
     rows = {r for _, r, _ in scarps}
     assert max(rows) - min(rows) <= 2               # ...and only along the cliff
-    assert build.escarpments(_flat(), t) == {}      # flat ground has none
+    assert build.escarpments(_flat(), land, t) == {}   # flat ground has none
 
 
 def test_routes_go_round_impassable_ground_and_make_passes_at_escarpments():
@@ -51,8 +52,17 @@ def test_routes_go_round_impassable_ground_and_make_passes_at_escarpments():
 
 
 def test_stray_hexsides_are_dropped_but_lines_kept():
-    line = {(5, 5, 1): 1, (5, 5, 2): 1, (30, 30, 1): 0}
-    assert set(build._lines_only(line)) == {(5, 5, 1), (5, 5, 2)}
+    line = {H.side(20, r, d): 1 for r in (5, 6) for d in (1, 2)}        # four sides that join up
+    stray = {(30, 30, 1): 0, (40, 10, 2): 0, (40, 10, 3): 0}            # one alone, and a pair
+    assert set(build._lines_only({**line, **stray})) == set(line)
+
+
+def test_a_hex_ringed_by_escarpments_is_rough_ground_without_the_lines():
+    t = np.full((geo.COLS, geo.ROWS), build.DESERT, dtype="<U1")
+    ring = {H.side(20, 20, d): 0 for d in range(6)}
+    line = {H.side(40, r, d): 1 for r in (5, 6) for d in (1, 2)}
+    assert set(build.broken_ground(t, {**ring, **line})) == set(line)
+    assert t[20][20] == build.ROUGH and t[40][5] == build.DESERT
 
 
 def test_a_drawn_escarpment_is_an_unbroken_line_and_replaces_what_was_found():

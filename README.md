@@ -27,25 +27,31 @@ python3 -m venv .venv && .venv/bin/pip install -r requirements.txt
   Cyrenaican coast south to Siwa.
 - **Terrain per hex**: sea, desert, rough going, deep depression (the Qattara
   Depression), sand sea — from the coastline and from elevation and slope.
-- **Escarpments on hex edges**, found where the ground drops sharply across an
-  edge; hills ringed by escarpments become rough ground.
-- **Places and routes** from `data/features.json` (38 places; the coast road,
+- **Escarpments on hex edges**: the cliff lines are traced in the elevation data
+  and laid on the hex edges they run between, so an unbroken cliff is an
+  unbroken line on the map; hills ringed by escarpments become rough ground.
+- **Places and routes** from `data/features.json` (44 places; the coast road,
   desert tracks and the railway): each route finds its own way over the
   generated ground between the places it names, and where it has to climb an
   escarpment, that crossing becomes a **pass**.
-- **Drawn by hand where the rules fall short**: the Sollum escarpment, from the
-  sea at Sollum south-east to where it fades, with its two ways up — **Sollum
+- **Drawn by hand where it matters most**: the Sollum escarpment, from the sea
+  at Sollum south-east to where it fades, with its two ways up — **Sollum
   Pass** (the coast road) and **Halfaya Pass** (a track).
+- **The picture**, `map.png`, is drawn in the manner of a map of the period:
+  relief shading, a border with the degrees marked, a title block with legend
+  and scale.
 - The result, `data/map.json`, is readable: one row of terrain letters per map row.
 
 Known limitations of this first version (see `docs/MAP.md`):
 
-- only the Sollum escarpment has been checked and drawn by hand; the others are
-  as the rules found them, and may have gaps where one runs through the middle
-  of a hex;
-- about 15 period sites have approximate coordinates, and the tracks are joined
-  from place to place rather than traced from period maps;
-- the sand sea outline is approximate; the coastal salt marshes are not marked.
+- the escarpments are checked against the elevation data, not against period
+  maps, and only Sollum has named passes; elsewhere a pass is simply where a
+  route climbs;
+- about 20 period sites have approximate coordinates; places and tracks have
+  been checked against two period maps (Gazala 1942 and Cyrenaica 1941, see
+  `docs/MAP.md`), but the tracks are still joined from place to place, not traced;
+- the sand sea's edge is read off a small-scale period map; the coastal salt
+  marshes are not marked.
 
 ## The name
 

@@ -12,6 +12,7 @@ the sources here. Check each licence before using a dataset.
 | --- | --- | --- | --- |
 | Coastline, land/sea | Natural Earth (naturalearthdata.com), 1:10m physical | public domain | the coast, sea hexes |
 | Elevation | Terrain Tiles (the Mapzen "terrarium" tiles hosted as an AWS Open Data set), zoom 9, about 260 m per pixel; built from SRTM and other open elevation data | open data, **attribution required** (see below) | escarpments (steep drops across hex edges), rough ground, the Qattara Depression |
+| Libya–Egypt frontier | Natural Earth, 1:10m boundary lines | public domain | the frontier line (the Wire) |
 | Sand seas, depressions, oases | Natural Earth physical labels; outlines traced from public-domain period maps | public domain | impassable terrain; water |
 | Roads, tracks, towns | U.S. Army Map Service / War Office 1940s survey sheets of Libya and Egypt (scans at e.g. the Perry–Castañeda Library, University of Texas — check each sheet's status) | public domain where published by the U.S. government; check others | the coast road, desert tracks, period place names, railway |
 | Modern cross-check | OpenStreetMap | ODbL — **requires attribution**; a hex map produced from it is a "produced work" (attribution needed) | positions of towns and roads |
@@ -20,6 +21,17 @@ Attribution for the elevation data, as its publishers ask: *Terrain Tiles: data 
 SRTM (NASA/USGS), GMTED2010 (USGS/NGA), ETOPO1 (NOAA) and other open sources,
 assembled by Mapzen and hosted by Amazon Web Services Open Data.* Place coordinates
 were cross-checked against OpenStreetMap (© OpenStreetMap contributors, ODbL).
+
+Period maps used as a check on places and tracks (positions and names only;
+the maps are not reproduced here): a map of Rommel's plan of attack at Gazala,
+May 1942, from a history published in 1954; "Cyrenaica in March 1941" (Map 2
+of a history published in 1956), for the edge of the Libyan Sand Sea and for
+names; and "Diagram showing the lines of
+advance of General Rommel's columns through Cyrenaica in April 1941" (Map 4 of
+a published history, probably the same 1956 volume — to be confirmed). A general map of the campaign
+on the Desert Rats Association website was the model for the *look* of
+`map.png` (relief shading, region names, the frontier), and the 1956 map for
+its border and title block; nothing was copied from either.
 
 Railway: the Western Desert Railway's westward extension (railhead dates) from
 the official histories below.

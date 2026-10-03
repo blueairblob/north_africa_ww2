@@ -79,3 +79,32 @@ def test_the_sollum_escarpment_is_crossed_only_at_its_passes(m):
     for name in ("Sollum Pass", "Halfaya Pass"):                                 # either pass alone will do
         assert _steps(m, below, above, scarps - {passes[name]}) <= direct + 1, name
     assert _steps(m, below, above, scarps) >= direct + 4                         # without them: round the end
+
+
+def test_escarpments_are_lines_not_scraps(m):
+    scarps = {tuple(s[:3]): s[3] for s in m["escarpments"]}
+    assert build._lines_only(scarps) == scarps                  # none shorter than SCARP_SIDES
+    where = {p["name"]: (p["col"], p["row"]) for p in m["places"]}
+    closed = set(scarps)
+    # the escarpment behind the coast from Gazala to Tobruk, and the ridges south of Tobruk:
+    # with the passes shut there is no short way up from the coast road
+    for below, above in (("Gazala", "Bir Hakeim"), ("Tobruk", "Bir el Gubi")):
+        direct = H.distance(where[below], where[above])
+        assert _steps(m, where[below], where[above], closed) >= direct + 4, (below, above)
+
+
+def test_frontier_and_labels_are_on_the_map(m):
+    lats = [lat for lat, lon in m["frontier"]]
+    assert all(24.5 < lon < 25.5 for lat, lon in m["frontier"])          # between Jarabub and Siwa, to Sollum
+    assert max(lats) > 31.5 and min(lats) < geo.LAT_S + 0.1              # from the sea to the southern edge
+    for label in m["labels"]:
+        assert geo.LON_W < label["lon"] < geo.LON_E and geo.LAT_S < label["lat"] < geo.LAT_N, label["name"]
+
+
+def test_places_checked_against_the_period_maps(m):
+    where = {p["name"]: (p["col"], p["row"]) for p in m["places"]}
+    assert where["Antelat"][1] < where["Agedabia"][1] - 3                # well north of Agedabia, east of Beda Fomm
+    assert abs(where["Antelat"][1] - where["Beda Fomm"][1]) <= 1
+    capuzzo = next(r for r in m["routes"] if r["name"] == "Trigh Capuzzo")["hexes"]
+    assert list(where["Knightsbridge"]) in capuzzo and list(where["El Adem"]) in capuzzo
+    assert list(where["Gambut"]) not in capuzzo                          # it passes south of Gambut

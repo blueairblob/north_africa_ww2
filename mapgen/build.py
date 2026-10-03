@@ -16,10 +16,14 @@ IMPASSABLE = {SEA, DEPRESSION, SAND}
 LAND_SHARE = 0.5            # a hex is land if at least this share of it is
 ROUGH_SLOPE = 30.0          # mean slope (m per km) from which a hex is rough going
 BELOW_SEA = -25.0           # deep below sea level: the Qattara Depression (the oases are shallower)
-SCARP_DROP = 28.0           # metres between the two sides of a hexside...
-SCARP_STEP = 9.0            # ...with at least this much of it within half a kilometre
-SCARP_PROFILES = 3          # ...on at least this many of 5 lines across the hexside
-BROKEN_SIDES = 3            # a hex with this many escarpment sides is broken ground: rough
+SCARP_STEEP = 28.0          # a cliff line: somewhere the ground is this steep (m per km)...
+SCARP_SLOPE = 14.0          # ...and the line is followed for as long as it stays this steep
+SCARP_KM = 10.0             # ...and is at least this long from end to end
+SCARP_DROP = 15.0           # where it crosses between two hexes, the metres it drops...
+SCARP_REACH = 1.5           # ...between points this many km either side of it
+SCARP_SIDES = 4             # an escarpment on the map is a line of at least this many hexsides
+BROKEN_SIDES = 4            # a hex with this many escarpment sides is broken ground: rough
+RINGED_SIDES = 6            # ...and with this many it is a hill or hollow: rough, without the lines
 ROUTE_COST = {DESERT: 1.0, ROUGH: 1.6}
 SCARP_COST = 4.0            # extra cost for a route to cross an escarpment (it makes a pass)
 DRAWN_KM = 5.0              # a drawn escarpment replaces the found hexsides this close to its line
@@ -69,39 +73,84 @@ def sand_seas(t, features):
                     t[c][r] = SAND
 
 
-def escarpments(elev, t):
-    """Hexsides where the ground drops sharply: {(col, row, d): high side (0 this hex, 1 the neighbour)}."""
+def cliff_lines(elev, land):
+    """Thin lines of grid pixels along the cliffs: the steepest line of each sharp slope,
+    followed for as long as it stays steep (edge detection on the smoothed ground).
+    Returns the lines (True where a pixel is on one) and the smoothed elevation."""
     h, w = elev.shape
+    pad = np.pad(elev, 1, mode="edge")
+    smooth = sum(pad[i:i + h, j:j + w] for i in range(3) for j in range(3)) / 9
+    gy, gx = np.gradient(smooth, raster.RES)
+    steep = np.hypot(gx, gy)
+    steep[~land] = 0
+    # the crest of the slope: steeper than the pixels up and down the slope from it
+    way = (np.rint(np.arctan2(gy, gx) / (np.pi / 4)) % 4).astype(int)
+    pad = np.pad(steep, 1)
+
+    def shifted(dy, dx):
+        return pad[1 + dy:1 + dy + h, 1 + dx:1 + dx + w]
+    crest = np.zeros((h, w), dtype=bool)
+    for k, (dy, dx) in enumerate(((0, 1), (1, 1), (1, 0), (1, -1))):
+        crest |= (way == k) & (steep >= shifted(dy, dx)) & (steep > shifted(-dy, -dx))
+    crest &= steep >= SCARP_SLOPE
+    # keep each connected line that somewhere is a real cliff and is long enough
+    lines = np.zeros((h, w), dtype=bool)
+    seen = np.zeros((h, w), dtype=bool)
+    for i, j in zip(*np.nonzero(crest & (steep >= SCARP_STEEP))):
+        if seen[i, j]:
+            continue
+        seen[i, j] = True
+        stack, line = [(i, j)], []
+        while stack:
+            y, x = stack.pop()
+            line.append((y, x))
+            for yy in range(max(y - 1, 0), min(y + 2, h)):
+                for xx in range(max(x - 1, 0), min(x + 2, w)):
+                    if crest[yy, xx] and not seen[yy, xx]:
+                        seen[yy, xx] = True
+                        stack.append((yy, xx))
+        ys, xs = [q[0] for q in line], [q[1] for q in line]
+        if np.hypot(max(ys) - min(ys), max(xs) - min(xs)) * raster.RES >= SCARP_KM:
+            lines[ys, xs] = True
+    return lines, smooth
+
+
+def escarpments(elev, land, t):
+    """Hexsides the cliff lines run along: {(col, row, d): high side (0 this hex, 1 the neighbour)}.
+    A cliff line is laid on the hexsides it parts (those whose two hexes it runs between),
+    so an unbroken cliff makes an unbroken line of hexsides."""
+    lines, smooth = cliff_lines(elev, land)
+    h, w = lines.shape
+    res = raster.RES
 
     def at(x, y):
-        return elev[min(max(int(y / raster.RES), 0), h - 1), min(max(int(x / raster.RES), 0), w - 1)]
+        return float(smooth[min(max(int(y / res), 0), h - 1), min(max(int(x / res), 0), w - 1)])
 
-    offsets = [k * 0.5 for k in range(-6, 7)]
+    def open_ground(c, r):
+        return geo.in_map(c, r) and t[c][r] != SEA
+
     found = {}
-    for c in range(geo.COLS):
-        for r in range(geo.ROWS):
-            if t[c][r] == SEA:
+    for i, j in zip(*np.nonzero(lines)):
+        a = ((j + 0.5) * res, (i + 0.5) * res)
+        for dy, dx in ((0, 1), (1, -1), (1, 0), (1, 1)):            # each link to the next pixel of the line
+            if not (i + dy < h and 0 <= j + dx < w and lines[i + dy, j + dx]):
                 continue
-            for d in (1, 2, 3):
-                nc, nr = H.neighbour(c, r, d)
-                if not geo.in_map(nc, nr) or t[nc][nr] == SEA:
+            b = (a[0] + dx * res, a[1] + dy * res)
+            mx, my = (a[0] + b[0]) / 2, (a[1] + b[1]) / 2
+            here = H.hex_at(mx, my)
+            for c, r in [here] + H.neighbours(*here):
+                if not open_ground(c, r):
                     continue
-                (ax, ay), (bx, by), (nx, ny) = H.edge(c, r, d)
-                up = down = 0
-                for k in (0.15, 0.325, 0.5, 0.675, 0.85):
-                    px, py = ax + (bx - ax) * k, ay + (by - ay) * k
-                    prof = [at(px + nx * o, py + ny * o) for o in offsets]
-                    drop = sum(prof[-4:]) / 4 - sum(prof[:4]) / 4
-                    step = max(abs(q - p) for p, q in zip(prof, prof[1:]))
-                    if step >= SCARP_STEP:
-                        if drop >= SCARP_DROP:
-                            up += 1
-                        elif drop <= -SCARP_DROP:
-                            down += 1
-                if up >= SCARP_PROFILES:
-                    found[(c, r, d)] = 1
-                elif down >= SCARP_PROFILES:
-                    found[(c, r, d)] = 0
+                for d in (1, 2, 3):
+                    n = H.neighbour(c, r, d)
+                    if (c, r, d) in found or not open_ground(*n) or (t[c][r] in IMPASSABLE and t[n[0]][n[1]] in IMPASSABLE):
+                        continue
+                    p, q = H.centre(c, r), H.centre(*n)
+                    if _crosses(p, q, a, b):
+                        ux, uy = (q[0] - p[0]) / H.HEX_KM * SCARP_REACH, (q[1] - p[1]) / H.HEX_KM * SCARP_REACH
+                        rise = at(mx + ux, my + uy) - at(mx - ux, my - uy)
+                        if abs(rise) >= SCARP_DROP:
+                            found[(c, r, d)] = int(rise > 0)
     return _lines_only(found)
 
 
@@ -111,8 +160,9 @@ def _ends(c, r, d):
 
 
 def broken_ground(t, scarps):
-    """Hexes hemmed in by escarpments are rough ground; between two rough hexes the
-    escarpment is part of the going, not a line on the map."""
+    """Hexes hemmed in by escarpments are rough ground. A hex ringed by them is a hill or
+    a hollow, not a line: its escarpments go. So do those between two rough hexes, where
+    the escarpment is part of the going."""
     sides = {}
     for c, r, d in scarps:
         for h in ((c, r), H.neighbour(c, r, d)):
@@ -122,19 +172,34 @@ def broken_ground(t, scarps):
             t[c][r] = ROUGH
     kept = {}
     for (c, r, d), v in scarps.items():
-        nc, nr = H.neighbour(c, r, d)
-        if not (t[c][r] == ROUGH and t[nc][nr] == ROUGH):
+        n = H.neighbour(c, r, d)
+        ringed = sides[(c, r)] >= RINGED_SIDES or sides[n] >= RINGED_SIDES
+        if not ringed and not (t[c][r] == ROUGH and t[n[0]][n[1]] == ROUGH):
             kept[(c, r, d)] = v
     return _lines_only(kept)
 
 
 def _lines_only(found):
-    """Drop stray hexsides: an escarpment is a line, so keep sides that join at least one other."""
+    """Drop stray hexsides: an escarpment is a line, so keep only the sides that join up
+    into a line of at least SCARP_SIDES."""
+    line = {s: s for s in found}
+
+    def root(s):
+        while line[s] != s:
+            line[s] = line[line[s]]
+            s = line[s]
+        return s
     at = {}
-    for s in found:
+    for s in sorted(found):
         for e in _ends(*s):
-            at.setdefault(e, []).append(s)
-    return {s: v for s, v in found.items() if any(len(at[e]) > 1 for e in _ends(*s))}
+            if e in at:
+                line[root(s)] = root(at[e])
+            else:
+                at[e] = s
+    size = {}
+    for s in found:
+        size[root(s)] = size.get(root(s), 0) + 1
+    return {s: v for s, v in found.items() if size[root(s)] >= SCARP_SIDES}
 
 
 def _crosses(p, q, a, b):
@@ -264,6 +329,17 @@ def routes(t, scarps, places, features):
     return out, [{"name": passes[s], "col": s[0], "row": s[1], "side": s[2]} for s in sorted(passes)]
 
 
+def frontier():
+    """The Libya-Egypt frontier (where the Italians built the Wire), as [lat, lon] points on the map."""
+    with open(fetch.borders_path()) as f:
+        lines = json.load(f)["features"]
+    for line in lines:
+        if {line["properties"]["ADM0_A3_L"], line["properties"]["ADM0_A3_R"]} == {"EGY", "LBY"}:
+            return [[round(lat, 3), round(lon, 3)] for lon, lat in line["geometry"]["coordinates"]
+                    if geo.LAT_S - 0.2 <= lat <= geo.LAT_N]
+    raise ValueError("no Libya-Egypt frontier in the boundary data")
+
+
 def build(log=print):
     features = json.load(open(FEATURES))
     elev = raster.elevation()
@@ -272,7 +348,7 @@ def build(log=print):
     t, mean_elev, _ = terrain(elev, land, index)
     sand_seas(t, features)
     places = place_hexes(t, features)
-    scarps = drawn_escarpments(t, mean_elev, broken_ground(t, escarpments(elev, t)), features)
+    scarps = drawn_escarpments(t, mean_elev, broken_ground(t, escarpments(elev, land, t)), features)
     route_list, passes = routes(t, scarps, places, features)
     counts = {TERRAIN_NAMES[k]: int((t == k).sum()) for k in TERRAIN_NAMES}
     log(f"{geo.COLS} x {geo.ROWS} hexes: {counts}; {len(scarps)} escarpment hexsides, "
@@ -290,6 +366,8 @@ def build(log=print):
         "escarpments": [[c, r, d, scarps[(c, r, d)]] for c, r, d in sorted(scarps)],
         "passes": passes,
         "routes": route_list,
+        "frontier": frontier(),
+        "labels": features.get("labels", []),
         "places": [{k: p[k] for k in ("name", "kind", "col", "row", "lat", "lon", "approx") if k in p}
                    for p in places],
     }
