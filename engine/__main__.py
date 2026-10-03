@@ -13,8 +13,7 @@ from . import state as S
 from .gamemap import GameMap
 
 DATA = Path(__file__).parent.parent / "data"
-PLAYERS = {"nothing": players.DoNothing, "attack": players.AlwaysAttack,
-           "retreat": players.AlwaysRetreat, "explore": players.Explore}
+PLAYERS = players.SCRIPTED
 
 
 def main(argv):

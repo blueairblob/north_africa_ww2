@@ -3,7 +3,7 @@ from . import board as B
 from . import state as S
 from . import units as U
 from .gamemap import WEST_ENTRY
-from .paths import haul_distances
+from .paths import haul_distances, route
 
 TRIPOLI_CAP = 3000      # tonnes landed at Tripoli per turn
 PORT_CAP = {"Benghazi": 1500, "Tobruk": 1200, "Derna": 300, "Bardia": 300,
@@ -84,7 +84,8 @@ def outlets(state, gmap, scenario, side, blocked):
         if state["places"][name] == side:
             out.append({"name": name, "hex": h, "extra": 0, "stock": state["ports"][name]})
     for o in out:
-        o["dist"] = haul_distances(gmap, o["hex"], blocked)
+        o["came"] = {}
+        o["dist"] = haul_distances(gmap, o["hex"], blocked, came=o["came"])
     return out
 
 
@@ -110,8 +111,9 @@ def largest(top, allowed):
     return lo
 
 
-def haul(side_totals, pool, outlet, hq, H, want):
+def haul(state, pool, outlet, hq, H, want):
     """One haul from an outlet to an HQ (6.5). pool holds the lift and rail tonnage left."""
+    side_totals = state["sides"][hq["side"]]
     src = outlet["stock"]
 
     def allowed(f, s):                                        # 6.5.3
@@ -132,6 +134,9 @@ def haul(side_totals, pool, outlet, hq, H, want):
     side_totals["burnt"] += burn
     want["fuel"] -= f
     want["stores"] -= s
+    if f + s:
+        S.log(state, "haul", side=hq["side"], source=outlet["name"], hq=hq["id"], fuel=f, stores=s,
+              burnt=burn, cost=H, route=[list(h) for h in route(outlet["came"], tuple(hq["hex"]))])
 
 
 def distribute(state, gmap, scenario, side, audit):
@@ -168,12 +173,12 @@ def distribute(state, gmap, scenario, side, audit):
                                   if depots[u["id"]] and depots[u["id"]][0][3] is hq) for k in KINDS}
         want = {k: max(0, gross[hq["id"]][k] - hq["dump"][k]) for k in KINDS}
         for H, n in reach_of(hq):
-            haul(totals, pool, outs[n], hq, H, want)
+            haul(state, pool, outs[n], hq, H, want)
     for _, _, hq in served:                                   # 6.7.3, 6.7.4
         if hq["stationary"]:
             want = {k: max(0, gross[hq["id"]][k] + DUMP_CAP - hq["dump"][k]) for k in KINDS}
             for H, n in reach_of(hq):
-                haul(totals, pool, outs[n], hq, H, want)
+                haul(state, pool, outs[n], hq, H, want)
 
     on_hand = sum(o["stock"]["fuel"] + o["stock"]["stores"] for o in outs if not o.get("rail")) \
         + sum(hq["dump"]["fuel"] + hq["dump"]["stores"] for hq in hqs)

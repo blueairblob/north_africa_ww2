@@ -9,6 +9,15 @@ def unit_lost(state, u):
     state["sides"][S.enemy(u["side"])]["vp"] += u["size"] * LOSS_VP          # 13.4
 
 
+def par(scenario):
+    """The Axis lead in points if both sides hold to the end what they hold at the start (13.6)."""
+    lead = 0
+    for obj in scenario["objectives"]:
+        points = obj.get("turn", 0) * scenario["turns"] + obj.get("end", 0)
+        lead += points if obj["place"] in scenario["owners"]["axis"] else -points
+    return lead
+
+
 def victory_phase(state, scenario):
     last = state["turn"] >= scenario["turns"]
     for obj in scenario["objectives"]:
@@ -20,7 +29,7 @@ def victory_phase(state, scenario):
                                           for u in state["units"])]
     if last or gone:                                                         # 13.5
         state["over"] = True
-        d = state["sides"]["axis"]["vp"] - state["sides"]["cw"]["vp"]        # 13.6
+        d = state["sides"]["axis"]["vp"] - state["sides"]["cw"]["vp"] - scenario.get("par", 0)   # 13.6
         grade = sum(abs(d) >= t for t in scenario["thresholds"])
         state["result"] = {"winner": None if grade == 0 else ("axis" if d > 0 else "cw"),
                            "grade": "draw" if grade == 0 else GRADES[grade - 1], "margin": d}

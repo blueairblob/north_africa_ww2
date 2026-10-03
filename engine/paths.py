@@ -59,9 +59,18 @@ def _least_path(gmap, start, goal, mode):
     return None
 
 
-def haul_distances(gmap, start, blocked=frozenset(), limit=None):
+def route(came, goal):
+    """The hexes from the start to goal along the paths haul_distances found."""
+    out = [goal]
+    while came.get(out[-1]) is not None:
+        out.append(came[out[-1]])
+    return out[::-1]
+
+
+def haul_distances(gmap, start, blocked=frozenset(), limit=None, came=None):
     """Haul distance from start to every hex a supply path reaches (6.4.3).
-    No path enters a blocked hex; a blocked start reaches nothing."""
+    No path enters a blocked hex; a blocked start reaches nothing.
+    Given a dict as came, it is filled with each hex's previous hex on its least path."""
     if start in blocked or not gmap.passable(start):
         return {}
     dist = {start: 0}
@@ -78,5 +87,7 @@ def haul_distances(gmap, start, blocked=frozenset(), limit=None):
                 continue
             if d + c < dist.get(nxt, 1 << 60):
                 dist[nxt] = d + c
+                if came is not None:
+                    came[nxt] = cur
                 heapq.heappush(heap, (d + c, nxt))
     return dist

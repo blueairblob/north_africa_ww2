@@ -13,7 +13,7 @@ ATTACK_STORES = 100     # tonnes of stores per size to attack
 DEFEND_STORES = 50      # tonnes of stores per size to defend
 UPHILL_PCT = 50         # attack value across a pass, uphill
 REST_PCT = 75           # defence value of a resting unit
-COLUMN_PCT = 50         # defence value of a unit on a road march
+COLUMN_PCT = 25         # defence value of a unit on a road march
 FLANK_PCT = 15          # added per extra hex attacked from
 ROUGH_PCT = 50          # added to defence in rough
 TOWN_PCT = 50           # added to defence in a port or town
@@ -85,15 +85,17 @@ def values(state, gmap, ctx, battle):
     hd = sum(u["steps"] for u in dfn if U.is_hard(u))
     sa = sum(u["steps"] for u in att if not U.is_hard(u))
     ha = sum(u["steps"] for u in att if U.is_hard(u))
-    total = 0
+    total, battle["av"] = 0, {}
     for u in att:                                                            # 10.4.3
         a_soft, a_hard, _, _ = VALUES[u["type"]]
         hexside = gmap.side_between(tuple(u["hex"]), h)
         uphill = hexside in gmap.passes and gmap.high[hexside] == h
-        total += (10 * u["steps"] * (a_soft * sd + a_hard * hd) * efficiency(u, battle)
-                  * (UPHILL_PCT if uphill else 100)) // ((sd + hd) * 10 ** 8)
+        battle["av"][u["id"]] = (10 * u["steps"] * (a_soft * sd + a_hard * hd) * efficiency(u, battle)
+                                 * (UPHILL_PCT if uphill else 100)) // ((sd + hd) * 10 ** 8)
+        total += battle["av"][u["id"]]
     froms = {tuple(u["hex"]) for u in att}
     battle["from"] = sorted(froms)
+    battle["stood"] = [tuple(u["hex"]) for u in att]                         # where each attacker fought from
     battle["att"] = (total * (100 + FLANK_PCT * (len(froms) - 1))
                      * (100 + ctx["support"][att[0]["side"]])) // 10000     # 10.4.5
     total = 0
@@ -226,7 +228,13 @@ def combat_phase(state, gmap, ctx):
             u["stationary"] = True
     for battle in battles:
         if battle["fought"]:
+            fought = battle["attackers"] + battle["defenders"]
             report = {"hex": list(battle["hex"]), "att": battle["att"], "def": battle["def"],
+                      "cla": battle["cla"], "cld": battle["cld"],
+                      "av": {str(k): v for k, v in sorted(battle["av"].items())},
+                      "where": dict({str(u["id"]): list(h) for u, h in zip(battle["attackers"], battle["stood"])},
+                                    **{str(u["id"]): list(battle["hex"]) for u in battle["defenders"]}),
+                      "destroyed": [u["id"] for u in fought if u["status"] == "destroyed"],
                       "attackers": [u["id"] for u in battle["attackers"]],
                       "defenders": [u["id"] for u in battle["defenders"]],
                       "lost": {str(k): v for k, v in sorted(battle["lost"].items())},

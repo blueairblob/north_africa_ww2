@@ -78,3 +78,6 @@ class Recorded:
 
     def orders(self, view):
         return self.submissions[view["turn"] - 1]
+
+
+SCRIPTED = {"nothing": DoNothing, "attack": AlwaysAttack, "retreat": AlwaysRetreat, "explore": Explore}

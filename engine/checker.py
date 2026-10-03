@@ -7,6 +7,7 @@ from . import units as U
 from .paths import FOOT, least_path
 from .recovery import FORT_MAX
 from .supply import PORT_CAP
+from .victory import par
 
 COUNTERS = 30           # no more than about this many a side (DESIGN.md §14.1)
 
@@ -33,6 +34,8 @@ def problems(scenario, gmap):
             bad.append(f"objective {obj['place']} is not a place")
     if sorted(scenario["thresholds"]) != scenario["thresholds"] or len(scenario["thresholds"]) != 3:
         bad.append("thresholds: three rising numbers are needed")
+    if not bad and scenario.get("par") != par(scenario):
+        bad.append(f"par: must be {par(scenario)}, the Axis lead if nobody moves (RULES 13.6); it is {scenario.get('par')}")
 
     for side in S.SIDES:
         for name, schedule in scenario["sides"][side].items():

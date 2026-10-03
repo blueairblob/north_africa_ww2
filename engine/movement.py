@@ -95,6 +95,7 @@ def movement_phase(state, gmap, ctx):
             m["spent"] += cost
             m["i"] += 1
             B.enter(state, u, nxt, ctx["entered"])
+            S.log(state, "step", side=u["side"], unit=uid, impulse=impulse, to=list(nxt), march=m["mode"] == "march")
 
         zocs = {s: B.zoc(state, gmap, s) for s in S.SIDES}                   # 9.5.7
         for uid in sorted(trying):

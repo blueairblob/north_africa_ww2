@@ -108,3 +108,19 @@ def test_the_game_ends_when_a_side_has_nothing_left():                          
     sc, state = start(units)
     state = play(sc, state, 1, cw=[{"unit": 201 + n, "order": "attack", "to": [70, 24]} for n in range(6)])
     assert state["over"] and state["sides"]["cw"]["vp"] >= 3 * 2
+
+
+def test_the_result_is_judged_against_standing_still():                         # 13.6
+    import json
+    from engine import checker, players, runner
+    from engine.victory import par
+    from helpers import GMAP, ROOT
+    sc = json.loads((ROOT / "data" / "scenarios" / "crusader.json").read_text())
+    assert par(sc) == sc["par"] == (5 * 22 + 70) - (2 * 22 + 30)                 # 180 for the Axis, 74 for the Commonwealth
+    state, _ = runner.play(sc, GMAP, {s: players.DoNothing(GMAP) for s in S.SIDES})
+    assert state["result"]["grade"] == "draw" and abs(state["result"]["margin"]) < sc["thresholds"][0]
+    assert any("par" in p for p in checker.problems(dict(sc, par=0), GMAP))      # the checker holds it to the sum
+    sc, state = start([unit(101, "axis", "foot", "Bardia"), unit(201, "cw", "foot", "Tobruk")], turns=2, par=-4,
+                      objectives=[{"place": "Tobruk", "turn": 2}], thresholds=[1, 15, 30])
+    state = play(sc, state, 2)
+    assert state["sides"]["cw"]["vp"] == 4 and state["result"] == {"winner": None, "grade": "draw", "margin": 0}

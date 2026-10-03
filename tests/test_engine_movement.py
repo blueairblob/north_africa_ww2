@@ -57,7 +57,8 @@ def test_both_sides_into_one_hex_the_priority_side_enters():                    
 def test_both_sides_into_one_hex_the_attacker_enters():                          # 9.5.3
     sc, state = start([unit(101, "axis", "armour", [70, 22]), unit(201, "cw", "armour", [70, 26], steps=1)])
     state, _ = turn(sc, state, axis=[move(101, [70, 26])], cw=[move(201, [70, 22], "attack")])
-    assert state["log"][0] == {"event": "stopped", "side": "axis", "unit": 101, "why": "contact", "hex": [70, 23]}
+    stopped = [e for e in state["log"] if e["event"] == "stopped"]
+    assert stopped[0] == {"event": "stopped", "side": "axis", "unit": 101, "why": "contact", "hex": [70, 23]}
 
 
 def test_two_enemies_changing_places_both_stop():                                # 9.5.2

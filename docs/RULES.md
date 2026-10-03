@@ -590,8 +590,9 @@ of up to `VIA_MAX` hexes to pass through in the order given.
 **8.1.3** A unit given no order, or whose order is rejected, has the order
 `hold`.
 
-**8.1.4** Orders for a whole corps are a convenience of the screen. The engine
-receives one order per unit.
+**8.1.4** Orders for a whole corps, and orders that stand from turn to turn
+until they are done, are conveniences of the screen. The engine receives one
+order per unit per turn.
 
 ### 8.2 Submission
 
@@ -1061,7 +1062,7 @@ roughness.
 | `DEFEND_STORES` | 50 | tonnes of stores per size to defend | to be tuned |
 | `UPHILL_PCT` | 50 | attack value across a pass, uphill | to be tuned |
 | `REST_PCT` | 75 | defence value of a resting unit | to be tuned |
-| `COLUMN_PCT` | 50 | defence value of a unit on a road march | to be tuned |
+| `COLUMN_PCT` | 25 | defence value of a unit on a road march: caught in column, it is nearly helpless | to be tuned; owner's decision that the penalty be heavy |
 | `FLANK_PCT` | 15 | added per extra hex attacked from | to be tuned |
 | `ROUGH_PCT` | 50 | added to defence in rough | to be tuned |
 | `TOWN_PCT` | 50 | added to defence in a port or town | to be tuned |
@@ -1189,7 +1190,12 @@ starvation) the enemy gains `size × LOSS_VP` points.
 turn, or of any turn in which a side has no unit on the map and none still to
 arrive.
 
-**13.6 Result.** Let `d` be the Axis points less the Commonwealth points. The
+**13.6 Result.** The scenario's **par** is the Axis lead in points if both
+sides hold to the end exactly the objectives they hold at the start: for each
+objective, its per-turn points times the number of turns plus its end points,
+added for the Axis and taken away for the Commonwealth. Let `d` be the Axis
+points less the Commonwealth points less par, so that standing still is level
+and a side wins by doing better than that. The
 scenario gives three thresholds `T1 < T2 < T3`. If `|d| < T1` the game is a
 draw. Otherwise the side ahead has a tactical victory (`|d| < T2`), a major
 victory (`|d| < T3`) or a decisive victory.
@@ -1226,8 +1232,12 @@ spotting range by 14.3.
 
 **14.6** The view gives the events of the last turn that the side took part
 in: for each battle with its units, the battle hex, both sides' units in it,
-both sides' step losses, who retreated, surrendered and advanced; and the
-replies and events for its own units. It gives no other enemy event.
+both sides' step and cohesion losses, each attacker's attack value, where
+each unit fought, which were destroyed, who
+retreated, surrendered and advanced; the replies and events for its own
+units, with every hex each entered and in which impulse; and its own hauls in the Supply phase
+just run, each with its source, HQ, tonnes, fuel burnt, haul cost and route.
+It gives no other enemy event.
 
 **14.7** The view holds no memory of earlier turns. A player may keep its own.
 
@@ -1319,7 +1329,7 @@ sides' orders then run at the same time. Nothing is left to chance.
 - **Hold** — stay; scrape a first line of defences; recover a little.
 - **Dig in** — stay and build defences, up to four levels. It costs stores.
 - **Road march** — far and fast along roads and tracks. Caught in column, you
-  fight at half strength.
+  fight at a quarter of your strength.
 - **Rest** — stay and recover. A resting unit defends less well.
 
 Each turn you also send the air force to one job: support the battle, raid
