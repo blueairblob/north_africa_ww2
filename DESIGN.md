@@ -1,6 +1,6 @@
-# Western Desert — Design
+# Benghazi Handicap: North Africa 1940–42 — Design
 
-*Working title. An original operational wargame of the North African campaign,
+*An original operational wargame of the North African campaign,
 1940–1942, in the spirit of the small 8-bit desert wargames: one map, a few
 dozen counters, a handful of orders — but with the ground, the time and the
 supply of the real campaign.*

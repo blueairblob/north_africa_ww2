@@ -1,6 +1,6 @@
 # Clean room: what this project may and may not use
 
-*Western Desert* is a new, original game. It is inspired by the 8-bit desert
+*Benghazi Handicap* is a new, original game. It is inspired by the 8-bit desert
 wargames of the 1980s, in particular *Desert Rats* (CCS, 1985), but it contains
 nothing taken from them. This page says how that is kept true. (This is a
 working practice, not legal advice.)
@@ -30,7 +30,7 @@ contributor, working only from `DESIGN.md` and `SOURCES.md`, should.
 
 ## Before publishing this project
 
-- [ ] Choose the name (see `README.md`).
+- [x] Choose the name (see `README.md`).
 - [ ] `docs/SOURCES.md` lists every source used for the map and the orders of
       battle, with its licence; attributions are in place (OpenStreetMap needs one).
 - [ ] No file, name, text or number has come from another game or a reconstruction of one.
