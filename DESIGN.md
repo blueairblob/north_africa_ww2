@@ -314,8 +314,14 @@ lopsided, and situations the rules do not cover.
 - NATO-style unit symbols, generated (no hand-drawn art needed); nation colours.
 - Overlays: **S** supply, **Z** zones of control and fog of war, **F** the front
   line history.
-- Mouse: click a unit, click a destination. Keyboard for everything too. The
-  six orders, the overlays and End turn are buttons under the map.
+- Mouse: click a unit, click a destination. Keyboard for everything too: an
+  order key, the arrow keys to move a hex cursor, Enter to confirm. The unit
+  being ordered is brought to the middle of the map. The six orders, the
+  overlays and End turn are buttons under the map; End turn asks once more if
+  units still wait for orders.
+- In the playback, what moves together is shown together: the movers are
+  taken in groups that fit in view, and the map goes to each group before it
+  sets off, so every formation is on the screen while it moves.
 - The map is the generated map with its relief; the wheel zooms at the pointer
   from the whole theatre down to a few hexes, and dragging moves it.
 - **The turn is played back.** After the orders, the player watches what he

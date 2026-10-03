@@ -486,7 +486,7 @@ class Painter:
             meter("Cohesion", u["cohesion"], 100, T.GOOD if u["cohesion"] >= 40 else T.POOR,
                   "fresh" if u["cohesion"] >= 80 else "tired" if u["cohesion"] >= 40 else "cannot attack")
             if U.is_vehicle(u):
-                meter("Fuel", u["fuel"], U.fuel_cap(u), T.FUEL, f"enough for {u['fuel'] // U.step_fuel(u)} hexes")
+                meter("Fuel", u["fuel"], U.fuel_cap(u), T.FUEL, "enough for " + T.count(u["fuel"] // U.step_fuel(u), "hex", "hexes"))
             meter("Stores", u["stores"], U.stores_cap(u), T.STORES, f"{u['stores']} t")
             if u["type"] == "hq":
                 line(f"Dump: {u['dump']['fuel']} t fuel, {u['dump']['stores']} t stores", 13)
@@ -505,7 +505,8 @@ class Painter:
             else:
                 line("Waiting for an order", 16, T.ATTACK, True)
                 line("With none, it holds its ground.", 12, T.DIM, gap=8)
-            for s in ("Click a hex to move there.", "Click an enemy to attack it.", "Space: next unit.  Right-click: let go."):
+            for s in ("Click a hex to move there.", "Click an enemy to attack it.",
+                      "Keys: M, A or R, arrows, then Enter.", "Space: next unit.  Right-click: let go."):
                 line(s, 12, T.DIM, gap=2)
         elif not over and not self.playing:
             mine = [m for m in view["units"] if m["status"] == "on_map"]
@@ -515,7 +516,8 @@ class Painter:
                 line(s, 13, gap=3)
             y += 6
             waiting = len(session.waiting_units())
-            line(f"{waiting} of {len(mine)} units wait for orders." if waiting else "All units have orders.", 13, T.PATH, True)
+            line(f"{waiting} of {T.count(len(mine), 'unit')} {'waits' if waiting == 1 else 'wait'} for orders." if waiting
+                 else "All units have orders.", 13, T.PATH, True)
             short = [m for m in mine if not m["traced"] or m["out_of_stores"]]
             if short:
                 y += 6
@@ -586,7 +588,7 @@ def describe(e, session):
     kind = e["event"]
     if kind == "battle":
         lost = sum(e["lost"].values())
-        return (f"Battle {whereabouts(session.gmap, e['hex'])}: {lost} steps lost"
+        return (f"Battle {whereabouts(session.gmap, e['hex'])}: {T.count(lost, 'step')} lost"
                 + (", defender retreats" if e["retreated"] else ""))
     if kind == "stopped":
         return f"{who} stopped: {e['why']}"

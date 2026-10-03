@@ -17,6 +17,7 @@ the destroyed burst, and the rest are seen to have held.
 from engine.movement import IMPULSES
 
 IMPULSE_MS = 110        # one impulse of movement
+MOVE_LEAD_MS = 500      # the map goes to a group of movers before they set off
 LEAD_MS = 600           # the map arrives and the striker is pointed out before it fires
 RATTLE_MS = 250         # the rattle of a strike that does the least damage
 DAMAGE_MS = 45          # added to the rattle for each point of cohesion the strike costs its targets
@@ -53,8 +54,33 @@ def strikes(battle, kinds):
     return out
 
 
-def script(before, after):
-    """The scenes of the turn between two views of one side."""
+def groups(tracks, cast, span):
+    """The movers in groups that each fit in view: the side's own units first, by id, each
+    joining the first group it fits beside. span is the columns and rows of hexes in view;
+    with none, all move as one group. A unit whose own march is too long to fit is followed."""
+    out = []
+    for i in sorted(tracks, key=lambda i: (not cast[i][1], i)):
+        cols = [h[0] for _, h in tracks[i]["points"]]
+        rows = [h[1] for _, h in tracks[i]["points"]]
+        box = (min(cols), min(rows), max(cols), max(rows))
+        for g in out:
+            both = (min(g["box"][0], box[0]), min(g["box"][1], box[1]), max(g["box"][2], box[2]), max(g["box"][3], box[3]))
+            if span is None or (both[2] - both[0] < span[0] and both[3] - both[1] < span[1]):
+                g["ids"].append(i)
+                g["box"] = both
+                break
+        else:
+            out.append({"ids": [i], "box": box})
+    for g in out:
+        b = g["box"]
+        g["focus"] = ((b[0] + b[2]) // 2, (b[1] + b[3]) // 2)
+        g["follow"] = g["ids"][0] if span and (b[2] - b[0] >= span[0] or b[3] - b[1] >= span[1]) else None
+    return out
+
+
+def script(before, after, span=None):
+    """The scenes of the turn between two views of one side. span is the columns and rows of
+    hexes the screen has in view, so that what moves together can be shown together."""
     events = after["events"]
     mine = {u["id"]: u for u in before["units"] if u["status"] == "on_map"}
     foes = {e["id"]: e for e in before["enemy"]}
@@ -82,8 +108,9 @@ def script(before, after):
     place.update(fought_at)
 
     scenes = []
-    if tracks:
-        scenes.append({"kind": "move", "tracks": tracks})
+    for g in groups(tracks, cast, span):                 # movement, a group in view at a time
+        scenes.append({"kind": "move", "tracks": {i: tracks[i] for i in g["ids"]}, "focus": g["focus"],
+                       "follow": g["follow"]})
     for b in battles:                                    # one strike at a time, battle by battle
         for s in strikes(b, kinds):
             scenes.append(dict(s, kind="strike", hex=tuple(b["hex"]), at=place.get(s["by"][0], tuple(b["hex"]))))
@@ -110,12 +137,12 @@ def script(before, after):
 class Playback:
     """The script on a clock. stage(t) says what to draw at t milliseconds; cues(t0, t1) says
     which sounds begin between two times."""
-    def __init__(self, before, after):
-        self.script = script(before, after)
+    def __init__(self, before, after, span=None):
+        self.script = script(before, after, span)
         self.timeline, t = [], 0
         for scene in self.script["scenes"]:
             if scene["kind"] == "move":
-                long = max(p[0] for tr in scene["tracks"].values() for p in tr["points"]) * IMPULSE_MS
+                long = MOVE_LEAD_MS + max(p[0] for tr in scene["tracks"].values() for p in tr["points"]) * IMPULSE_MS
             elif scene["kind"] == "strike":
                 long = scene["long"]
             else:
@@ -137,8 +164,8 @@ class Playback:
                 out.append((name, amount))
         for start, end, scene in self.timeline:
             if scene["kind"] == "move":
-                for k in range(0, int((end - start) // IMPULSE_MS), 2):
-                    at(start + k * IMPULSE_MS, "tick")
+                for k in range(0, int((end - start - MOVE_LEAD_MS) // IMPULSE_MS), 2):
+                    at(start + MOVE_LEAD_MS + k * IMPULSE_MS, "tick")
             elif scene["kind"] == "strike":
                 at(start, "alarm")
                 if scene["rattle"]:
@@ -165,7 +192,9 @@ class Playback:
             local, over = t - start, t >= end
             if scene["kind"] == "move":
                 title = "" if over else "Movement"
-                clock = local / IMPULSE_MS
+                clock = max(0.0, (local - MOVE_LEAD_MS) / IMPULSE_MS)
+                if not over:
+                    focus = scene["focus"]
                 for i, tr in scene["tracks"].items():
                     pts = tr["points"]
                     place[i] = pts[-1][1]
@@ -176,6 +205,9 @@ class Playback:
                             break
                     if tr["march"] and clock < pts[-1][0]:
                         scale[i] = MARCH_SCALE
+                if not over and scene["follow"]:         # one long march: the map goes with it
+                    where = place[scene["follow"]]
+                    focus = where[1] if len(where) == 3 else where
             elif scene["kind"] == "strike" and not over:
                 title = "The reply" if scene["reply"] else "Assault"
                 focus, ring = scene["at"], scene["hex"]

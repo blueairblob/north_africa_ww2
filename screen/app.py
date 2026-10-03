@@ -1,4 +1,6 @@
 """The window: mouse and keys in, frames out. Sleeps while nothing happens."""
+import math
+
 import pygame
 
 from . import theme as T
@@ -12,7 +14,8 @@ AIR = {pygame.K_1: "support", pygame.K_2: "interdict", pygame.K_3: "recon"}
 SCROLL = {pygame.K_LEFT: (-1, 0), pygame.K_RIGHT: (1, 0), pygame.K_UP: (0, -1), pygame.K_DOWN: (0, 1)}
 DRAG = 6                # pixels the mouse must move with the button down to drag the map
 FAST = 5                # how much faster the playback runs with F
-GLIDE_MS = 180          # how quickly the map goes to a striker
+GLIDE_MS = 110          # how quickly the map glides to where it is going
+CURSOR_EDGE = 2.5       # hexes from the edge of the view at which the map follows the keyboard cursor
 
 
 class App:
@@ -21,9 +24,13 @@ class App:
         self.painter = Painter(session.gmap)
         self.press = None               # where the left button went down, and whether it has dragged
         self.play, self.play_t, self.sounds, self.fast = None, 0.0, None, False   # last turn being played back
+        self.target = None              # where the map is gliding to
+        self.confirm = self.asked = False   # End turn has been pressed once with units still waiting
         self.begin_orders()
         self.ui.message = "Click where this unit should go, or an enemy to attack. Orders stand until done."
-        self.look_at_own()
+        u = session.unit(self.ui.selected)
+        if u:
+            self.centre_on(tuple(u["hex"]))               # the first unit to order starts in the middle
 
     # ---- looking -------------------------------------------------------------------------
 
@@ -45,10 +52,43 @@ class App:
         ui.cam = [max(0.0, min(ui.cam[0], bw - w / ui.zoom)), max(0.0, min(ui.cam[1], bh - h / ui.zoom))]
 
     def centre_on(self, h):
+        """Put a hex in the middle of the map area, at once."""
         x, y = Layout(T.BASE_HEX).centre(h)
         w, hgt = self.map_rect().size
         self.ui.cam = [x - w / self.ui.zoom / 2, y - hgt / self.ui.zoom / 2]
         self.clamp()
+        self.target = None
+
+    def glide_to(self, h):
+        """Bring a hex to the middle of the map area, smoothly (tick does the moving)."""
+        here = list(self.ui.cam)
+        self.centre_on(h)
+        self.target, self.ui.cam = list(self.ui.cam), here
+
+    def tick(self, ms):
+        """Time passes: the playback moves on, and the map glides towards where it is going."""
+        self.advance(ms)
+        if self.target:
+            ms = min(ms, 50) * (FAST if self.fast else 1)
+            ease, cam = 1 - math.exp(-ms / GLIDE_MS), self.ui.cam
+            self.ui.cam = [cam[0] + (self.target[0] - cam[0]) * ease, cam[1] + (self.target[1] - cam[1]) * ease]
+            if abs(self.target[0] - self.ui.cam[0]) + abs(self.target[1] - self.ui.cam[1]) < 1:
+                self.ui.cam, self.target = self.target, None
+
+    @property
+    def busy(self):
+        """Something is moving on the screen, so frames must keep coming."""
+        return bool(self.play or self.target)
+
+    def span(self):
+        """The columns and rows of hexes that fit in the map area, with a margin."""
+        (w, h), px = self.map_rect().size, self.ui.layout.hex_px
+        return max(3, int(w / (px * 0.75)) - 3), max(3, int(h / (px * 0.866)) - 3)
+
+    def spot(self, h):
+        """Where a hex's centre is in the window."""
+        x, y = self.ui.layout.centre(h)
+        return x - int(self.ui.cam[0]) * self.ui.zoom, y - int(self.ui.cam[1]) * self.ui.zoom
 
     def look_at_own(self):
         """Centre on the middle of the side's units."""
@@ -72,6 +112,7 @@ class App:
         ui.zoom = max(self.zoom_min(), min(T.ZOOM_MAX, ui.zoom * factor))
         ui.cam = [bx - mx / ui.zoom, by - my / ui.zoom]
         self.clamp()
+        self.target = None
 
     # ---- doing ---------------------------------------------------------------------------
 
@@ -88,10 +129,10 @@ class App:
         if to is not None:
             order["to"] = list(to)
         reply = self.session.give(order)
-        ui.mode = None
-        if not reply["ok"]:
+        if not reply["ok"]:                               # the order key and the cursor stay as they were
             ui.message = reply["text"]
             return
+        ui.mode = None
         said = f"{u['name']}: {T.ORDER_NAME[name]}."
         self.step()                                       # on to the next unit that waits for an order
         left = len(self.session.waiting_units())
@@ -106,10 +147,7 @@ class App:
         ui.selected = (after or waiting or [None])[0]
         u = s.unit(ui.selected)
         if u:
-            x, y = Layout(T.BASE_HEX).centre(tuple(u["hex"]))
-            (w, h), z = self.map_rect().size, ui.zoom
-            if not (ui.cam[0] + 80 / z < x < ui.cam[0] + (w - 80) / z and ui.cam[1] + 80 / z < y < ui.cam[1] + (h - 80) / z):
-                self.centre_on(tuple(u["hex"]))           # the map shifts across only when it must
+            self.glide_to(tuple(u["hex"]))                # the unit being ordered comes to the middle
 
     def begin_orders(self):
         """A side starts giving orders: say what ended, take up the first unit that waits."""
@@ -123,14 +161,15 @@ class App:
     def begin_message(self):
         s = self.session
         names = {u["id"]: u["name"] for u in s.view["units"]}
-        ended = [f"{names[uid]} {why[0].lower() + why[1:]}" for uid, why in s.ended[s.side] if uid in names]
+        ended = [f"{names[uid]} {why}." for uid, why in s.ended[s.side] if uid in names]
         left = len(s.waiting_units())
         self.ui.message = ("  ".join(ended[:2]) + "   " if ended else "") + (
-            f"{left} units wait for orders." if left else "All units have orders: press End turn.")
+            f"{T.count(left, 'unit')} {'waits' if left == 1 else 'wait'} for orders." if left
+            else "All units have orders: press End turn.")
 
     def watch(self):
         """Play back the last turn as this side saw it, if it has not watched it yet."""
-        self.play, self.play_t, self.fast = self.session.playback(), 0.0, False
+        self.play, self.play_t, self.fast = self.session.playback(self.span()), 0.0, False
         if self.play:
             self.ui.message = "Last turn.   F: faster   any other key or a click: skip"
 
@@ -145,13 +184,8 @@ class App:
             for name, amount in cues:
                 self.sounds.play(name, amount)
         focus = self.play.stage(self.play_t)["focus"]
-        if focus:                                         # the map goes to the striker, smoothly
-            x, y = Layout(T.BASE_HEX).centre(focus)
-            (w, h), ui = self.map_rect().size, self.ui
-            want = (x - w / ui.zoom / 2, y - h / ui.zoom / 2)
-            ease = min(1.0, ms / GLIDE_MS)
-            ui.cam = [ui.cam[0] + (want[0] - ui.cam[0]) * ease, ui.cam[1] + (want[1] - ui.cam[1]) * ease]
-            self.clamp()
+        if focus:                                         # the map goes to what is happening
+            self.glide_to(focus)
         if self.play.done(self.play_t):
             self.stop_watching()
             self.begin_message()                          # back to the orders: say who waits
@@ -160,24 +194,53 @@ class App:
         self.play, self.fast = None, False
         if self.sounds:
             self.sounds.stop()
-        self.look_at_own()
+        u = self.session.unit(self.ui.selected)
+        if u:
+            self.glide_to(tuple(u["hex"]))                # back to the unit waiting for its order
+        else:
+            self.look_at_own()
 
     def press_button(self, name):
         ui = self.ui
         if name == "done":
-            self.done()
+            self.end_turn()
         elif name in ("s", "z"):
             ui.overlays ^= {name}
         elif self.session.unit(ui.selected) is None:
             ui.message = "Click one of your units first."
         elif name in ("move", "attack", "road_march"):
             ui.mode = None if ui.mode == name else name
-            ui.message = f"{T.ORDER_NAME[name]}: now click the hex to go to." if ui.mode else ""
+            ui.hover = tuple(self.session.unit(ui.selected)["hex"]) if ui.mode else ui.hover     # the cursor starts on the unit
+            ui.message = (f"{T.ORDER_NAME[name]}: click the hex, or choose it with the arrow keys and press Enter."
+                          if ui.mode else "")
         else:
             self.give(name)
 
+    def cursor(self, dx, dy):
+        """Move the keyboard's hex cursor. Up and down go along the column. Left and right go to
+        the next column on the same row, so the cursor zigzags half a hex and never drifts."""
+        ui, g = self.ui, self.session.gmap
+        c, r = ui.hover or tuple(self.session.unit(ui.selected)["hex"])
+        ui.hover = (max(0, min(g.cols - 1, c + dx)), max(0, min(g.rows - 1, r + dy)))
+        x, y = self.spot(ui.hover)
+        edge, (w, h) = CURSOR_EDGE * ui.layout.hex_px, self.map_rect().size
+        if not (edge < x < w - edge and edge < y < h - edge):
+            self.glide_to(ui.hover)                       # the map follows the cursor
+        ui.mouse = (int(max(0, min(w - 1, x))), int(max(0, min(h - 1, y))))
+
+    def end_turn(self):
+        """End turn, asked for by key or button: once more to be sure if units still wait."""
+        left = len(self.session.waiting_units())
+        if left and not self.asked and not self.session.state["over"]:
+            self.confirm = True
+            self.ui.message = (f"{T.count(left, 'unit')} still {'waits' if left == 1 else 'wait'} for orders and will "
+                               f"hold {'its' if left == 1 else 'their'} ground. Press End turn again to end the turn.")
+            return
+        self.done()
+
     def click(self, pos, button=1):
         ui, s = self.ui, self.session
+        self.asked, self.confirm = self.confirm, False
         if ui.cover:
             ui.cover = None
             return self.begin_orders()
@@ -210,7 +273,7 @@ class App:
         ring = ids[start:] + ids[:start]
         ui.selected = next((i for i in ring if i not in s.pending[s.side]), ring[0])
         ui.mode = None
-        self.centre_on(tuple(s.unit(ui.selected)["hex"]))
+        self.glide_to(tuple(s.unit(ui.selected)["hex"]))
         ui.message = "This unit keeps its order." if ui.selected in s.pending[s.side] else "This unit waits for an order."
 
     def done(self):
@@ -231,12 +294,20 @@ class App:
 
     def key(self, key):
         ui = self.ui
+        self.asked, self.confirm = self.confirm, False
         if ui.cover:
             if key in (pygame.K_SPACE, pygame.K_RETURN):
                 ui.cover = None
                 self.begin_orders()
             return
-        if key in GO:
+        if ui.mode and self.session.unit(ui.selected) and key in SCROLL:       # choosing a destination
+            self.cursor(*SCROLL[key])
+        elif ui.mode and self.session.unit(ui.selected) and key in (pygame.K_RETURN, pygame.K_KP_ENTER):
+            if ui.hover and ui.hover != tuple(self.session.unit(ui.selected)["hex"]):
+                self.give(ui.mode, ui.hover)              # Enter confirms the destination; it never ends the turn here
+            else:
+                ui.message = "Choose the hex with the arrow keys first, or press Escape."
+        elif key in GO:
             self.press_button(GO[key])
         elif key in STAY:
             self.give(STAY[key])
@@ -247,6 +318,7 @@ class App:
             dx, dy = SCROLL[key]
             ui.cam = [ui.cam[0] + dx * T.BASE_HEX * 2, ui.cam[1] + dy * T.BASE_HEX * 2]
             self.clamp()
+            self.target = None
         elif key in (pygame.K_s, pygame.K_z):
             ui.overlays ^= {pygame.key.name(key)}
         elif key in (pygame.K_PLUS, pygame.K_EQUALS, pygame.K_KP_PLUS):
@@ -260,7 +332,7 @@ class App:
         elif key == pygame.K_ESCAPE:
             ui.mode, ui.selected = (None, ui.selected) if ui.mode else (None, None)
         elif key in (pygame.K_RETURN, pygame.K_KP_ENTER):
-            self.done()
+            self.end_turn()
 
     def handle(self, event):
         """One event. Returns False when the window is closed."""
@@ -294,6 +366,7 @@ class App:
                 self.press[1] = True                      # dragging the map
                 ui.cam = [ui.cam[0] - event.rel[0] / ui.zoom, ui.cam[1] - event.rel[1] / ui.zoom]
                 self.clamp()
+                self.target = None
             ui.hover = None if self.press and self.press[1] else self.hex_under(event.pos)
         return True
 
@@ -313,9 +386,9 @@ class App:
         while running:
             self.paint(window)
             pygame.display.flip()
-            if self.play:                                 # playing back: a frame every sixtieth of a second
+            if self.busy:                                 # something is moving: a frame every sixtieth of a second
                 events = pygame.event.get()
-                self.advance(clock.tick(60))
+                self.tick(clock.tick(60))
             else:                                         # otherwise sleep until something happens
                 events = [pygame.event.wait()] + pygame.event.get()
                 clock.tick()

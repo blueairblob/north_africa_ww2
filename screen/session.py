@@ -16,6 +16,12 @@ from engine.turn import begin_turn, finish_turn
 from engine.view import view
 
 
+# why a standing order ended, to follow the unit's name: "15. Panzer-Division has arrived"
+ENDED = {"E_SAME_HEX": "has arrived", "E_COHESION": "is too disorganised to attack",
+         "E_IMPASSABLE": "cannot enter that ground", "E_NO_PATH": "has no way there",
+         "E_NOT_ON_ROUTE": "is no longer on a road or track"}
+
+
 class Session:
     def __init__(self, scenario, gmap, humans=S.SIDES, scripted=None):
         self.scenario, self.gmap = scenario, gmap
@@ -43,13 +49,13 @@ class Session:
                 code = O.check_one(self.state, self.gmap, s, order, {})
                 if order["order"] == "attack" and uid in repulsed and code != "E_NOT_ON_MAP":
                     del self.standing[s][uid]           # to attack again is a new decision
-                    self.ended[s].append((uid, "Was repulsed"))
+                    self.ended[s].append((uid, "was repulsed"))
                 elif code is None:
                     self.pending[s][uid] = order
                 else:
                     del self.standing[s][uid]
                     if code != "E_NOT_ON_MAP":
-                        self.ended[s].append((uid, "has arrived" if code == "E_SAME_HEX" else O.REPLIES[code]))
+                        self.ended[s].append((uid, ENDED.get(code, "cannot carry out its order")))
         self.air = {s: self.state["sides"][s]["air"] for s in S.SIDES}
         self.waiting = [] if self.state["over"] else list(self.humans)
 
@@ -109,13 +115,14 @@ class Session:
         fuel = reach * U.step_fuel(u) if U.is_vehicle(u) else 0
         return {"path": way, "reach": reach, "mp": mp, "fuel": fuel, "enough_fuel": fuel <= u["fuel"]}
 
-    def playback(self):
-        """The last turn as this side saw it, once (screen/replay.py); None if there is none."""
+    def playback(self, span=None):
+        """The last turn as this side saw it, once (screen/replay.py); None if there is none.
+        span is the columns and rows of hexes the screen has in view."""
         from .replay import Playback
         if self.before is None or self.side in self.watched:
             return None
         self.watched.add(self.side)
-        play = Playback(self.before[self.side], self.view)
+        play = Playback(self.before[self.side], self.view, span)
         return play if play.length else None
 
     def set_air(self, choice):

@@ -34,3 +34,8 @@ ORDER_HELP = {"move": "go to a hex across country", "attack": "go there and atta
 BUTTONS = (("move", "Move", "M"), ("attack", "Attack", "A"), ("road_march", "Road march", "R"),
            ("hold", "Hold", "H"), ("dig_in", "Dig in", "D"), ("rest", "Rest", "T"),
            ("s", "Supply", "S"), ("z", "Zones", "Z"), ("done", "End turn", "Enter"))
+
+
+def count(n, one, many=None):
+    """A number with its noun: "1 step", "2 steps"."""
+    return f"{n} {one if n == 1 else many or one + 's'}"

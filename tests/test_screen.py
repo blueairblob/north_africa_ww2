@@ -167,6 +167,8 @@ def test_keys_and_clicks_give_orders():
     app.key(pygame.K_3)
     assert app.session.air["axis"] == "recon"
     app.click(layout.buttons(app.size)["done"].center)
+    assert "still wait for orders" in app.ui.message and app.session.side == "axis"   # units wait: asked once
+    app.click(layout.buttons(app.size)["done"].center)
     assert app.ui.cover and app.session.side == "cw"                # the screen is covered between players
     app.key(pygame.K_SPACE)
     assert app.ui.cover is None and app.ui.selected in app.session.waiting_units()   # the first that waits
@@ -401,8 +403,174 @@ def test_a_standing_attack_ends_when_the_defenders_do_not_fall_back():
     s.give({"unit": 201, "order": "attack", "to": [70, 25]})       # tanks on to guns: it fails
     s.give({"unit": 202, "order": "attack", "to": [66, 25]})       # tanks on to a weak brigade, from two hexes away
     s.done()
-    assert (201, "Was repulsed") in s.ended["cw"] and 201 not in s.pending["cw"] and 201 in s.waiting_units()
+    assert (201, "was repulsed") in s.ended["cw"] and 201 not in s.pending["cw"] and 201 in s.waiting_units()
     battle = [e for e in s.view["events"] if e["event"] == "battle" and 202 in e["attackers"]]
     assert battle and battle[0]["retreated"]                       # the other attack drove its enemy back...
-    assert (202, "Was repulsed") not in s.ended["cw"] and (202, "has arrived") in s.ended["cw"]   # ...and followed up
+    assert (202, "was repulsed") not in s.ended["cw"] and (202, "has arrived") in s.ended["cw"]   # ...and followed up
     assert s.give({"unit": 201, "order": "attack", "to": [70, 25]})["ok"]       # to attack again is a new decision
+
+
+# ---- found by the second playtest --------------------------------------------------------
+
+def keys(app, *names):
+    for name in names:
+        app.handle(pygame.event.Event(pygame.KEYDOWN, key=getattr(pygame, "K_" + name)))
+
+
+def settle(app):
+    """Let the map finish gliding."""
+    for _ in range(400):
+        if not app.target:
+            break
+        app.tick(16)
+    assert app.target is None
+
+
+def test_a_keyboard_only_player_can_choose_a_destination_and_enter_does_not_end_the_turn():
+    pygame.init()
+    app = App(Session(crusader(), GMAP, humans=["cw"], scripted={"axis": players.DoNothing(GMAP)}))
+    assert app.ui.selected == 201 and app.session.unit(201)["hex"] == [64, 22]
+    cam = list(app.ui.cam)
+    keys(app, "m")
+    assert app.ui.mode == "move" and app.ui.hover == (64, 22) and "arrow keys" in app.ui.message
+    keys(app, "RIGHT", "RIGHT", "UP")
+    assert app.ui.hover == (66, 21) and app.ui.cam == cam            # the cursor moved, not the map
+    surface = pygame.Surface(theme.WINDOW)
+    app.paint(surface)
+    assert "Move here" in app.ui.message                             # the way is previewed as with the mouse
+    keys(app, "RETURN")
+    assert app.session.pending["cw"][201] == {"unit": 201, "order": "move", "to": [66, 21]}
+    assert app.session.state["turn"] == 1 and app.ui.mode is None and app.ui.selected == 202
+    keys(app, "a", "LEFT", "ESCAPE")                                 # Escape cancels
+    assert app.ui.mode is None and 202 not in app.session.pending["cw"]
+    keys(app, "m", "RETURN")                                         # Enter with no hex chosen: nothing happens
+    assert app.session.state["turn"] == 1 and "Choose the hex" in app.ui.message
+    keys(app, "ESCAPE", "RETURN")
+    assert app.session.state["turn"] == 1 and "still wait for orders" in app.ui.message    # asked once
+    keys(app, "RIGHT", "RETURN")
+    assert app.session.state["turn"] == 1                            # another key in between: asked again
+    keys(app, "RETURN")
+    assert app.session.state["turn"] == 2                            # twice running: the turn ends
+    assert app.session.unit(201)["hex"] == [66, 21]
+
+
+def test_left_and_right_keep_to_the_row_and_the_map_follows_the_cursor():
+    pygame.init()
+    app = App(Session(crusader(), GMAP, humans=["cw"], scripted={"axis": players.DoNothing(GMAP)}))
+    keys(app, "m")
+    for _ in range(30):
+        keys(app, "RIGHT")
+    assert app.ui.hover == (94, 22)                                  # the same row all the way
+    settle(app)
+    assert app.map_rect().collidepoint(app.spot(app.ui.hover))       # and still in view
+    for _ in range(200):
+        keys(app, "DOWN", "RIGHT")
+    assert app.ui.hover == (GMAP.cols - 1, GMAP.rows - 1)            # it stops at the edge of the map
+
+
+def test_the_unit_taken_up_for_orders_is_brought_to_the_middle():
+    pygame.init()
+    app = App(Session(crusader(), GMAP, humans=["cw"], scripted={"axis": players.DoNothing(GMAP)}))
+    middle = app.map_rect().center
+    for _ in range(8):                                               # the automatic step after each order
+        settle(app)
+        x, y = app.spot(tuple(app.session.unit(app.ui.selected)["hex"]))
+        assert abs(x - middle[0]) <= 2 and abs(y - middle[1]) <= 2, app.ui.selected
+        keys(app, "h")
+    keys(app, "TAB")                                                 # and Tab does the same
+    assert app.target is not None                                    # by a glide, not a jump
+    settle(app)
+    x, y = app.spot(tuple(app.session.unit(app.ui.selected)["hex"]))
+    assert abs(x - middle[0]) <= 2 and abs(y - middle[1]) <= 2
+
+
+def test_every_unit_is_on_the_screen_while_it_moves():
+    from engine.gamemap import distance
+    from screen.replay import MOVE_LEAD_MS
+    pygame.init()
+    app = App(Session(crusader(), GMAP, humans=["cw"], scripted={"axis": players.AlwaysAttack(GMAP)}))
+    s = app.session
+    for u in s.view["units"]:                                        # every unit at the nearest enemy in sight
+        if u["type"] != "hq" and s.view["enemy"]:
+            e = min(s.view["enemy"], key=lambda e: (distance(tuple(u["hex"]), tuple(e["hex"])), e["id"]))
+            s.give({"unit": u["id"], "order": "attack", "to": e["hex"]})
+    app.done()
+    moves = scenes(app.play, "move")
+    movers = [i for _, _, sc in moves for i in sc["tracks"]]
+    assert len(moves) > 1 and len(movers) == len(set(movers)) >= 12  # in groups, each unit in one
+    seen, area = 0, app.map_rect()
+    while app.play and app.play_t < moves[-1][1]:
+        app.tick(16)
+        for start, end, sc in moves:
+            if start + MOVE_LEAD_MS <= app.play_t < end:             # this group is on the move
+                stage = app.play.stage(app.play_t)
+                for i, _, _, where, *_ in stage["units"]:
+                    if i in sc["tracks"]:
+                        a = app.spot(where[0]) if len(where) == 3 else app.spot(where)
+                        b = app.spot(where[1]) if len(where) == 3 else a
+                        f = where[2] if len(where) == 3 else 0
+                        assert area.collidepoint(a[0] + (b[0] - a[0]) * f, a[1] + (b[1] - a[1]) * f), (i, app.play_t)
+                        seen += 1
+    assert seen > 500
+
+
+def test_a_march_too_long_to_fit_is_followed_by_the_map():
+    from helpers import scenario, unit
+    from screen.replay import Playback
+    s = Session(scenario([unit(102, "axis", "recon", "Tobruk", steps=3), unit(201, "cw", "foot", "Alexandria")]),
+                GMAP, humans=["axis"], scripted={"cw": players.DoNothing(GMAP)})
+    s.give({"unit": 102, "order": "road_march", "to": list(GMAP.places["Fort Capuzzo"]["hex"])})
+    s.done()
+    play = Playback(s.before["axis"], s.view, span=(8, 6))
+    start, end, move = play.timeline[0]
+    assert move["follow"] == 102
+    spots = {play.stage(start + ms)["focus"] for ms in range(600, end - start, 200)}
+    assert len(spots) > 3                                            # the focus goes along the road with it
+
+
+# ---- found by the third playtest ---------------------------------------------------------
+
+def test_one_of_a_thing_is_not_plural():
+    from helpers import scenario, unit
+    from screen.draw import describe
+    assert (theme.count(1, "step"), theme.count(2, "step"), theme.count(1, "hex", "hexes"), theme.count(0, "unit")) \
+        == ("1 step", "2 steps", "1 hex", "0 units")
+    pygame.init()
+    s = Session(scenario([unit(101, "axis", "armour", [70, 25], steps=12), unit(201, "cw", "armour", [70, 24], steps=13),
+                          unit(202, "cw", "foot", [72, 24])]), GMAP, humans=["cw"])
+    app = App(s)
+    keys(app, "h")
+    assert "1 more to order" in app.ui.message
+    app.ui.selected = None
+    app.begin_message()
+    assert app.ui.message == "1 unit waits for orders."
+    keys(app, "RETURN")
+    assert app.ui.message.startswith("1 unit still waits for orders and will hold its ground.")
+    told = describe({"event": "battle", "hex": [55, 10], "lost": {"1": 1, "2": 0}, "retreated": False}, s)
+    assert told == "Battle at Tobruk: 1 step lost"
+
+
+def test_an_order_that_ends_is_told_as_a_sentence():
+    from helpers import scenario, unit
+    pygame.init()
+    s = Session(scenario([unit(101, "axis", "foot", [70, 28]), unit(201, "cw", "armour", [66, 24], cohesion=41, name="4th Armoured Brigade"),
+                          unit(202, "cw", "foot", [72, 24], name="2nd Division")]), GMAP, humans=["cw"])
+    s.give({"unit": 201, "order": "attack", "to": [70, 28]})        # the march will wear it below what an attack needs
+    s.give({"unit": 202, "order": "move", "to": [72, 25]})
+    app = App(s)
+    app.done()
+    app.play = None
+    app.begin_message()
+    assert app.ui.message.startswith("4th Armoured Brigade is too disorganised to attack.  2nd Division has arrived.")
+    assert "The unit" not in app.ui.message and "the unit" not in app.ui.message
+
+
+def test_a_rejected_destination_keeps_the_order_and_the_cursor():
+    pygame.init()
+    app = App(Session(crusader(), GMAP, humans=["axis"], scripted={"cw": players.DoNothing(GMAP)}))
+    assert app.ui.selected == 101 and app.session.unit(101)["hex"] == [59, 11]
+    keys(app, "m", "RIGHT", "RETURN")                              # (60, 11) is the sea
+    assert app.ui.message == "The unit cannot enter that ground."
+    assert app.ui.mode == "move" and app.ui.hover == (60, 11) and app.ui.selected == 101
+    keys(app, "DOWN", "RETURN")                                    # carry on from there: (60, 12) is land
+    assert app.session.pending["axis"][101] == {"unit": 101, "order": "move", "to": [60, 12]} and app.ui.mode is None
