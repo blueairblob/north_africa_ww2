@@ -327,7 +327,8 @@ def place_hexes(t, features):
 
 
 def routes(t, scarps, places, features):
-    """The routes, and the passes: the named ones and wherever else a route climbs an escarpment."""
+    """The routes, and the passes: the named ones and wherever else a road or track climbs an
+    escarpment. A railway makes no pass: its cuttings are not a way up for anything else."""
     where = {p["name"]: (p["col"], p["row"]) for p in places}
     out, passes = [], named_passes(scarps, features)
     for route in features["routes"]:
@@ -337,7 +338,7 @@ def routes(t, scarps, places, features):
             hexes += find_route(t, scarps, a, b, passes)[1:]
         for a, b in zip(hexes, hexes[1:]):
             d = next(k for k in range(6) if H.neighbour(*a, k) == b)
-            if H.side(*a, d) in scarps:
+            if H.side(*a, d) in scarps and route["kind"] != "rail":
                 passes.setdefault(H.side(*a, d), None)
         out.append({"name": route["name"], "kind": route["kind"], "hexes": [list(h) for h in hexes]})
     return out, [{"name": passes[s], "col": s[0], "row": s[1], "side": s[2]} for s in sorted(passes)]

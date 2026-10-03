@@ -137,3 +137,27 @@ def test_the_compass_approach_from_matruh_to_the_camps_and_the_coast(m):
     passes = {(p["col"], p["row"], p["side"]) for p in m["passes"]}
     for a, b in (("Mersa Matruh", "Nibeiwa"), ("Nibeiwa", "Sidi Barrani"), ("Nibeiwa", "Sofafi")):
         assert _steps(m, where[a], where[b], scarps - passes) == H.distance(where[a], where[b]), (a, b)
+
+
+def test_the_railway_runs_from_alexandria_through_its_railheads_to_belhamed(m):
+    where = {p["name"]: [p["col"], p["row"]] for p in m["places"]}
+    rails = [r for r in m["routes"] if r["kind"] == "rail"]
+    assert len(rails) == 1                                     # one line, counted from Alexandria
+    line = rails[0]["hexes"]
+    assert line[0] == where["Alexandria"] and line[-1] == where["Belhamed"]
+    stops = [line.index(where[n]) for n in ("Mersa Matruh", "Misheifa", "Fort Capuzzo", "Belhamed")]
+    assert stops == sorted(stops)
+    assert 14 <= stops[1] - stops[0] <= 17                     # Misheifa: 92 miles (148 km) from the junction
+    assert 25 <= stops[2] - stops[0] <= 27                     # Capuzzo: at the 162-mile peg (261 km)
+
+
+def test_a_railway_makes_no_pass(m):
+    passes = {(p["col"], p["row"], p["side"]) for p in m["passes"]}
+    on_roads = set()
+    for route in m["routes"]:
+        if route["kind"] != "rail":
+            for a, b in zip(route["hexes"], route["hexes"][1:]):
+                d = next(k for k in range(6) if list(H.neighbour(*a, k)) == b)
+                on_roads.add(H.side(*a, d))
+    named = {(p["col"], p["row"], p["side"]) for p in m["passes"] if p["name"]}
+    assert passes <= on_roads | named

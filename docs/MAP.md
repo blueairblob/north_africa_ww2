@@ -34,8 +34,17 @@ Between two rough hexes the escarpment is part of the going and is not drawn.
 
 Then: short scraps of escarpment are dropped (an escarpment is a line);
 places from `data/features.json` are put in their hexes; each route is found
-over the ground between the places it names (least cost); and wherever a route
-crosses an escarpment edge, that edge becomes a pass.
+over the ground between the places it names (least cost); and wherever a road
+or track crosses an escarpment edge, that edge becomes a pass. A railway makes
+no pass.
+
+The **railway** is one line from Alexandria: to Mersa Matruh as it stood in
+1940, then the desert extension across the plateau to Misheifa (railhead in
+November 1941), Fort Capuzzo (February 1942) and Belhamed (June 1942). On the
+map Misheifa is 160 km from Matruh and Capuzzo 260 km; the line's own mile
+pegs give 148 km and 261 km. How far it is open is for each scenario to say.
+Misheifa is placed from a gazetteer entry for Bir Abu Misheifa and Belhamed
+from its position north of Sidi Rezegh; both are marked `approx`.
 
 ## What is drawn by hand
 
