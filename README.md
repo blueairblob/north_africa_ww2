@@ -15,8 +15,13 @@ Status: design. No code yet.
 
 **Benghazi Handicap** was the soldiers' own name for this campaign: the armies
 raced back and forth along the same coast road, past Benghazi, five times in two
-years, like runners in a handicap race. Each advance ran out of supply and was
-thrown back.
+years. Each advance ran out of supply and was thrown back.
+
+> **Etymology.** Named for the great speed of the retreat; *handicap* is in the
+> horse-racing sense. The field was large, the going was firm to dusty, and the
+> favourite changed at every meeting. Also run as the *Benghazi Stakes*, the
+> *Gazala Gallop* and the *Msus Stakes* — the Eighth Army being of the view that
+> if one must leave in a hurry, one may as well name the race.
 
 Why this name:
 
