@@ -5,9 +5,11 @@
 dozen counters, a handful of orders — but with the ground, the time and the
 supply of the real campaign.*
 
-**Design rule:** *small and neat on the screen, true to life underneath.* Every
-rule must be something a player can see on the map or a counter. If it can't be
-shown, it doesn't go in.
+**Design rule:** *small and neat on the screen, true to life underneath.* What
+the player handles is small: a few dozen counters and six orders. What the
+engine models underneath — supply above all, but movement, combat and recovery
+too — is as thorough as the history allows, and its *results* are always shown
+on the map or a counter. The player never does the engine's arithmetic.
 
 This document is an original design. It is written from history and geography
 (see `docs/SOURCES.md`), not from any earlier game's data or code (see
@@ -38,8 +40,8 @@ The three things the campaign was really about, and that the game is built on:
 | Hex | 10 km across (flat-topped hexes) |
 | Map | 123 × 44 hexes: El Agheila (west) to Alexandria (east), the coast to the oases and the Qattara Depression (south) |
 | Turn | 2 days |
-| Units | brigades and regiments (German *Kampfgruppen* and regiments, Italian divisions or regiments), with division HQs |
-| Counters on the map | typically 20–60 per side |
+| Units | **divisions**, plus the brigades and regiments that fought on their own (armoured brigades, support groups, garrisons, reconnaissance) |
+| Counters on the map | typically 10–30 per side |
 | A battle scenario | 6–20 turns (Crusader: 18 Nov – 30 Dec 1941 ≈ 21 turns) |
 | The campaign | Sept 1940 – Nov 1942 ≈ 400 turns (an optional long game) |
 
@@ -102,12 +104,12 @@ original, reproducible and accurate:
 
 | Type | Moves | Strong at | Weak at |
 | --- | --- | --- | --- |
-| **Armour** (tank brigade/regiment) | fast | attacking in the open, exploiting | against dug-in anti-tank guns; uses fuel |
+| **Armour** (armoured division or brigade) | fast | attacking in the open, exploiting | against dug-in anti-tank guns; uses fuel |
 | **Motorised infantry** | fast | holding, escorting | attacking armour in the open |
 | **Foot infantry** (many Italian and some Commonwealth divisions) | slow, no fuel needed | holding towns, boxes, escarpments | the open desert; cannot keep up |
-| **Anti-tank / artillery** (incl. the 88s) | medium | defending against armour | alone against infantry |
+| **Anti-tank / artillery** (the few gun groups that fought as formations, incl. the 88s) | medium | defending against armour | alone against infantry |
 | **Reconnaissance** (armoured cars) | very fast | screening, seeing | fighting |
-| **HQ** (division / corps) | medium | supply distribution, command | — |
+| **HQ** (corps / army) | medium | supply distribution, command | — |
 
 ### 4.2 What a counter shows
 
@@ -122,8 +124,8 @@ small numbers and two bars:
  └───────────┘
 ```
 
-- **Strength** — in steps (an armoured brigade: tanks in tens; an infantry
-  brigade: battalions). Losses take steps away; recovered tanks return them.
+- **Strength** — in steps (an armoured formation: tanks in tens; an infantry
+  division: its brigades). Losses take steps away; recovered tanks return them.
 - **Cohesion** (0–100%) — how organised and fresh the unit is. Moving far,
   fighting, being shelled and being out of supply lower it; resting restores it.
   A unit at low cohesion cannot attack and breaks more easily.
@@ -171,7 +173,9 @@ hidden orders, not from random numbers.)
 
 ## 6. Supply — the heart of the game
 
-Two kinds of supply, kept deliberately simple:
+The most thoroughly modelled part of the game. The player sees two bars on a
+counter and one overlay; the engine underneath tracks ports, shipping, the
+truck haul and the dumps turn by turn. Two kinds of supply:
 
 - **Fuel** — needed to move vehicles. Armour and motorised units spend it by
   moving; foot infantry needs none.
@@ -235,7 +239,7 @@ order).
 | **Road march** | fast along roads and tracks, but vulnerable if caught |
 | **Rest** | no move, recover cohesion and draw supply |
 
-A whole division can be ordered at once (its units keep formation). That is the
+A whole corps can be ordered at once (its divisions keep formation). That is the
 complete list: six orders.
 
 ## 9. Winning
@@ -275,6 +279,14 @@ Deterministic (the same situation gives the same moves), in three layers:
 Difficulty changes how bold and how far-sighted it is — never what it is allowed
 to know or do.
 
+**Computer against computer.** The computer plays through exactly the same
+door as a person: it is given what its side can see and returns a list of
+orders. So any two players — two people, a person and a computer, or two
+computers — can play the same game, and a computer-against-computer game runs
+with no screen at all. That makes it the main test of the rules: thousands of
+whole games can be run to find rules that can be exploited, scenarios that are
+lopsided, and situations the rules do not cover.
+
 ## 12. Presentation
 
 - One screen: the hex map (scrollable, two zoom levels), a side panel for the
@@ -293,6 +305,24 @@ to know or do.
 - **Engine** (pure Python, no input/output): map, units, rules, supply, AI.
   Deterministic and fully serialisable, so a game is a scenario plus a list of
   orders, and every rule is unit-tested.
+- **The rules are solid enough for machines to play.** That means:
+  - *complete*: every situation has exactly one defined outcome — simultaneous
+    moves into the same hex, retreats with nowhere to go, a supply route cut in
+    mid-turn, ties of every kind (broken by a stated order, never by chance);
+  - *written down*: one rules specification (`docs/RULES.md`), numbered, that
+    the engine's tests cite rule by rule;
+  - *closed*: an order is either legal or rejected with the reason; the engine
+    never guesses what a player meant, and no sequence of legal orders can put
+    the game in a state the rules do not describe;
+  - *checked*: properties that must always hold (supply delivered never exceeds
+    supply landed; no two enemy units in one hex; strength never negative) are
+    asserted after every turn of every test game;
+  - *replayable*: a finished game is its scenario plus both sides' orders, and
+    replays to the identical result.
+- **Players** are a small interface — *see your side's view, give orders* —
+  with three kinds behind it: a person at the screen, a computer opponent, and
+  a recorded game. A runner plays any two against each other without a screen
+  and in batches.
 - **Data** (JSON, all original): the generated map, each scenario's order of
   battle and objectives, the rule tables (unit types, terrain effects).
 - **Front ends**: a desktop window (pygame) first; a browser version later from
@@ -307,10 +337,41 @@ detailed logistics accounting (trucks are an abstraction), no naval or air units
 as counters, no weather beyond a scheduled sandstorm or two, no random events,
 no unit editor in the game.
 
+### 14.1 The complexity budget
+
+The aim is the simplicity and playability of the small 8-bit desert wargames,
+at the same level — the division, with a few independent brigades — and not a
+detailed simulation. What this game adds to that level is history, in two
+places only: **supply** (§6) and **reinforcements** arriving and leaving when
+they did (§4.3). Large
+modern treatments of this campaign run to a million-hex map, a hundred
+scenarios and a designer's manual of 150 pages; this game is the other kind.
+Every later milestone is held to this budget:
+
+| | Limit |
+| --- | --- |
+| What the player must learn | explained on one page; the tutorial takes ten minutes. (The full rules specification the engine follows is as long as it needs to be) |
+| Orders | six (§8), and no more |
+| Counters | the division is the normal counter; a brigade or regiment gets its own only where it fought on its own. No more than about 30 a side |
+| A counter | a symbol, a name and at most three numbers |
+| Terrain the player must know | six kinds of hex, plus escarpment and pass |
+| A turn | every formation ordered in a couple of minutes |
+| Scenarios | under ten, plus the campaign |
+| Editors, sub-maps, optional rules | none |
+
+Under the hood is another matter: the map, supply, movement, combat and
+recovery may be as thorough as the history and the data allow, because the
+computer keeps track of them and shows the result. Detail is allowed where the
+machine carries it; it is not allowed where the player would have to. A feature that needs a table to look up, or a rule that cannot be seen
+on the map or a counter, is over budget.
+
 ## 15. First milestones
 
 1. **Map generator** → a viewable hex map from the public data.
-2. **Engine core** on one scenario (Crusader): movement, contact, combat, supply.
-3. **Supply overlay and the order interface** — playable two-player.
-4. **Computer opponent** (operations + tactics layers).
-5. More scenarios; the campaign; the tutorial.
+2. **Rules specification** (`docs/RULES.md`): complete and numbered, before the engine.
+3. **Engine core** on one scenario (Crusader): movement, contact, combat, supply —
+   with the player interface and the screenless game runner from the start.
+4. **Supply overlay and the order interface** — playable two-player.
+5. **Computer opponent** (operations + tactics layers), and batches of
+   computer-against-computer games as the standing test of the rules.
+6. More scenarios; the campaign; the tutorial.
