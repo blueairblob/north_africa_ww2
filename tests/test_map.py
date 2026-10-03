@@ -78,7 +78,8 @@ def test_the_sollum_escarpment_is_crossed_only_at_its_passes(m):
     assert _steps(m, below, above, scarps - set(passes.values())) == direct      # up through the passes
     for name in ("Sollum Pass", "Halfaya Pass"):                                 # either pass alone will do
         assert _steps(m, below, above, scarps - {passes[name]}) <= direct + 1, name
-    assert _steps(m, below, above, scarps) >= direct + 4                         # without them: round the end
+    shut = _steps(m, below, above, scarps)                                       # without them: no way, or a long one
+    assert shut is None or shut >= direct + 4
 
 
 def test_escarpments_are_lines_not_scraps(m):
@@ -108,3 +109,31 @@ def test_places_checked_against_the_period_maps(m):
     capuzzo = next(r for r in m["routes"] if r["name"] == "Trigh Capuzzo")["hexes"]
     assert list(where["Knightsbridge"]) in capuzzo and list(where["El Adem"]) in capuzzo
     assert list(where["Gambut"]) not in capuzzo                          # it passes south of Gambut
+
+
+def test_the_plateau_behind_sidi_barrani_is_reached_only_by_a_pass(m):
+    where = {p["name"]: (p["col"], p["row"]) for p in m["places"]}
+    scarps = {tuple(s[:3]) for s in m["escarpments"]}
+    below, above = where["Sidi Barrani"], (80, 22)             # the open plateau to the south
+    assert m["terrain"][above[1]][above[0]] == build.DESERT
+    direct = H.distance(below, above)
+    assert _steps(m, below, above, set()) == direct
+    assert _steps(m, below, above, scarps) is None             # the coastal plain is walled in
+    passes = {(p["col"], p["row"], p["side"]) for p in m["passes"]}
+    assert _steps(m, below, above, scarps - passes) is not None
+
+
+def test_the_oases_are_on_the_map(m):
+    where = {p["name"]: (p["col"], p["row"]) for p in m["places"]}
+    for name in ("Siwa", "Jarabub", "Augila", "Gicherra", "Marada"):
+        c, r = where[name]
+        assert m["terrain"][r][c] == build.OASIS, name
+    assert sum(row.count(build.OASIS) for row in m["terrain"]) >= 8      # Siwa is a string of them
+
+
+def test_the_compass_approach_from_matruh_to_the_camps_and_the_coast(m):
+    where = {p["name"]: (p["col"], p["row"]) for p in m["places"]}
+    scarps = {tuple(s[:3]) for s in m["escarpments"]}
+    passes = {(p["col"], p["row"], p["side"]) for p in m["passes"]}
+    for a, b in (("Mersa Matruh", "Nibeiwa"), ("Nibeiwa", "Sidi Barrani"), ("Nibeiwa", "Sofafi")):
+        assert _steps(m, where[a], where[b], scarps - passes) == H.distance(where[a], where[b]), (a, b)

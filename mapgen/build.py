@@ -8,8 +8,9 @@ import numpy as np
 from . import fetch, geo, raster
 from . import hexgrid as H
 
-SEA, DESERT, ROUGH, DEPRESSION, SAND = "~", ".", "^", "v", "s"
-TERRAIN_NAMES = {SEA: "sea", DESERT: "desert", ROUGH: "rough", DEPRESSION: "depression", SAND: "sand sea"}
+SEA, DESERT, ROUGH, DEPRESSION, SAND, OASIS = "~", ".", "^", "v", "s", "o"
+TERRAIN_NAMES = {SEA: "sea", DESERT: "desert", ROUGH: "rough", DEPRESSION: "depression", SAND: "sand sea",
+                 OASIS: "oasis"}
 IMPASSABLE = {SEA, DEPRESSION, SAND}
 
 # the rules that turn the ground into the map
@@ -24,7 +25,7 @@ SCARP_REACH = 1.5           # ...between points this many km either side of it
 SCARP_SIDES = 4             # an escarpment on the map is a line of at least this many hexsides
 BROKEN_SIDES = 4            # a hex with this many escarpment sides is broken ground: rough
 RINGED_SIDES = 6            # ...and with this many it is a hill or hollow: rough, without the lines
-ROUTE_COST = {DESERT: 1.0, ROUGH: 1.6}
+ROUTE_COST = {DESERT: 1.0, ROUGH: 1.6, OASIS: 1.0}
 SCARP_COST = 4.0            # extra cost for a route to cross an escarpment (it makes a pass)
 DRAWN_KM = 5.0              # a drawn escarpment replaces the found hexsides this close to its line
 PASS_KM = 6.0               # a named pass belongs to the escarpment hexside within this distance
@@ -71,6 +72,18 @@ def sand_seas(t, features):
             for r in range(geo.ROWS):
                 if t[c][r] in (DESERT, ROUGH) and _inside(poly, *H.centre(c, r)):
                     t[c][r] = SAND
+
+
+def oases(t, features):
+    """The oases: water and palms in the desert. Each is the hexes its points fall in,
+    whatever the ground there would otherwise be."""
+    for oasis in features.get("oases", []):
+        for lat, lon in oasis["at"]:
+            c, r = geo.hex_of(lon, lat)
+            if not geo.in_map(c, r):
+                raise ValueError(f"{oasis['name']} is off the map")
+            if t[c][r] != SEA:
+                t[c][r] = OASIS
 
 
 def cliff_lines(elev, land):
@@ -226,10 +239,11 @@ def drawn_escarpments(t, mean_elev, scarps, features):
     The line is laid on the hexsides it parts (those whose two hexes it runs between)
     and replaces whatever was found along it."""
     scarps = dict(scarps)
-    for scarp in features.get("escarpments", []):
-        line = [geo.to_km(lon, lat) for lat, lon in scarp["line"]]
+    lines = [[geo.to_km(lon, lat) for lat, lon in scarp["line"]] for scarp in features.get("escarpments", [])]
+    for line in lines:                                     # first clear what was found along them all
         for s in [s for s in scarps if min(_away(_middle(s), a, b) for a, b in zip(line, line[1:])) <= DRAWN_KM]:
             del scarps[s]
+    for line in lines:
         for c in range(geo.COLS):
             for r in range(geo.ROWS):
                 if t[c][r] == SEA:
@@ -347,6 +361,7 @@ def build(log=print):
     index = raster.hex_index()
     t, mean_elev, _ = terrain(elev, land, index)
     sand_seas(t, features)
+    oases(t, features)
     places = place_hexes(t, features)
     scarps = drawn_escarpments(t, mean_elev, broken_ground(t, escarpments(elev, land, t)), features)
     route_list, passes = routes(t, scarps, places, features)

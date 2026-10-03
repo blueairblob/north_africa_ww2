@@ -98,3 +98,12 @@ def test_a_named_pass_is_the_nearest_escarpment_hexside_and_routes_use_it():
     routes, passes = build.routes(t, wall, places, features)
     assert passes == [{"name": "The Gap", "col": 20, "row": 21, "side": 1}]     # the road went to the pass
     assert [20, 21] in routes[0]["hexes"]
+
+
+def test_an_oasis_is_the_hexes_its_points_fall_in_whatever_the_ground():
+    t = np.full((geo.COLS, geo.ROWS), build.SAND, dtype="<U1")
+    t[10][10] = build.SEA
+    points = [list(reversed(geo.to_lonlat(*H.centre(c, r)))) for c, r in ((30, 20), (31, 20), (10, 10))]
+    build.oases(t, {"oases": [{"name": "x", "at": points}]})
+    assert t[30][20] == t[31][20] == build.OASIS and t[10][10] == build.SEA
+    assert build.OASIS not in build.IMPASSABLE and build.OASIS in build.ROUTE_COST

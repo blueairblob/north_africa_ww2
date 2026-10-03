@@ -35,6 +35,10 @@
     {"name": "Halfaya Pass", "lat": 31.50, "lon": 25.18, "kind": "site"},
     {"name": "Sidi Omar", "lat": 31.43, "lon": 24.90, "kind": "site", "approx": true},
     {"name": "Fort Maddalena", "lat": 30.90, "lon": 24.90, "kind": "site", "approx": true},
+    {"name": "Sofafi", "lat": 31.15, "lon": 25.55, "kind": "site", "approx": true},
+    {"name": "Bir Rabia", "lat": 31.21, "lon": 25.71, "kind": "site", "approx": true},
+    {"name": "Nibeiwa", "lat": 31.36, "lon": 25.91, "kind": "site", "approx": true},
+    {"name": "Maktila", "lat": 31.50, "lon": 26.20, "kind": "site", "approx": true},
     {"name": "Buq Buq", "lat": 31.52, "lon": 25.53, "kind": "site", "approx": true},
     {"name": "Sidi Barrani", "lat": 31.61, "lon": 25.93, "kind": "town"},
     {"name": "Mersa Matruh", "lat": 31.35, "lon": 27.24, "kind": "port"},
@@ -44,7 +48,10 @@
     {"name": "Alam Halfa", "lat": 30.67, "lon": 29.17, "kind": "site", "approx": true},
     {"name": "Alexandria", "lat": 31.20, "lon": 29.90, "kind": "port"},
     {"name": "Siwa", "lat": 29.20, "lon": 25.52, "kind": "oasis"},
-    {"name": "Jarabub", "lat": 29.74, "lon": 24.52, "kind": "oasis"}
+    {"name": "Jarabub", "lat": 29.74, "lon": 24.52, "kind": "oasis"},
+    {"name": "Augila", "lat": 29.11, "lon": 21.29, "kind": "oasis"},
+    {"name": "Gicherra", "lat": 29.27, "lon": 21.63, "kind": "oasis", "approx": true},
+    {"name": "Marada", "lat": 29.23, "lon": 19.21, "kind": "oasis"}
   ],
   "routes": [
     {"name": "Coast road", "kind": "road",
@@ -69,6 +76,11 @@
     {"name": "Siwa track", "kind": "track", "approx": true, "via": ["Mersa Matruh", "Siwa", "Jarabub"]},
     {"name": "Halfaya track", "kind": "track", "approx": true,
      "via": ["Halfaya Pass", [31.47, 25.13], "Sidi Omar"]},
+    {"name": "Matruh - Sidi Barrani desert track", "kind": "track", "approx": true,
+     "about": "The British approach march of December 1940, inland of the coast road and down to the coast past Nibeiwa.",
+     "via": ["Mersa Matruh", [31.30, 26.60], "Nibeiwa", "Sidi Barrani"]},
+    {"name": "Nibeiwa - Sofafi track", "kind": "track", "approx": true,
+     "via": ["Nibeiwa", "Bir Rabia", "Sofafi"]},
     {"name": "Western Desert Railway (1940)", "kind": "rail",
      "via": ["Alexandria", "El Alamein", "El Daba", "Fuka", "Mersa Matruh"]}
   ],
@@ -77,11 +89,36 @@
      "about": "From the sea at Sollum south-east towards Sofafi, where it turns north and fades into a slope. Traced along the steepest ground in the elevation data.",
      "line": [[31.60, 25.165], [31.546, 25.157], [31.485, 25.206], [31.437, 25.247], [31.400, 25.295],
               [31.351, 25.330], [31.314, 25.373], [31.300, 25.415], [31.277, 25.457], [31.250, 25.503],
-              [31.226, 25.560], [31.228, 25.620], [31.246, 25.668], [31.273, 25.723], [31.287, 25.744]]}
+              [31.226, 25.560], [31.228, 25.620], [31.246, 25.668], [31.273, 25.723], [31.287, 25.744]]},
+    {"name": "Sidi Barrani escarpment",
+     "about": "The northern of the two escarpments a 1956 map of Cyrenaica draws east of Sofafi: the step up from the coastal plain, from the end of the Sollum escarpment east to where, at this scale, it reaches the sea some 50 km past Sidi Barrani (the coastal plain beyond is narrower than a hex; the escarpment at Matruh is found by the rules). Gentler than a cliff, so the rules do not find it; traced along the crest of the slope in the elevation data.",
+     "line": [[31.287, 25.744], [31.307, 25.739], [31.329, 25.734], [31.352, 25.752], [31.38, 25.764], [31.409, 25.764],
+              [31.513, 25.855], [31.511, 25.885], [31.513, 25.916], [31.502, 25.944], [31.492, 25.979], [31.485, 26.011],
+              [31.477, 26.039], [31.47, 26.074], [31.467, 26.107], [31.457, 26.136], [31.454, 26.168], [31.448, 26.199],
+              [31.44, 26.231], [31.435, 26.262], [31.429, 26.293], [31.427, 26.334], [31.42, 26.367], [31.425, 26.398],
+              [31.431, 26.43], [31.433, 26.461], [31.535, 26.456]]},
+    {"name": "Sofafi - Matruh escarpment",
+     "about": "The southern of the two: the edge of the plateau, from the end of the Sollum escarpment east-south-east to south of Matruh. Traced along the crest of the slope in the elevation data.",
+     "line": [[31.287, 25.744], [31.292, 25.86], [31.273, 25.889], [31.253, 25.922], [31.242, 25.953], [31.238, 25.984],
+              [31.234, 26.016], [31.231, 26.047], [31.233, 26.079], [31.225, 26.108], [31.221, 26.142], [31.22, 26.173],
+              [31.217, 26.205], [31.211, 26.236], [31.197, 26.267], [31.195, 26.299], [31.192, 26.33], [31.175, 26.36],
+              [31.17, 26.393], [31.175, 26.425], [31.168, 26.459], [31.148, 26.486], [31.145, 26.519], [31.145, 26.55],
+              [31.145, 26.582], [31.139, 26.613], [31.134, 26.647], [31.133, 26.675], [31.138, 26.708], [31.136, 26.739],
+              [31.132, 26.77], [31.133, 26.802], [31.137, 26.834], [31.14, 26.865], [31.132, 26.899], [31.114, 26.928],
+              [31.099, 26.957], [31.096, 26.991], [31.099, 27.022], [31.099, 27.053], [31.095, 27.085], [31.067, 27.116],
+              [31.032, 27.146], [31.02, 27.179], [31.015, 27.211], [31.007, 27.244], [30.964, 27.271], [30.915, 27.305],
+              [30.891, 27.334]]}
   ],
   "passes": [
     {"name": "Sollum Pass", "lat": 31.56, "lon": 25.15, "about": "the coast road's climb behind Sollum"},
     {"name": "Halfaya Pass", "lat": 31.50, "lon": 25.18}
+  ],
+  "oases": [
+    {"name": "Siwa", "at": [[29.22, 25.22], [29.21, 25.36], [29.20, 25.52], [29.19, 25.66], [29.16, 25.80]]},
+    {"name": "Jarabub", "at": [[29.74, 24.52], [29.71, 24.64]]},
+    {"name": "Augila", "at": [[29.11, 21.29]]},
+    {"name": "Gicherra", "at": [[29.27, 21.63]]},
+    {"name": "Marada", "at": [[29.23, 19.21]]}
   ],
   "labels": [
     {"name": "Mediterranean Sea", "lat": 32.3, "lon": 25.35, "kind": "sea"},

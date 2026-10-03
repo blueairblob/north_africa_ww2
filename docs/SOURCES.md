@@ -28,7 +28,9 @@ May 1942, from a history published in 1954; "Cyrenaica in March 1941" (Map 2
 of a history published in 1956), for the edge of the Libyan Sand Sea and for
 names; and "Diagram showing the lines of
 advance of General Rommel's columns through Cyrenaica in April 1941" (Map 4 of
-a published history, probably the same 1956 volume — to be confirmed). A general map of the campaign
+a published history, probably the same 1956 volume — to be confirmed). Two modern maps of Operation Compass (one a vector map, apparently from
+Wikimedia Commons; one from a printed atlas) were used the same way, for the
+Italian camps, the approach routes and the oases. A general map of the campaign
 on the Desert Rats Association website was the model for the *look* of
 `map.png` (relief shading, region names, the frontier), and the 1956 map for
 its border and title block; nothing was copied from either.

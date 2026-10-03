@@ -26,17 +26,20 @@ python3 -m venv .venv && .venv/bin/pip install -r requirements.txt
 - **123 × 44 hexes of 10 km**, from west of El Agheila to Alexandria and from the
   Cyrenaican coast south to Siwa.
 - **Terrain per hex**: sea, desert, rough going, deep depression (the Qattara
-  Depression), sand sea — from the coastline and from elevation and slope.
+  Depression), sand sea, oasis — from the coastline, from elevation and slope,
+  and (the sand sea and the oases) from maps of the period.
 - **Escarpments on hex edges**: the cliff lines are traced in the elevation data
   and laid on the hex edges they run between, so an unbroken cliff is an
   unbroken line on the map; hills ringed by escarpments become rough ground.
-- **Places and routes** from `data/features.json` (44 places; the coast road,
+- **Places and routes** from `data/features.json` (51 places; the coast road,
   desert tracks and the railway): each route finds its own way over the
   generated ground between the places it names, and where it has to climb an
   escarpment, that crossing becomes a **pass**.
 - **Drawn by hand where it matters most**: the Sollum escarpment, from the sea
-  at Sollum south-east to where it fades, with its two ways up — **Sollum
-  Pass** (the coast road) and **Halfaya Pass** (a track).
+  at Sollum south-east to Sofafi, with its two ways up — **Sollum Pass** (the
+  coast road) and **Halfaya Pass** (a track) — and the two gentler escarpments
+  that carry on east from Sofafi, behind Sidi Barrani and along the plateau
+  edge to south of Matruh.
 - **The picture**, `map.png`, is drawn in the manner of a map of the period:
   relief shading, a border with the degrees marked, a title block with legend
   and scale.

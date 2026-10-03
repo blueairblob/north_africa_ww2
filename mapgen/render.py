@@ -17,7 +17,8 @@ CREDIT = ("BENGHAZI HANDICAP  ·  North Africa 1940–42",
           "Places and tracks after maps of the period.")
 PAPER, INK, HALO = (240, 230, 205), (45, 38, 30), (250, 244, 228)
 COLOURS = {build.SEA: (186, 211, 224), build.DESERT: (236, 219, 176), build.ROUGH: (214, 186, 136),
-           build.DEPRESSION: (188, 192, 172), build.SAND: (242, 214, 128)}
+           build.DEPRESSION: (188, 192, 172), build.SAND: (242, 214, 128),
+           build.OASIS: (150, 190, 112)}
 STIPPLE = {build.SAND: (176, 128, 52), build.DEPRESSION: (104, 116, 104)}
 SCARP, ROAD, TRACK, RAIL, FRONTIER = (116, 58, 26), (156, 34, 30), (92, 72, 52), (25, 25, 25), (70, 66, 60)
 PLACE = {"port": (200, 40, 40), "town": (40, 40, 40), "oasis": (40, 130, 60), "site": (250, 250, 250)}
@@ -240,11 +241,11 @@ def title_block(d, x, y, scale):
     _scarp(d, *line(5, 0), (0, 1), scale)
     rx, ry = row(5, 0)
     _pass(d, (rx + 14 * scale, ry), scale); name(5, 0, "Pass")
-    for k, (kind, text) in enumerate((("port", "Port"), ("town", "Town"), ("oasis", "Oasis"), ("site", "Other place"))):
+    for k, (kind, text) in enumerate((("port", "Port"), ("town", "Town"), ("oasis", "Oasis village"), ("site", "Other place"))):
         rx, ry = row(k, 1)
         _place(d, (rx + 14 * scale, ry), kind, scale); name(k, 1, text)
     for k, (t, text) in enumerate(((build.SAND, "Sand sea"), (build.DEPRESSION, "Depression, salt marsh"),
-                                   (build.ROUGH, "Rough going"))):
+                                   (build.ROUGH, "Rough going"), (build.OASIS, "Oasis"))):
         rx, ry = row(4 + k, 1)
         box = [rx + 4 * scale, ry - 3.5 * scale, rx + 24 * scale, ry + 3.5 * scale]
         d.rectangle(box, fill=COLOURS[t], outline=INK)
@@ -257,7 +258,7 @@ def title_block(d, x, y, scale):
                     d.line([(bx - 1.1 * scale, by), (bx + 1.1 * scale, by)], fill=STIPPLE[t], width=1)
         name(4 + k, 1, text)
     # scale bars: miles above, kilometres below
-    bx, by = x + 40 * scale, y + 122 * scale
+    bx, by = x + 40 * scale, y + 133 * scale
     for unit, km, marks, dy, above in (("Scale of Miles", MILE, (0, 20, 40, 60, 80, 100), 0, True),
                                        ("Kilometres", 1.0, (0, 50, 100, 150), 9 * scale, False)):
         yy = by + dy

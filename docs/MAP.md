@@ -45,15 +45,40 @@ them, `data/features.json` says where the escarpment is:
 - `escarpments`: a named line of latitude/longitude points. It is laid on the
   hex edges it runs between (so it is always unbroken) and replaces whatever the
   rules found within `DRAWN_KM` of it. The high side is the higher hex.
+- `oases`: a name and the points it covers. The hexes those points fall in
+  become oasis, whatever the ground there would otherwise be: Siwa (a string of
+  five hexes), Jarabub, Augila, Gicherra and Marada.
 - `passes`: a named point. It becomes the nearest escarpment edge. Routes climb
   at a named pass for free, so they go to it instead of making a pass of their own.
 
-So far this is done for the **Sollum escarpment**: traced along the steepest
+So far this is done for three escarpments on the Egyptian frontier. The **Sollum escarpment**: traced along the steepest
 ground in the elevation data from the sea at Sollum south-east for about 60 km,
 to where it turns north and fades into a slope. Its passes are **Sollum Pass**
 (the coast road) and **Halfaya Pass** (a track up to Sidi Omar); they are
-neighbouring edges of the same hex below the cliff. East of the last of them the
-only way up is round the end.
+neighbouring edges of the same hex below the cliff.
+
+East of it, near Sofafi, the cliff turns into two gentler steps, which a 1956
+map of Cyrenaica draws as escarpments and the elevation data shows as slope
+crests too gentle for the rules above. Both are traced along those crests:
+
+- the **Sidi Barrani escarpment**, the step up from the coastal plain, running
+  east for about 80 km until, at this scale, it reaches the sea (beyond that
+  the coastal plain is narrower than a hex, and the coast road climbs onto the
+  terrace by a pass);
+- the **Sofafi – Matruh escarpment**, the edge of the plateau, running
+  east-south-east for about 170 km to south of Mersa Matruh.
+
+Two tracks cross them, as the British approach of December 1940 did: one from
+Matruh along the terrace between the two escarpments to Nibeiwa and down to
+Sidi Barrani, and one from Nibeiwa up past Bir Rabia to Sofafi. Each makes a
+pass where it climbs.
+
+Together with the Sollum escarpment they wall off the plateau from the coast
+all the way from Sollum to Matruh. The coastal plain from Sollum to past Sidi
+Barrani is walled in: the ways off it are the Sollum and Halfaya passes, the
+pass below Nibeiwa and the pass where the coast road climbs. From the terrace
+above, the plateau is reached by the pass at Bir Rabia or round the eastern
+end, south of Matruh.
 
 **3. Render** (`mapgen/render.py`) draws `map.png` in the manner of a map of
 the period: the hexes over relief shading from the same elevation data (lit
@@ -67,7 +92,7 @@ The same inputs always give the same map: there is nothing random in it.
 
 ## The file: `data/map.json`
 
-- `terrain`: one string per map row; `~` sea, `.` desert, `^` rough, `v` depression, `s` sand sea.
+- `terrain`: one string per map row; `~` sea, `.` desert, `^` rough, `v` depression, `s` sand sea, `o` oasis.
 - `elevation`: mean height of each hex in metres, by row.
 - `escarpments`: `[col, row, direction, high side]` — the edge of hex (col, row)
   in direction 1 NE, 2 SE or 3 S; high side 0 = this hex, 1 = the neighbour.
@@ -111,6 +136,15 @@ latitude/longitude grid or scale bar, and the places read off them:
   the elevation data shows that stretch as a slope, not a cliff, so it is not
   on the map yet (see below).
 
+- **Operation Compass, 1940–41** (two modern maps of the operation, one a
+  detailed vector map): fitted on Benghazi, Tobruk, Agedabia, El Agheila, Mersa
+  Matruh and Siwa. It gave the Italian camps (Maktila, Nibeiwa, Bir Rabia,
+  Sofafi) and the British approach from Matruh; **Sofafi was 25 km out** and is
+  now where both this map and the 1956 one put it, on top of the escarpment at
+  its south-eastern corner. It also gave the extent of the oases (Siwa,
+  Jarabub) and the positions of Augila, Gicherra and Marada. Unlike the 1956
+  map, it draws no escarpment east of Sofafi.
+
 Only positions and names (facts) were taken from these maps; the maps
 themselves are not in this repository. Places read off them are marked
 `approx` unless a gazetteer confirmed them.
@@ -132,9 +166,11 @@ themselves are not in this repository. Places read off them are marked
 - **Approximate sites.** About 15 period sites (marked `approx` in
   `features.json`) are placed from general references, to within a hex or so.
 - **Tracks** are joined from place to place by least cost, not traced.
-- **Sofafi to Matruh.** The 1956 map draws an escarpment all the way from
-  Sollum to Matruh; here it stops near Sofafi and starts again south of Matruh.
-  Whether the stretch between was a barrier to vehicles needs a better source.
+- **Sofafi to Matruh.** These two escarpments are slopes, not cliffs. One
+  period map draws them; a detailed modern map of Operation Compass does not.
+  They are on the map as escarpments with passes where the 1940 approach
+  crossed them, which may still make them too much of a barrier; if play shows
+  that, they are two entries in `data/features.json` to remove.
 - **Sand sea** edge read off a small-scale map: good to a hex or so; **coastal salt marshes** (e.g. at El Agheila)
   not marked yet.
 - The thresholds above were tuned by eye on the Tobruk–Sollum area and
