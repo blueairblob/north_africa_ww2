@@ -33,12 +33,16 @@ python3 -m venv .venv && .venv/bin/pip install -r requirements.txt
   desert tracks and the railway): each route finds its own way over the
   generated ground between the places it names, and where it has to climb an
   escarpment, that crossing becomes a **pass**.
+- **Drawn by hand where the rules fall short**: the Sollum escarpment, from the
+  sea at Sollum south-east to where it fades, with its two ways up — **Sollum
+  Pass** (the coast road) and **Halfaya Pass** (a track).
 - The result, `data/map.json`, is readable: one row of terrain letters per map row.
 
 Known limitations of this first version (see `docs/MAP.md`):
 
-- the Sollum–Halfaya escarpment is found only in part, so its passes are not yet
-  placed by the generator;
+- only the Sollum escarpment has been checked and drawn by hand; the others are
+  as the rules found them, and may have gaps where one runs through the middle
+  of a hex;
 - about 15 period sites have approximate coordinates, and the tracks are joined
   from place to place rather than traced from period maps;
 - the sand sea outline is approximate; the coastal salt marshes are not marked.

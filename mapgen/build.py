@@ -22,6 +22,8 @@ SCARP_PROFILES = 3          # ...on at least this many of 5 lines across the hex
 BROKEN_SIDES = 3            # a hex with this many escarpment sides is broken ground: rough
 ROUTE_COST = {DESERT: 1.0, ROUGH: 1.6}
 SCARP_COST = 4.0            # extra cost for a route to cross an escarpment (it makes a pass)
+DRAWN_KM = 5.0              # a drawn escarpment replaces the found hexsides this close to its line
+PASS_KM = 6.0               # a named pass belongs to the escarpment hexside within this distance
 
 FEATURES = os.path.join(fetch.HERE, "data", "features.json")
 OUT = os.path.join(fetch.HERE, "data", "map.json")
@@ -135,8 +137,69 @@ def _lines_only(found):
     return {s: v for s, v in found.items() if any(len(at[e]) > 1 for e in _ends(*s))}
 
 
-def find_route(t, scarps, a, b):
-    """The cheapest way over the ground from hex a to hex b (A*), as a list of hexes."""
+def _crosses(p, q, a, b):
+    """Whether the segments p-q and a-b cross."""
+    def turn(o, u, v):
+        return (u[0] - o[0]) * (v[1] - o[1]) - (u[1] - o[1]) * (v[0] - o[0])
+    return (turn(p, q, a) > 0) != (turn(p, q, b) > 0) and (turn(a, b, p) > 0) != (turn(a, b, q) > 0)
+
+
+def _away(p, a, b):
+    """Distance from the point p to the segment a-b."""
+    dx, dy = b[0] - a[0], b[1] - a[1]
+    k = max(0.0, min(1.0, ((p[0] - a[0]) * dx + (p[1] - a[1]) * dy) / ((dx * dx + dy * dy) or 1.0)))
+    return ((a[0] + k * dx - p[0]) ** 2 + (a[1] + k * dy - p[1]) ** 2) ** 0.5
+
+
+def _middle(s):
+    (ax, ay), (bx, by), _ = H.edge(*s)
+    return (ax + bx) / 2, (ay + by) / 2
+
+
+def drawn_escarpments(t, mean_elev, scarps, features):
+    """Escarpments drawn by hand in the features file, where the rules above leave gaps.
+    The line is laid on the hexsides it parts (those whose two hexes it runs between)
+    and replaces whatever was found along it."""
+    scarps = dict(scarps)
+    for scarp in features.get("escarpments", []):
+        line = [geo.to_km(lon, lat) for lat, lon in scarp["line"]]
+        for s in [s for s in scarps if min(_away(_middle(s), a, b) for a, b in zip(line, line[1:])) <= DRAWN_KM]:
+            del scarps[s]
+        for c in range(geo.COLS):
+            for r in range(geo.ROWS):
+                if t[c][r] == SEA:
+                    continue
+                for d in (1, 2, 3):
+                    nc, nr = H.neighbour(c, r, d)
+                    if not geo.in_map(nc, nr) or t[nc][nr] == SEA:
+                        continue
+                    p, q = H.centre(c, r), H.centre(nc, nr)
+                    if any(_crosses(p, q, a, b) for a, b in zip(line, line[1:])):
+                        scarps[(c, r, d)] = int(mean_elev[nc][nr] > mean_elev[c][r])
+    return scarps
+
+
+def named_passes(scarps, features):
+    """Each named pass is the escarpment hexside nearest to it: {(col, row, d): name}."""
+    out = {}
+    for p in features.get("passes", []):
+        x, y = geo.to_km(p["lon"], p["lat"])
+
+        def away(s):
+            mx, my = _middle(s)
+            return (mx - x) ** 2 + (my - y) ** 2
+        s = min(sorted(scarps), key=away, default=None)
+        if s is None or away(s) > PASS_KM ** 2:
+            raise ValueError(f"{p['name']} is not on an escarpment")
+        if s in out:
+            raise ValueError(f"{p['name']} and {out[s]} are the same hexside")
+        out[s] = p["name"]
+    return out
+
+
+def find_route(t, scarps, a, b, passes=()):
+    """The cheapest way over the ground from hex a to hex b (A*), as a list of hexes.
+    Crossing an escarpment costs extra, except at a pass that is already there."""
     frontier = [(0.0, 0.0, a)]
     came, cost = {a: None}, {a: 0.0}
     while frontier:
@@ -149,7 +212,8 @@ def find_route(t, scarps, a, b):
             nxt = H.neighbour(*cur, d)
             if not geo.in_map(*nxt) or t[nxt[0]][nxt[1]] in IMPASSABLE:
                 continue
-            step = ROUTE_COST[t[nxt[0]][nxt[1]]] + (SCARP_COST if H.side(*cur, d) in scarps else 0)
+            s = H.side(*cur, d)
+            step = ROUTE_COST[t[nxt[0]][nxt[1]]] + (SCARP_COST if s in scarps and s not in passes else 0)
             ng = g + step
             if ng < cost.get(nxt, 1e18):
                 cost[nxt], came[nxt] = ng, cur
@@ -184,19 +248,20 @@ def place_hexes(t, features):
 
 
 def routes(t, scarps, places, features):
+    """The routes, and the passes: the named ones and wherever else a route climbs an escarpment."""
     where = {p["name"]: (p["col"], p["row"]) for p in places}
-    out, passes = [], set()
+    out, passes = [], named_passes(scarps, features)
     for route in features["routes"]:
         stops = [where[v] if isinstance(v, str) else geo.hex_of(v[1], v[0]) for v in route["via"]]
         hexes = [stops[0]]
         for a, b in zip(stops, stops[1:]):
-            hexes += find_route(t, scarps, a, b)[1:]
+            hexes += find_route(t, scarps, a, b, passes)[1:]
         for a, b in zip(hexes, hexes[1:]):
             d = next(k for k in range(6) if H.neighbour(*a, k) == b)
             if H.side(*a, d) in scarps:
-                passes.add(H.side(*a, d))
+                passes.setdefault(H.side(*a, d), None)
         out.append({"name": route["name"], "kind": route["kind"], "hexes": [list(h) for h in hexes]})
-    return out, sorted(passes)
+    return out, [{"name": passes[s], "col": s[0], "row": s[1], "side": s[2]} for s in sorted(passes)]
 
 
 def build(log=print):
@@ -207,7 +272,7 @@ def build(log=print):
     t, mean_elev, _ = terrain(elev, land, index)
     sand_seas(t, features)
     places = place_hexes(t, features)
-    scarps = broken_ground(t, escarpments(elev, t))
+    scarps = drawn_escarpments(t, mean_elev, broken_ground(t, escarpments(elev, t)), features)
     route_list, passes = routes(t, scarps, places, features)
     counts = {TERRAIN_NAMES[k]: int((t == k).sum()) for k in TERRAIN_NAMES}
     log(f"{geo.COLS} x {geo.ROWS} hexes: {counts}; {len(scarps)} escarpment hexsides, "
@@ -223,7 +288,7 @@ def build(log=print):
         "terrain": ["".join(t[c][r] for c in range(geo.COLS)) for r in range(geo.ROWS)],
         "elevation": [[int(mean_elev[c][r]) for c in range(geo.COLS)] for r in range(geo.ROWS)],
         "escarpments": [[c, r, d, scarps[(c, r, d)]] for c, r, d in sorted(scarps)],
-        "passes": [list(p) for p in passes],
+        "passes": passes,
         "routes": route_list,
         "places": [{k: p[k] for k in ("name", "kind", "col", "row", "lat", "lon", "approx") if k in p}
                    for p in places],

@@ -1,5 +1,5 @@
 {
-  "about": "Places and routes placed by hand (latitude, longitude). Coordinates marked approx are period sites not in modern gazetteers: verify against 1940s survey sheets (docs/SOURCES.md). Routes are lists of place names or [lat, lon] points; the generator finds the way between them over the ground.",
+  "about": "Places, routes, and the escarpments and passes the generator cannot find for itself, placed by hand (latitude, longitude). Coordinates marked approx are period sites not in modern gazetteers: verify against 1940s survey sheets (docs/SOURCES.md). Routes are lists of place names or [lat, lon] points; the generator finds the way between them over the ground.",
   "places": [
     {"name": "El Agheila", "lat": 30.26, "lon": 19.20, "kind": "town", "approx": true},
     {"name": "Mersa Brega", "lat": 30.41, "lon": 19.58, "kind": "town"},
@@ -56,8 +56,21 @@
     {"name": "Frontier track", "kind": "track", "approx": true,
      "via": ["Sidi Omar", "Fort Maddalena", "Jarabub"]},
     {"name": "Siwa track", "kind": "track", "approx": true, "via": ["Mersa Matruh", "Siwa", "Jarabub"]},
+    {"name": "Halfaya track", "kind": "track", "approx": true,
+     "via": ["Halfaya Pass", [31.47, 25.13], "Sidi Omar"]},
     {"name": "Western Desert Railway (1940)", "kind": "rail",
      "via": ["Alexandria", "El Alamein", "El Daba", "Fuka", "Mersa Matruh"]}
+  ],
+  "escarpments": [
+    {"name": "Sollum escarpment",
+     "about": "From the sea at Sollum south-east towards Sofafi, where it turns north and fades into a slope. Traced along the steepest ground in the elevation data.",
+     "line": [[31.60, 25.165], [31.546, 25.157], [31.485, 25.206], [31.437, 25.247], [31.400, 25.295],
+              [31.351, 25.330], [31.314, 25.373], [31.300, 25.415], [31.277, 25.457], [31.250, 25.503],
+              [31.226, 25.560], [31.228, 25.620], [31.246, 25.668], [31.273, 25.723], [31.287, 25.744]]}
+  ],
+  "passes": [
+    {"name": "Sollum Pass", "lat": 31.56, "lon": 25.15, "about": "the coast road's climb behind Sollum"},
+    {"name": "Halfaya Pass", "lat": 31.50, "lon": 25.18}
   ],
   "sand_seas": [
     {"name": "Great Sand Sea (northern edge)", "approx": true,

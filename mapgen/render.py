@@ -45,8 +45,8 @@ def render(m, path=OUT, scale=1.6):
     for c, r, k, high in m["escarpments"]:
         a, b, _ = H.edge(c, r, k)
         d.line([px(a), px(b)], fill=SCARP, width=3)
-    for c, r, k in m["passes"]:
-        a, b, _ = H.edge(c, r, k)
+    for p in m["passes"]:
+        a, b, _ = H.edge(p["col"], p["row"], p["side"])
         mid = ((a[0] + b[0]) / 2 * scale, (a[1] + b[1]) / 2 * scale)
         d.ellipse([mid[0] - 3, mid[1] - 3, mid[0] + 3, mid[1] + 3], fill=(250, 250, 250), outline=SCARP)
     for route in m["routes"]:

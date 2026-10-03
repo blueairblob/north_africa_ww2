@@ -45,8 +45,37 @@ def test_geography_is_where_it_should_be(m):
 def test_escarpments_and_passes(m):
     scarps = {tuple(s[:3]) for s in m["escarpments"]}
     assert all(d in (1, 2, 3) for _, _, d in scarps)
-    assert all(tuple(p) in scarps for p in m["passes"])
+    assert all((p["col"], p["row"], p["side"]) in scarps for p in m["passes"])
 
 
 def test_saved_file_is_what_the_writer_produces(m):
     assert build.dumps(m) == open(build.OUT).read()
+
+
+def _steps(m, a, b, closed):
+    """Hexes from a to b without crossing the closed hexsides (breadth first)."""
+    seen, edge = {a: 0}, [a]
+    while edge and b not in seen:
+        nxt = []
+        for cur in edge:
+            for d in range(6):
+                n = H.neighbour(*cur, d)
+                if (geo.in_map(*n) and n not in seen and H.side(*cur, d) not in closed
+                        and m["terrain"][n[1]][n[0]] not in build.IMPASSABLE):
+                    seen[n] = seen[cur] + 1
+                    nxt.append(n)
+        edge = nxt
+    return seen.get(b)
+
+
+def test_the_sollum_escarpment_is_crossed_only_at_its_passes(m):
+    where = {p["name"]: (p["col"], p["row"]) for p in m["places"]}
+    scarps = {tuple(s[:3]) for s in m["escarpments"]}
+    passes = {p["name"]: (p["col"], p["row"], p["side"]) for p in m["passes"]}
+    assert {"Sollum Pass", "Halfaya Pass"} <= set(passes)
+    below, above = where["Buq Buq"], where["Fort Capuzzo"]
+    direct = H.distance(below, above)
+    assert _steps(m, below, above, scarps - set(passes.values())) == direct      # up through the passes
+    for name in ("Sollum Pass", "Halfaya Pass"):                                 # either pass alone will do
+        assert _steps(m, below, above, scarps - {passes[name]}) <= direct + 1, name
+    assert _steps(m, below, above, scarps) >= direct + 4                         # without them: round the end
