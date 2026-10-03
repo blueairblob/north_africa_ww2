@@ -1,3 +1,7 @@
 # local notes, never published
 local/
 __pycache__/
+.venv/
+# downloaded source data (python -m mapgen fetch)
+cache/
+.pytest_cache/

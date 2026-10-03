@@ -9,7 +9,39 @@ real tempo of a desert battle and, above all, the real supply problem.
 - **`docs/SOURCES.md`** — where the map and the orders of battle come from.
 - **`docs/CLEAN_ROOM.md`** — what this project may and may not use.
 
-Status: design. No code yet.
+Status: design, plus the first milestone — the **map generator**.
+
+## The map
+
+![The generated map](map.png)
+
+The map is not drawn by hand: `mapgen/` builds it from public geographic data.
+
+```
+python3 -m venv .venv && .venv/bin/pip install -r requirements.txt
+.venv/bin/python -m mapgen all      # fetch the data, build data/map.json, draw map.png
+.venv/bin/python -m pytest tests    # 15 checks
+```
+
+- **123 × 44 hexes of 10 km**, from west of El Agheila to Alexandria and from the
+  Cyrenaican coast south to Siwa.
+- **Terrain per hex**: sea, desert, rough going, deep depression (the Qattara
+  Depression), sand sea — from the coastline and from elevation and slope.
+- **Escarpments on hex edges**, found where the ground drops sharply across an
+  edge; hills ringed by escarpments become rough ground.
+- **Places and routes** from `data/features.json` (38 places; the coast road,
+  desert tracks and the railway): each route finds its own way over the
+  generated ground between the places it names, and where it has to climb an
+  escarpment, that crossing becomes a **pass**.
+- The result, `data/map.json`, is readable: one row of terrain letters per map row.
+
+Known limitations of this first version (see `docs/MAP.md`):
+
+- the Sollum–Halfaya escarpment is found only in part, so its passes are not yet
+  placed by the generator;
+- about 15 period sites have approximate coordinates, and the tracks are joined
+  from place to place rather than traced from period maps;
+- the sand sea outline is approximate; the coastal salt marshes are not marked.
 
 ## The name
 

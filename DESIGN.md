@@ -36,7 +36,7 @@ The three things the campaign was really about, and that the game is built on:
 | | |
 | --- | --- |
 | Hex | 10 km across (flat-topped hexes) |
-| Map | about 110 × 38 hexes: El Agheila (west) to Alexandria (east), the coast to the oases and the Qattara Depression (south) |
+| Map | 123 × 44 hexes: El Agheila (west) to Alexandria (east), the coast to the oases and the Qattara Depression (south) |
 | Turn | 2 days |
 | Units | brigades and regiments (German *Kampfgruppen* and regiments, Italian divisions or regiments), with division HQs |
 | Counters on the map | typically 20–60 per side |
