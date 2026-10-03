@@ -13,23 +13,24 @@ Status: design. No code yet.
 
 ## The name
 
-**Benghazi Handicap** was the soldiers' own name for this campaign: the armies
-raced back and forth along the same coast road, past Benghazi, five times in two
-years. Each advance ran out of supply and was thrown back.
+**The Benghazi Handicap** was the soldiers' name — the Australians', first — for
+the retreat from Benghazi to Tobruk in the spring of 1941, with Rommel close
+behind. The race was run again, in both directions: Benghazi changed hands five
+times in under two years, as each advance along the coast road ran out of supply
+and was thrown back. The retreat from the Gazala line in June 1942 earned its
+own name, the *Gazala Gallop*.
 
 > **Etymology.** Named for the great speed of the retreat; *handicap* is in the
 > horse-racing sense. The field was large, the going was firm to dusty, and the
-> favourite changed at every meeting. Also run as the *Benghazi Stakes*, the
-> *Gazala Gallop* and the *Msus Stakes* — the Eighth Army being of the view that
-> if one must leave in a hurry, one may as well name the race.
+> favourite changed at every meeting.
 
 Why this name:
 
 - **It says what the game is about.** The campaign was decided by distance and
   supply — how far an army could go before its trucks could no longer feed it —
   and that is the centre of this design (`DESIGN.md` §6).
-- **It is historical and nobody's product.** It is a period nickname, not a
-  trademark. A few tabletop wargame supplements have used it as a subtitle; no
+- **It is historical and nobody's product.** It is a period nickname (it is the
+  title of a chapter in the Australian official history), not a trademark. A few tabletop wargame supplements have used it as a subtitle; no
   computer game uses it as its title.
 - **It stands apart from other games.** Plainer names were considered and
   dropped because they sit too close to existing titles: "Desert War" (Matrix
