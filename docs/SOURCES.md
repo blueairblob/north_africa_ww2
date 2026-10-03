@@ -52,6 +52,17 @@ Logistics figures (port capacities, consumption, truck haulage) to calibrate
 `DESIGN.md` §6: the official histories above and the standard studies of
 desert logistics — take the facts and set our own values.
 
+Used for the supply constants in `docs/RULES.md` §6.12 (facts only, each
+marked there):
+
+| Source | Used for |
+| --- | --- |
+| M. van Creveld, *Supplying War* (1977), ch. 6, as quoted in the Wikipedia articles "Western Desert campaign" and "Operation Crusader" (CC BY-SA; facts only) | Tripoli's capacity; Tobruk's; a motorised division's 350 tons a day; lorries needed over 300 miles; fuel used by road transport; road distances |
+| "Capacity of Tripoli and Benghazi Harbours, 1941", rommelsriposte.com (a research note quoting Italian naval staff returns) | tons actually unloaded at Tripoli and Benghazi, May–August 1941; the doubt about van Creveld's figure for Benghazi |
+| *New Zealand Engineers, Middle East* (NZ official history), ch. 9, "The Western Desert Railway" (NZ Electronic Text Collection) | railhead dates, 1941–42 |
+
+Not yet read at first hand: van Creveld and Playfair themselves.
+
 ## Art
 
 Generated for this game: hex terrain tiles drawn from the terrain types, and

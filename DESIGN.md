@@ -13,7 +13,8 @@ on the map or a counter. The player never does the engine's arithmetic.
 
 This document is an original design. It is written from history and geography
 (see `docs/SOURCES.md`), not from any earlier game's data or code (see
-`docs/CLEAN_ROOM.md`).
+`docs/CLEAN_ROOM.md`). The exact rules are in `docs/RULES.md`; where the two
+differ, the rules are right and this document is to be corrected.
 
 ---
 
@@ -46,8 +47,8 @@ The three things the campaign was really about, and that the game is built on:
 | The campaign | Sept 1940 – Nov 1942 ≈ 400 turns (an optional long game) |
 
 Tripoli, the Axis main port, is off the map to the west: supply and
-reinforcements enter there and arrive at the west edge after a fixed delay.
-The British base (the Nile Delta) is off the east edge in the same way.
+reinforcements enter there and arrive at the west edge, at El Agheila, after
+a fixed delay. The British base is Alexandria, which is on the map.
 
 ## 3. The map
 
@@ -57,11 +58,13 @@ The British base (the Nile Delta) is off the east edge in the same way.
 | --- | --- | --- | --- |
 | **Desert** (good going) | normal | open: favours armour and guns | most of the map |
 | **Rough** (bad going) | double for vehicles | defender helped | Jebel Akhdar, broken ground, wadi country |
-| **Sand sea / dunes** | impassable to vehicles | — | the Great Sand Sea, Kalansho |
+| **Sand sea / dunes** | impassable | — | the Great Sand Sea, Kalansho |
 | **Salt marsh / depression** | impassable | — | Qattara Depression, the El Agheila marshes |
-| **Oasis** | normal | — | water; Siwa, Jarabub |
-| **Town / port** | normal | defender helped strongly | Tobruk, Bardia, Benghazi, Derna, Mersa Matruh… |
+| **Oasis** | normal | — | desert with a name; Siwa, Jarabub |
 | **Sea** | — | — | — |
+
+A **town or port** is a place in a hex, not a kind of ground: it helps the
+defender (Tobruk, Bardia, Benghazi, Derna, Mersa Matruh…).
 
 ### 3.2 Hexside features
 
@@ -69,20 +72,23 @@ The things that shaped every battle are *lines*, so they live on hexsides:
 
 - **Escarpment** — a cliff edge: impassable to vehicles except at **passes**
   (marked, e.g. Halfaya, Sollum, the Sidi Rezegh and Belhamed escarpments), and
-  a strong defensive line. Generated from elevation data (`docs/SOURCES.md`).
+  a strong defensive line. Foot infantry can climb it anywhere, slowly.
+  Generated from elevation data (`docs/SOURCES.md`).
 - **Road** — the coast road (Via Balbia in Libya, the coast road in Egypt): fast
   movement and the main supply artery.
 - **Track** — the desert tracks (Trigh Capuzzo, Trigh el Abd…): faster than open
   desert, a secondary supply route.
 - **Railway** — the British Western Desert Railway from Alexandria, extended
   westwards during the campaign on a historical schedule; its railhead moves.
-- **Minefield / wire** — built by units (and present at start where historical,
-  e.g. the Gazala line, the Alamein line): slows and costs the attacker.
+  It carries Commonwealth supply only.
+- **Fortification** — diggings, wire and mines together, as one level per hex,
+  built by units (and present at start where historical, e.g. the Gazala line,
+  the Alamein line): slows and costs the attacker. The frontier wire is drawn
+  on the map but is not a rule.
 
 ### 3.3 Places that matter
 
-Ports (supply capacity), towns, airfields (for the air rule) and the historical
-objectives: Tobruk, Benghazi, Bardia, Sollum/Halfaya, Sidi Rezegh, Gazala,
+Ports (supply capacity), towns and the historical objectives: Tobruk, Benghazi, Bardia, Sollum/Halfaya, Sidi Rezegh, Gazala,
 Bir Hakeim, Mersa Matruh, El Alamein, Alexandria, El Agheila.
 
 ### 3.4 How the map is made
@@ -132,6 +138,8 @@ small numbers and two bars:
 - **Supply** — what the unit holds (see §6).
 - **Experience** — green / regular / veteran, shown by a pip.
 
+A hex holds at most two fighting formations and one HQ.
+
 ### 4.3 Order of battle
 
 Built from historical sources (`docs/SOURCES.md`) for each scenario date:
@@ -148,12 +156,12 @@ happened in a day of desert war. Each turn (2 days):
 1. **Supply** — supply flows from ports and railheads through the road and track
    network to HQs and on to units in reach (§6). Shortages are applied *before*
    anyone moves: a unit without fuel will not get far.
-2. **Air** — each side assigns its air effort (one simple choice: *support*,
-   *interdict roads*, or *reconnaissance*); air superiority is set by the
-   scenario date and the airfields held.
-3. **Orders** — both players (or the computer) give every formation an order:
-   *Move*, *Attack*, *Hold*, *Dig in*, *Road march*, *Rest*. Orders are hidden
-   from the other side.
+2. **Orders** — both players (or the computer) give every formation an order:
+   *Move*, *Attack*, *Hold*, *Dig in*, *Road march*, *Rest*, and choose the
+   air effort. Orders are hidden from the other side.
+3. **Air** — each side's air effort takes effect (one simple choice:
+   *support*, *interdict roads*, or *reconnaissance*); air superiority is set
+   by the scenario date.
 4. **Movement** — all units move **simultaneously**, a hex at a time in
    impulses (fastest units get more impulses). A unit stops when it meets the
    enemy (contact) — so meeting engagements happen where the two plans collide.
@@ -189,15 +197,17 @@ captured — demolitions). Shipping to the Axis ports is reduced while Malta is
 active (a scenario setting and an air-war track).
 
 **How it moves.** From a port or railhead, supply travels along the road and
-track network by **truck**. Trucks burn fuel themselves: the further the haul,
-the less arrives — this is the "tyranny of distance" that stopped every
+track network by **truck**. Each side has only so many trucks, and trucks burn
+fuel themselves: the further the haul, and the further from the road, the
+less arrives — this is the "tyranny of distance" that stopped every
 advance. The cost is shown on the supply overlay as the line thins out.
 
 - An enemy unit or zone of control on a supply route cuts it.
 - Supply reaches **HQs** along the network, and units within a short distance of
-  their HQ (or of the route) draw from it.
+  an HQ or a port draw from it — less, the further off they stand.
 - **Dumps**: an HQ that does not move can build up a dump, ready for an
-  offensive (as both sides did before Crusader and Gazala).
+  offensive (as both sides did before Crusader and Gazala). Supply is never
+  captured.
 
 **What shortage does.** Out of fuel: vehicles cannot move. Out of stores:
 cohesion falls each turn and attacks are weak. Both are shown on the counter's
