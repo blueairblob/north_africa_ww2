@@ -6,10 +6,29 @@ real tempo of a desert battle and, above all, the real supply problem.
 
 - **`DESIGN.md`** — the game: scale, map, units, sequence of play, supply,
   combat, orders, scenarios, the computer opponent, presentation.
+- **`docs/RULES.md`** — the rules specification the engine follows, numbered, with
+  every constant named and its source given.
 - **`docs/SOURCES.md`** — where the map and the orders of battle come from.
 - **`docs/CLEAN_ROOM.md`** — what this project may and may not use.
 
-Status: design, plus the first milestone — the **map generator**.
+Status: the **map generator**, the **rules specification** and the **engine
+core** on one scenario (Crusader). No screen yet, and no computer opponent
+beyond scripted test players.
+
+## The engine
+
+`engine/` is pure Python with no input or output: the same scenario and the
+same orders always give the same game. A turn is the eight phases of
+`docs/RULES.md` §5; each function names the rule it follows and each test the
+rule it checks.
+
+```
+.venv/bin/python -m engine crusader attack nothing   # a whole game, no screen
+```
+
+plays Operation Crusader (`data/scenarios/crusader.json`) between two scripted
+players (`nothing`, `attack`, `retreat`, `explore`) and asserts the rules'
+invariants after every turn.
 
 ## The map
 
@@ -20,7 +39,7 @@ The map is not drawn by hand: `mapgen/` builds it from public geographic data.
 ```
 python3 -m venv .venv && .venv/bin/pip install -r requirements.txt
 .venv/bin/python -m mapgen all      # fetch the data, build data/map.json, draw map.png
-.venv/bin/python -m pytest tests    # 15 checks
+.venv/bin/python -m pytest tests
 ```
 
 - **123 × 44 hexes of 10 km**, from west of El Agheila to Alexandria and from the
@@ -31,7 +50,7 @@ python3 -m venv .venv && .venv/bin/pip install -r requirements.txt
 - **Escarpments on hex edges**: the cliff lines are traced in the elevation data
   and laid on the hex edges they run between, so an unbroken cliff is an
   unbroken line on the map; hills ringed by escarpments become rough ground.
-- **Places and routes** from `data/features.json` (51 places; the coast road,
+- **Places and routes** from `data/features.json` (53 places; the coast road,
   desert tracks and the railway): each route finds its own way over the
   generated ground between the places it names, and where it has to climb an
   escarpment, that crossing becomes a **pass**.

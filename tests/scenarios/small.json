@@ -1,0 +1,31 @@
+{
+  "id": "small",
+  "name": "A small frontier battle (for tests)",
+  "start": "1941-11-18",
+  "turns": 10,
+  "owners": {"axis": ["Acroma", "Agedabia", "Antelat", "Augila", "Barce", "Bardia", "Beda Fomm", "Belhamed", "Ben Gania", "Benghazi", "Bir Hakeim", "Bir el Gubi", "Cyrene", "Derna", "El Adem", "El Agheila", "Fort Capuzzo", "Gambut", "Gazala", "Gicherra", "Halfaya Pass", "Knightsbridge", "Maaten el Grara", "Marada", "Martuba", "Mechili", "Mersa Brega", "Msus", "Sceleidima", "Sidi Omar", "Sidi Rezegh", "Sollum", "Soluch", "Tengeder", "Tmimi", "Tocra"], "cw": ["Alam Halfa", "Alexandria", "Bir Rabia", "Buq Buq", "El Alamein", "El Daba", "Fort Maddalena", "Fuka", "Jarabub", "Maktila", "Mersa Matruh", "Misheifa", "Nibeiwa", "Sidi Barrani", "Siwa", "Sofafi", "Tobruk"]},
+  "sides": {"axis": {"lift": [["1941-11-18", 200000]], "air": [["1941-11-18", 1]], "sea_pct": [["1941-11-18", 60]], "fuel_pct": [["1941-11-18", 40]]}, "cw": {"lift": [["1941-11-18", 200000]], "air": [["1941-11-18", 1]], "railhead": [["1941-11-18", "Misheifa"]]}},
+  "units": [
+    {"id": 101, "side": "axis", "name": "Panzer division", "type": "armour", "size": 3, "steps": 14, "at": "Gambut", "max": 16, "xp": "veteran"},
+    {"id": 102, "side": "axis", "name": "Infantry division", "type": "foot", "size": 3, "steps": 9, "at": "El Adem"},
+    {"id": 103, "side": "axis", "name": "Halfaya guns", "type": "guns", "size": 1, "steps": 4, "at": "Halfaya Pass"},
+    {"id": 104, "side": "axis", "name": "Panzer group HQ", "type": "hq", "size": 1, "steps": 1, "at": "Gambut", "dump": {"fuel": 600, "stores": 900}},
+    {"id": 105, "side": "axis", "name": "Motorised division", "type": "motorised", "size": 3, "steps": 8, "at": "Derna", "arrives": "1941-11-22", "entry": "Derna"},
+    {"id": 106, "side": "axis", "name": "Reconnaissance", "type": "recon", "size": 1, "steps": 3, "at": "Sidi Omar"},
+    {"id": 107, "side": "axis", "name": "Bardia garrison", "type": "foot", "size": 2, "steps": 6, "at": "Bardia", "xp": "green"},
+    {"id": 201, "side": "cw", "name": "Armoured brigade", "type": "armour", "size": 1, "steps": 15, "at": "Fort Maddalena"},
+    {"id": 202, "side": "cw", "name": "Tobruk garrison", "type": "foot", "size": 3, "steps": 9, "at": "Tobruk"},
+    {"id": 203, "side": "cw", "name": "Motor division", "type": "motorised", "size": 3, "steps": 9, "hex": [70, 20]},
+    {"id": 204, "side": "cw", "name": "Army HQ", "type": "hq", "size": 1, "steps": 1, "hex": [72, 20], "dump": {"fuel": 800, "stores": 800}},
+    {"id": 205, "side": "cw", "name": "Armoured cars", "type": "recon", "size": 1, "steps": 3, "hex": [66, 21]},
+    {"id": 206, "side": "cw", "name": "Army tank brigade", "type": "armour", "size": 1, "steps": 10, "at": "Tobruk", "xp": "veteran"},
+    {"id": 207, "side": "cw", "name": "Reserve division", "type": "foot", "size": 3, "steps": 9, "at": "Mersa Matruh", "arrives": "1941-11-24", "entry": "Misheifa"}
+  ],
+  "objectives": [{"place": "Tobruk", "turn": 2, "end": 20}, {"place": "Bardia", "turn": 1, "end": 10}, {"place": "Sidi Rezegh", "turn": 1, "end": 10}, {"place": "Halfaya Pass", "turn": 1, "end": 5}],
+  "thresholds": [5, 15, 30],
+  "ports": {"Benghazi": {"fuel": 800, "stores": 1200}, "Tobruk": {"fuel": 300, "stores": 600}, "Alexandria": {"fuel": 8000, "stores": 12000}},
+  "tripoli": {"fuel": 1500, "stores": 2500, "pipeline": [[1200, 1800], [1200, 1800]]},
+  "forts": [[55, 10, 3, "cw"], [68, 17, 2, "axis"]],
+  "withdrawals": [{"date": "1941-11-28", "unit": 107}],
+  "replacements": [{"date": "1941-11-26", "unit": 201, "steps": 3}]
+}

@@ -4,7 +4,8 @@ This is the one rules document the engine follows and its tests cite, rule by
 rule (`DESIGN.md` §13). It is written from `DESIGN.md` and from history
 (`docs/SOURCES.md`), and from no other game (`docs/CLEAN_ROOM.md`).
 
-**Status: draft 1.** No number in it has been play-tested. Every constant is
+**Status: draft 2.** The engine in `engine/` follows it and the tests in
+`tests/test_engine_*.py` cite it. No number in it has been play-tested. Every constant is
 marked *from source* (a historical or design fact), *derived* (worked out here
 from a stated fact, and open to tuning) or *to be tuned* (a first guess).
 Historical figures marked **unverified**, **unsure** or **not known** have
@@ -532,8 +533,9 @@ The railhead schedule is scenario data. The dates found so far: Misheifa,
 November 1941; Capuzzo, February 1942; Belhamed, June 1942; lost in the
 retreat to Alamein that month; reopened to El Daba on 9 November 1942, Mersa
 Matruh on the 13th, Capuzzo on the 20th and Tobruk on 1 December (New Zealand
-official history, the engineers' volume, ch. 9). The map so far holds only
-the 1940 line to Mersa Matruh.
+official history, the engineers' volume, ch. 9). The map's railway runs from
+Alexandria through Mersa Matruh, Misheifa and Fort Capuzzo to Belhamed; a
+scenario names the place the line is open to.
 
 A warning for scenario work: along the coast road the map counts more hexes
 than the real road has tens of kilometres. Benghazi to El Alamein is 108
@@ -607,7 +609,8 @@ because of an enemy unit.
 
 In this sequence; the first failure gives the reply.
 
-1. The order name is one of the six. Else `E_ORDER`.
+1. The order is a record with a whole-number unit id and one of the six
+   order names. Else `E_ORDER`.
 2. The unit id is a unit of the scenario. Else `E_UNIT`.
 3. The unit belongs to the side submitting. Else `E_NOT_YOURS`.
 4. The unit's status is `on_map`. Else `E_NOT_ON_MAP`.
@@ -623,7 +626,8 @@ cohesion or neighbours.
 **8.4.2 Move.** In sequence:
 
 1. `to` is given; else `E_NO_DEST`.
-2. `to` and every `via` hex are on the map; else `E_OFF_MAP`.
+2. `to` and every `via` hex are hexes on the map (a pair of whole numbers
+   within it); else `E_OFF_MAP`.
 3. `via` has at most `VIA_MAX` hexes; else `E_VIA`.
 4. `to` is not the unit's hex; else `E_SAME_HEX`.
 5. `to` and every `via` hex are passable; else `E_IMPASSABLE`.
@@ -637,11 +641,11 @@ the unit goes as far as the turn allows.
 - the unit is not an HQ; else `E_HQ`;
 - the unit's cohesion is at least `ATTACK_MIN`; else `E_COHESION`.
 
-**8.4.4 Road march.** The checks of 8.4.2, and before them:
+**8.4.4 Road march.** The checks of 8.4.2, with two more:
 
-- the unit is a vehicle; else `E_FOOT`;
-- the unit's hex, `to` and every `via` hex are each on a road or track
-  link; else `E_NOT_ON_ROUTE`.
+- before them: the unit is a vehicle; else `E_FOOT`;
+- between checks 5 and 6: the unit's hex, `to` and every `via` hex are each
+  on a road or track link; else `E_NOT_ON_ROUTE`.
 
 The path of check 6 is the road-march path (9.2.3).
 
@@ -973,7 +977,8 @@ side's base hex (3.5.3); then by direction 0 to 5.
 **10.6.4 Through a full hex.** If no hex qualifies, but some adjacent hex
 fails only the stacking test, the unit may pass through such a hex to a hex
 beyond it that qualifies in full (counting as its whole retreat, of one hex or
-two). The through-hex is chosen by 10.6.3, then the hex beyond by 10.6.3.
+two). The through-hexes are tried in the order of 10.6.3; the first that has
+a qualifying hex beyond it is used, and the hex beyond is chosen by 10.6.3.
 
 **10.6.5 Nowhere to go.** If there is still no hex, the unit **surrenders**:
 it is destroyed.
@@ -981,7 +986,7 @@ it is destroyed.
 **10.6.6 Second hex.** A unit retreating two hexes takes the first by
 10.6.2–10.6.5 and then the second by 10.6.2–10.6.3 from its new hex. If no
 hex qualifies for the second, it stays after the first; it does not
-surrender.
+surrender. The second hex is never its battle hex.
 
 **10.6.7 Order.** Retreats are taken one at a time, against the positions as
 they then stand: battles in standard order of battle hex; within a battle,
@@ -1101,8 +1106,8 @@ fortification at level 1.
 **11.3.3 Dig in.** If one or more combat units ordered `dig_in` are in a hex
 and did not retreat this turn, the lowest-id one that holds at least
 `size × DIG_STORES` tonnes of stores pays that, and the hex's fortification
-rises by one level, to at most `FORT_MAX`. If none can pay, nothing is paid
-and nothing is built.
+rises by one level. If none can pay, or the level is already `FORT_MAX`,
+nothing is paid and nothing is built.
 
 **11.3.4** A hex gains at most one level a turn.
 
@@ -1131,8 +1136,8 @@ the order withdrawals, replacements, arrivals, and within each by unit id.
 
 **12.2 Withdrawal.** The unit, if on the map, is removed wherever it is and
 whatever it is doing; its status becomes `withdrawn`. It does not count as
-destroyed. An HQ's dump is lost (6.11.4). A unit already destroyed is not
-affected.
+destroyed. What it holds, and an HQ's dump, are lost (6.11.4). A unit that
+has not yet arrived never does. A unit already destroyed is not affected.
 
 **12.3 Replacement.** The unit, if on the map and traced, gains the steps, up
 to its maximum. Otherwise the replacement is lost.
@@ -1140,9 +1145,9 @@ to its maximum. Otherwise the replacement is lost.
 **12.4 Arrival.** The unit arrives with full fuel and stores and the cohesion
 the scenario gives, at the first of these that is possible:
 
-1. its entry hex, if its side owns the place there (or the hex is its side's
-   base hex), no enemy unit is in it, and the stacking limit allows;
-2. the nearest hex within `ARRIVE_RADIUS` of the entry hex (1.4, then standard
+1. its entry hex, if its side owns every place there (or the hex is its
+   side's base hex), no enemy unit is in it, and the stacking limit allows;
+2. the nearest other hex within `ARRIVE_RADIUS` of the entry hex (1.4, then standard
    hex order) that is passable, holds no enemy unit, is not in an enemy zone
    of control, and is within the stacking limit;
 3. its side's base hex, by the same tests as 1, then its neighbours by 2;
@@ -1251,9 +1256,9 @@ asserted after every turn of every test game.
   fuel is 0.
 - **I-8** No stock (port, Tripoli, pipeline, dump) is negative.
 - **I-9 Supply is conserved.** For each side: the starting stocks and
-  holdings, plus all it has landed, equal its present stocks, pipeline, dumps
-  and unit holdings, plus all its units have spent, plus all burnt, plus all
-  lost.
+  holdings and what arriving units brought, plus all it has landed, equal its
+  present stocks, pipeline, dumps and unit holdings, plus all its units have
+  spent, plus all burnt, plus all lost.
 - **I-10** In each Supply phase, a side's lift used is at most its lift, and
   the tonnes issued at the railhead are at most `RAIL_CAP`.
 - **I-11** What a side's units draw in a Supply phase is at most what its
