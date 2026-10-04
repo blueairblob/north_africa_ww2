@@ -77,22 +77,37 @@ def test_join_in_the_same_hex_is_at_once_and_the_group_keeps_its_order():       
     assert [u[i]["group"] for i in (TANKS, RIFLES, GUNS)] == [TANKS] * 3
 
 
-def test_a_unit_cannot_join_a_stranger_itself_or_its_own_group():                # 20.2.3
+def test_units_of_different_divisions_can_form_a_group_within_the_stacking_limit():   # 20.2.1, 20.1.4
+    sc, state = start(division() + [unit(120, "axis", "foot", [70, 26])])
+    state, replies = turn(sc, state, axis=[{"unit": 120, "order": "join", "with": HQ}])
+    u = by_id(state)
+    assert replies["axis"][0]["ok"] and u[120]["hex"] == [70, 24] and u[120]["group"] == HQ
+    assert invariants.check(state, GMAP) == []
+    state, _ = turn(sc, state, axis=[move(HQ, [70, 22])])
+    assert {tuple(x["hex"]) for x in state["units"]} == {(70, 22)}               # the made-up force moves as one
+
+
+def test_a_unit_cannot_join_the_enemy_itself_or_its_own_group():                 # 20.2.3
     sc, state = start(division() + [unit(120, "axis", "foot", [70, 26]), unit(201, "cw", "foot", "Tobruk")])
-    for who, other in ((120, HQ), (HQ, 120), (HQ, HQ), (HQ, TANKS), (HQ, 201), (HQ, 999), (HQ, None)):
+    for who, other in ((HQ, HQ), (HQ, TANKS), (HQ, 201), (HQ, 999), (HQ, None)):
         _, _, replies = orders.check(state, GMAP, "axis", {"orders": [{"unit": who, "order": "join", "with": other}], "air": "support"})
         assert replies[0]["code"] == "E_JOIN", (who, other)
 
 
-def test_a_group_with_a_man_on_foot_cannot_road_march_and_keeps_to_his_pace():   # 20.2.6
-    gambut = list(GMAP.places["Gambut"]["hex"])
+def test_men_on_foot_march_the_road_and_a_group_with_them_goes_at_their_rate():   # 8.4.4, 9.3, 20.2.6
+    gambut, bardia = list(GMAP.places["Gambut"]["hex"]), list(GMAP.places["Bardia"]["hex"])
     units = [unit(HQ, "axis", "hq", gambut, steps=1), unit(TANKS, "axis", "armour", gambut, parent=HQ),
-             unit(RIFLES, "axis", "foot", gambut, parent=HQ)]
+             unit(RIFLES, "axis", "foot", gambut, parent=HQ), unit(120, "axis", "foot", "Tobruk"), unit(121, "axis", "foot", "Derna")]
     sc, state = start(units)
-    _, _, replies = orders.check(state, GMAP, "axis", {"orders": [move(HQ, list(GMAP.places["Bardia"]["hex"]), "road_march")], "air": "support"})
-    assert replies[0]["code"] == "E_FOOT"
-    state, _ = turn(sc, state, axis=[move(HQ, list(GMAP.places["Bardia"]["hex"]))])
-    assert S.distance(tuple(by_id(state)[TANKS]["hex"]), tuple(gambut)) <= 4      # sixteen MP between them
+    tobruk = tuple(GMAP.places["Tobruk"]["hex"])
+    given = [move(HQ, bardia, "road_march"), move(120, gambut, "road_march"), move(121, list(tobruk))]
+    state, replies = turn(sc, state, axis=given)
+    u = by_id(state)
+    assert all(r["ok"] for r in replies["axis"])
+    road = [tuple(h) for h in orders.paths.least_path(GMAP, tobruk, tuple(gambut), "foot_march")]
+    assert tuple(u[120]["hex"]) == road[4]                                       # five road hexes: sixteen MP at three each
+    assert u[TANKS]["hex"] == u[RIFLES]["hex"] and S.distance(tuple(u[TANKS]["hex"]), tuple(gambut)) <= 5    # the tanks keep his pace
+    assert orders.paths.least_path(GMAP, (70, 24), (72, 24), "foot_march") is None                          # no marching in the desert
 
 
 def test_a_group_out_of_fuel_stops_whole():                                      # 20.2.6
@@ -131,3 +146,11 @@ def test_morale_has_a_ceiling_from_supply_strength_and_its_own_hq():            
     S.unit(state, 114)["stores"] = 300
     state, _ = turn(sc, state, axis=[{"unit": 114, "order": "rest"}])
     assert by_id(state)[114]["cohesion"] == 50                                   # ...and rest cannot lift it above
+
+
+def test_a_group_follows_up_as_one_with_its_hq():                                # 20.2.7, 10.7
+    sc, state = start(division((70, 24)) + [unit(201, "cw", "foot", [70, 25], steps=2)])
+    state, _ = turn(sc, state, axis=[{"unit": HQ, "order": "attack", "to": [70, 25]}])
+    u = by_id(state)
+    assert [u[i]["hex"] for i in (HQ, TANKS, RIFLES, GUNS)] == [[70, 25]] * 4     # the HQ went in with them
+    assert [u[i]["group"] for i in (HQ, TANKS, RIFLES, GUNS)] == [HQ] * 4 and invariants.check(state, GMAP) == []

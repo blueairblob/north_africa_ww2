@@ -47,7 +47,14 @@ Click one of your units, then click where it should go, or an enemy to attack
 it. The order bar under the map has the six orders, the supply and zones
 overlays and End turn; each has a key. With the keyboard alone:
 press M, A or R, choose the hex with the arrow keys and press Enter. The mouse
-wheel zooms at the pointer, dragging moves the map. A division's units move and fight as one group until you split one off: click it in
+wheel zooms at the pointer, dragging moves the map, and with a unit taken up
+the map scrolls when the pointer reaches its edge. Layers, in the map's
+corner, shows supply, zones and the key. Men on foot March where vehicles
+Travel: by road or track only, a little faster than across country. A greyed button says why when pointed at, and
+pressing a unit's own lit order takes it back. After an order the unit is let go; Next unit takes up the next one waiting and
+brings it to the middle. A right click on your own units opens a menu to choose
+one, group the whole stack or split a group up, at once; a stack of units from more
+than one division is a Special Army Group, and the pencil by a group's name renames it. A division's units move and fight as one group until you split one off: click it in
 the panel's list and order it, or press Split. Join sends a unit back to its
 division, and Recall, on an HQ, calls them all in. An order stands from turn to turn until it is done,
 and the screen steps through the units that are waiting for one. After End

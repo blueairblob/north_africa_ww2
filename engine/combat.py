@@ -231,10 +231,13 @@ def combat_phase(state, gmap, ctx):
         if not battle["fought"] or B.occupied(state).get(battle["hex"]) == battle["defenders"][0]["side"]:
             continue
         for u in battle["attackers"]:
-            if (u["status"] == "on_map" and u["id"] not in ctx["retreated"]
-                    and B.room(S.at(state).get(battle["hex"], []), u)):
-                B.enter(state, u, battle["hex"], ctx["entered"])             # 10.7.2
-                S.log(state, "advanced", side=u["side"], unit=u["id"], to=list(battle["hex"]))
+            if u["status"] != "on_map" or u["id"] in ctx["retreated"] or tuple(u["hex"]) == battle["hex"]:
+                continue
+            units = [v for v in S.party(state, u) if v["hex"] == u["hex"] and v["id"] not in ctx["retreated"]]
+            if B.room(S.at(state).get(battle["hex"], []), units):            # its group goes with it, HQ and all (20.2.7)
+                for v in units:
+                    B.enter(state, v, battle["hex"], ctx["entered"])         # 10.7.2
+                    S.log(state, "advanced", side=v["side"], unit=v["id"], to=list(battle["hex"]))
     B.regroup(state)                                                         # 20.2.8
     B.settle_owners(state, gmap)                                             # 10.7.3
 

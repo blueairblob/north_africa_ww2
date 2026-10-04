@@ -27,7 +27,7 @@ SUPPLY, REACH, REACH_FULL, SHORT = (24, 98, 170), (70, 140, 210, 34), (70, 140, 
 ZOC_OWN, ZOC_FOE, UNSEEN = (40, 110, 200, 50), (210, 50, 40, 70), (60, 52, 40, 100)
 GOOD, POOR, FUEL, STORES = (60, 150, 70), (200, 60, 40), (150, 110, 40), (40, 100, 180)
 BUTTON, BUTTON_ON, BUTTON_GO = (222, 210, 182), (255, 226, 60), (120, 170, 110)
-ORDER_KEY = {"move": "M", "attack": "A", "hold": "H", "dig_in": "D", "road_march": "R", "rest": "T", "join": "J"}
+ORDER_KEY = {"move": "M", "attack": "A", "hold": "H", "dig_in": "D", "road_march": "T", "rest": "R", "join": "J"}
 ORDER_NAME = {"move": "Move", "attack": "Attack", "hold": "Hold", "dig_in": "Dig in",
               "road_march": "Travel", "rest": "Rest", "join": "Join"}   # Travel is the road march of the rules
 ORDER_HELP = {"move": "go to a hex across country", "attack": "go there and attack what you meet",
@@ -41,11 +41,26 @@ STRENGTH = {"armour": (10, "tanks"), "motorised": (800, "men"), "foot": (800, "m
             "recon": (15, "armoured cars")}
 MORALE = ("Very poor", "Poor", "Very low", "Low", "Fair", "Normal", "Good", "Very good", "Excellent")
 # the order bar: name, label, key shown
-BUTTONS = (("move", "Move", "M"), ("attack", "Attack", "A"), ("road_march", "Travel", "R"),
-           ("hold", "Hold", "H"), ("dig_in", "Dig in", "D"), ("rest", "Rest", "T"),
+BUTTONS = (("move", "Move", "M"), ("attack", "Attack", "A"), ("road_march", "Travel", "T"),
+           ("hold", "Hold", "H"), ("dig_in", "Dig in", "D"), ("rest", "Rest", "R"),
            ("join", "Join", "J"), ("split", "Split", "X"), ("recall", "Recall", "C"),
-           ("s", "Supply", "S"), ("z", "Zones", "Z"), ("done", "End turn", "Enter"))
+           ("next", "Next unit", "Space"), ("done", "End turn", "Enter"))
+LAYERS = (("s", "Supply", "S"), ("z", "Zones", "Z"), ("k", "Key", "K"))   # the map's layers, behind the button in its corner
+MARGIN = 46             # base-map pixels of paper shown beyond the map's edge, for its border
+HQ_STAFF = 300          # a headquarters' nominal strength in men, for show: it has one step in the rules
+STRONG, WORN, WEAK = (40, 90, 190), (214, 126, 24), (200, 40, 30)   # strength: under full, under 70%, under 50%
+PREVIEW = (70, 150, 255)                                           # the way being chosen: blue, like one ordered
+HAUL = (255, 214, 40)                                              # a supply haul: yellow
+BADGE = (255, 214, 40)                                             # the trouble badge on a counter
 ARM = ("armour", "motorised", "foot", "guns", "recon", "hq")       # which unit of a pile is shown on top
+
+
+def order_name(name, units=()):
+    """An order by the name the player sees: a road march is Travel for vehicles and March for
+    any group with men on foot."""
+    if name == "road_march" and any(u["type"] == "foot" for u in units):
+        return "March"
+    return ORDER_NAME[name]
 
 
 def morale(cohesion):
@@ -54,16 +69,51 @@ def morale(cohesion):
     return level, MORALE[level - 1]
 
 
+def strength_now(u):
+    """(now, at full, what) in real terms, or None for a unit whose strength is not known."""
+    if "steps" not in u:
+        return None
+    if u["type"] == "hq":
+        return HQ_STAFF, HQ_STAFF, "men"
+    if u.get("real"):
+        n, what, began = u["real"]
+        return n * u["steps"] // began, n, "armoured cars" if what == "cars" else what
+    each, what = STRENGTH[u["type"]]
+    return u["steps"] * each, u.get("max", u["steps"]) * each, what
+
+
+def strength_colour(u):
+    """Black at full strength, blue from 70%, orange from 50%, red below."""
+    now = strength_now(u)
+    pct = 100 if not now else now[0] * 100 // max(1, now[1])
+    return INK if pct >= 100 else STRONG if pct >= 70 else WORN if pct >= 50 else WEAK
+
+
+def strength_tip(u):
+    """The figures behind the word: "about 80 of 100 tanks (80%, 20 lost)"."""
+    now, full, what = strength_now(u)
+    if u["type"] == "hq":
+        return f"a headquarters: about {now} men, a nominal figure"
+    return f"about {now:,} of {full:,} {what} ({now * 100 // max(1, full)}%, {full - now:,} lost)"
+
+
 def strength(u):
     """A unit's strength in real terms, from its steps: "about 130 tanks"."""
-    if u["type"] == "hq" or "steps" not in u:
+    if "steps" not in u:
         return ""
+    if u["type"] == "hq":
+        return f"about {HQ_STAFF} men"
     if u.get("real"):                                    # the scenario's own figure, scaled by what is left (RULES 20.4.2)
         n, what, began = u["real"]
         what = "armoured cars" if what == "cars" else what
         return f"about {n * u['steps'] // began:,} {what}"
     each, what = STRENGTH[u["type"]]
     return f"about {u['steps'] * each:,} {what}"
+
+
+def fuel_words(hexes):
+    """How far the fuel goes: "300 km (30 hexes)". A hex is 10 km."""
+    return f"{hexes * 10:,} km ({count(hexes, 'hex', 'hexes')})"
 
 
 def count(n, one, many=None):

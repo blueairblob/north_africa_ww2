@@ -602,7 +602,10 @@ of up to `VIA_MAX` hexes to pass through in the order given.
 
 **8.1.4** Orders for a whole corps, and orders that stand from turn to turn
 until they are done, are conveniences of the screen. The engine receives one
-order per unit per turn.
+order per unit per turn. The screen shows a split, and a join of units already
+in one hex, as soon as it is ordered: the rules do both in the Orders phase,
+before anything moves (20.2.2, 20.2.4), so nothing in the game is changed by
+showing them early, and a game replays the same from its orders.
 
 ### 8.2 Submission
 
@@ -655,9 +658,9 @@ the unit goes as far as the turn allows.
 - the unit is not an HQ; else `E_HQ`;
 - the unit's cohesion is at least `ATTACK_MIN`; else `E_COHESION`.
 
-**8.4.4 Road march.** The checks of 8.4.2, with two more:
+**8.4.4 Road march.** Any unit may road march: vehicles drive the road and
+men on foot march it, more slowly (9.3). The checks of 8.4.2, with one more:
 
-- before them: the unit is a vehicle; else `E_FOOT`;
 - between checks 5 and 6: the unit's hex, `to` and every `via` hex are each
   on a road or track link; else `E_NOT_ON_ROUTE`.
 
@@ -684,7 +687,6 @@ and a fixed English sentence.
 | `E_NO_PATH` | There is no way there for this unit. |
 | `E_HQ` | A headquarters cannot do that. |
 | `E_COHESION` | The unit is too disorganised to attack. |
-| `E_FOOT` | Foot infantry cannot road march. |
 | `E_NOT_ON_ROUTE` | A road march must start, pass and end on a road or track. |
 | `E_AIR` | That is not an air mission; support is flown. |
 
@@ -733,15 +735,19 @@ steps along road and track links.
 
 The MP cost of a step into a passable hex:
 
-| Step | Vehicle, `move` or `attack` | Vehicle, `road_march` | Foot |
-| --- | --- | --- | --- |
-| along a road link | 4 | 2 | 4 |
-| along a track link | 4 | 3 | 4 |
-| otherwise, into desert or oasis | 4 | not allowed | 4 |
-| otherwise, into rough | 8 | not allowed | 4 |
-| crossing a pass, in addition | +2 | +2 | +2 |
-| crossing a cliff, in addition | not allowed | not allowed | +8 |
-| into a hex with an enemy fortification, in addition | +2 per level | +2 per level | +2 per level |
+| Step | Vehicle, `move` or `attack` | Vehicle, `road_march` | Foot, `move` or `attack` | Foot, `road_march` |
+| --- | --- | --- | --- | --- |
+| along a road link | 4 | 2 | 4 | 3 |
+| along a track link | 4 | 3 | 4 | 4 |
+| otherwise, into desert or oasis | 4 | not allowed | 4 | not allowed |
+| otherwise, into rough | 8 | not allowed | 4 | not allowed |
+| crossing a pass, in addition | +2 | +2 | +2 | +2 |
+| crossing a cliff, in addition | not allowed | not allowed | +8 | not allowed |
+| into a hex with an enemy fortification, in addition | +2 per level | +2 per level | +2 per level | +2 per level |
+
+A foot unit on a road march covers five road hexes a turn where it covers
+four across country: one cannot march in the open desert. Caught on the
+march it is as helpless as a column of lorries (10.4.4).
 
 Path-finding (9.2) ignores the fortification cost; it is paid when the step is
 taken.
@@ -1298,8 +1304,8 @@ asserted after every turn of every test game.
   spends more MP than its allowance.
 - **I-17** A side's view contains nothing listed in 14.8.
 - **I-18** No phase changes state outside its list in 5.1.
-- **I-19** Every group is two or more related units on the map in one hex,
-  led by the one with the lowest id.
+- **I-19** Every group is two or more units of one side on the map in one
+  hex, led by the one with the lowest id.
 
 I-10, I-11, I-15, I-16 and I-18 are about what happens inside a turn, so the
 engine notes any breach as the turn runs; the rest are checked on the state
@@ -1493,19 +1499,22 @@ units of one formation in a hex.
 
 ### 20.2 Groups
 
-**20.2.1** Related units in one hex may be a **group**. A group has one order
-and moves as one. Its **leader** is its member with the lowest id.
+**20.2.1** Units of one side in one hex may be a **group**, whether or not
+they are related: a division, or a force made up for the occasion from the
+units that are there. A group has one order and moves as one. Its **leader**
+is its member with the lowest id. Stacking (20.1.4) still limits a hex, and so
+a group, to the units of two formations.
 
-**20.2.2 Join** is a seventh order. It names a related unit that is on the
-map. If the two are in the same hex, they are grouped at once, in the Orders
+**20.2.2 Join** is a seventh order. It names a unit of the same side that is
+on the map. If the two are in the same hex, they are grouped at once, in the Orders
 phase, and the group then carries out the order of the unit joined.
 Otherwise the unit moves as under `move` towards the hex the other is in at
 the start of the Movement phase, and is grouped with it if they are in the
 same hex when the phase ends. Joining a unit that is in a group joins the
 group.
 
-**20.2.3** A join order naming a unit that is not related, not on the map, or
-the unit itself is rejected with `E_JOIN` ("That unit cannot join that
+**20.2.3** A join order naming a unit of the other side, one not on the map,
+one already in its group, or the unit itself is rejected with `E_JOIN` ("That unit cannot join that
 one.").
 
 **20.2.4 Split.** Any order may be marked `alone`. A unit given such an order
@@ -1524,13 +1533,14 @@ order.
 
 **20.2.6 A group moving.** Its allowance is the least of its members'. The
 cost of a step is the greatest of its members' costs for it, and a step any
-member cannot make the group cannot make. It may road march only if every
-member is a vehicle. Each vehicle pays its own fuel; if any member cannot pay
+member cannot make the group cannot make. On a road march a group with any
+member on foot goes at the foot rate. Each vehicle pays its own fuel; if any member cannot pay
 for a step, the group stops (out of fuel). For stacking it counts as its
 units: it enters a hex whole or is refused whole.
 
 **20.2.7 A group fighting.** Its members fight as units in one hex already do
-(10.1.1): they attack the same hex and defend together. A group retreats as
+(10.1.1): they attack the same hex and defend together. A group advances
+after combat as one, its HQ with it. A group retreats as
 one: the hex is chosen for its leader; if any member would go two hexes, all
 do; if there is no hex, all surrender.
 

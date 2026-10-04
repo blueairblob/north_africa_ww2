@@ -6,7 +6,10 @@ FOOT_CLIFF_COST = 8     # a foot unit crossing a cliff, in addition
 OPEN_COST = 4           # into desert or oasis; along any link for a vehicle not on a road march
 ROUGH_COST = 8          # a vehicle into rough, off a link
 
-VEHICLE, MARCH, FOOT, HAUL = "vehicle", "march", "foot", "haul"
+FOOT_ROAD_COST = 3      # a foot unit on a road march, along a road link
+FOOT_TRACK_COST = 4     # ...and along a track link: no faster than the open desert
+
+VEHICLE, MARCH, FOOT, HAUL, FOOT_MARCH = "vehicle", "march", "foot", "haul", "foot_march"
 
 
 def step_cost(gmap, a, b, hexside, mode):
@@ -22,6 +25,8 @@ def step_cost(gmap, a, b, hexside, mode):
         return OPEN_COST + extra
     if mode == MARCH:
         return None if link is None else link + extra
+    if mode == FOOT_MARCH:                               # on the march: by road or track, never across country
+        return None if link is None else (FOOT_ROAD_COST if link == 2 else FOOT_TRACK_COST) + extra
     if link is not None:
         return (link if mode == HAUL else OPEN_COST) + extra
     return (ROUGH_COST if gmap.rough(b) else OPEN_COST) + extra

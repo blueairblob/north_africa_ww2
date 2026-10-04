@@ -16,6 +16,7 @@ the destroyed burst, and the rest are seen to have held.
 """
 from engine.combat import COH_MIN
 from engine.movement import IMPULSES
+from engine.paths import FOOT, VEHICLE, least_path
 
 IMPULSE_MS = 110        # one impulse of movement
 MOVE_LEAD_MS = 500      # the map goes to a group of movers before they set off
@@ -80,7 +81,16 @@ def groups(tracks, cast, span):
     return out
 
 
-def script(before, after, span=None):
+def seen_way(gmap, kind, a, b):
+    """A way an enemy unit could have gone between two hexes it was seen in: the side is not
+    told its steps, but it must not be shown driving through a cliff. (impulse, hex) points."""
+    way = gmap and least_path(gmap, a, b, FOOT if kind == "foot" else VEHICLE)
+    if not way:
+        return [(0, a), (IMPULSES, b)]
+    return [(0, a)] + [((n + 1) * IMPULSES // len(way), h) for n, h in enumerate(way)]
+
+
+def script(before, after, span=None, gmap=None):
     """The scenes of the turn between two views of one side. span is the columns and rows of
     hexes the screen has in view, so that what moves together can be shown together."""
     events = after["events"]
@@ -103,7 +113,7 @@ def script(before, after, span=None):
     for i, e in foes.items():                            # an enemy seen before and after, or met in battle
         end = fought_at.get(i) or (tuple(now_foes[i]["hex"]) if i in now_foes else None)
         if end and end != tuple(e["hex"]):
-            tracks[i] = {"points": [(0, tuple(e["hex"])), (IMPULSES, end)], "march": False, "glide": True}
+            tracks[i] = {"points": seen_way(gmap, e["type"], tuple(e["hex"]), end), "march": False, "glide": True}
     place = {i: tuple(u["hex"]) for i, (u, _) in cast.items() if u.get("hex")}
     for i, t in tracks.items():
         place[i] = t["points"][-1][1]
@@ -139,8 +149,8 @@ def script(before, after, span=None):
 class Playback:
     """The script on a clock. stage(t) says what to draw at t milliseconds; cues(t0, t1) says
     which sounds begin between two times."""
-    def __init__(self, before, after, span=None):
-        self.script = script(before, after, span)
+    def __init__(self, before, after, span=None, gmap=None):
+        self.script = script(before, after, span, gmap)
         self.timeline, t = [], 0
         for scene in self.script["scenes"]:
             if scene["kind"] == "move":

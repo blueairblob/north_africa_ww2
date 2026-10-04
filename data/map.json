@@ -821,6 +821,15 @@
     {"name": "Gulf of Sidra", "lat": 31.1, "lon": 19.45, "kind": "sea"},
     {"name": "Gulf of Bomba", "lat": 32.62, "lon": 23.75, "kind": "sea"}
   ],
+  "shipping": [
+    {"name": "Alexandria - Tobruk", "line": [[31.2, 29.9], [31.55, 29.5], [31.9, 28.3], [32.25, 26.6], [32.45, 25.2], [32.35, 24.3], [32.08, 23.96]]},
+    {"name": "to Mersa Matruh", "line": [[31.9, 28.3], [31.7, 27.6], [31.35, 27.24]]},
+    {"name": "to Bardia", "line": [[32.45, 25.2], [32.0, 25.35], [31.76, 25.08]]},
+    {"name": "Tobruk - Derna", "line": [[32.08, 23.96], [32.35, 23.9], [32.95, 23.2], [32.98, 22.9], [32.76, 22.64]]},
+    {"name": "Derna - Benghazi", "line": [[32.76, 22.64], [33.0, 22.5], [33.03, 21.6], [32.95, 20.4], [32.5, 19.85], [32.12, 20.08]]},
+    {"name": "Benghazi - Italy", "line": [[32.5, 19.85], [33.04, 19.3]]},
+    {"name": "Benghazi - Tripoli", "line": [[32.12, 20.08], [32.25, 19.75], [31.3, 19.15], [30.95, 18.95]]}
+  ],
   "places": [
     {"name": "El Agheila", "kind": "town", "col": 3, "row": 30, "lat": 30.26, "lon": 19.2, "approx": true},
     {"name": "Mersa Brega", "kind": "town", "col": 7, "row": 29, "lat": 30.41, "lon": 19.58},

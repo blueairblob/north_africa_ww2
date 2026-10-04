@@ -246,7 +246,7 @@ order).
 | **Attack** | move and attack what you meet |
 | **Hold** | stay and defend; begins digging in |
 | **Dig in** | spend the turn building fortification and minefields |
-| **Road march** | fast along roads and tracks, but vulnerable if caught |
+| **Road march** | fast along roads and tracks, but vulnerable if caught. Shown as *Travel* for vehicles and *March* for men on foot, who gain a hex a turn by it; nobody marches in the open desert |
 | **Rest** | no move, recover cohesion and draw supply |
 
 A whole corps can be ordered at once (its divisions keep formation). That is the
@@ -317,7 +317,21 @@ lopsided, and situations the rules do not cover.
   dark grey, Italian green. Strength is told in real terms (tanks, men), and
   cohesion as morale in nine named levels.
 - Overlays: **S** supply, **Z** zones of control and fog of war, **F** the front
-  line history.
+  line history; a Layers button in the map's corner lists them.
+- The unit taken up is lifted and ringed with a pulsing border. A counter
+  carries a badge when its unit is in trouble: a drop for no fuel, otherwise
+  an exclamation mark. Orders that do not apply are greyed and say why.
+  Reports, in the panel, are what the general is told: at most one for each
+  unit or group and only what matters (driven back, heavy losses in tanks or
+  men, repulsed, the enemy driven back, supply lost, out of fuel, morale low,
+  under half strength, enemy in contact), each with the unit's picture; a
+  click goes to it.
+- Any units of one side in a hex can be grouped, not only a division's: a
+  right click on a stack offers to group it or split it, and it shows at
+  once. A group of units from more than one division is called a Special Army
+  Group, numbered; the player can give any group a name of his own.
+- In the playback an enemy seen to move is shown going by ground it could
+  cross, never through an escarpment; its real steps are not known.
 - Mouse: click a unit, click a destination. Keyboard for everything too: an
   order key, the arrow keys to move a hex cursor, Enter to confirm. The unit
   being ordered is brought to the middle of the map. The six orders, the

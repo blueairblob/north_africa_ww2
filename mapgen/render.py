@@ -23,6 +23,7 @@ COLOURS = {build.SEA: (186, 211, 224), build.DESERT: (236, 219, 176), build.ROUG
            build.OASIS: (150, 190, 112)}
 STIPPLE = {build.SAND: (176, 128, 52), build.DEPRESSION: (104, 116, 104)}
 SCARP, ROAD, TRACK, RAIL, FRONTIER = (116, 58, 26), (156, 34, 30), (92, 72, 52), (25, 25, 25), (70, 66, 60)
+SHIPPING = (84, 124, 156)
 PLACE = {"port": (200, 40, 40), "town": (40, 40, 40), "oasis": (40, 130, 60), "site": (250, 250, 250)}
 LIGHT = 26.0                    # the slope (m per km) that takes the relief shading to full strength
 SHADE = 0.42                    # how much darker or lighter a slope can be
@@ -176,7 +177,11 @@ def draw_map(m, scale, lettering=None):
     if shade is not None:                                  # the lie of the land, under the hexes
         rgb = np.asarray(img, dtype=np.float32)
         lit = np.clip(rgb * shade[:, :, None], 0, 255)
-        rgb = np.where(np.asarray(masks[build.SEA])[:, :, None] > 0, rgb, lit)
+        land = np.zeros((h, w), dtype=bool)                # shade the land only: not the sea, nor the edge beyond the hexes
+        for t in COLOURS:
+            if t != build.SEA:
+                land |= np.asarray(masks[t]) > 0
+        rgb = np.where(land[:, :, None], lit, rgb)
         img = Image.fromarray(rgb.astype(np.uint8))
     for t, colour in STIPPLE.items():
         _stipple(img, masks[t], colour, scale, dash=t == build.DEPRESSION)
@@ -196,6 +201,8 @@ def draw_map(m, scale, lettering=None):
         else:
             d.text(xy, label["name"], font=_font(7.5 * ls, "Serif-Italic"), fill=(96, 66, 36), anchor="mm",
                    stroke_width=2, stroke_fill=HALO)
+    for lane in m.get("shipping", []):                     # the sea lanes between the ports, as dashes
+        _dashes(d, [at(lat, lon) for lat, lon in lane["line"]], 5 * scale, 4 * scale, fill=SHIPPING, width=max(1, int(0.6 * scale)))
     if m.get("frontier"):
         _frontier(d, [at(lat, lon) for lat, lon in m["frontier"]], scale)
     for c, r, k, high in m["escarpments"]:

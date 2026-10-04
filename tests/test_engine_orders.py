@@ -26,7 +26,7 @@ REJECTED = [                                                         # rule, ord
     ("8.4.2", {"unit": 101, "order": "move", "to": [83, 43]}, "E_NO_PATH"),     # land cut off by the depression
     ("8.4.3", {"unit": 103, "order": "attack", "to": [71, 24]}, "E_HQ"),
     ("8.4.3", {"unit": 104, "order": "attack", "to": [56, 11]}, "E_COHESION"),
-    ("8.4.4", {"unit": 102, "order": "road_march", "to": [71, 24]}, "E_FOOT"),
+    ("8.4.4", {"unit": 102, "order": "road_march", "to": [71, 24]}, "E_NOT_ON_ROUTE"),   # foot too must keep to the road
     ("8.4.4", {"unit": 101, "order": "road_march", "to": [71, 24]}, "E_NOT_ON_ROUTE"),
     ("8.4.4", {"unit": 106, "order": "road_march", "to": OPEN}, "E_NOT_ON_ROUTE"),
 ]

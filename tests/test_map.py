@@ -161,3 +161,14 @@ def test_a_railway_makes_no_pass(m):
                 on_roads.add(H.side(*a, d))
     named = {(p["col"], p["row"], p["side"]) for p in m["passes"] if p["name"]}
     assert passes <= on_roads | named
+
+
+def test_the_sea_lanes_keep_to_the_sea(m):
+    assert len(m["shipping"]) >= 5
+    for lane in m["shipping"]:
+        ends = {geo.hex_of(lon, lat) for lat, lon in (lane["line"][0], lane["line"][-1])}      # ports are on land
+        for (a, b), (c, d) in zip(lane["line"], lane["line"][1:]):
+            for k in range(21):
+                col, row = geo.hex_of(b + (d - b) * k / 20, a + (c - a) * k / 20)
+                at_sea = not geo.in_map(col, row) or m["terrain"][row][col] == build.SEA
+                assert at_sea or (col, row) in ends, (lane["name"], col, row)

@@ -128,7 +128,9 @@ def test_zooming_keeps_the_point_under_the_mouse_and_never_leaves_the_map():
     app.zoom(0.001)                                                # as far out as it goes: the whole map
     w, h = app.map_rect().size
     bw, bh = app.base_size()
-    assert app.ui.zoom == app.zoom_min() and app.ui.cam[0] + w / app.ui.zoom <= bw + 1 and app.ui.cam[1] + h / app.ui.zoom <= bh + 1
+    margin = theme.MARGIN + 1                                      # the paper round the map's border may show, no more
+    assert app.ui.zoom == app.zoom_min() and -margin <= app.ui.cam[0] and -margin <= app.ui.cam[1]
+    assert app.ui.cam[0] + w / app.ui.zoom <= bw + margin and app.ui.cam[1] + h / app.ui.zoom <= bh + margin
     app.zoom(1000)
     assert app.ui.zoom == theme.ZOOM_MAX
 
@@ -155,8 +157,8 @@ def test_keys_and_clicks_give_orders():
     app.centre_on((59, 11))
     app.click(spot((59, 11)))
     assert app.ui.selected == 101                                  # clicked 15th Panzer
-    app.key(pygame.K_t)
-    assert app.session.order_of(101)["order"] == "rest" and app.ui.selected == 102      # and on to the next
+    app.key(pygame.K_r)
+    assert app.session.order_of(101)["order"] == "rest" and app.ui.selected is None     # the order given, it lets go
     app.click(spot((59, 11)))
     app.click(spot((60, 12)))                                      # a plain click on open ground: move
     assert app.session.order_of(101) == {"unit": 101, "order": "move", "to": [60, 12]}
@@ -168,7 +170,9 @@ def test_keys_and_clicks_give_orders():
     app.click(spot((57, 11)))
     app.click(layout.buttons(app.size)["dig_in"].center)           # the order bar
     assert app.session.order_of(109)["order"] == "dig_in"
-    app.click(layout.buttons(app.size)["s"].center)
+    app.click(layout.layers(app.size, False)["layers"].center)      # the Layers button in the map's corner
+    assert app.ui.layers_open and app.ui.overlays == set()
+    app.click(layout.layers(app.size, True)["s"].center)
     assert app.ui.overlays == {"s"}
     app.key(pygame.K_3)
     assert app.session.air["axis"] == "recon"
@@ -200,10 +204,13 @@ def test_the_screen_steps_through_the_units_that_wait():
     app = App(Session(crusader(), GMAP, humans=["axis"], scripted={"cw": players.DoNothing(GMAP)}))
     assert app.ui.selected == 101                                 # the first unit is taken up for you
     app.key(pygame.K_h)
-    assert app.session.order_of(101)["order"] == "hold" and app.ui.selected == 102      # ...then the next
+    assert app.session.order_of(101)["order"] == "hold" and app.ui.selected is None and "press Next unit" in app.ui.message
+    app.click(layout.buttons(app.size)["next"].center)              # Next unit: on to the one after, taken up and lit
+    assert app.ui.selected == 102 and app.target is not None and "waits for an order" in app.ui.message
     for _ in range(17):
         app.key(pygame.K_h)
-    assert app.session.waiting_units() == [] and "End turn" in app.ui.message
+        app.key(pygame.K_SPACE)
+    assert app.session.waiting_units() == [] and "End turn" in app.ui.message and app.ui.selected is None
     app.key(pygame.K_RETURN)
     assert app.session.state["turn"] == 2 and app.session.waiting_units() == []          # the orders stand
 
@@ -447,8 +454,12 @@ def test_a_keyboard_only_player_can_choose_a_destination_and_enter_does_not_end_
     assert "Move here" in app.ui.message                             # the way is previewed as with the mouse
     keys(app, "RETURN")
     assert app.session.pending["cw"][201] == {"unit": 201, "order": "move", "to": [66, 21]}
-    assert app.session.state["turn"] == 1 and app.ui.mode is None and app.ui.selected == 202
-    keys(app, "a", "LEFT", "ESCAPE")                                 # Escape cancels
+    assert app.session.state["turn"] == 1 and app.ui.mode is None and app.ui.selected is None
+    keys(app, "SPACE")
+    assert app.ui.selected == 202                                    # Next unit: the one after the last ordered
+    keys(app, "a")                                                   # no enemy within reach: Attack is greyed
+    assert app.ui.mode is None and "No enemy in sight" in app.ui.message
+    keys(app, "m", "LEFT", "ESCAPE")                                 # Escape cancels
     assert app.ui.mode is None and 202 not in app.session.pending["cw"]
     keys(app, "m", "RETURN")                                         # Enter with no hex chosen: nothing happens
     assert app.session.state["turn"] == 1 and "Choose the hex" in app.ui.message
@@ -479,11 +490,11 @@ def test_the_unit_taken_up_for_orders_is_brought_to_the_middle():
     pygame.init()
     app = App(Session(crusader(), GMAP, humans=["cw"], scripted={"axis": players.DoNothing(GMAP)}))
     middle = app.map_rect().center
-    for _ in range(8):                                               # the automatic step after each order
+    for _ in range(8):                                               # the first at the start, then each by Next unit
         settle(app)
         x, y = app.spot(tuple(app.session.unit(app.ui.selected)["hex"]))
         assert abs(x - middle[0]) <= 2 and abs(y - middle[1]) <= 2, app.ui.selected
-        keys(app, "h")
+        keys(app, "h", "SPACE")
     keys(app, "TAB")                                                 # and Tab does the same
     assert app.target is not None                                    # by a glide, not a jump
     settle(app)
@@ -548,13 +559,13 @@ def test_one_of_a_thing_is_not_plural():
     app = App(s)
     keys(app, "h")
     assert "1 more to order" in app.ui.message
-    app.ui.selected = None
     app.begin_message()
     assert app.ui.message == "1 unit waits for orders."
     keys(app, "RETURN")
     assert app.ui.message.startswith("1 unit still waits for orders and will hold its ground.")
     told = describe({"event": "battle", "hex": [55, 10], "lost": {"1": 1, "2": 0}, "retreated": False}, s)
-    assert told == "Battle at Tobruk: 1 step lost"
+    assert told == "Battle at Tobruk" and "step" not in s.lost_words({"type": "armour", "real": [100, "tanks", 10]}, 2)
+    assert s.lost_words({"type": "armour", "real": [100, "tanks", 10]}, 2) == "about 20 tanks"
 
 
 def test_an_order_that_ends_is_told_as_a_sentence():
@@ -669,14 +680,16 @@ def test_morale_is_told_in_nine_named_levels_and_strength_in_real_terms():
     assert len(theme.MORALE) == 9
     assert theme.strength({"type": "armour", "steps": 13}) == "about 130 tanks"
     assert theme.strength({"type": "foot", "steps": 9}) == "about 7,200 men"
-    assert theme.strength({"type": "hq", "steps": 1}) == "" and theme.strength({"type": "foot"}) == ""   # an enemy unseen
+    assert theme.strength({"type": "hq", "steps": 1}) == "about 300 men"        # an HQ: a nominal figure
+    assert theme.strength({"type": "foot"}) == ""                                # an enemy not seen close
 
 
 def test_the_orders_are_in_the_panel_and_travel_is_the_road_march():
     area, where = layout.areas(theme.WINDOW), layout.buttons(theme.WINDOW)
-    assert len(where) == 12 and all(area["panel"].contains(r) for r in where.values())
+    assert len(where) == 11 and all(area["panel"].contains(r) for r in where.values())
     assert not any(a.colliderect(b) for n, a in where.items() for m, b in where.items() if n < m)
-    assert theme.ORDER_NAME["road_march"] == "Travel" and ("road_march", "Travel", "R") in theme.BUTTONS
+    assert theme.ORDER_NAME["road_march"] == "Travel" and ("road_march", "Travel", "T") in theme.BUTTONS
+    assert ("rest", "Rest", "R") in theme.BUTTONS
     pygame.init()
     app = App(Session(crusader(), GMAP, humans=["axis"], scripted={"cw": players.DoNothing(GMAP)}))
     app.click(where["road_march"].center)
@@ -708,7 +721,7 @@ def test_the_way_shows_how_far_the_fuel_goes():
     app = App(s)
     app.ui.hover = (76, 24)
     app.paint(pygame.Surface(theme.WINDOW))
-    assert "about 2 turns" in app.ui.message and "fuel gives out after 5 hexes" in app.ui.message
+    assert "about 2 turns" in app.ui.message and "fuel gives out after 50 km (5 hexes)" in app.ui.message
     assert s.preview(101, "move", (68, 24))["range"] == 5 and "foot" not in app.ui.message
 
 
@@ -740,6 +753,7 @@ def test_a_division_is_one_pile_on_the_map_and_one_card_in_the_panel():
     app = App(Session(regiments(), GMAP, humans=["axis"], scripted={"cw": players.DoNothing(GMAP)}))
     s = app.session
     assert s.waiting_units()[:4] == [101, 102, 103, 104] and 111 not in s.waiting_units()   # a group waits as one
+    app.ui.selected = None                                          # nothing taken up: a click takes up what is there
     app.centre_on((59, 11))
     app.click(app.spot((59, 11)))
     assert app.ui.selected == 110 and [m["id"] for m in s.members(110)] == [110, 111, 112, 113, 114]
@@ -754,18 +768,19 @@ def test_split_takes_a_unit_out_of_its_group_and_join_puts_it_back():
     pygame.init()
     app = App(Session(regiments(), GMAP, humans=["axis"], scripted={"cw": players.DoNothing(GMAP)}))
     s = app.session
+    app.ui.selected = None
     app.centre_on((59, 11))
     app.click(app.spot((59, 11)))
     app.paint(pygame.Surface(theme.WINDOW))
     app.click(layout.buttons(app.size)["split"].center)
     assert "list on the right" in app.ui.message                                 # nothing chosen from the group yet
-    app.click(app.spot((59, 11)))
     app.paint(pygame.Surface(theme.WINDOW))
     app.click(app.painter.member_rects[111].center)                              # the panzer regiment, by itself
     assert app.ui.selected == 111 and app.ui.alone
     keys(app, "m")
     app.click(app.spot((61, 12)))                                                # off to Gambut alone
     assert s.pending["axis"][111] == {"unit": 111, "order": "move", "to": [61, 12], "alone": True} and not app.ui.alone
+    assert s.unit(111)["group"] is None and [m["id"] for m in s.members(110)] == [110, 112, 113, 114]   # split at once
     s.done()
     assert s.unit(111)["hex"] == [61, 12] and s.unit(111)["group"] is None
     assert [m["id"] for m in s.members(110)] == [110, 112, 113, 114]
@@ -773,8 +788,8 @@ def test_split_takes_a_unit_out_of_its_group_and_join_puts_it_back():
     keys(app, "j")
     assert app.ui.mode == "join"
     app.centre_on((59, 11))
-    app.click(app.spot((57, 11)))                                                # Bologna is there: not its division
-    assert "no unit of the same division" in app.ui.message and app.ui.mode == "join"
+    app.click(app.spot((58, 12)))                                                # nobody of yours is there
+    assert "no other unit of yours" in app.ui.message and app.ui.mode == "join"
     app.click(app.spot((59, 11)))
     assert s.pending["axis"][111] == {"unit": 111, "order": "join", "with": 110}
     s.done()
@@ -797,4 +812,330 @@ def test_recall_brings_a_division_in_to_its_hq():
     assert s.unit(142)["group"] == 140 and s.unit(142)["hex"] == s.unit(140)["hex"]
     app.ui.selected = 140
     keys(app, "c")
-    assert "with it already" in app.ui.message
+    assert "away from it" in app.ui.message                                      # nothing left to recall: the button says why
+
+
+# ---- the owner's second list -------------------------------------------------------------
+
+def test_a_button_that_cannot_be_used_says_why():                    # 3a, 3c
+    pygame.init()
+    s = Session(regiments(), GMAP, humans=["axis"], scripted={"cw": players.DoNothing(GMAP)})
+    assert s.can(170, "road_march")[1].startswith("It is not on a road or track")                  # Brescia, off the road
+    from helpers import scenario, unit
+    desert = Session(scenario([unit(101, "axis", "armour", [70, 24]), unit(201, "cw", "foot", "Alexandria")]), GMAP, humans=["axis"])
+    assert desert.can(101, "road_march") == (False, "It is not on a road or track: one cannot march in the desert.")
+    assert s.can(110, "road_march") == (True, "")                                                  # 15. Panzer, on the coast road
+    assert desert.can(101, "attack") == (False, "No enemy in sight within its reach.")             # nobody for miles
+    assert s.can(200, "attack") == (True, "")                                                      # Bologna, facing Tobruk
+    assert s.can(101, "attack")[1] == "A headquarters does not attack." and s.can(101, "dig_in")[0] is False
+    assert s.can(107, "join") == (True, "")                                                        # any unit of yours may be joined
+    assert s.can(107, "split")[1] == "It is not in a group." and s.can(110, "split")[0]
+    assert s.can(110, "recall")[0] is False and s.can(140, "recall") == (True, "")                  # Savona has a regiment away
+    assert s.can(142, "join") == (True, "")
+    app = App(s)
+    app.ui.selected = 170
+    app.click(layout.buttons(app.size)["road_march"].center)
+    assert app.ui.mode is None and "cannot march in the desert" in app.ui.message
+    app.ui.mouse = layout.buttons(app.size)["road_march"].center
+    app.paint(pygame.Surface(theme.WINDOW))
+    assert (layout.buttons(app.size)["road_march"], s.can(170, "road_march")[1]) in app.painter.tips
+
+
+def test_pressing_a_units_own_order_takes_it_back():                 # 3b
+    pygame.init()
+    app = App(Session(regiments(), GMAP, humans=["axis"], scripted={"cw": players.DoNothing(GMAP)}))
+    s = app.session
+    app.ui.selected = 110
+    keys(app, "d")
+    assert s.pending["axis"][110]["order"] == "dig_in"
+    app.ui.selected = 110
+    app.click(layout.buttons(app.size)["dig_in"].center)
+    assert 110 not in s.pending["axis"] and 110 not in s.standing["axis"] and "cancelled" in app.ui.message
+    assert 110 in s.waiting_units()
+
+
+def test_a_crowded_hex_offers_a_list_to_choose_from():               # 1g
+    pygame.init()
+    app = App(Session(regiments(), GMAP, humans=["cw"], scripted={"axis": players.DoNothing(GMAP)}))
+    app.ui.selected = None
+    app.centre_on((55, 10))
+    app.click(app.spot((55, 10)))                                    # Tobruk: 70th Division and the tank brigade
+    assert app.ui.chooser == {"hex": (55, 10), "ids": [307, 350]} and app.ui.selected is None
+    app.paint(pygame.Surface(theme.WINDOW))
+    app.click(app.painter.chooser_rects[307].center)
+    assert app.ui.selected == 307 and app.ui.chooser is None
+    app.click(app.spot((55, 10)))
+    app.paint(pygame.Surface(theme.WINDOW))
+    app.click((5, 5))                                                # a click elsewhere puts the list away
+    assert app.ui.chooser is None and app.ui.selected == 307
+
+
+def test_a_click_on_an_orders_line_finds_its_unit():                 # 2a
+    pygame.init()
+    app = App(Session(regiments(), GMAP, humans=["cw"], scripted={"axis": players.DoNothing(GMAP)}))
+    s = app.session
+    s.give({"unit": 310, "order": "move", "to": [60, 18]})
+    way = s.preview(310, "move", (60, 18))["path"]
+    assert s.order_at(way[2]) == 310 and s.order_at((100, 30)) is None
+    app.ui.selected = None
+    app.centre_on(way[2])
+    app.click(app.spot(way[2]))
+    assert app.ui.selected == 310 and "unit with that order" in app.ui.message
+
+
+def test_the_map_scrolls_when_the_mouse_is_at_its_edge_while_a_unit_is_taken_up():    # 2b
+    pygame.init()
+    app = App(Session(regiments(), GMAP, humans=["cw"], scripted={"axis": players.DoNothing(GMAP)}))
+    settle(app)
+    area, cam = app.map_rect(), list(app.ui.cam)
+    app.ui.mouse = (area.right - 5, area.centery)
+    assert app.edge() == (1, 0)
+    for _ in range(10):
+        app.tick(16)
+    assert app.ui.cam[0] > cam[0] + 100 and app.ui.cam[1] == cam[1]
+    app.ui.mouse = area.center
+    assert app.edge() == (0, 0)
+    app.ui.selected, app.ui.mouse = None, (area.right - 5, area.centery)
+    assert app.edge() == (0, 0)                                      # nothing taken up: the map stays
+
+
+def test_strength_is_coloured_by_how_much_is_left_and_the_tooltip_gives_the_figures():    # 3e, 1b
+    full = {"type": "armour", "steps": 10, "real": [100, "tanks", 10]}
+    assert [theme.strength_colour(dict(full, steps=n)) for n in (10, 8, 6, 4)] == [theme.INK, theme.STRONG, theme.WORN, theme.WEAK]
+    assert theme.strength_tip(dict(full, steps=8)) == "about 80 of 100 tanks (80%, 20 lost)"
+    assert "nominal" in theme.strength_tip({"type": "hq", "steps": 1}) and theme.strength_colour({"type": "hq", "steps": 1}) == theme.INK
+
+
+def test_reports_are_one_a_unit_and_only_what_matters_and_a_back_button_returns_to_the_group():   # 3f, 3g
+    pygame.init()
+    s = Session(regiments(), GMAP, humans=["cw"], scripted={"axis": players.AlwaysAttack(GMAP)})
+    from engine.gamemap import distance
+    for _ in range(3):                                               # three turns of everyone at the nearest enemy in sight
+        for lead in s.waiting_units():
+            u = s.unit(lead)
+            if s.view["enemy"] and s.can(lead, "attack")[0]:
+                e = min(s.view["enemy"], key=lambda e: (distance(tuple(u["hex"]), tuple(e["hex"])), e["id"]))
+                s.give({"unit": lead, "order": "attack", "to": e["hex"]})
+        s.done()
+    told = s.reports()
+    words = [w for w, _ in told]
+    assert told and all(isinstance(w, str) for w in words)
+    assert len({uid for _, uid in told}) == len(told)                 # one for each unit or group, no more
+    assert not any("step" in w or "haul" in w or "arrived" in w for w in words)      # no arithmetic, no routine
+    kinds = ("driven back", "heavy losses", "repulsed", "drove the enemy", "lost its supply", "out of fuel", "morale is low",
+             "under half strength", "enemy in contact", "destroyed", "surrendered", "starved")
+    assert all(any(k in w for k in kinds) for w in words), words
+    app = App(s)
+    app.play = None
+    app.paint(pygame.Surface(theme.WINDOW))
+    row, uid = next(iter(app.painter.report_rects.values()))
+    app.click(row.center)
+    assert app.ui.selected == s.leader(uid) and app.target is not None
+    app.ui.selected = 310
+    app.paint(pygame.Surface(theme.WINDOW))
+    app.click(app.painter.member_rects[312].center)
+    app.paint(pygame.Surface(theme.WINDOW))
+    assert app.ui.alone and app.painter.back_rect is not None
+    app.click(app.painter.back_rect.center)
+    assert app.ui.selected == 310 and not app.ui.alone
+
+
+def test_a_counter_shows_trouble_with_a_badge_and_which_kind():      # 1e
+    from screen.draw import problem
+    ok = {"type": "armour", "size": 1, "fuel": 100, "traced": True, "out_of_stores": False, "cohesion": 90}
+    assert problem([ok]) is None
+    assert problem([ok, dict(ok, fuel=3)]) == "fuel"
+    assert problem([dict(ok, traced=False)]) == "trouble" and problem([dict(ok, cohesion=30)]) == "trouble"
+    assert problem([dict(ok, type="hq", cohesion=10)]) is None       # an HQ's morale is no trouble
+
+
+# ---- the owner's third list --------------------------------------------------------------
+
+def test_men_on_foot_march_the_road_and_the_button_says_march():
+    from helpers import scenario, unit
+    tobruk, gambut = list(GMAP.places["Tobruk"]["hex"]), list(GMAP.places["Gambut"]["hex"])
+    s = Session(scenario([unit(101, "axis", "foot", tobruk), unit(102, "axis", "motorised", tobruk), unit(201, "cw", "foot", "Alexandria")]),
+                GMAP, humans=["axis"])
+    assert theme.order_name("road_march", [s.unit(101)]) == "March" and theme.order_name("road_march", [s.unit(102)]) == "Travel"
+    assert s.can(101, "road_march") == (True, "")
+    p, q = s.preview(101, "road_march", tuple(gambut)), s.preview(102, "road_march", tuple(gambut))
+    assert p["reach"] == 5 and p["fuel"] == 0 and q["reach"] == len(q["path"]) == 6      # five hexes on foot; lorries all the way
+    pygame.init()
+    app = App(s)
+    app.ui.selected = 101
+    keys(app, "t")
+    assert app.ui.mode == "road_march"
+    app.click(app.spot(tuple(gambut)))
+    assert "March" in app.ui.message and s.pending["axis"][101]["order"] == "road_march"
+
+
+def test_the_supply_layer_puts_port_figures_in_a_callout_and_haul_figures_on_request():
+    pygame.init()
+    app = App(Session(regiments(), GMAP, humans=["axis"], scripted={"cw": players.DoNothing(GMAP)}))
+    app.ui.overlays = {"s"}
+    app.ui.selected = None
+    app.centre_on(GMAP.places["Bardia"]["hex"])
+    plain, shown = pygame.Surface(theme.WINDOW), pygame.Surface(theme.WINDOW)
+    app.paint(plain)
+    app.ui.selected = 120                                          # 21. Panzer-Division: what its HQ was hauled
+    app.paint(shown)
+    area = layout.areas(theme.WINDOW)["map"]
+    assert pygame.image.tostring(plain.subsurface(area), "RGB") != pygame.image.tostring(shown.subsurface(area), "RGB")
+
+
+def test_a_unit_in_trouble_is_marked_in_the_list_over_a_crowded_hex():
+    from screen.draw import problem
+    pygame.init()
+    app = App(Session(regiments(), GMAP, humans=["cw"], scripted={"axis": players.DoNothing(GMAP)}))
+    s = app.session
+    next(u for u in s.view["units"] if u["id"] == 307)["fuel"] = 0   # the tank brigade in Tobruk has run dry
+    assert problem(s.members(307)) == "fuel" and problem(s.members(350)) is None
+    app.ui.selected = None
+    app.centre_on((55, 10))
+    app.click(app.spot((55, 10)))
+    marked, clean = pygame.Surface(theme.WINDOW), pygame.Surface(theme.WINDOW)
+    app.paint(marked)
+    next(u for u in s.view["units"] if u["id"] == 307)["fuel"] = 120
+    app.paint(clean)
+    row = app.painter.chooser_rects[307]
+    assert pygame.image.tostring(marked.subsurface(row), "RGB") != pygame.image.tostring(clean.subsurface(row), "RGB")
+
+
+def test_the_map_has_a_border_at_its_edge_and_a_key_among_its_layers():
+    pygame.init()
+    app = App(Session(regiments(), GMAP, humans=["cw"], scripted={"axis": players.DoNothing(GMAP)}))
+    app.ui.cam = [-1000.0, -1000.0]
+    app.clamp()
+    assert app.ui.cam == [-theme.MARGIN, -theme.MARGIN]              # the north-west corner, with its margin of paper
+    surface = pygame.Surface(theme.WINDOW)
+    app.paint(surface)
+    assert tuple(surface.get_at((6, 6)))[:3] == theme.PAPER           # paper outside the border
+    line = int(theme.MARGIN - 9) + 1
+    assert tuple(surface.get_at((300, line)))[:3] == theme.INK        # the neat line
+    assert [name for name, _, _ in theme.LAYERS] == ["s", "z", "k"] and "k" in layout.layers(app.size, True)
+    before = pygame.image.tostring(surface, "RGB")
+    keys(app, "k")
+    app.paint(surface)
+    assert app.ui.overlays == {"k"} and pygame.image.tostring(surface, "RGB") != before
+
+
+# ---- the owner's fourth list -------------------------------------------------------------
+
+def test_a_right_click_on_a_stack_offers_to_group_it_or_split_it():
+    pygame.init()
+    app = App(Session(regiments(), GMAP, humans=["cw"], scripted={"axis": players.DoNothing(GMAP)}))
+    s = app.session
+    app.ui.selected = None
+    app.centre_on((55, 10))
+    app.click(app.spot((55, 10)), 3)                                 # Tobruk: 70th Division and the tank brigade
+    assert app.ui.chooser == {"hex": (55, 10), "ids": [307, 350]}
+    app.paint(pygame.Surface(theme.WINDOW))
+    assert {("group",), ("split", 350), 307, 350} == set(app.painter.chooser_rects)
+    app.click(app.painter.chooser_rects[("group",)].center)
+    assert s.pending["cw"][350] == {"unit": 350, "order": "join", "with": 307} and "one group" in app.ui.message
+    assert s.unit(350)["group"] == 307 and len(s.members(307)) == 6  # at once, not when the turn is played
+    assert s.group_name(307) == "Special Army Group I" and s.group_name(310) == "7th Armoured Division"
+    assert s.waiting_units().count(307) == 1 and 350 not in s.waiting_units()      # and it is ordered as one
+    assert s.give({"unit": 352, "order": "dig_in"})["ok"] and s.pending["cw"][307]["order"] == "dig_in"
+    s.done()
+    assert s.unit(350)["group"] == 307 and len(s.members(307)) == 6
+    app.click(app.spot((55, 10)), 3)                                 # one group there now: the menu offers to split it
+    app.paint(pygame.Surface(theme.WINDOW))
+    app.click(app.painter.chooser_rects[("split", 307)].center)
+    assert "break up" in app.ui.message
+    assert all(u["group"] is None for u in s.members(307)) and len(s.parties_at((55, 10))) == 6    # at once
+    s.done()
+    assert len(s.parties_at((55, 10))) == 6
+    app.ui.selected = 310
+    app.click(app.spot((56, 8)), 3)                                  # a right click away from your units still lets go
+    assert app.ui.selected is None and app.ui.chooser is None
+
+
+def test_an_enemy_seen_to_move_is_shown_going_round_a_cliff_not_through_it():
+    from screen.replay import seen_way
+    from mapgen.hexgrid import neighbour
+    from screen.replay import least_path
+    c, r, d = next(side for side in sorted(GMAP.cliffs) if GMAP.passable((side[0], side[1]))
+                   and GMAP.passable(neighbour(*side)) and least_path(GMAP, (side[0], side[1]), neighbour(*side), "vehicle"))
+    a, b = (c, r), neighbour(c, r, d)                                # two hexes with a cliff between them
+    way = seen_way(GMAP, "armour", a, b)
+    hexes = [h for _, h in way]
+    assert hexes[0] == a and hexes[-1] == b and len(hexes) > 2
+    assert not any(GMAP.cliff_between(x, y) for x, y in zip(hexes, hexes[1:]))
+    assert [i for i, _ in way] == sorted(i for i, _ in way) and way[-1][0] == 24
+    assert seen_way(None, "armour", a, b) == [(0, a), (24, b)]       # with no map to go by, a straight line
+
+
+# ---- the owner's fifth list --------------------------------------------------------------
+
+def test_a_game_with_grouping_done_at_the_screen_replays_the_same_from_its_orders():      # RULES 2.3, 20.2
+    from engine import runner
+    from engine import state as S
+    s = Session(regiments(), GMAP, humans=["cw"], scripted={"axis": players.DoNothing(GMAP)})
+    s.group_all((55, 10))                                           # 70th Division and the tank brigade, one force
+    s.give({"unit": 307, "order": "move", "to": [56, 11]})
+    s.give({"unit": 312, "order": "move", "to": [62, 20], "alone": True})     # a brigade split from its division
+    s.done()
+    s.give({"unit": 312, "order": "move", "to": [61, 19]})          # it is still its own, and the record must say so
+    s.split_up(330)                                                 # the New Zealanders break up
+    s.give({"unit": 331, "order": "move", "to": [67, 18]})
+    s.done()
+    s.done()
+    again, _ = runner.play(regiments(), GMAP, {side: players.Recorded([t[side] for t in s.record]) for side in S.SIDES},
+                           turns=len(s.record))
+    again = __import__("engine.turn", fromlist=["begin_turn"]).begin_turn(again, GMAP, regiments())
+    assert S.dumps(again) == S.dumps(s.state)
+
+
+def test_a_group_can_be_given_a_name_of_the_players_own():
+    pygame.init()
+    app = App(Session(regiments(), GMAP, humans=["cw"], scripted={"axis": players.DoNothing(GMAP)}))
+    s = app.session
+    s.group_all((55, 10))
+    app.ui.selected = 307
+    app.paint(pygame.Surface(theme.WINDOW))
+    assert s.group_name(307) == "Special Army Group I" and app.painter.pencil_rect is not None
+    app.click(app.painter.pencil_rect.center)
+    assert app.ui.editing == "Special Army Group I"
+    for _ in range(25):
+        app.handle(pygame.event.Event(pygame.KEYDOWN, key=pygame.K_BACKSPACE, unicode=""))
+    for ch in "Tobforce":
+        app.handle(pygame.event.Event(pygame.KEYDOWN, key=ord(ch.lower()), unicode=ch))
+    assert app.ui.editing == "Tobforce" and s.pending["cw"].get(307, {}).get("order") != "road_march"   # T typed, not Travel
+    app.handle(pygame.event.Event(pygame.KEYDOWN, key=pygame.K_RETURN, unicode="\\r"))
+    assert app.ui.editing is None and s.group_name(307) == "Tobforce" and s.group_name(352) == "Tobforce"
+    s.rename(307, "")
+    assert s.group_name(307) == "Special Army Group I"
+
+
+def test_with_a_unit_taken_up_a_click_on_your_own_units_ends_its_move_there():
+    pygame.init()
+    app = App(Session(regiments(), GMAP, humans=["cw"], scripted={"axis": players.DoNothing(GMAP)}))
+    s = app.session
+    app.ui.selected = 304                                           # 22nd Guards Brigade
+    app.centre_on((64, 23))
+    app.click(app.spot((64, 22)))                                   # where 7th Armoured Division stands
+    assert s.pending["cw"][304] == {"unit": 304, "order": "move", "to": [64, 22]} and app.ui.chooser is None
+    app.click(app.spot((64, 22)))                                   # nothing taken up now: the same click takes up what is there
+    assert app.ui.selected == 310
+
+
+def test_next_unit_is_greyed_when_every_unit_has_its_order_and_a_units_own_order_is_always_lit():
+    from helpers import scenario, unit
+    pygame.init()
+    s = Session(scenario([unit(101, "axis", "armour", [70, 24]), unit(201, "cw", "foot", "Alexandria")]), GMAP, humans=["axis"])
+    app = App(s)
+    app.paint(pygame.Surface(theme.WINDOW))
+    nxt = layout.buttons(app.size)["next"]
+    assert not any(r == nxt for r, _ in app.painter.tips)           # a unit waits: Next unit is live
+    s.give({"unit": 101, "order": "attack", "to": [80, 24]})        # an attack far away: no enemy near, yet it is its order
+    app.ui.selected = 101
+    app.paint(pygame.Surface(theme.WINDOW))
+    assert (nxt, "Every unit has its order.") in app.painter.tips
+    assert (layout.buttons(app.size)["attack"], "This is its order. Click to take it back.") in app.painter.tips
+    app.click(layout.buttons(app.size)["attack"].center)
+    assert 101 not in s.pending["axis"] and "cancelled" in app.ui.message
+
+
+def test_fuel_is_told_in_kilometres_with_the_hexes_beside():
+    assert theme.fuel_words(30) == "300 km (30 hexes)" and theme.fuel_words(1) == "10 km (1 hex)"

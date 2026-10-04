@@ -34,7 +34,7 @@ def check(state, gmap):
         if u["group"] is not None:                              # I-19
             lead = S.unit(state, u["group"])
             members = S.party(state, u)
-            if (u["status"] != "on_map" or lead["hex"] != u["hex"] or U.formation(lead) != U.formation(u)
+            if (u["status"] != "on_map" or lead["hex"] != u["hex"] or lead["side"] != u["side"]
                     or lead["id"] != min(m["id"] for m in members) or len(members) < 2):
                 bad.append(f"I-19 unit {u['id']} is wrongly grouped under {u['group']}")
     for side in S.SIDES:

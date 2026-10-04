@@ -111,6 +111,8 @@ The same inputs always give the same map: there is nothing random in it.
 - `frontier`: the Libya–Egypt frontier as latitude/longitude points (where the
   Italians built the Wire). Drawn only; it is not yet a rule.
 - `labels`: names of seas, countries and regions, for the picture.
+- `shipping`: the sea lanes between the ports, as latitude/longitude points,
+  from `data/features.json`. Drawn as dashes; they are not a rule.
 - `places`: name, kind (port / town / oasis / site), hex, coordinates.
 
 Hexes are flat-topped; odd columns sit half a hex lower.

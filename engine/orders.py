@@ -24,7 +24,6 @@ REPLIES = {
     "E_NO_PATH": "There is no way there for this unit.",
     "E_HQ": "A headquarters cannot do that.",
     "E_COHESION": "The unit is too disorganised to attack.",
-    "E_FOOT": "Foot infantry cannot road march.",
     "E_NOT_ON_ROUTE": "A road march must start, pass and end on a road or track.",
     "E_AIR": "That is not an air mission; support is flown.",
     "E_JOIN": "That unit cannot join that one.",
@@ -36,8 +35,8 @@ def mode(members, name):
     """How the steps of a unit, or of a group moving as one, are costed under this order
     (9.3, 20.2.6): a group with any vehicle in it goes where vehicles can."""
     members = members if isinstance(members, list) else [members]
-    if name == "road_march":
-        return paths.MARCH
+    if name == "road_march":                             # men on foot march the road more slowly than lorries drive it
+        return paths.MARCH if all(U.is_vehicle(u) for u in members) else paths.FOOT_MARCH
     return paths.VEHICLE if any(U.is_vehicle(u) for u in members) else paths.FOOT
 
 
@@ -89,7 +88,7 @@ def check_one(state, gmap, side, order, seen):
     if name == "join":                                          # 20.2.2, 20.2.3
         other = S.unit(state, order["with"]) if type(order.get("with")) is int else None
         if (other is None or other["status"] != "on_map" or other["id"] == u["id"]
-                or U.formation(other) != U.formation(u) or other in members):
+                or other["side"] != u["side"] or other in members):
             return "E_JOIN"
         return None if full_path(gmap, u, order, state) is not None else "E_NO_PATH"
     if name not in MOVING:                                      # 8.4.1
@@ -101,8 +100,6 @@ def check_one(state, gmap, side, order, seen):
             return "E_HQ"
         if all(m["cohesion"] < ATTACK_MIN for m in fighters):
             return "E_COHESION"
-    if name == "road_march" and not all(U.is_vehicle(m) for m in members):   # 8.4.4, 20.2.6
-        return "E_FOOT"
     if "to" not in order:                                       # 8.4.2
         return "E_NO_DEST"
     via = order.get("via", [])

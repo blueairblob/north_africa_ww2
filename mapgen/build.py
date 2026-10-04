@@ -384,6 +384,7 @@ def build(log=print):
         "routes": route_list,
         "frontier": frontier(),
         "labels": features.get("labels", []),
+        "shipping": features.get("shipping", []),
         "places": [{k: p[k] for k in ("name", "kind", "col", "row", "lat", "lon", "approx") if k in p}
                    for p in places],
     }
