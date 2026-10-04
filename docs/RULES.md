@@ -1467,9 +1467,7 @@ Decided by the owner on 3 October 2026, after the first screen was played.
 The engine follows 20.1 to 20.3 and its tests cite them
 (`tests/test_engine_groups.py`). They change the earlier sections where they
 say so: stacking (4.3.1), the orders (8.1.1 has a seventh, Join), movement
-(9), retreat (10.6) and recovery (11.2). 20.4, strength in real terms, is
-agreed but not yet in the scenario data; the screen shows a figure worked out
-from steps until it is.
+(9), retreat (10.6) and recovery (11.2).
 
 ### 20.1 Formations and their units
 
@@ -1484,6 +1482,10 @@ an HQ that no unit names (a corps or army HQ), is **independent**, and counts
 as a formation of its own.
 
 **20.1.3** Two units are **related** if they are in the same formation.
+
+**20.1.5** A division's HQ is a depot like any HQ (6.6.1): it is hauled what
+its units need. But it builds no dump: the dump pass (6.7.3) is for
+independent HQs only.
 
 **20.1.4 Stacking** (in place of 4.3.1). A hex may hold the units of at most
 `STACK_FORMATIONS` formations, all of one side. There is no limit on the
@@ -1563,12 +1565,12 @@ not to below the ceiling. This is as well as 6.10.2.
 ### 20.4 Strength in real terms
 
 **20.4.1** Each unit in a scenario carries its real strength on the scenario's
-first day (men, tanks or guns) with the source of the figure. Steps are
-worked out from it: a step is `MEN_STEP` men, `TANKS_STEP` tanks or
+first day (men, tanks, guns or armoured cars) with the source of the figure.
+Steps are worked out from it: a step is `MEN_STEP` men, `TANKS_STEP` tanks or
 `GUNS_STEP` guns, rounded to the nearest, and at least one.
 
 **20.4.2** The player is shown the real figure, scaled by the steps the unit
-has left, and never the steps.
+has left of those it began with.
 
 ### 20.6 Constants
 

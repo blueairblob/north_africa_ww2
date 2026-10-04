@@ -45,22 +45,22 @@ def areas(size):
             "panel": pygame.Rect(w - T.PANEL, 0, T.PANEL, h)}
 
 
-BUTTON_H, GAP, EDGE = 40, 8, 16
+BUTTON_H, GAP, EDGE = 36, 7, 16
 
 
 def buttons(size):
     """name -> its rectangle in the window: at the foot of the panel, the six orders in two rows
-    of three, the two overlays under them, and End turn across the bottom."""
+    of three, Join, Split and Recall in a third, the two overlays, and End turn across the bottom."""
     panel = areas(size)["panel"]
     names = [b[0] for b in T.BUTTONS]
     x0, w = panel.x + EDGE, panel.w - 2 * EDGE
     third, half = (w - 2 * GAP) // 3, (w - GAP) // 2
-    y = panel.bottom - EDGE - 4 * BUTTON_H - 3 * GAP - 6
+    y = panel.bottom - EDGE - 5 * BUTTON_H - 4 * GAP - 6
     out = {}
-    for i, name in enumerate(names[:6]):
+    for i, name in enumerate(names[:9]):
         out[name] = pygame.Rect(x0 + (i % 3) * (third + GAP), y + (i // 3) * (BUTTON_H + GAP), third, BUTTON_H)
-    y += 2 * (BUTTON_H + GAP)
-    for i, name in enumerate(names[6:8]):
+    y += 3 * (BUTTON_H + GAP)
+    for i, name in enumerate(names[9:11]):
         out[name] = pygame.Rect(x0 + i * (half + GAP), y, half, BUTTON_H)
-    out[names[8]] = pygame.Rect(x0, y + BUTTON_H + GAP, w, BUTTON_H + 6)
+    out[names[11]] = pygame.Rect(x0, y + BUTTON_H + GAP, w, BUTTON_H + 6)
     return out

@@ -58,9 +58,13 @@ def problems(scenario, gmap):
         if spec["side"] not in S.SIDES or spec["type"] not in U.TYPES or spec.get("xp", "regular") not in U.EXPERIENCE:
             bad.append(f"{tag}: side, type or experience unknown")
             continue
-        if not 1 <= spec["size"] <= 4 or not 1 <= spec["steps"] <= spec.get("max", spec["steps"]):
+        if "steps" not in spec and U.real_of(spec) is None:
+            bad.append(f"{tag}: needs steps or a real strength (tanks, men, guns or cars)")
+            continue
+        steps = U.steps_of(spec)
+        if not 1 <= spec["size"] <= 4 or not 1 <= steps <= spec.get("max", steps):
             bad.append(f"{tag}: size 1 to 4 and steps 1 to max")
-        if U.is_hq(spec) and (spec["steps"] != 1 or spec["size"] != 1):
+        if U.is_hq(spec) and (steps != 1 or spec["size"] != 1):
             bad.append(f"{tag}: an HQ has one step and size 1")
         if spec.get("fuel", 0) > U.fuel_cap(spec) or spec.get("stores", 0) > U.stores_cap(spec):
             bad.append(f"{tag}: holds more than it can carry")

@@ -63,6 +63,20 @@ marked there):
 
 Not yet read at first hand: van Creveld and Playfair themselves.
 
+Used for the strengths in `data/scenarios/crusader.json` (each unit carries a
+source letter, explained in the file's `sources`):
+
+| Source | Used for |
+| --- | --- |
+| Wikipedia, "Operation Crusader" and "Operation Crusader order of battle" (CC BY-SA; facts only) | the formations and their regiments and brigades; 7th Armoured Brigade's 129 tanks |
+| historyofwar.org, "Operation Crusader, 18 November-20 December 1941" | 4th Armoured Brigade 166 Stuarts; 22nd Armoured Brigade 155; 1st Army Tank Brigade about 130; 249 German and 189 Italian medium tanks in all |
+
+Not sourced: the men and guns of every unit are worked out from its
+establishment (about 800 men to a battalion), not taken from a strength
+return; the split of the German tanks between the two panzer regiments,
+Ariete's share of the Italian tanks and 32nd Army Tank Brigade's strength are
+from memory. All are marked in the scenario file.
+
 ## Art
 
 Generated for this game: hex terrain tiles drawn from the terrain types, and

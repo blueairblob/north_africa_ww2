@@ -410,9 +410,11 @@ separately, so that armour can be massed and a division can be split, with
 grouping to keep the map clear: units of one division in one hex can be
 joined into a stack that is ordered, moves and fights as one; an HQ can
 recall its units to it; a unit can be split off again. The rules for this are
-in `docs/RULES.md` §20. The engine follows them; the Crusader scenario still
-has whole divisions as its counters, and the screen has no buttons yet for
-Join, Split and Recall.
+in `docs/RULES.md` §20. The engine follows them, the Crusader scenario shows
+each division as its units under its HQ, and the screen has Join, Split and
+Recall beside the six orders. A pile of units in a hex is drawn as one
+counter with the number in it; the panel lists a group's units, and a click
+on one takes it up by itself.
 
 Under the hood is another matter: the map, supply, movement, combat and
 recovery may be as thorough as the history and the data allow, because the

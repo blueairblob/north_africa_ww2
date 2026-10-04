@@ -54,9 +54,11 @@ def new_game(scenario, gmap):
     for c, r, level, side in scenario.get("forts", []):
         state["forts"][fort_key((c, r))] = [level, side]
     for spec in sorted(scenario["units"], key=lambda s: s["id"]):
+        steps = U.steps_of(spec)
         u = {"id": spec["id"], "side": spec["side"], "name": spec["name"], "type": spec["type"],
              "size": spec["size"], "xp": spec.get("xp", "regular"),
-             "steps": spec["steps"], "max": spec.get("max", spec["steps"]),
+             "steps": steps, "max": spec.get("max", steps),
+             "real": U.real_of(spec) + [steps] if U.real_of(spec) else None,     # the figure, what it counts, the steps it began with
              "hex": None, "cohesion": spec.get("cohesion", 100), "fuel": 0, "stores": 0,
              "out_of_stores": False, "traced": True, "status": "not_arrived", "fate": None,
              "parent": spec.get("parent"), "group": None, "ceiling": 100}

@@ -21,6 +21,28 @@ def is_hard(u):
     return u["type"] in ("armour", "recon")                     # 4.1.4
 
 
+MEN_STEP, TANKS_STEP, GUNS_STEP = 800, 10, 12       # what a step stands for (20.4.1)
+REAL = (("tanks", TANKS_STEP), ("men", MEN_STEP), ("guns", GUNS_STEP), ("cars", 15))
+
+
+def real_of(spec):
+    """A unit's real strength on the scenario's first day: [number, what], or None (20.4.1)."""
+    for what, _ in REAL:
+        if what in spec:
+            return [spec[what], what]
+    return None
+
+
+def steps_of(spec):
+    """A unit's steps: as given, or worked out from its real strength, to the nearest, at least one."""
+    if "steps" in spec:
+        return spec["steps"]
+    for what, each in REAL:
+        if what in spec:
+            return max(1, (spec[what] + each // 2) // each)
+    raise ValueError(f"unit {spec.get('id')} has neither steps nor a real strength")
+
+
 def formation(u):
     """What a unit belongs to: its division's HQ, or itself if it is independent (20.1.2)."""
     return u.get("parent") or u["id"]

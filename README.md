@@ -27,7 +27,8 @@ rule it checks.
 .venv/bin/python -m engine crusader attack nothing   # a whole game, no screen
 ```
 
-plays Operation Crusader (`data/scenarios/crusader.json`) between two scripted
+plays Operation Crusader (`data/scenarios/crusader.json`: 91 units, each
+division shown as its regiments and brigades under its HQ) between two scripted
 players (`nothing`, `attack`, `retreat`, `explore`) and asserts the rules'
 invariants after every turn.
 
@@ -46,7 +47,9 @@ Click one of your units, then click where it should go, or an enemy to attack
 it. The order bar under the map has the six orders, the supply and zones
 overlays and End turn; each has a key. With the keyboard alone:
 press M, A or R, choose the hex with the arrow keys and press Enter. The mouse
-wheel zooms at the pointer, dragging moves the map. An order stands from turn to turn until it is done,
+wheel zooms at the pointer, dragging moves the map. A division's units move and fight as one group until you split one off: click it in
+the panel's list and order it, or press Split. Join sends a unit back to its
+division, and Recall, on an HQ, calls them all in. An order stands from turn to turn until it is done,
 and the screen steps through the units that are waiting for one. After End
 turn the turn is played back: the movement, then each formation's strike in
 turn, with the units it hits burning and a rattle as long as the damage, then

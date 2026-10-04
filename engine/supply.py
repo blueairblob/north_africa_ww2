@@ -209,8 +209,9 @@ def distribute(state, gmap, scenario, side, audit):
                 stock[kind] -= n
                 u[kind] += n
                 totals["issued"] += n                         # 6.8.3
+    led = {u["parent"] for u in state["units"] if u["parent"]}       # the HQs of divisions build no dumps (20.1.5)
     for _, _, hq in served:                                   # 6.7.3, 6.7.4: dumps, after the units have drawn
-        if hq["stationary"]:
+        if hq["stationary"] and hq["id"] not in led:
             need = {k: sum(demand(u, k, depots[u["id"]][0][0]) for u in units
                            if depots[u["id"]] and depots[u["id"]][0][3] is hq) for k in KINDS}
             want = {k: max(0, need[k] + DUMP_CAP - hq["dump"][k]) for k in KINDS}

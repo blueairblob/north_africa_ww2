@@ -8,7 +8,8 @@ from .draw import UI, Painter, guess
 from .layout import Layout, areas, buttons
 from .sound import Sounds
 
-GO = {pygame.K_m: "move", pygame.K_a: "attack", pygame.K_r: "road_march"}        # orders with a destination
+GO = {pygame.K_m: "move", pygame.K_a: "attack", pygame.K_r: "road_march",        # orders with a destination
+      pygame.K_j: "join", pygame.K_x: "split", pygame.K_c: "recall"}             # and the three for groups
 STAY = {pygame.K_h: "hold", pygame.K_d: "dig_in", pygame.K_t: "rest"}
 AIR = {pygame.K_1: "support", pygame.K_2: "interdict", pygame.K_3: "recon"}
 SCROLL = {pygame.K_LEFT: (-1, 0), pygame.K_RIGHT: (1, 0), pygame.K_UP: (0, -1), pygame.K_DOWN: (0, 1)}
@@ -119,7 +120,7 @@ class App:
     def mine_at(self, h):
         return [u["id"] for u in self.session.view["units"] if u["status"] == "on_map" and tuple(u["hex"]) == h]
 
-    def give(self, name, to=None):
+    def give(self, name, to=None, with_unit=None):
         ui = self.ui
         u = self.session.unit(ui.selected)
         if u is None:
@@ -128,11 +129,15 @@ class App:
         order = {"unit": ui.selected, "order": name}
         if to is not None:
             order["to"] = list(to)
+        if with_unit is not None:
+            order["with"] = with_unit
+        if ui.alone:
+            order["alone"] = True                         # one of a group, ordered by itself: it splits off
         reply = self.session.give(order)
         if not reply["ok"]:                               # the order key and the cursor stay as they were
             ui.message = reply["text"]
             return
-        ui.mode = None
+        ui.mode, ui.alone = None, False
         said = f"{u['name']}: {T.ORDER_NAME[name]}."
         self.step()                                       # on to the next unit that waits for an order
         left = len(self.session.waiting_units())
@@ -141,6 +146,7 @@ class App:
     def step(self):
         """Take up the next unit with no order, bringing it into view; none left, let go."""
         s, ui = self.session, self.ui
+        ui.alone = False
         waiting = s.waiting_units()
         ids = [u["id"] for u in s.view["units"] if u["status"] == "on_map"]
         after = [i for i in waiting if ui.selected in ids and ids.index(i) > ids.index(ui.selected)]
@@ -220,6 +226,21 @@ class App:
             ui.overlays ^= {name}
         elif self.session.unit(ui.selected) is None:
             ui.message = "Click one of your units first."
+        elif name == "split":                             # leave the group, and stay
+            if ui.alone:
+                self.give("hold")
+            else:
+                ui.message = ("Click a unit in the list on the right, then Split." if len(self.session.members(ui.selected)) > 1
+                              else "This unit is not in a group.")
+        elif name == "recall":                            # the HQ calls its division in
+            given = self.session.recall(ui.selected)
+            ui.message = ("Only a division's HQ can recall its units." if given is None
+                          else "All its units are with it already." if given == 0
+                          else f"{T.count(given, 'unit')} recalled to the HQ.")
+        elif name == "join":
+            ui.mode = None if ui.mode == name else name
+            ui.hover = tuple(self.session.unit(ui.selected)["hex"]) if ui.mode else ui.hover
+            ui.message = "Join: click a unit of the same division, or choose it with the arrow keys and press Enter." if ui.mode else ""
         elif name in ("move", "attack", "road_march"):
             ui.mode = None if ui.mode == name else name
             ui.hover = tuple(self.session.unit(ui.selected)["hex"]) if ui.mode else ui.hover     # the cursor starts on the unit
@@ -259,6 +280,11 @@ class App:
         for name, r in buttons(self.size).items():
             if r.collidepoint(pos):
                 return self.press_button(name) if button == 1 else None
+        for uid, r in self.painter.member_rects.items():  # a unit in the panel's list: take it up by itself
+            if r.collidepoint(pos) and button == 1:
+                ui.selected, ui.alone, ui.mode = uid, True, None
+                ui.message = "This unit alone: an order now splits it from its group. Split leaves it where it is."
+                return
         h = self.hex_under(pos)
         if h is None or s.state["over"]:
             return
@@ -267,14 +293,25 @@ class App:
             return
         here = self.mine_at(h)
         chosen = s.unit(ui.selected)
-        if ui.mode and chosen:
+        if ui.mode == "join" and chosen:
+            self.join_at(h)
+        elif ui.mode and chosen:
             self.give(ui.mode, h)
         elif here:                                        # your own units: take one, or the next in the pile
+            ui.alone = False
             here = sorted({s.leader(i) for i in here})    # a group is taken up as one, by its leader
             ui.selected = here[(here.index(ui.selected) + 1) % len(here)] if ui.selected in here else here[0]
             ui.message = "Now click where it should go, or an enemy to attack."
         elif chosen and guess(s, h):
             self.give(guess(s, h), h)                     # a plain click: attack a seen enemy, else move
+
+    def join_at(self, h):
+        """Join the unit taken up to a unit of its division in this hex."""
+        other = self.session.related_at(self.ui.selected, h)
+        if other is None:
+            self.ui.message = "There is no unit of the same division there."
+        else:
+            self.give("join", with_unit=other)
 
     def next_unit(self):
         """The next unit with no order yet; failing that, the next unit."""
@@ -316,7 +353,9 @@ class App:
         if ui.mode and self.session.unit(ui.selected) and key in SCROLL:       # choosing a destination
             self.cursor(*SCROLL[key])
         elif ui.mode and self.session.unit(ui.selected) and key in (pygame.K_RETURN, pygame.K_KP_ENTER):
-            if ui.hover and ui.hover != tuple(self.session.unit(ui.selected)["hex"]):
+            if ui.mode == "join" and ui.hover:
+                self.join_at(ui.hover)
+            elif ui.hover and ui.hover != tuple(self.session.unit(ui.selected)["hex"]):
                 self.give(ui.mode, ui.hover)              # Enter confirms the destination; it never ends the turn here
             else:
                 ui.message = "Choose the hex with the arrow keys first, or press Escape."

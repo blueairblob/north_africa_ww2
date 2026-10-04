@@ -35,6 +35,7 @@ class UI:
         self.message = ""
         self.cover = None               # text shown instead of the map between two players
         self.symbols = "pictures"       # what a counter shows: "pictures", or "nato" for NATO-style symbols
+        self.alone = False              # the unit taken up is one of a group, to be ordered by itself
 
     @property
     def layout(self):
@@ -51,6 +52,7 @@ class Painter:
         self.reach_cache = (None, None)
         self.zone_cache = (None, None)
         self.playing = False            # the last turn is being played back
+        self.member_rects = {}          # the rows of a group's units in the panel, to click
 
     def font(self, px, bold=False):
         px = max(9, int(px))
@@ -165,11 +167,16 @@ class Painter:
             stacks.setdefault(tuple(e["hex"]), []).append((e, False))
         for hx in sorted(stacks):
             if shown(hx):
-                pile = sorted(stacks[hx], key=lambda p: (p[0]["type"] != "hq", p[0]["id"] == ui.selected, p[0]["id"]))
-                for n, (u, own) in enumerate(pile):
-                    x, y = at(hx)
-                    lift = (n - (len(pile) - 1) / 2) * lay.counter / 4
-                    self.counter(surface, session, ui, u, own, (x + lift, y - lift), lay.counter)
+                pile = sorted(stacks[hx], key=lambda p: (T.ARM.index(p[0]["type"]), p[0]["id"]))
+                taken = [p for p in pile if p[1] and ui.selected in (p[0]["id"], session.leader(p[0]["id"]))]
+                u, own = (taken or pile)[0]                          # one counter for the pile: the unit taken up, or its chief arm
+                x, y = at(hx)
+                size, nation = lay.counter, session.nation[u["id"]]
+                for k in range(min(len(pile), 3) - 1, 0, -1):        # the edges of the units beneath it
+                    edge = pygame.Rect(x - size / 2 + k * size * 0.1, y - size / 2 - k * size * 0.1, size, size)
+                    pygame.draw.rect(surface, T.FACE[nation], edge, border_radius=4)
+                    pygame.draw.rect(surface, T.INK, edge, 1, border_radius=4)
+                self.counter(surface, session, ui, u, own, (x, y), size, bool(taken), len(pile))
         for e in view["events"]:                                     # where last turn's battles were
             if e["event"] == "battle" and shown(tuple(e["hex"])):
                 x, y = at(tuple(e["hex"]))
@@ -340,7 +347,7 @@ class Painter:
         u = session.unit(ui.selected)
         if u and ui.hover and ui.hover != tuple(u["hex"]) and not ui.cover:
             name = ui.mode or guess(session, ui.hover)
-            p = draw(u, {"order": name, "to": ui.hover}, T.SELECT) if name else None
+            p = draw(u, {"order": name, "to": ui.hover}, T.SELECT) if name and name != "join" else None
             if p:
                 turns = -(-len(p["path"]) // p["reach"]) if p["reach"] else 0
                 when = "this turn" if turns == 1 else f"about {turns} turns" if turns else "it cannot set off"
@@ -359,11 +366,11 @@ class Painter:
                                  if os.path.exists(path) else None)
         return self.sprites[key]
 
-    def counter(self, surface, session, ui, u, own, centre, size):
+    def counter(self, surface, session, ui, u, own, centre, size, taken=None, pile=1):
         nation = session.nation[u["id"]]
         x, y = int(centre[0] - size / 2), int(centre[1] - size / 2)
         face = pygame.Rect(x, y, size, size)
-        chosen = u["id"] == ui.selected
+        chosen = u["id"] == ui.selected if taken is None else taken
         pygame.draw.rect(surface, (30, 26, 20), face.move(2, 2), border_radius=4)             # a little shadow
         pygame.draw.rect(surface, T.FACE[nation], face, border_radius=4)
         mark = T.MARK[nation]
@@ -380,6 +387,11 @@ class Painter:
             picture(surface, u["type"], area, mark, T.FACE[nation])
         if big:
             self.text(surface, u.get("steps", "?"), (x + size * 0.5, y + size * 0.7), size * 0.27, mark, True, True)
+        if pile > 1 and size >= 22:                                  # how many units are in the pile
+            tag = pygame.Rect(x - size * 0.08, y - size * 0.08, size * 0.36, size * 0.34)
+            pygame.draw.rect(surface, T.PAPER, tag, border_radius=3)
+            pygame.draw.rect(surface, T.INK, tag, 1, border_radius=3)
+            self.text(surface, pile, tag.center, size * 0.24, T.INK, True, True)
         if not own:
             return
         if big:                                                      # stores and cohesion, side by side
@@ -389,7 +401,7 @@ class Painter:
                 bx = x + 4 + n * (half + 4)
                 pygame.draw.rect(surface, T.PAPER, (bx, y + size - 7, half, 4))
                 pygame.draw.rect(surface, colour, (bx, y + size - 7, int(half * share), 4))
-        order = session.order_of(u["id"])["order"]
+        order = session.order_of(session.leader(u["id"]))["order"]
         if order != "hold" and size >= 22:
             tag = pygame.Rect(x + size - size * 0.3, y - size * 0.08, size * 0.38, size * 0.34)
             pygame.draw.rect(surface, T.ATTACK if order == "attack" else T.PATH, tag, border_radius=3)
@@ -504,6 +516,8 @@ class Painter:
         rule()
 
         u = None if self.playing else session.unit(ui.selected)
+        group = session.members(u["id"]) if u else []
+        self.member_rects = {}
         if over and not self.playing:                                # the result, and how it was reached
             r = session.state["result"]
             line("A draw" if r["winner"] is None else f"{T.SIDE_NAME[r['winner']]}: {r['grade']} victory", 18, T.SHORT, True)
@@ -515,6 +529,40 @@ class Painter:
                 line("Your losses", 13, bold=True)
                 for m in lost[:8]:
                     line(f"{m['name'][:26]}: {m['fate']['cause']}, turn {m['fate']['turn']}", 12, gap=2)
+        elif u and len(group) > 1 and not ui.alone:                  # a group: its units, and what binds them
+            head = next((m for m in group if m["type"] == "hq"), u)
+            line(head["name"], 17, bold=True, gap=2)
+            line(f"{len(group)} units in a group: one order moves them all.", 12, T.DIM, gap=6)
+            for m in group[:9]:
+                nation = session.nation[m["id"]]
+                row = pygame.Rect(x, y, w, 22)
+                mini = pygame.Rect(x, y + 1, 30, 19)
+                pygame.draw.rect(surface, T.FACE[nation], mini, border_radius=3)
+                picture(surface, m["type"], mini.inflate(-6, -5), T.MARK[nation], T.FACE[nation])
+                self.text(surface, m["name"][:25], (x + 38, y + 3), 12)
+                words = T.strength(m).replace("about ", "")
+                self.text(surface, words, (x + w - self.font(12).size(words)[0], y + 3), 12, T.DIM)
+                self.member_rects[m["id"]] = row
+                y += 23
+            y += 4
+            low = min(group, key=lambda m: m["cohesion"])
+            level, word = T.morale(low["cohesion"])
+            meter("Morale", level, 9, T.GOOD if low["cohesion"] >= 40 else T.POOR, word + " (the lowest)")
+            wheels = [m for m in group if U.is_vehicle(m)]
+            if wheels:
+                least = min(wheels, key=lambda m: m["fuel"] * 100 // max(1, U.fuel_cap(m)))
+                meter("Fuel", least["fuel"], U.fuel_cap(least),
+                      T.FUEL, "for " + T.count(min(m["fuel"] // U.step_fuel(m) for m in wheels), "hex", "hexes"))
+            if any(not m["traced"] or m["out_of_stores"] for m in group):
+                line("SHORT OF SUPPLY", 13, T.SHORT, True)
+            if u["id"] in session.pending[session.side]:
+                order = session.order_of(u["id"])
+                turns = session.turns_to_go(u["id"])
+                more = f", about {turns} turns" if turns and turns > 1 else ""
+                line(f"Order: {T.ORDER_NAME[order['order']]}{more}", 15, T.PATH, True, gap=2)
+            else:
+                line("Waiting for an order", 15, T.ATTACK, True, gap=2)
+            line("Click a unit above to order it by itself.", 12, T.DIM)
         elif u:
             nation = session.nation[u["id"]]
             card = pygame.Rect(x, y, 76, 50)                         # the unit's picture beside its name
@@ -547,6 +595,9 @@ class Painter:
                 more = f", about {turns} turns" if turns and turns > 1 else ""
                 line(f"Order: {T.ORDER_NAME[order['order']]}{more}", 15, T.PATH, True, gap=2)
                 line(T.ORDER_HELP[order["order"]], 12, T.DIM)
+            elif ui.alone:
+                line("Chosen from its group", 15, T.ATTACK, True, gap=2)
+                line("An order now splits it off. Split leaves it here.", 12, T.DIM)
             else:
                 line("Waiting for an order", 15, T.ATTACK, True, gap=2)
                 line("Click the map, or press a button below.", 12, T.DIM)

@@ -17,6 +17,12 @@ from screen.session import Session                                # noqa: E402
 
 
 def crusader():
+    """Crusader with whole divisions as its counters: fewer units, and ids these tests know."""
+    return json.loads((ROOT / "tests" / "scenarios" / "divisions.json").read_text())
+
+
+def regiments():
+    """Crusader as it is played: each division as its units, grouped under its HQ."""
     return json.loads((ROOT / "data" / "scenarios" / "crusader.json").read_text())
 
 
@@ -668,7 +674,7 @@ def test_morale_is_told_in_nine_named_levels_and_strength_in_real_terms():
 
 def test_the_orders_are_in_the_panel_and_travel_is_the_road_march():
     area, where = layout.areas(theme.WINDOW), layout.buttons(theme.WINDOW)
-    assert len(where) == 9 and all(area["panel"].contains(r) for r in where.values())
+    assert len(where) == 12 and all(area["panel"].contains(r) for r in where.values())
     assert not any(a.colliderect(b) for n, a in where.items() for m, b in where.items() if n < m)
     assert theme.ORDER_NAME["road_march"] == "Travel" and ("road_march", "Travel", "R") in theme.BUTTONS
     pygame.init()
@@ -725,3 +731,70 @@ def test_at_the_screen_a_group_is_taken_up_and_ordered_as_one():     # RULES 20.
     assert app.ui.selected == 110                                    # a click on the stack takes up the group
     s.done()
     assert {tuple(u["hex"]) for u in s.view["units"]} == {(74, 24)} or len({tuple(u["hex"]) for u in s.view["units"]}) == 1
+
+
+# ---- groups at the screen (RULES 20.2) ---------------------------------------------------
+
+def test_a_division_is_one_pile_on_the_map_and_one_card_in_the_panel():
+    pygame.init()
+    app = App(Session(regiments(), GMAP, humans=["axis"], scripted={"cw": players.DoNothing(GMAP)}))
+    s = app.session
+    assert s.waiting_units()[:4] == [101, 102, 103, 104] and 111 not in s.waiting_units()   # a group waits as one
+    app.centre_on((59, 11))
+    app.click(app.spot((59, 11)))
+    assert app.ui.selected == 110 and [m["id"] for m in s.members(110)] == [110, 111, 112, 113, 114]
+    surface = pygame.Surface(theme.WINDOW)
+    app.paint(surface)
+    assert sorted(app.painter.member_rects) == [110, 111, 112, 113, 114]         # its units are listed, to click
+    assert theme.strength(s.unit(111)) == "about 133 tanks"                      # the scenario's figure, not steps
+    assert s.give({"unit": 113, "order": "move", "to": [61, 12]})["ok"] and list(s.pending["axis"]) == [110]
+
+
+def test_split_takes_a_unit_out_of_its_group_and_join_puts_it_back():
+    pygame.init()
+    app = App(Session(regiments(), GMAP, humans=["axis"], scripted={"cw": players.DoNothing(GMAP)}))
+    s = app.session
+    app.centre_on((59, 11))
+    app.click(app.spot((59, 11)))
+    app.paint(pygame.Surface(theme.WINDOW))
+    app.click(layout.buttons(app.size)["split"].center)
+    assert "list on the right" in app.ui.message                                 # nothing chosen from the group yet
+    app.click(app.spot((59, 11)))
+    app.paint(pygame.Surface(theme.WINDOW))
+    app.click(app.painter.member_rects[111].center)                              # the panzer regiment, by itself
+    assert app.ui.selected == 111 and app.ui.alone
+    keys(app, "m")
+    app.click(app.spot((61, 12)))                                                # off to Gambut alone
+    assert s.pending["axis"][111] == {"unit": 111, "order": "move", "to": [61, 12], "alone": True} and not app.ui.alone
+    s.done()
+    assert s.unit(111)["hex"] == [61, 12] and s.unit(111)["group"] is None
+    assert [m["id"] for m in s.members(110)] == [110, 112, 113, 114]
+    app.ui.selected = 111
+    keys(app, "j")
+    assert app.ui.mode == "join"
+    app.centre_on((59, 11))
+    app.click(app.spot((57, 11)))                                                # Bologna is there: not its division
+    assert "no unit of the same division" in app.ui.message and app.ui.mode == "join"
+    app.click(app.spot((59, 11)))
+    assert s.pending["axis"][111] == {"unit": 111, "order": "join", "with": 110}
+    s.done()
+    assert s.unit(111)["hex"] == [59, 11] and s.unit(111)["group"] == 110 and (111, "has joined") in s.ended["axis"]
+
+
+def test_recall_brings_a_division_in_to_its_hq():
+    pygame.init()
+    app = App(Session(regiments(), GMAP, humans=["axis"], scripted={"cw": players.DoNothing(GMAP)}))
+    s = app.session
+    app.ui.selected = 140                                                        # Savona's HQ: one regiment is at Capuzzo
+    keys(app, "c")
+    assert "1 unit recalled" in app.ui.message and s.pending["axis"][142] == {"unit": 142, "order": "join", "with": 140}
+    keys(app, "c")
+    app.ui.selected = 101
+    keys(app, "c")
+    assert "Only a division's HQ" in app.ui.message                              # the Panzergruppe leads no division
+    for _ in range(3):
+        s.done()
+    assert s.unit(142)["group"] == 140 and s.unit(142)["hex"] == s.unit(140)["hex"]
+    app.ui.selected = 140
+    keys(app, "c")
+    assert "with it already" in app.ui.message

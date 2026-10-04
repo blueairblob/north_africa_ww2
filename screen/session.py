@@ -17,7 +17,7 @@ from engine.view import view
 
 
 # why a standing order ended, to follow the unit's name: "15. Panzer-Division has arrived"
-ENDED = {"E_SAME_HEX": "has arrived", "E_COHESION": "is too disorganised to attack",
+ENDED = {"E_SAME_HEX": "has arrived", "E_COHESION": "is too disorganised to attack", "E_JOIN": "has joined",
          "E_IMPASSABLE": "cannot enter that ground", "E_NO_PATH": "has no way there",
          "E_NOT_ON_ROUTE": "is no longer on a road or track"}
 
@@ -54,7 +54,9 @@ class Session:
                     self.pending[s][uid] = order
                 else:
                     del self.standing[s][uid]
-                    if code != "E_NOT_ON_MAP":
+                    if order["order"] == "join" and code in ("E_JOIN", "E_GROUPED"):
+                        self.ended[s].append((uid, "has joined"))
+                    elif code not in ("E_NOT_ON_MAP", "E_GROUPED"):      # a unit now led by another needs no word
                         self.ended[s].append((uid, ENDED.get(code, "cannot carry out its order")))
         self.air = {s: self.state["sides"][s]["air"] for s in S.SIDES}
         self.waiting = [] if self.state["over"] else list(self.humans)
@@ -101,6 +103,30 @@ class Session:
         self.pending[self.side][order["unit"]] = order
         self.standing[self.side][order["unit"]] = order
         return {"ok": True}
+
+    def related_at(self, uid, h):
+        """A unit of the same division in this hex that uid could join, or None (RULES 20.2.2)."""
+        u = self.unit(uid)
+        mine = {m["id"] for m in self.members(uid)}
+        for m in self.view["units"]:
+            if (u and m["status"] == "on_map" and tuple(m["hex"]) == tuple(h) and m["id"] not in mine
+                    and U.formation(m) == U.formation(u)):
+                return m["id"]
+        return None
+
+    def recall(self, uid):
+        """An HQ calls its division in: every related unit not with it is ordered to join it
+        (RULES 20.2.9). Returns how many orders were given, or None if this is no division's HQ."""
+        u = self.unit(self.leader(uid))
+        hq = next((m for m in self.members(u["id"]) if m["type"] == "hq"), None) if u else None
+        if hq is None or not any(m.get("parent") == hq["id"] for m in self.view["units"]):
+            return None
+        with_hq, given = {m["id"] for m in self.members(hq["id"])}, 0
+        for m in self.view["units"]:
+            if m["status"] == "on_map" and m.get("parent") == hq["id"] and m["id"] not in with_hq \
+                    and m["group"] in (None, m["id"]):
+                given += self.give({"unit": m["id"], "order": "join", "with": hq["id"]})["ok"]
+        return given
 
     def waiting_units(self):
         """The side's units that have no order yet, in the order the screen steps through them."""

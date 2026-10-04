@@ -27,12 +27,13 @@ SUPPLY, REACH, REACH_FULL, SHORT = (24, 98, 170), (70, 140, 210, 34), (70, 140, 
 ZOC_OWN, ZOC_FOE, UNSEEN = (40, 110, 200, 50), (210, 50, 40, 70), (60, 52, 40, 100)
 GOOD, POOR, FUEL, STORES = (60, 150, 70), (200, 60, 40), (150, 110, 40), (40, 100, 180)
 BUTTON, BUTTON_ON, BUTTON_GO = (222, 210, 182), (255, 226, 60), (120, 170, 110)
-ORDER_KEY = {"move": "M", "attack": "A", "hold": "H", "dig_in": "D", "road_march": "R", "rest": "T"}
+ORDER_KEY = {"move": "M", "attack": "A", "hold": "H", "dig_in": "D", "road_march": "R", "rest": "T", "join": "J"}
 ORDER_NAME = {"move": "Move", "attack": "Attack", "hold": "Hold", "dig_in": "Dig in",
-              "road_march": "Travel", "rest": "Rest"}            # Travel is the road march of the rules
+              "road_march": "Travel", "rest": "Rest", "join": "Join"}   # Travel is the road march of the rules
 ORDER_HELP = {"move": "go to a hex across country", "attack": "go there and attack what you meet",
               "hold": "stay and defend", "dig_in": "stay and build defences (costs stores)",
-              "road_march": "far and fast by road; nearly helpless if caught", "rest": "stay and recover"}
+              "road_march": "far and fast by road; nearly helpless if caught", "rest": "stay and recover",
+              "join": "go to a unit of its division and group with it"}
 TYPE_NAME = {"armour": "Tanks", "motorised": "Motorised infantry", "foot": "Infantry", "guns": "Guns",
              "recon": "Armoured cars", "hq": "Headquarters"}
 # what a step of strength stands for (docs/RULES.md 4.2.1): so many of these
@@ -42,7 +43,9 @@ MORALE = ("Very poor", "Poor", "Very low", "Low", "Fair", "Normal", "Good", "Ver
 # the order bar: name, label, key shown
 BUTTONS = (("move", "Move", "M"), ("attack", "Attack", "A"), ("road_march", "Travel", "R"),
            ("hold", "Hold", "H"), ("dig_in", "Dig in", "D"), ("rest", "Rest", "T"),
+           ("join", "Join", "J"), ("split", "Split", "X"), ("recall", "Recall", "C"),
            ("s", "Supply", "S"), ("z", "Zones", "Z"), ("done", "End turn", "Enter"))
+ARM = ("armour", "motorised", "foot", "guns", "recon", "hq")       # which unit of a pile is shown on top
 
 
 def morale(cohesion):
@@ -53,8 +56,12 @@ def morale(cohesion):
 
 def strength(u):
     """A unit's strength in real terms, from its steps: "about 130 tanks"."""
-    if u["type"] not in STRENGTH or "steps" not in u:
+    if u["type"] == "hq" or "steps" not in u:
         return ""
+    if u.get("real"):                                    # the scenario's own figure, scaled by what is left (RULES 20.4.2)
+        n, what, began = u["real"]
+        what = "armoured cars" if what == "cars" else what
+        return f"about {n * u['steps'] // began:,} {what}"
     each, what = STRENGTH[u["type"]]
     return f"about {u['steps'] * each:,} {what}"
 
