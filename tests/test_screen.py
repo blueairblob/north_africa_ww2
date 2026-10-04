@@ -113,7 +113,7 @@ def test_a_frame_is_drawn_without_a_window(zoom, overlays):
     surface = pygame.Surface(theme.WINDOW)
     app.paint(surface)
     colours = {tuple(surface.get_at((x, y)))[:3] for x in range(0, 1000, 37) for y in range(0, 700, 41)}
-    assert len(colours) > 6 and "Move here" in app.ui.message
+    assert len(colours) > 6 and "Move here" in app.ui.preview
 
 
 def test_zooming_keeps_the_point_under_the_mouse_and_never_leaves_the_map():
@@ -158,15 +158,18 @@ def test_keys_and_clicks_give_orders():
     app.click(spot((59, 11)))
     assert app.ui.selected == 101                                  # clicked 15th Panzer
     app.key(pygame.K_r)
-    assert app.session.order_of(101)["order"] == "rest" and app.ui.selected is None     # the order given, it lets go
+    assert app.session.order_of(101)["order"] == "rest" and app.ui.selected == 102      # and on to the next
+    app.ui.selected = None
     app.click(spot((59, 11)))
     app.click(spot((60, 12)))                                      # a plain click on open ground: move
     assert app.session.order_of(101) == {"unit": 101, "order": "move", "to": [60, 12]}
-    app.click(spot((57, 11)))                                      # a click on your own unit takes it up
+    app.ui.selected = None
+    app.click(spot((57, 11)))                                      # nothing taken up: a click on your own unit takes it up
     assert app.ui.selected == 109
     assert (55, 10) in {tuple(e["hex"]) for e in app.session.view["enemy"]}
     app.click(spot((55, 10)))                                      # ...and on an enemy in sight: attack
     assert app.session.order_of(109) == {"unit": 109, "order": "attack", "to": [55, 10]}
+    app.ui.selected = None
     app.click(spot((57, 11)))
     app.click(layout.buttons(app.size)["dig_in"].center)           # the order bar
     assert app.session.order_of(109)["order"] == "dig_in"
@@ -204,13 +207,13 @@ def test_the_screen_steps_through_the_units_that_wait():
     app = App(Session(crusader(), GMAP, humans=["axis"], scripted={"cw": players.DoNothing(GMAP)}))
     assert app.ui.selected == 101                                 # the first unit is taken up for you
     app.key(pygame.K_h)
-    assert app.session.order_of(101)["order"] == "hold" and app.ui.selected is None and "press Next unit" in app.ui.message
-    app.click(layout.buttons(app.size)["next"].center)              # Next unit: on to the one after, taken up and lit
-    assert app.ui.selected == 102 and app.target is not None and "waits for an order" in app.ui.message
-    for _ in range(17):
-        app.key(pygame.K_h)
-        app.key(pygame.K_SPACE)
-    assert app.session.waiting_units() == [] and "End turn" in app.ui.message and app.ui.selected is None
+    assert app.session.order_of(101)["order"] == "hold" and app.ui.selected == 102 and "more to order" in app.ui.message
+    assert app.ui.hover is None                                     # the next is taken up, with no line trailing the pointer
+    app.click(layout.buttons(app.size)["next"].center)              # Next unit skips one: on to the one after
+    assert app.ui.selected == 103 and app.target is not None and "waits for an order" in app.ui.message
+    while app.session.waiting_units():
+        app.key(pygame.K_h)                                         # each order goes on to the next that waits
+    assert "End turn" in app.ui.message and app.ui.selected is None
     app.key(pygame.K_RETURN)
     assert app.session.state["turn"] == 2 and app.session.waiting_units() == []          # the orders stand
 
@@ -452,12 +455,10 @@ def test_a_keyboard_only_player_can_choose_a_destination_and_enter_does_not_end_
     assert app.ui.hover == (66, 21) and app.ui.cam == cam            # the cursor moved, not the map
     surface = pygame.Surface(theme.WINDOW)
     app.paint(surface)
-    assert "Move here" in app.ui.message                             # the way is previewed as with the mouse
+    assert "Move here" in app.ui.preview                             # the way is previewed as with the mouse
     keys(app, "RETURN")
     assert app.session.pending["cw"][201] == {"unit": 201, "order": "move", "to": [66, 21]}
-    assert app.session.state["turn"] == 1 and app.ui.mode is None and app.ui.selected is None
-    keys(app, "SPACE")
-    assert app.ui.selected == 202                                    # Next unit: the one after the last ordered
+    assert app.session.state["turn"] == 1 and app.ui.mode is None and app.ui.selected == 202   # on to the next
     keys(app, "a")                                                   # no enemy within reach: Attack is greyed
     assert app.ui.mode is None and "No enemy in sight" in app.ui.message
     keys(app, "m", "LEFT", "ESCAPE")                                 # Escape cancels
@@ -495,7 +496,7 @@ def test_the_unit_taken_up_for_orders_is_brought_to_the_middle():
         settle(app)
         x, y = app.spot(tuple(app.session.unit(app.ui.selected)["hex"]))
         assert abs(x - middle[0]) <= 2 and abs(y - middle[1]) <= 2, app.ui.selected
-        keys(app, "h", "SPACE")
+        keys(app, "h")
     keys(app, "TAB")                                                 # and Tab does the same
     assert app.target is not None                                    # by a glide, not a jump
     settle(app)
@@ -722,7 +723,7 @@ def test_the_way_shows_how_far_the_fuel_goes():
     app = App(s)
     app.ui.hover = (76, 24)
     app.paint(pygame.Surface(theme.WINDOW))
-    assert "about 2 turns" in app.ui.message and "fuel gives out after 50 km (5 hexes)" in app.ui.message
+    assert "about 2 turns" in app.ui.preview and "fuel gives out after 50 km (5 hexes)" in app.ui.preview
     assert s.preview(101, "move", (68, 24))["range"] == 5 and "foot" not in app.ui.message
 
 
@@ -1118,6 +1119,7 @@ def test_with_a_unit_taken_up_a_click_on_your_own_units_ends_its_move_there():
     app.centre_on((64, 23))
     app.click(app.spot((64, 22)))                                   # where 7th Armoured Division stands
     assert s.pending["cw"][304] == {"unit": 304, "order": "move", "to": [64, 22]} and app.ui.chooser is None
+    app.ui.selected = None
     app.click(app.spot((64, 22)))                                   # nothing taken up now: the same click takes up what is there
     assert app.ui.selected == 310
 
@@ -1164,3 +1166,36 @@ def test_a_surrender_is_reported_and_shown_as_a_white_flag():        # RULES 6.1
     app.centre_on((70, 25))
     app.paint(pygame.Surface(theme.WINDOW))                          # the flag is drawn without error
     assert at(play.stage(play.length), 101) is None
+
+
+# ---- the third review --------------------------------------------------------------------
+
+def test_the_playback_is_watched_close_in_and_the_zoom_returns_after():
+    pygame.init()
+    app = App(Session(regiments(), GMAP, humans=["cw"], scripted={"axis": players.AlwaysAttack(GMAP)}))
+    app.zoom(0.01)
+    far = app.ui.zoom
+    assert far < 0.5
+    app.done()
+    assert app.play is not None and app.ui.zoom == 1.0              # counters are legible while it plays
+    keys(app, "ESCAPE")
+    assert app.play is None and app.ui.zoom == far                   # and the player's zoom comes back
+
+
+def test_the_instruction_line_follows_the_state_and_the_tooltip_keeps_quiet_on_empty_desert():
+    pygame.init()
+    app = App(Session(regiments(), GMAP, humans=["cw"], scripted={"axis": players.DoNothing(GMAP)}))
+    surface = pygame.Surface(theme.WINDOW)
+    app.ui.hover = (60, 30)
+    app.paint(surface)
+    assert app.ui.preview.startswith("Move here")                    # a unit is taken up: what a click would do
+    app.ui.selected = None
+    app.paint(surface)
+    assert app.ui.preview == ""                                      # nothing taken up: nothing claimed
+    said = []
+    app.painter.tooltip = lambda *args: said.append(app.ui.hover)
+    for hx in ((60, 30), tuple(GMAP.places["Tobruk"]["hex"]), (64, 22)):          # empty desert; a place; your own units
+        app.ui.hover = hx
+        app.centre_on(hx)
+        app.paint(surface)
+    assert said == [tuple(GMAP.places["Tobruk"]["hex"]), (64, 22)]               # no "open desert" box following the pointer

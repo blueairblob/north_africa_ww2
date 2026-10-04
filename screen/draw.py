@@ -42,6 +42,7 @@ class UI:
         self.chooser = None             # a hex with several of your units in it, and which: a list to choose from
         self.layers_open = False        # the Layers list in the map's corner is showing
         self.editing = None             # the name being typed for the group taken up, or None
+        self.preview = ""               # what a click here would do, while a unit is taken up and a hex pointed at
 
     @property
     def layout(self):
@@ -57,6 +58,7 @@ class Painter:
         self.back = (None, None)        # the scaled background and what it was made for
         self.reach_cache = (None, None)
         self.zone_cache = (None, None)
+        self.named = {p["hex"] for p in gmap.places.values()}       # hexes with a place in them
         self.playing = False            # the last turn is being played back
         self.member_rects = {}          # the rows of a group's units in the panel, to click
         self.chooser_rects, self.report_rects, self.back_rect, self.tips = {}, {}, None, []
@@ -292,7 +294,8 @@ class Painter:
                 self.chooser_rects[uid] = row
         elif ui.hover and g.on_map(ui.hover):
             pygame.draw.polygon(surface, T.SELECT, poly(ui.hover), 2)
-            self.tooltip(surface, session, ui, stacks.get(ui.hover, []))
+            if stacks.get(ui.hover) or ui.hover in self.named or f"{ui.hover[0]},{ui.hover[1]}" in view["forts"]:
+                self.tooltip(surface, session, ui, stacks.get(ui.hover, []))     # only where there is something to say
         if "k" in ui.overlays:
             self.key(surface)
         for name, r in layers((w + T.PANEL, h + T.BAR), ui.layers_open).items():      # the Layers button, in the corner
@@ -510,7 +513,7 @@ class Painter:
                 when = "this turn" if turns == 1 else f"about {turns} turns" if turns else "it cannot set off"
                 dry = p["range"] is not None and p["range"] < len(p["path"])
                 fuel = f"   Its fuel gives out after {T.fuel_words(p['range'])}, at the cross." if dry else ""
-                ui.message = f"{T.ORDER_NAME[name]} here: {when}.{fuel}   Click to order."
+                ui.preview = f"{T.order_name(name, session.members(u['id']))} here: {when}.{fuel}   Click to order."
 
     # ---- a counter -----------------------------------------------------------------------
 
@@ -638,8 +641,10 @@ class Painter:
     # ---- the message line and the panel --------------------------------------------------
 
     def bar(self, surface, session, ui, rect):
+        """One line of instruction, tied to what is happening: what a click would do while a
+        unit is taken up and a hex pointed at, otherwise the last thing said."""
         pygame.draw.rect(surface, T.INK, rect)
-        self.text(surface, ui.message, (rect.x + 10, rect.y + 7), 14, T.PAPER)
+        self.text(surface, ui.preview or ui.message, (rect.x + 10, rect.y + 7), 14, T.PAPER)
 
     def buttons(self, surface, session, ui):
         """The orders and End turn, at the foot of the panel. The unit's own order is lit, and a
@@ -886,6 +891,7 @@ class Painter:
     def frame(self, surface, session, ui, stage=None):
         a = areas(surface.get_size())
         self.playing = stage is not None
+        ui.preview = ""
         if stage:
             self.stage(surface.subsurface(a["map"]), session, ui, stage)
         elif ui.cover:

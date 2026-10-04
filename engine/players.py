@@ -4,6 +4,14 @@ from .gamemap import distance
 from .orders import ORDERS
 
 
+def parties(view):
+    """The side's units as they are ordered: each group under its leader, and each unit that is
+    in no group, as (leader, members) (RULES 20.2.5)."""
+    on_map = [u for u in view["units"] if u["status"] == "on_map"]
+    return [(u, [m for m in on_map if m["id"] == u["id"] or (u["group"] is not None and m["group"] == u["group"])])
+            for u in on_map if u["group"] in (None, u["id"])]
+
+
 class DoNothing:
     """Gives no orders: every unit holds."""
     def __init__(self, gmap):
@@ -14,38 +22,41 @@ class DoNothing:
 
 
 class AlwaysAttack(DoNothing):
-    """Every fighting unit attacks towards the nearest enemy it can see, or the enemy's base."""
+    """Every unit or group that can fight attacks towards the nearest enemy it can see, or the
+    enemy's base; one too shaken to attack rests."""
     def orders(self, view):
         foe_base = self.gmap.base["cw" if view["side"] == "axis" else "axis"]
         out = []
-        for u in view["units"]:
-            if u["status"] != "on_map" or u["type"] == "hq":
-                continue
-            here = tuple(u["hex"])
+        for lead, members in parties(view):
+            fighters = [m for m in members if m["type"] != "hq"]
+            if not fighters:
+                continue                                             # a headquarters by itself holds
+            here = tuple(lead["hex"])
             seen = sorted((distance(here, tuple(e["hex"])), tuple(e["hex"])) for e in view["enemy"])
             to = seen[0][1] if seen else foe_base
-            name = "attack" if u["cohesion"] >= 40 else "rest"
-            out.append({"unit": u["id"], "order": name, "to": list(to)} if name == "attack" and to != here
-                       else {"unit": u["id"], "order": "rest"})
+            fit = any(m["cohesion"] >= 40 for m in fighters)
+            out.append({"unit": lead["id"], "order": "attack", "to": list(to)} if fit and to != here
+                       else {"unit": lead["id"], "order": "rest"})
         return {"orders": out, "air": "support"}
 
 
 class AlwaysRetreat(DoNothing):
-    """Every unit marches for its own base."""
+    """Every unit or group marches for its own base."""
     def orders(self, view):
         base = self.gmap.base[view["side"]]
-        return {"orders": [{"unit": u["id"], "order": "move", "to": list(base)} for u in view["units"]
-                           if u["status"] == "on_map" and tuple(u["hex"]) != base], "air": "recon"}
+        return {"orders": [{"unit": lead["id"], "order": "move", "to": list(base)} for lead, _ in parties(view)
+                           if tuple(lead["hex"]) != base], "air": "recon"}
 
 
 class Explore(DoNothing):
     """Tries everything in turn, sensible or not, legal or not: every order, near and far
-    destinations, the sea, off the map, units that are not its own, orders that are not orders."""
+    destinations, the sea, off the map, units that are not its own, units inside groups, joins
+    and splits, orders that are not orders."""
     def orders(self, view):
         g, turn, out = self.gmap, view["turn"], []
         ids = [u["id"] for u in view["units"]] + [e["id"] for e in view["enemy"]] + [-1]
         for n, uid in enumerate(ids):
-            k = (turn * 7 + uid * 3 + n) % 12
+            k = (turn * 7 + uid * 3 + n) % 15
             here = next((tuple(u["hex"]) for u in view["units"] if u["id"] == uid and u["hex"]), (60, 15))
             far = g.base["cw" if (turn + uid) % 2 else "axis"]
             spots = [far, (here[0] + k % 5 - 2, here[1] + k % 3 - 1), here, (0, 0), (g.cols + 3, 2),
@@ -63,8 +74,14 @@ class Explore(DoNothing):
                 order = {"unit": uid, "order": "charge"}
             elif k == 10:
                 order = {"unit": uid, "order": "move"}
-            else:
+            elif k == 11:
                 order = "nonsense" if uid % 2 else {"unit": str(uid), "order": "hold"}
+            elif k == 12:                                           # join whoever comes next in the list, friend or foe
+                order = {"unit": uid, "order": "join", "with": ids[(n + 1 + turn) % len(ids)]}
+            elif k == 13:                                           # split off, and go somewhere
+                order = {"unit": uid, "order": "move", "to": to, "alone": True}
+            else:
+                order = {"unit": uid, "order": "hold", "alone": True}
             out.append(order)
             if k == 3:
                 out.append({"unit": uid, "order": "hold"})          # a second order for the same unit

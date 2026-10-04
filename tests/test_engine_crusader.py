@@ -77,3 +77,29 @@ def test_crusader_plays_to_the_end_with_the_invariants_holding(axis, cw):
     kinds = {"nothing": players.DoNothing, "attack": players.AlwaysAttack, "explore": players.Explore}
     state, record = runner.play(crusader(), GMAP, {"axis": kinds[axis](GMAP), "cw": kinds[cw](GMAP)})
     assert state["over"] and len(record) == 22
+
+
+def refused(axis, cw):
+    """Play Crusader; the share of each side's orders the engine accepted, and the final state."""
+    from engine.view import view
+    from engine.turn import finish_turn
+    sc = crusader()
+    P = {"axis": players.SCRIPTED[axis](GMAP), "cw": players.SCRIPTED[cw](GMAP)}
+    state, given, taken = S.new_game(sc, GMAP), {s: 0 for s in S.SIDES}, {s: 0 for s in S.SIDES}
+    while not state["over"]:
+        state = begin_turn(state, GMAP, sc)
+        state, replies = finish_turn(state, GMAP, sc, {s: P[s].orders(view(state, GMAP, sc, s)) for s in S.SIDES})
+        for s in S.SIDES:
+            given[s] += len(replies[s])
+            taken[s] += sum(r["ok"] for r in replies[s])
+    return {s: taken[s] * 100 // max(1, given[s]) for s in S.SIDES}, state
+
+
+def test_the_scripted_players_orders_are_accepted_and_they_change_the_game():
+    share, fought = refused("attack", "retreat")
+    assert share["axis"] >= 90 and share["cw"] >= 90, share          # they order groups as groups (20.2.5)
+    _, still = refused("nothing", "nothing")
+    _, pushed = refused("attack", "nothing")
+    place = lambda st: sorted((u["id"], u["hex"], u["steps"]) for u in st["units"])
+    assert place(pushed) != place(still)                             # an attacker is not the same as nobody
+    assert sum(u["status"] == "destroyed" for u in fought["units"]) + sum(u["status"] == "destroyed" for u in pushed["units"]) > 0

@@ -17,6 +17,7 @@ DRAG = 6                # pixels the mouse must move with the button down to dra
 FAST = 3                # how much faster the playback runs with F; its rattles are as much shorter
 GLIDE_MS = 110          # how quickly the map glides to where it is going
 CURSOR_EDGE = 2.5       # hexes from the edge of the view at which the map follows the keyboard cursor
+PLAY_ZOOM = 1.0         # the playback is never watched from further out than this
 EDGE_PX = 26            # with a unit taken up, the mouse this near the map's edge scrolls the map
 EDGE_SPEED = 0.9        # base-map pixels a millisecond
 
@@ -29,6 +30,7 @@ class App:
         self.play, self.play_t, self.sounds, self.fast = None, 0.0, None, False   # last turn being played back
         self.target = None              # where the map is gliding to
         self.last = None                # the unit last taken up by Next, so Next goes on from it
+        self.zoom_back = None           # the zoom to return to when the playback ends
         self.confirm = self.asked = False   # End turn has been pressed once with units still waiting
         self.begin_orders()
         self.ui.message = "Click where this unit should go, or an enemy to attack. Orders stand until done."
@@ -163,9 +165,10 @@ class App:
             return
         ui.mode, ui.alone = None, False
         said = f"{self.session.group_name(u['id'])}: {T.order_name(name, self.session.members(u['id']))}."
-        ui.selected, ui.hover = None, None                # the order is given: let go, so no new line trails the mouse
+        self.step()                                       # on to the next unit that waits, taken up and brought to the middle
+        ui.hover = None                                   # no line trails the pointer for it until the pointer moves
         left = len(self.session.waiting_units())
-        ui.message = said + (f"   {left} more to order: press Next unit." if left else "   All units have orders: press End turn.")
+        ui.message = said + (f"   {left} more to order." if left else "   All units have orders: press End turn.")
 
     def step(self):
         """Take up the next unit with no order, bringing it into view; none left, let go."""
@@ -199,7 +202,13 @@ class App:
 
     def watch(self):
         """Play back the last turn as this side saw it, if it has not watched it yet."""
+        before = self.ui.zoom
+        if self.ui.zoom < PLAY_ZOOM:                      # zoomed out, the counters are dots: come in to watch
+            self.zoom(PLAY_ZOOM / self.ui.zoom)
         self.play, self.play_t, self.fast = self.session.playback(self.span()), 0.0, False
+        self.zoom_back = before if self.play else None
+        if not self.play and self.ui.zoom != before:
+            self.zoom(before / self.ui.zoom)
         if self.play:
             self.ui.message = "Last turn.   F: faster   Right arrow: next   any other key or a click: skip it all"
 
@@ -236,6 +245,9 @@ class App:
         self.play, self.fast = None, False
         if self.sounds:
             self.sounds.stop()
+        if self.zoom_back and self.zoom_back != self.ui.zoom:      # back to the zoom the player had
+            self.zoom(self.zoom_back / self.ui.zoom)
+        self.zoom_back = None
         u = self.session.unit(self.ui.selected)
         if u:
             self.glide_to(tuple(u["hex"]))                # back to the unit waiting for its order
