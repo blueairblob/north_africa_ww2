@@ -58,7 +58,8 @@ def new_game(scenario, gmap):
              "size": spec["size"], "xp": spec.get("xp", "regular"),
              "steps": spec["steps"], "max": spec.get("max", spec["steps"]),
              "hex": None, "cohesion": spec.get("cohesion", 100), "fuel": 0, "stores": 0,
-             "out_of_stores": False, "traced": True, "status": "not_arrived", "fate": None}
+             "out_of_stores": False, "traced": True, "status": "not_arrived", "fate": None,
+             "parent": spec.get("parent"), "group": None, "ceiling": 100}
         u["fuel"] = spec.get("fuel", U.fuel_cap(u))
         u["stores"] = spec.get("stores", U.stores_cap(u))
         if U.is_hq(u):
@@ -68,6 +69,13 @@ def new_game(scenario, gmap):
             u["hex"] = list(spec["hex"]) if "hex" in spec else list(gmap.places[spec["at"]]["hex"])
             u["status"] = "on_map"
         state["units"].append(u)
+    if scenario.get("grouped", True):                   # related units that start together start grouped (20.2.1)
+        for units_here in at(state).values():
+            for key in sorted({U.formation(u) for u in units_here}):
+                members = [u for u in units_here if U.formation(u) == key]
+                if len(members) > 1:
+                    for u in members:
+                        u["group"] = members[0]["id"]
     for side in SIDES:
         state["sides"][side]["brought"] = holdings(state, side)
     return state
@@ -100,6 +108,13 @@ def at(state):
 def carried(u):
     """Tonnes a unit holds, with its dump if it is an HQ."""
     return u["fuel"] + u["stores"] + (u["dump"]["fuel"] + u["dump"]["stores"] if U.is_hq(u) else 0)
+
+
+def party(state, u):
+    """The units that move and are ordered with u: its group, or itself alone (20.2.1)."""
+    if u["group"] is None:
+        return [u]
+    return [v for v in on_map(state) if v["group"] == u["group"]]
 
 
 def holdings(state, side):

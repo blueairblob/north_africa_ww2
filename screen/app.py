@@ -270,6 +270,7 @@ class App:
         if ui.mode and chosen:
             self.give(ui.mode, h)
         elif here:                                        # your own units: take one, or the next in the pile
+            here = sorted({s.leader(i) for i in here})    # a group is taken up as one, by its leader
             ui.selected = here[(here.index(ui.selected) + 1) % len(here)] if ui.selected in here else here[0]
             ui.message = "Now click where it should go, or an enemy to attack."
         elif chosen and guess(s, h):

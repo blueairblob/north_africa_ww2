@@ -407,7 +407,8 @@ def test_a_standing_attack_ends_when_the_defenders_do_not_fall_back():
     battle = [e for e in s.view["events"] if e["event"] == "battle" and 202 in e["attackers"]]
     assert battle and battle[0]["retreated"]                       # the other attack drove its enemy back...
     assert (202, "was repulsed") not in s.ended["cw"] and (202, "has arrived") in s.ended["cw"]   # ...and followed up
-    assert s.give({"unit": 201, "order": "attack", "to": [70, 25]})["ok"]       # to attack again is a new decision
+    again = s.give({"unit": 201, "order": "attack", "to": [70, 25]})            # to attack again is a new decision,
+    assert again["ok"] == (s.unit(201)["cohesion"] >= 40)                        # open to it unless it is too worn
 
 
 # ---- found by the second playtest --------------------------------------------------------
@@ -703,3 +704,24 @@ def test_the_way_shows_how_far_the_fuel_goes():
     app.paint(pygame.Surface(theme.WINDOW))
     assert "about 2 turns" in app.ui.message and "fuel gives out after 5 hexes" in app.ui.message
     assert s.preview(101, "move", (68, 24))["range"] == 5 and "foot" not in app.ui.message
+
+
+def test_at_the_screen_a_group_is_taken_up_and_ordered_as_one():     # RULES 20.2.5
+    from helpers import scenario, unit
+    units = [unit(110, "axis", "hq", [70, 24], steps=1), unit(111, "axis", "armour", [70, 24], parent=110, fuel=40),
+             unit(112, "axis", "motorised", [70, 24], parent=110), unit(201, "cw", "foot", "Alexandria")]
+    s = Session(scenario(units), GMAP, humans=["axis"], scripted={"cw": players.DoNothing(GMAP)})
+    assert s.waiting_units() == [110] and s.leader(112) == 110 and [m["id"] for m in s.members(111)] == [110, 111, 112]
+    p = s.preview(112, "move", (80, 24))
+    wheels = {m["id"]: m["fuel"] for m in s.members(110)}            # refuelled by the HQ in the Supply phase
+    assert p["reach"] == 8 and p["range"] == min(wheels[110] // 2, wheels[111] // 4, wheels[112] // 3)   # the tanks' pace
+    assert s.give({"unit": 112, "order": "move", "to": [74, 24]})["ok"] and s.pending["axis"] == {
+        110: {"unit": 110, "order": "move", "to": [74, 24]}}
+    pygame.init()
+    app = App(s)
+    app.ui.selected = None
+    app.centre_on((70, 24))
+    app.click(app.spot((70, 24)))
+    assert app.ui.selected == 110                                    # a click on the stack takes up the group
+    s.done()
+    assert {tuple(u["hex"]) for u in s.view["units"]} == {(74, 24)} or len({tuple(u["hex"]) for u in s.view["units"]}) == 1

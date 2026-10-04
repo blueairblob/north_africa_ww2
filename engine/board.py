@@ -25,10 +25,43 @@ def zoc(state, gmap, side):
     return out
 
 
-def room(units_there, u):
-    """Whether a hex holding these units of u's side has room for u (4.3.1)."""
-    same = [v for v in units_there if U.is_hq(v) == U.is_hq(u) and v["id"] != u["id"]]
-    return len(same) < (U.STACK_HQ if U.is_hq(u) else U.STACK_COMBAT)
+def room(units_there, comers):
+    """Whether a hex holding these units has room for the comers, a unit or a list of units
+    of one side: the units of at most STACK_FORMATIONS formations may share a hex (20.1.4)."""
+    comers = comers if isinstance(comers, list) else [comers]
+    ids = {u["id"] for u in comers}
+    there = {U.formation(v) for v in units_there if v["id"] not in ids}
+    return len(there | {U.formation(u) for u in comers}) <= U.STACK_FORMATIONS
+
+
+def regroup(state):
+    """Put the groups right after units have moved, fallen back or been lost: a group is the
+    related units still in its leader's hex, led by the lowest id; one alone is no group (20.2)."""
+    groups = {}
+    for u in state["units"]:
+        if u["group"] is not None:
+            if u["status"] == "on_map":
+                groups.setdefault(u["group"], []).append(u)
+            else:
+                u["group"] = None
+    for members in groups.values():
+        lead = members[0]                                       # units are kept in id order
+        stay = [u for u in members if u["hex"] == lead["hex"]]
+        for u in members:
+            u["group"] = lead["id"] if u in stay and len(stay) > 1 else None
+        rest = [u for u in members if u not in stay]            # those left elsewhere group among themselves
+        for h in sorted({tuple(u["hex"]) for u in rest}):
+            left = [u for u in rest if tuple(u["hex"]) == h]
+            for u in left:
+                u["group"] = left[0]["id"] if len(left) > 1 else None
+
+
+def join(state, u, other):
+    """Group u with a related unit in its hex, and so with that unit's group (20.2.2)."""
+    members = S.party(state, u) + S.party(state, other)
+    lead = min(v["id"] for v in members)
+    for v in members:
+        v["group"] = lead
 
 
 def enter(state, u, h, entered):

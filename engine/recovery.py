@@ -21,7 +21,7 @@ def recovery_phase(state, ctx):
     for u in S.on_map(state):                                                # 11.2.1
         gain = {"rest": REST_GAIN, "hold": HOLD_GAIN}.get(ctx["orders"][u["id"]]["order"], 0)
         if gain and u["traced"] and not u["out_of_stores"] and u["id"] not in ctx["in_battle"]:
-            u["cohesion"] = min(100, u["cohesion"] + gain)
+            u["cohesion"] = max(u["cohesion"], min(u["ceiling"], u["cohesion"] + gain))   # 20.3.4
 
     there = S.at(state)
     for h in sorted(there):                                                  # 11.3

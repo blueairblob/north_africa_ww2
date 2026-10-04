@@ -68,14 +68,23 @@ def test_two_enemies_changing_places_both_stop():                               
     assert u[101]["hex"] == [70, 24] and u[201]["hex"] == [70, 25]
 
 
-def test_a_full_hex_refuses_the_highest_id():                                    # 9.5.4, 4.3.1
+def test_a_full_hex_refuses_the_highest_id():                                    # 9.5.4, 20.1.4
     sc, state = start([unit(201, "cw", "motorised", [70, 23]), unit(202, "cw", "motorised", [69, 23]),
-                       unit(203, "cw", "motorised", [69, 24]), unit(204, "cw", "hq", [71, 23], steps=1),
-                       unit(205, "cw", "hq", [71, 24], steps=1)])
-    state, _ = turn(sc, state, cw=[move(uid, [70, 24]) for uid in (201, 202, 203, 204, 205)])
+                       unit(203, "cw", "motorised", [69, 24]), unit(204, "cw", "hq", [71, 23], steps=1)])
+    state, _ = turn(sc, state, cw=[move(uid, [70, 24]) for uid in (201, 202, 203, 204)])
     u = by_id(state)
-    assert [u[i]["hex"] for i in (201, 202, 203)] == [[70, 24], [70, 24], [69, 24]]
-    assert [u[i]["hex"] for i in (204, 205)] == [[70, 24], [71, 24]]              # one HQ a hex
+    assert [u[i]["hex"] for i in (201, 202, 203, 204)] == [[70, 24], [70, 24], [69, 24], [71, 23]]   # two formations a hex
+
+
+def test_a_division_fits_in_one_hex_whatever_its_size():                         # 20.1.4
+    units = [unit(220, "cw", "hq", [70, 24], steps=1)]
+    units += [unit(201 + n, "cw", "motorised", h, parent=220) for n, h in enumerate(([70, 23], [69, 23], [69, 24], [71, 23]))]
+    units += [unit(230, "cw", "motorised", [71, 24]), unit(231, "cw", "motorised", [70, 25])]
+    sc, state = start(units)
+    state, _ = turn(sc, state, cw=[move(uid, [70, 24]) for uid in (201, 202, 203, 204, 230, 231)])
+    u = by_id(state)
+    assert all(u[i]["hex"] == [70, 24] for i in (201, 202, 203, 204, 230))        # the division, and one other formation
+    assert u[231]["hex"] == [70, 25]                                              # a third formation is refused
 
 
 def test_friends_may_change_places():                                            # 9.5.2 is about enemies only

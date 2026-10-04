@@ -118,3 +118,15 @@ def test_units_draw_before_dumps_are_filled():                                  
     u = by_id(state)
     assert u[101]["stores"] == 300 - 50                                          # the garrison had it, not the dump
     assert u[104]["dump"]["stores"] == 0 and state["ports"]["Derna"]["stores"] == 0
+
+
+def test_a_port_keeps_a_reserve_for_the_units_that_draw_from_it():               # 6.7.5
+    units = [unit(104, "axis", "hq", "Gazala", steps=1), unit(101, "axis", "foot", "Derna", size=2),
+             unit(102, "axis", "foot", "Gazala", stores=0)]
+    sc, state = start(units, ports={"Derna": {"condition": 0, "fuel": 500, "stores": 1400}})
+    sc["sides"]["axis"]["sea_pct"] = [["1941-11-18", 0]]
+    state = begin_turn(state, GMAP, sc)
+    hq, port = by_id(state)[104], state["ports"]["Derna"]
+    assert port["stores"] == supply.RESERVE_TURNS * supply.UPKEEP * 2            # ten turns for the garrison: 1000 tonnes
+    assert hq["dump"]["stores"] + by_id(state)[102]["stores"] + 50 == 400        # the HQ had only what was above it
+    assert by_id(state)[101]["stores"] == 600 - 100                              # the garrison itself was full: it drew nothing

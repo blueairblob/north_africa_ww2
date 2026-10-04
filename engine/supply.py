@@ -19,6 +19,12 @@ REACH_FILL_PCT = 50     # how full a depot can make a unit at REACH
 DUMP_CAP = 3000         # tonnes of each kind an HQ dump may hold beyond current need
 UPKEEP = 50             # tonnes of stores per size per turn
 STARVE_COHESION = 10    # cohesion lost per turn out of stores
+RESERVE_TURNS = 10      # turns of upkeep a port keeps for the units that draw from it
+MORALE_UNSUPPLIED = 30  # off the ceiling of a unit with no depot in reach (20.3.2)
+MORALE_THIN = 20        # off the ceiling of a unit at the limit of its depot's reach
+MORALE_ORPHAN = 20      # off the ceiling of a unit out of reach of its own HQ
+MORALE_WEAK = 40        # off the ceiling of a unit with no strength left; in proportion before that
+MORALE_FALL = 10        # cohesion lost per turn above the ceiling
 
 KINDS = ("stores", "fuel")                                   # stores are settled first (6.5.4)
 
@@ -116,8 +122,8 @@ def haul(state, pool, outlet, hq, H, want):
     side_totals = state["sides"][hq["side"]]
     src = outlet["stock"]
 
-    def allowed(f, s):                                        # 6.5.3
-        return ((f + s) * H <= pool["lift"] and s <= src["stores"]
+    def allowed(f, s):                                        # 6.5.3, and the port's reserve (6.7.5)
+        return ((f + s) * H <= pool["lift"] and s <= src["stores"] - outlet.get("reserve", 0)
                 and f + -(-(f + s) * H // HAUL_BURN_DIV) <= src["fuel"]
                 and (not outlet.get("rail") or f + s <= pool["rail"]))
 
@@ -161,6 +167,21 @@ def distribute(state, gmap, scenario, side, audit):
                 found.append((o["extra"] + o["dist"][h], 1, n, o))
         depots[u["id"]] = sorted(found, key=lambda d: d[:3])
         u["traced"] = bool(found)                             # 6.6.4
+        u["ceiling"] = 100 - (MORALE_THIN * (100 - fill(depots[u["id"]][0][0])) // 50 if found else MORALE_UNSUPPLIED)
+        if u.get("parent"):                                   # 20.3.2: its own HQ gone, or out of reach
+            hq = S.unit(state, u["parent"])
+            if hq["status"] != "on_map" or h not in hq_dist[hq["id"]]:
+                u["ceiling"] -= MORALE_ORPHAN
+        u["ceiling"] -= MORALE_WEAK * (u["max"] - u["steps"]) // u["max"]
+
+    for o in outs:                                            # 6.7.5: what a port keeps for its own
+        o["reserve"] = 0 if "extra" in o and o["name"] in ("Tripoli", "railhead") else RESERVE_TURNS * UPKEEP * sum(
+            u["size"] for u in units if depots[u["id"]] and depots[u["id"]][0][3] is o)
+    by_stock = {}
+    for o in outs:                                            # the railhead issues Alexandria's stock: one reserve
+        by_stock[id(o["stock"])] = max(by_stock.get(id(o["stock"]), 0), o["reserve"])
+    for o in outs:
+        o["reserve"] = by_stock[id(o["stock"])]
 
     def reach_of(hq):
         return sorted((o["extra"] + o["dist"][tuple(hq["hex"])], n) for n, o in enumerate(outs)
@@ -217,6 +238,9 @@ def upkeep(state):
                     B.destroy(state, u, "starved")
             else:
                 u["cohesion"] = max(0, u["cohesion"] - STARVE_COHESION)
+    for u in S.on_map(state):                                 # 20.3.3
+        if u["cohesion"] > u["ceiling"]:
+            u["cohesion"] = max(u["ceiling"], u["cohesion"] - MORALE_FALL)
 
 
 def supply_phase(state, gmap, scenario, audit):

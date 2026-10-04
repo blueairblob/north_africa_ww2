@@ -1,4 +1,4 @@
-"""Simultaneous movement in impulses (docs/RULES.md §9)."""
+"""Simultaneous movement in impulses (docs/RULES.md §9), a group moving as one (20.2.6)."""
 from . import board as B
 from . import state as S
 from . import units as U
@@ -12,10 +12,11 @@ FORT_MP = 2             # MP per level to enter a hex with an enemy fortificatio
 
 
 def cost_of(state, gmap, m, here, nxt):
-    """MP for the unit's step, with any enemy fortification in the hex entered (9.3)."""
+    """MP for the party's step, with any enemy fortification in the hex entered (9.3). The
+    party's mode already costs the step for the member that finds it hardest."""
     cost = step_cost(gmap, here, nxt, gmap.side_between(here, nxt), m["mode"])
     fort = state["forts"].get(S.fort_key(nxt))
-    if fort and fort[1] != m["u"]["side"]:
+    if fort and fort[1] != m["side"]:
         cost += FORT_MP * fort[0]
     return cost
 
@@ -23,92 +24,105 @@ def cost_of(state, gmap, m, here, nxt):
 def movement_phase(state, gmap, ctx):
     if sorted(ctx["orders"]) != [u["id"] for u in S.on_map(state)]:
         ctx["audit"].append("I-15 the orders do not match the units on the map")
-    movers = {}
+    movers = {}                                                              # by the id of each party's leader
     for u in S.on_map(state):
         order = ctx["orders"][u["id"]]
-        if order["order"] in MOVING:                                         # 9.1.2
-            movers[u["id"]] = {"u": u, "path": full_path(gmap, u, order) or [], "i": 0, "spent": 0,
-                               "stopped": False, "mode": mode(u, order["order"]),
-                               "attack": order["order"] == "attack"}
+        if u["group"] not in (None, u["id"]) or order["order"] not in MOVING:      # 9.1.2; members go with their leader
+            continue
+        units = S.party(state, u)
+        movers[u["id"]] = {"units": units, "side": u["side"], "path": full_path(gmap, u, order, state) or [],
+                           "i": 0, "spent": 0, "stopped": False, "mode": mode(units, order["order"]),
+                           "allowance": min(ALLOWANCE[v["type"]] for v in units),   # 20.2.6
+                           "attack": order["order"] == "attack"}
 
     def stop(m, why=None):
         m["stopped"] = True
         if why:
-            S.log(state, "stopped", side=m["u"]["side"], unit=m["u"]["id"], why=why, hex=m["u"]["hex"])
+            for u in m["units"]:
+                S.log(state, "stopped", side=u["side"], unit=u["id"], why=why, hex=u["hex"])
 
     for impulse in range(1, IMPULSES + 1):
         held = B.occupied(state)
         zocs = {s: B.zoc(state, gmap, s) for s in S.SIDES}
         trying = {}
-        for uid in sorted(movers):                                           # 9.5.1
-            m = movers[uid]
-            u = m["u"]
+        for lead in sorted(movers):                                          # 9.5.1
+            m = movers[lead]
             if m["stopped"]:
                 continue
             if m["i"] >= len(m["path"]):
                 stop(m)
                 continue
-            here, nxt, foe = tuple(u["hex"]), m["path"][m["i"]], S.enemy(u["side"])
+            here, nxt, foe = tuple(m["units"][0]["hex"]), m["path"][m["i"]], S.enemy(m["side"])
             cost = cost_of(state, gmap, m, here, nxt)
-            if ALLOWANCE[u["type"]] * impulse // IMPULSES - m["spent"] < cost:      # 9.4.2
+            if m["allowance"] * impulse // IMPULSES - m["spent"] < cost:     # 9.4.2
                 continue
             if held.get(nxt) == foe:
                 stop(m, "contact")
             elif here in zocs[foe] and nxt in zocs[foe]:
                 stop(m, "zone of control")
-            elif U.is_vehicle(u) and u["fuel"] < U.step_fuel(u):
+            elif any(U.is_vehicle(u) and u["fuel"] < U.step_fuel(u) for u in m["units"]):
                 stop(m, "out of fuel")
             else:
-                trying[uid] = (nxt, cost)
+                trying[lead] = (nxt, cost)
 
         for h in sorted({nxt for nxt, _ in trying.values()}):                # 9.5.3
-            here = [uid for uid in sorted(trying) if trying[uid][0] == h]
-            sides = {movers[uid]["u"]["side"] for uid in here}
+            here = [lead for lead in sorted(trying) if trying[lead][0] == h]
+            sides = {movers[lead]["side"] for lead in here}
             if len(sides) == 2:
-                attacking = {movers[uid]["u"]["side"] for uid in here if movers[uid]["attack"]}
+                attacking = {movers[lead]["side"] for lead in here if movers[lead]["attack"]}
                 winner = attacking.pop() if len(attacking) == 1 else S.priority_side(state["turn"])
-                for uid in here:
-                    if movers[uid]["u"]["side"] != winner:
-                        del trying[uid]
-                        stop(movers[uid], "contact")
+                for lead in here:
+                    if movers[lead]["side"] != winner:
+                        del trying[lead]
+                        stop(movers[lead], "contact")
 
-        there, changed = S.at(state), True                                   # 9.5.4
+        there, changed = S.at(state), True                                   # 9.5.4, 20.1.4
         while changed:
             changed = False
+            leaving = {u["id"] for lead in trying for u in movers[lead]["units"]}
             for h in sorted({nxt for nxt, _ in trying.values()}):
-                staying = [v for v in there.get(h, []) if v["id"] not in trying]
-                for hq, limit in ((False, U.STACK_COMBAT), (True, U.STACK_HQ)):
-                    entering = [uid for uid in sorted(trying)
-                                if trying[uid][0] == h and U.is_hq(movers[uid]["u"]) == hq]
-                    over = len([v for v in staying if U.is_hq(v) == hq]) + len(entering) - limit
-                    for uid in reversed(entering[max(0, len(entering) - over):] if over > 0 else []):
-                        del trying[uid]
+                now = [v for v in there.get(h, []) if v["id"] not in leaving]
+                for lead in sorted(lead for lead in trying if trying[lead][0] == h):   # lowest id first
+                    if B.room(now, movers[lead]["units"]):
+                        now = now + movers[lead]["units"]
+                    else:
+                        del trying[lead]                                      # refused whole; it tries again
                         changed = True
+                if changed:
+                    break
 
-        for uid in sorted(trying):                                           # 9.5.5, 9.5.6
-            nxt, cost = trying[uid]
-            m = movers[uid]
-            u = m["u"]
-            fuel = U.step_fuel(u) if U.is_vehicle(u) else 0                   # 9.7.1
-            u["fuel"] -= fuel
-            state["sides"][u["side"]]["spent"] += fuel
+        for lead in sorted(trying):                                          # 9.5.5, 9.5.6
+            nxt, cost = trying[lead]
+            m = movers[lead]
+            for u in m["units"]:
+                fuel = U.step_fuel(u) if U.is_vehicle(u) else 0               # 9.7.1
+                u["fuel"] -= fuel
+                state["sides"][u["side"]]["spent"] += fuel
+                B.enter(state, u, nxt, ctx["entered"])
+                S.log(state, "step", side=u["side"], unit=u["id"], impulse=impulse, to=list(nxt), march=m["mode"] == "march")
             m["spent"] += cost
             m["i"] += 1
-            B.enter(state, u, nxt, ctx["entered"])
-            S.log(state, "step", side=u["side"], unit=uid, impulse=impulse, to=list(nxt), march=m["mode"] == "march")
 
         zocs = {s: B.zoc(state, gmap, s) for s in S.SIDES}                   # 9.5.7
-        for uid in sorted(trying):
-            u = movers[uid]["u"]
-            if tuple(u["hex"]) in zocs[S.enemy(u["side"])]:
-                stop(movers[uid], "contact")
+        for lead in sorted(trying):
+            m = movers[lead]
+            if tuple(m["units"][0]["hex"]) in zocs[S.enemy(m["side"])]:
+                stop(m, "contact")
 
-    for uid in sorted(movers):
-        m = movers[uid]
-        ctx["next"][uid] = m["path"][m["i"]] if m["i"] < len(m["path"]) else None
-        ctx["mp"][uid] = m["spent"]
-        if m["i"] > IMPULSES or m["spent"] > ALLOWANCE[m["u"]["type"]]:
-            ctx["audit"].append(f"I-16 unit {uid} moved {m['i']} hexes for {m['spent']} MP")
-        m["u"]["cohesion"] = max(0, m["u"]["cohesion"] - m["spent"] // MOVE_COHESION_DIV)    # 9.8.1
+    for lead in sorted(movers):
+        m = movers[lead]
+        if m["i"] > IMPULSES or m["spent"] > m["allowance"]:
+            ctx["audit"].append(f"I-16 unit {lead} moved {m['i']} hexes for {m['spent']} MP")
+        for u in m["units"]:
+            ctx["next"][u["id"]] = m["path"][m["i"]] if m["i"] < len(m["path"]) else None
+            ctx["mp"][u["id"]] = m["spent"]
+            u["cohesion"] = max(0, u["cohesion"] - m["spent"] // MOVE_COHESION_DIV)       # 9.8.1
+    for u in S.on_map(state):                                                # 20.2.2: joined, if it got there
+        order = ctx["orders"][u["id"]]
+        if order["order"] == "join":
+            other = S.unit(state, order["with"])
+            if other["status"] == "on_map" and other["hex"] == u["hex"] and B.room(
+                    [v for v in S.at(state)[tuple(u["hex"])]], [u]):
+                B.join(state, u, other)
+    B.regroup(state)
     B.settle_owners(state, gmap)                                             # 3.4.2
-

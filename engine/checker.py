@@ -9,7 +9,7 @@ from .recovery import FORT_MAX
 from .supply import PORT_CAP
 from .victory import par
 
-COUNTERS = 30           # no more than about this many a side (DESIGN.md §14.1)
+COUNTERS = 60           # no more than about this many a side (DESIGN.md §14.1)
 
 
 def problems(scenario, gmap):
@@ -76,11 +76,16 @@ def problems(scenario, gmap):
             day(spec["arrives"], tag)
         else:
             where.setdefault(h, []).append(spec)
+    hqs = {s["id"]: s for s in scenario["units"] if s.get("type") == "hq"}
+    for spec in scenario["units"]:                              # 20.1.2
+        parent = spec.get("parent")
+        if parent is not None and (parent not in hqs or hqs[parent]["side"] != spec["side"] or parent == spec["id"]):
+            bad.append(f"unit {spec['id']} {spec['name']}: its parent must be an HQ of its own side")
     for h, specs in sorted(where.items()):
         if len({s["side"] for s in specs}) > 1:
             bad.append(f"{h}: both sides start here")
-        if sum(not U.is_hq(s) for s in specs) > U.STACK_COMBAT or sum(U.is_hq(s) for s in specs) > U.STACK_HQ:
-            bad.append(f"{h}: too many units start here")
+        if len({U.formation(s) for s in specs}) > U.STACK_FORMATIONS:
+            bad.append(f"{h}: too many formations start here")
     for side in S.SIDES:
         n = sum(s["side"] == side for s in scenario["units"])
         if n > COUNTERS:

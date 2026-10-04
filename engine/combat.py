@@ -137,44 +137,54 @@ def losses(battle):
                       **share(battle["defenders"], d_steps * min(STEP_MAX, STEP_LOSS * att // dfn) // 100)}
 
 
-def retreat_hexes(state, gmap, u, here, froms, stack, barred=None):
-    """The hexes next to here that u may retreat into, best first (10.6.2, 10.6.3).
-    With stack False, those that fail only for want of room."""
-    foe = S.enemy(u["side"])
+def retreat_hexes(state, gmap, units, here, froms, stack, barred=None):
+    """The hexes next to here that these units may retreat into together, best first
+    (10.6.2, 10.6.3, 20.2.7). With stack False, those that fail only for want of room."""
+    side = units[0]["side"]
+    foe = S.enemy(side)
     held, there, foe_zoc = B.occupied(state), S.at(state), B.zoc(state, gmap, foe)
     out = []
     for d, n, hexside in gmap.around(here):
-        if hexside in gmap.cliffs and U.is_vehicle(u):
+        if hexside in gmap.cliffs and any(U.is_vehicle(u) for u in units):
             continue
-        if held.get(n) == foe or (n in foe_zoc and held.get(n) != u["side"]) or n in froms:
+        if held.get(n) == foe or (n in foe_zoc and held.get(n) != side) or n in froms:
             continue
-        if n in (tuple(u["hex"]), barred) or B.room(there.get(n, []), u) != stack:
+        if n in (tuple(units[0]["hex"]), barred) or B.room(there.get(n, []), units) != stack:
             continue
-        out.append(((-sum(distance(n, f) for f in froms), distance(n, gmap.base[u["side"]]), d), n))
+        out.append(((-sum(distance(n, f) for f in froms), distance(n, gmap.base[side]), d), n))
     return [n for _, n in sorted(out)]
 
 
-def retreat(state, gmap, ctx, u, froms):
-    """One unit's retreat, or its surrender (10.6)."""
-    hexes = 2 if u["cohesion"] < ROUT_COHESION else 1                        # 10.6.1
-    ctx["retreated"].add(u["id"])
-    here = tuple(u["hex"])
-    first = retreat_hexes(state, gmap, u, here, froms, True)
+def retreat(state, gmap, ctx, units, froms):
+    """The retreat of a unit, or of a group as one, or its surrender (10.6, 20.2.7)."""
+    hexes = 2 if any(u["cohesion"] < ROUT_COHESION for u in units) else 1    # 10.6.1
+    ctx["retreated"] |= {u["id"] for u in units}
+    here = tuple(units[0]["hex"])
+
+    def go(h):
+        for u in units:
+            B.enter(state, u, h, ctx["entered"])
+
+    def tell():
+        for u in units:
+            S.log(state, "retreated", side=u["side"], unit=u["id"], to=u["hex"])
+
+    first = retreat_hexes(state, gmap, units, here, froms, True)
     if not first:
-        for through in retreat_hexes(state, gmap, u, here, froms, False):    # 10.6.4
-            beyond = retreat_hexes(state, gmap, u, through, froms, True)
+        for through in retreat_hexes(state, gmap, units, here, froms, False):    # 10.6.4
+            beyond = retreat_hexes(state, gmap, units, through, froms, True)
             if beyond:
-                B.enter(state, u, beyond[0], ctx["entered"])
-                S.log(state, "retreated", side=u["side"], unit=u["id"], to=list(beyond[0]))
-                return
-        B.destroy(state, u, "surrendered")                                   # 10.6.5
+                go(beyond[0])
+                return tell()
+        for u in units:
+            B.destroy(state, u, "surrendered")                               # 10.6.5
         return
-    B.enter(state, u, first[0], ctx["entered"])
+    go(first[0])
     if hexes == 2:                                                           # 10.6.6
-        second = retreat_hexes(state, gmap, u, first[0], froms, True, barred=here)
+        second = retreat_hexes(state, gmap, units, first[0], froms, True, barred=here)
         if second:
-            B.enter(state, u, second[0], ctx["entered"])
-    S.log(state, "retreated", side=u["side"], unit=u["id"], to=u["hex"])
+            go(second[0])
+    tell()
 
 
 def combat_phase(state, gmap, ctx):
@@ -208,8 +218,12 @@ def combat_phase(state, gmap, ctx):
         alive = [u for u in battle["defenders"] if u["status"] == "on_map"]
         if battle["fought"] and battle["cld"] >= battle["cla"] + RETREAT_MARGIN:
             battle["retreated"] = True
-            for u in alive:
-                retreat(state, gmap, ctx, u, battle["from"])
+            done = set()
+            for u in alive:                                                  # a group falls back as one (20.2.7)
+                if u["id"] not in done and u["status"] == "on_map":
+                    units = [v for v in S.party(state, u) if v in alive]
+                    done |= {v["id"] for v in units}
+                    retreat(state, gmap, ctx, units, battle["from"])
         elif battle["fought"] and not alive:
             battle["retreated"] = True                                       # none survived (11.1.1)
 
@@ -221,6 +235,7 @@ def combat_phase(state, gmap, ctx):
                     and B.room(S.at(state).get(battle["hex"], []), u)):
                 B.enter(state, u, battle["hex"], ctx["entered"])             # 10.7.2
                 S.log(state, "advanced", side=u["side"], unit=u["id"], to=list(battle["hex"]))
+    B.regroup(state)                                                         # 20.2.8
     B.settle_owners(state, gmap)                                             # 10.7.3
 
     for u in S.on_map(state):                                                # 9.9.1

@@ -214,8 +214,9 @@ Foot units have fuel capacity 0 and never need fuel.
 
 ### 4.3 Stacking
 
-**4.3.1** A hex may hold at most `STACK_COMBAT` combat units and `STACK_HQ`
-HQs, all of one side.
+**4.3.1** A hex may hold the units of at most `STACK_FORMATIONS` formations,
+all of one side (20.1.4). A unit that belongs to no division counts as a
+formation of its own.
 
 **4.3.2** No hex ever holds units of both sides.
 
@@ -227,8 +228,6 @@ what happens instead.
 
 | Name | Value | Meaning | Status |
 | --- | --- | --- | --- |
-| `STACK_COMBAT` | 2 | combat units in a hex | owner's decision (18.1) |
-| `STACK_HQ` | 1 | HQs in a hex | to be tuned |
 | `FUEL_HEX` | armour 4, motorised 3, guns 2, recon 2, hq 2, foot 0 | tonnes of fuel per size to enter one hex | derived: a division's fuel for 100 km taken as roughly 100 tonnes (**unverified**) |
 | `FUEL_RANGE` | 30 | hexes of fuel a full unit carries | to be tuned |
 | `STORES_CAP` | 300 | tonnes of stores per size a full unit carries | to be tuned |
@@ -243,7 +242,7 @@ state listed for it; anything else is a defect in the engine.
 | # | Phase | May change |
 | --- | --- | --- |
 | 1 | Supply (§6) | port condition and stock, Tripoli pipeline and stock, HQ dumps, unit fuel and stores, the flags `out_of_stores` and `traced`, cohesion; by starvation only: steps, unit status and hex, victory points |
-| 2 | Orders (§8) | the orders and air choice for this turn; nothing else |
+| 2 | Orders (§8) | the orders and air choice for this turn; which units are grouped (20.2); nothing else |
 | 3 | Air (§7) | each side's air effect for this turn |
 | 4 | Movement (§9) | unit hexes, fuel, cohesion, the `stationary` flag, HQ dumps (9.9), place owners, port condition and stock (on capture), fortification (on capture) |
 | 5 | Combat (§10) | steps, cohesion, stores, unit hexes (retreat, advance), unit status, what a destroyed unit held, HQ dumps, the `stationary` flag, victory points, place owners, port condition and stock, fortification |
@@ -441,6 +440,12 @@ dump beyond what the units whose first depot it is still demand, and fuel
 likewise, and takes hauls in the same way. Units draw before dumps are
 filled.
 
+**6.7.5 A port's reserve.** A port keeps back, from every haul to an HQ,
+`RESERVE_TURNS` turns of upkeep (6.9.1) in stores for the units whose first
+depot it is: no haul takes its stores below that. Those units themselves draw
+from all of its stock (6.8). The railhead issues Alexandria's stock and
+respects Alexandria's reserve. Tripoli, which no unit draws from, keeps none.
+
 **6.7.4** No haul raises a dump above its need plus `DUMP_CAP`, for fuel or
 for stores. A dump already above that (because its units' demands fell)
 keeps what it holds.
@@ -525,6 +530,7 @@ withdrawn, its whole dump is lost. Supply is never captured (18.10).
 | `REACH_FILL_PCT` | 50 | how full a depot can make a unit at `REACH` | to be tuned |
 | `DUMP_CAP` | 3000 | tonnes of each kind an HQ dump may hold beyond current need | to be tuned |
 | `HQ_CARRY` | 300 | tonnes of each kind a moving HQ keeps | to be tuned |
+| `RESERVE_TURNS` | 10 | turns of upkeep a port keeps back from hauls for the units that draw from it directly | to be tuned; owner's decision that there be a reserve |
 | `UPKEEP` | 50 | tonnes of stores per size per turn | derived, to be tuned: with combat and movement, a division at full effort uses about 300 tonnes a day, against 350 tons a day for a German motorised division (van Creveld) |
 | `STARVE_COHESION` | 10 | cohesion lost per turn out of stores | to be tuned |
 
@@ -1266,8 +1272,7 @@ asserted after every turn of every test game.
 - **I-1 Replay.** The same scenario and the same submitted orders give the
   same state, byte for byte when serialised.
 - **I-2** No hex holds units of both sides.
-- **I-3** No hex holds more than `STACK_COMBAT` combat units or `STACK_HQ`
-  HQs.
+- **I-3** No hex holds the units of more than `STACK_FORMATIONS` formations.
 - **I-4** Every unit on the map is in a passable hex on the map.
 - **I-5** Every unit on the map has steps from 1 to its maximum; no destroyed
   or withdrawn unit is on the map.
@@ -1293,6 +1298,8 @@ asserted after every turn of every test game.
   spends more MP than its allowance.
 - **I-17** A side's view contains nothing listed in 14.8.
 - **I-18** No phase changes state outside its list in 5.1.
+- **I-19** Every group is two or more related units on the map in one hex,
+  led by the one with the lowest id.
 
 I-10, I-11, I-15, I-16 and I-18 are about what happens inside a turn, so the
 engine notes any breach as the turn runs; the rest are checked on the state
@@ -1374,9 +1381,9 @@ These were the owner's to take, and the owner accepted all of them as
 written here on 3 October 2026. Each is in the rules above, and each can
 still be changed in one place if play shows it wrong.
 
-- **18.1 Stacking:** two combat units and one HQ in a hex (4.3). One counter a
-  hex cannot hold the Alamein line, which is about six hexes for some twenty
-  divisions.
+- **18.1 Stacking:** the units of two formations in a hex (4.3, 20.1.4); at
+  first, two combat units and one HQ. One formation a hex cannot hold the
+  Alamein line, which is about six hexes for some twenty divisions.
 - **18.2 Sand sea** is impassable to every unit (3.1.2). `DESIGN.md` §3.1 says
   impassable to vehicles; foot divisions did not cross the dunes either, and
   one rule is simpler.
@@ -1454,11 +1461,15 @@ adjacent, and each is the other's target: two battles (10.8.2).
 
 ---
 
-## 20. Agreed, not yet in the engine
+## 20. Formations, groups and morale
 
-Decided by the owner on 3 October 2026. These rules are not built: the engine
-and its tests still follow sections 1 to 19. When they are built they move
-into the sections they change, and this section goes.
+Decided by the owner on 3 October 2026, after the first screen was played.
+The engine follows 20.1 to 20.3 and its tests cite them
+(`tests/test_engine_groups.py`). They change the earlier sections where they
+say so: stacking (4.3.1), the orders (8.1.1 has a seventh, Join), movement
+(9), retreat (10.6) and recovery (11.2). 20.4, strength in real terms, is
+agreed but not yet in the scenario data; the screen shows a figure worked out
+from steps until it is.
 
 ### 20.1 Formations and their units
 
@@ -1559,12 +1570,6 @@ worked out from it: a step is `MEN_STEP` men, `TANKS_STEP` tanks or
 **20.4.2** The player is shown the real figure, scaled by the steps the unit
 has left, and never the steps.
 
-### 20.5 Supply: a port's reserve (proposed, not yet decided)
-
-**20.5.1** A port keeps back, from hauls to HQs, `RESERVE_TURNS` turns of
-upkeep (6.9.1) for the units whose first depot it is. Those units draw from
-all of its stock; an HQ may be hauled only what is above the reserve.
-
 ### 20.6 Constants
 
 | Name | Value | Meaning | Status |
@@ -1578,4 +1583,3 @@ all of its stock; an HQ may be hauled only what is above the reserve.
 | `MEN_STEP` | 800 | men in a step: about a battalion | derived; to be checked against establishments |
 | `TANKS_STEP` | 10 | tanks in a step | from 4.2.1 |
 | `GUNS_STEP` | 12 | guns in a step: about a regiment's battery group | to be tuned |
-| `RESERVE_TURNS` | 10 | turns of upkeep a port keeps for the units that draw from it | proposed; to be tuned |

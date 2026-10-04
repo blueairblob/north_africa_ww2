@@ -79,8 +79,22 @@ class Session:
     def order_of(self, uid):
         return self.pending[self.side].get(uid, {"unit": uid, "order": "hold"})
 
+    def leader(self, uid):
+        """The unit to order for this one: its group's leader, or itself (RULES 20.2.5)."""
+        u = self.unit(uid)
+        return uid if u is None or u["group"] is None else u["group"]
+
+    def members(self, uid):
+        """The units ordered with this one: its group, or itself alone."""
+        u = self.unit(uid)
+        return [] if u is None else [m for m in self.view["units"] if m["status"] == "on_map" and
+                                     (m["id"] == uid or (u["group"] is not None and m["group"] == u["group"]))]
+
     def give(self, order):
-        """Give or replace a unit's order. Returns the engine's reply (RULES 8.5)."""
+        """Give or replace a unit's order; an order for a unit in a group is its group's, unless
+        it is marked alone. Returns the engine's reply (RULES 8.5)."""
+        if not order.get("alone") and isinstance(order.get("unit"), int):
+            order = dict(order, unit=self.leader(order["unit"]))
         code = O.check_one(self.state, self.gmap, self.side, order, {})
         if code:
             return {"ok": False, "code": code, "text": O.REPLIES[code]}
@@ -90,7 +104,8 @@ class Session:
 
     def waiting_units(self):
         """The side's units that have no order yet, in the order the screen steps through them."""
-        return [u["id"] for u in self.view["units"] if u["status"] == "on_map" and u["id"] not in self.pending[self.side]]
+        return [u["id"] for u in self.view["units"] if u["status"] == "on_map" and u["id"] not in self.pending[self.side]
+                and u["group"] in (None, u["id"])]               # a group waits as one, under its leader
 
     def turns_to_go(self, uid):
         """How many turns a unit's standing order will take, or None."""
@@ -101,20 +116,24 @@ class Session:
     def preview(self, uid, name, to):
         """The way a unit would go under this order: the hexes, how many it reaches this turn,
         and the MP and fuel for those. None if the order would be rejected."""
+        uid = self.leader(uid)
         order = {"unit": uid, "order": name, "to": list(to)}
         u = self.unit(uid)
         if u is None or O.check_one(self.state, self.gmap, self.side, order, {}):
             return None
-        way = O.full_path(self.gmap, u, order)
+        group = self.members(uid)
+        way = O.full_path(self.gmap, u, order, self.state)
         here, mp, reach = tuple(u["hex"]), 0, 0
         for nxt in way[:IMPULSES]:
-            cost = paths.step_cost(self.gmap, here, nxt, self.gmap.side_between(here, nxt), O.mode(u, name))
-            if mp + cost > ALLOWANCE[u["type"]]:
+            cost = paths.step_cost(self.gmap, here, nxt, self.gmap.side_between(here, nxt), O.mode(group, name))
+            if mp + cost > min(ALLOWANCE[m["type"]] for m in group):         # a group goes at its slowest pace
                 break
             mp, reach, here = mp + cost, reach + 1, nxt
-        fuel = reach * U.step_fuel(u) if U.is_vehicle(u) else 0
-        return {"path": way, "reach": reach, "mp": mp, "fuel": fuel, "enough_fuel": fuel <= u["fuel"],
-                "range": u["fuel"] // U.step_fuel(u) if U.is_vehicle(u) else None}     # hexes its fuel will take it
+        wheels = [m for m in group if U.is_vehicle(m)]
+        fuel = reach * sum(U.step_fuel(m) for m in wheels)
+        return {"path": way, "reach": reach, "mp": mp, "fuel": fuel,
+                "enough_fuel": all(reach * U.step_fuel(m) <= m["fuel"] for m in wheels),
+                "range": min(m["fuel"] // U.step_fuel(m) for m in wheels) if wheels else None}   # hexes its fuel allows
 
     def playback(self, span=None):
         """The last turn as this side saw it, once (screen/replay.py); None if there is none.

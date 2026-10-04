@@ -10,8 +10,8 @@ def check(state, gmap):
     for h, us in sorted(there.items()):
         if len({u["side"] for u in us}) > 1:
             bad.append(f"I-2 both sides in {h}")
-        if sum(not U.is_hq(u) for u in us) > U.STACK_COMBAT or sum(U.is_hq(u) for u in us) > U.STACK_HQ:
-            bad.append(f"I-3 too many units in {h}")
+        if len({U.formation(u) for u in us}) > U.STACK_FORMATIONS:
+            bad.append(f"I-3 too many formations in {h}")
         if not gmap.passable(h):
             bad.append(f"I-4 units in impassable {h}")
     for u in state["units"]:
@@ -30,6 +30,13 @@ def check(state, gmap):
     stocks = list(state["ports"].values()) + [state["tripoli"]]
     if any(min(s["fuel"], s["stores"]) < 0 for s in stocks) or any(min(p) < 0 for p in state["tripoli"]["pipeline"]):
         bad.append("I-8 a stock is negative")
+    for u in state["units"]:
+        if u["group"] is not None:                              # I-19
+            lead = S.unit(state, u["group"])
+            members = S.party(state, u)
+            if (u["status"] != "on_map" or lead["hex"] != u["hex"] or U.formation(lead) != U.formation(u)
+                    or lead["id"] != min(m["id"] for m in members) or len(members) < 2):
+                bad.append(f"I-19 unit {u['id']} is wrongly grouped under {u['group']}")
     for side in S.SIDES:
         t = state["sides"][side]
         if t["brought"] + t["landed"] != S.holdings(state, side) + t["spent"] + t["burnt"] + t["lost"]:

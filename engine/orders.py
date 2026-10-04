@@ -3,8 +3,8 @@ from . import paths
 from . import state as S
 from . import units as U
 
-ORDERS = ("move", "attack", "hold", "dig_in", "road_march", "rest")
-MOVING = ("move", "attack", "road_march")
+ORDERS = ("move", "attack", "hold", "dig_in", "road_march", "rest", "join")     # join: 20.2.2
+MOVING = ("move", "attack", "road_march", "join")
 AIR = ("support", "interdict", "recon")
 VIA_MAX = 4             # points on the way in one order
 ATTACK_MIN = 40         # least cohesion to be given, or to carry out, an attack
@@ -27,14 +27,23 @@ REPLIES = {
     "E_FOOT": "Foot infantry cannot road march.",
     "E_NOT_ON_ROUTE": "A road march must start, pass and end on a road or track.",
     "E_AIR": "That is not an air mission; support is flown.",
+    "E_JOIN": "That unit cannot join that one.",
+    "E_GROUPED": "That unit is in a group; order the group, or split the unit from it.",
 }
 
 
-def mode(u, name):
-    """How the unit's steps are costed under this order (9.3)."""
+def mode(members, name):
+    """How the steps of a unit, or of a group moving as one, are costed under this order
+    (9.3, 20.2.6): a group with any vehicle in it goes where vehicles can."""
+    members = members if isinstance(members, list) else [members]
     if name == "road_march":
         return paths.MARCH
-    return paths.VEHICLE if U.is_vehicle(u) else paths.FOOT
+    return paths.VEHICLE if any(U.is_vehicle(u) for u in members) else paths.FOOT
+
+
+def members_of(state, u, order):
+    """The units an order is for: the unit's group, or the unit alone if it is split off (20.2.4)."""
+    return [u] if order.get("alone") else S.party(state, u)
 
 
 def _hex(v):
@@ -42,11 +51,17 @@ def _hex(v):
     return tuple(v) if ok else None
 
 
-def full_path(gmap, u, order):
-    """The hexes the unit is to enter, in order, or None if there is no way (9.2)."""
+def full_path(gmap, u, order, state=None):
+    """The hexes the unit, or its group, is to enter, in order, or None if there is no way (9.2).
+    A join order goes to the hex the unit joined is in (20.2.2)."""
     here, out = tuple(u["hex"]), []
-    for stop in [tuple(v) for v in order.get("via", [])] + [tuple(order["to"])]:
-        leg = paths.least_path(gmap, here, stop, mode(u, order["order"]))
+    how = mode(members_of(state, u, order) if state else u, order["order"])
+    if order["order"] == "join":
+        stops = [tuple(S.unit(state, order["with"])["hex"])]
+    else:
+        stops = [tuple(v) for v in order.get("via", [])] + [tuple(order["to"])]
+    for stop in stops:
+        leg = paths.least_path(gmap, here, stop, how)
         if leg is None:
             return None
         out += leg
@@ -67,16 +82,26 @@ def check_one(state, gmap, side, order, seen):
         return "E_NOT_ON_MAP"
     if u["id"] in seen:
         return "E_DUPLICATE"
+    if u["group"] not in (None, u["id"]) and not order.get("alone"):         # 20.2.5
+        return "E_GROUPED"
+    members = members_of(state, u, order)
+    fighters = [m for m in members if not U.is_hq(m)]
+    if name == "join":                                          # 20.2.2, 20.2.3
+        other = S.unit(state, order["with"]) if type(order.get("with")) is int else None
+        if (other is None or other["status"] != "on_map" or other["id"] == u["id"]
+                or U.formation(other) != U.formation(u) or other in members):
+            return "E_JOIN"
+        return None if full_path(gmap, u, order, state) is not None else "E_NO_PATH"
     if name not in MOVING:                                      # 8.4.1
         if "to" in order or "via" in order:
             return "E_DEST"
-        return "E_HQ" if name == "dig_in" and U.is_hq(u) else None
+        return "E_HQ" if name == "dig_in" and not fighters else None
     if name == "attack":                                        # 8.4.3
-        if U.is_hq(u):
+        if not fighters:
             return "E_HQ"
-        if u["cohesion"] < ATTACK_MIN:
+        if all(m["cohesion"] < ATTACK_MIN for m in fighters):
             return "E_COHESION"
-    if name == "road_march" and not U.is_vehicle(u):            # 8.4.4
+    if name == "road_march" and not all(U.is_vehicle(m) for m in members):   # 8.4.4, 20.2.6
         return "E_FOOT"
     if "to" not in order:                                       # 8.4.2
         return "E_NO_DEST"
@@ -93,7 +118,7 @@ def check_one(state, gmap, side, order, seen):
         return "E_IMPASSABLE"
     if name == "road_march" and not all(h in gmap.on_route for h in [here] + stops):
         return "E_NOT_ON_ROUTE"
-    if full_path(gmap, u, order) is None:
+    if full_path(gmap, u, order, state) is None:
         return "E_NO_PATH"
     return None
 
@@ -110,7 +135,7 @@ def check(state, gmap, side, submission):
         if code:
             replies.append({"unit": uid, "ok": False, "code": code, "text": REPLIES[code]})
         else:
-            accepted[uid] = {k: order[k] for k in ("unit", "order", "to", "via") if k in order}
+            accepted[uid] = {k: order[k] for k in ("unit", "order", "to", "via", "with", "alone") if k in order}
             replies.append({"unit": uid, "ok": True})
     air = submission.get("air")
     if air not in AIR:                                          # 7.1, 8.5.4
