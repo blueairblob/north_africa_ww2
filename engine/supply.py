@@ -223,7 +223,7 @@ def distribute(state, gmap, scenario, side, audit):
         audit.append(f"I-11 {side} units drew {totals['issued'] - before} from depots holding {on_hand}")
 
 
-def upkeep(state):
+def upkeep(state, gmap):
     """Upkeep, and what being out of stores does (6.9.1, 6.10.2)."""
     for u in S.on_map(state):
         due = u["size"] * UPKEEP
@@ -231,9 +231,12 @@ def upkeep(state):
         u["stores"] -= paid
         state["sides"][u["side"]]["spent"] += paid
         u["out_of_stores"] = paid < due
+    zocs = {side: B.zoc(state, gmap, side) for side in S.SIDES}       # as the units stand when the phase begins
     for u in S.on_map(state):
         if u["out_of_stores"]:
-            if u["cohesion"] == 0:
+            if u["cohesion"] == 0 and tuple(u["hex"]) in zocs[S.enemy(u["side"])]:
+                B.destroy(state, u, "surrendered")            # starving, broken and with the enemy at hand: it gives up
+            elif u["cohesion"] == 0:
                 u["steps"] -= 1
                 if u["steps"] == 0:
                     B.destroy(state, u, "starved")
@@ -248,4 +251,4 @@ def supply_phase(state, gmap, scenario, audit):
     land(state, gmap, scenario)
     for side in S.SIDES:
         distribute(state, gmap, scenario, side, audit)
-    upkeep(state)
+    upkeep(state, gmap)

@@ -280,8 +280,12 @@ class Session:
         repulsed = {uid for uid, why in self.ended[self.side] if why == "was repulsed"}
         for e in view["events"]:                              # those no longer on the map
             if e["event"] == "destroyed" and e["unit"] in mine:
-                how = {"starved": "starved and is lost", "surrendered": "was surrounded and surrendered"}.get(e["cause"], "was destroyed")
+                how = {"starved": "starved and is lost", "surrendered": "surrendered"}.get(e["cause"], "was destroyed")
                 out.append((f"{mine[e['unit']]['name']} {how}.", e["unit"]))
+        theirs = {u["id"]: u["name"] for u in self.scenario["units"] if u["id"] not in mine}
+        for e in view["events"]:                              # an enemy that gave up
+            if e["event"] == "surrender" and e["unit"] in theirs:
+                out.append((f"The enemy's {theirs[e['unit']]} surrendered {where(self.gmap, e['hex'])}.", None))
         for lead in sorted({self.leader(u["id"]) for u in view["units"] if u["status"] == "on_map"}):
             group = self.members(lead)
             ids = {m["id"] for m in group}

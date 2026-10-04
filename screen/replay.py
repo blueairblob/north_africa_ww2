@@ -138,8 +138,14 @@ def script(before, after, span=None, gmap=None):
             gone.add(i)
         elif i in place and end != place[i]:
             slides[i] = (place[i], end)
+    flags = {e["unit"] for e in events if e["event"] == "surrender"}     # these give up: a white flag, not a burst
+    for e in events:
+        if e["event"] == "surrender" and e["unit"] in cast:
+            place.setdefault(e["unit"], tuple(e["hex"]))
+    burst = (burst | {i for b in battles for i in b["destroyed"]}) - flags
     if slides or gone or fought:
         scenes.append({"kind": "outcome", "slides": slides, "gone": sorted(gone), "burst": sorted(burst & gone),
+                       "flags": sorted(flags & gone),
                        "held": [i for i in fought if i not in slides and i not in gone]})
     return {"cast": cast, "start": {i: (fought_at.get(i) if i not in mine and i not in foes else tuple(u["hex"]))
                                     for i, (u, _) in cast.items() if i in mine or i in foes or i in fought_at},
@@ -191,6 +197,8 @@ class Playback:
                     at(start + HOLD_MS, "fall")
                 if scene["burst"]:
                     at(start + HOLD_MS, "boom")
+                if scene["flags"] and not scene["slides"]:
+                    at(start + HOLD_MS, "fall")
         return out
 
     def stage(self, t):
@@ -249,8 +257,8 @@ class Playback:
                     place[i] = b if over else (a, b, min(1.0, max(0.0, (local - HOLD_MS) / FALL_MS)))
                 for i in scene["gone"]:
                     fade[i] = 1.0 - part
-                    if i in scene["burst"] and 0 < part < 1 and i in place:
-                        bursts.append((place[i], part))
+                    if i in scene["burst"] + scene["flags"] and 0 < part < 1 and i in place:
+                        bursts.append((place[i], part, "flag" if i in scene["flags"] else "burst"))
         units = [(i, u, own, place[i], scale.get(i, 1.0), fade.get(i, 1.0), lit.get(i), i in shake)
                  for i, (u, own) in sorted(self.script["cast"].items()) if place.get(i) and fade.get(i, 1.0) > 0.02]
         return {"units": units, "title": title, "focus": focus, "ring": ring, "line": line, "meter": meter,

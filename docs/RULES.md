@@ -480,7 +480,11 @@ an adjacent hex.
 
 **6.10.2 Out of stores.** A unit whose `out_of_stores` flag is set:
 
-- if its cohesion is 0, loses one step (and is destroyed at 0 steps);
+- if its cohesion is 0 and it is in an enemy zone of control (9.6), as the
+  units stand at the start of the phase, **surrenders**: it is destroyed
+  whole, whatever steps it has left;
+- otherwise, if its cohesion is 0, loses one step (and is destroyed at 0
+  steps);
 - otherwise loses `STARVE_COHESION` cohesion;
 - fights at half value until the flag is cleared (10.4.2);
 - recovers no cohesion (11.2).
@@ -1256,7 +1260,8 @@ each unit fought, which were destroyed, who
 retreated, surrendered and advanced; the replies and events for its own
 units, with every hex each entered and in which impulse; and its own hauls in the Supply phase
 just run, each with its source, HQ, tonnes, fuel burnt, haul cost and route.
-It gives no other enemy event.
+A surrender, in battle (10.6.5) or from hunger (6.10.2), is told to both
+sides, with the unit and the hex. It gives no other enemy event.
 
 **14.7** The view holds no memory of earlier turns. A player may keep its own.
 

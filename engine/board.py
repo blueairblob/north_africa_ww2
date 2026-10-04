@@ -93,6 +93,8 @@ def remove(state, u, status):
 def destroy(state, u, cause):
     """A unit destroyed in combat, by surrender or by starvation (4.2.1, 10.6.5, 6.10.2)."""
     S.log(state, "destroyed", side=u["side"], unit=u["id"], cause=cause, hex=u["hex"])
+    if cause == "surrendered":                                               # both sides see a surrender (14.6)
+        S.log(state, "surrender", side="both", sides=list(S.SIDES), unit=u["id"], hex=u["hex"])
     u["fate"] = {"cause": cause, "turn": state["turn"]}                      # 13.4
     victory.unit_lost(state, u)
     remove(state, u, "destroyed")

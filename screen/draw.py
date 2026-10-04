@@ -361,8 +361,15 @@ class Painter:
                 pygame.draw.rect(tile, T.SELECT + (255,), face, 4, border_radius=4)
             tile.set_alpha(int(255 * solid))
             surface.blit(tile, (x - pad / 2, y - pad / 2))
-        for where, f in stage["bursts"]:                             # a unit destroyed: rings and sparks
+        for where, f, kind in stage["bursts"]:                       # a unit destroyed: rings and sparks
             x, y = at(where)
+            if kind == "flag":                                       # a unit surrendering: a white flag goes up
+                top = y - lay.hex_px * (0.3 + 0.7 * min(1.0, f * 2))
+                pygame.draw.line(surface, T.INK, (x, y), (x, top), max(2, int(4 * z)))
+                cloth = pygame.Rect(x, top, lay.hex_px * 0.55, lay.hex_px * 0.36)
+                pygame.draw.rect(surface, (255, 255, 255), cloth)
+                pygame.draw.rect(surface, T.INK, cloth, max(1, int(2 * z)))
+                continue
             for k, colour in enumerate(((255, 230, 120), (255, 140, 40), (160, 40, 20))):
                 r = lay.hex_px * (0.3 + 1.3 * f) * (1 - 0.22 * k)
                 pygame.draw.circle(surface, colour, (x, y), max(2, r), max(2, int((1 - f) * 10 * z)))

@@ -130,3 +130,23 @@ def test_a_port_keeps_a_reserve_for_the_units_that_draw_from_it():              
     assert port["stores"] == supply.RESERVE_TURNS * supply.UPKEEP * 2            # ten turns for the garrison: 1000 tonnes
     assert hq["dump"]["stores"] + by_id(state)[102]["stores"] + 50 == 400        # the HQ had only what was above it
     assert by_id(state)[101]["stores"] == 600 - 100                              # the garrison itself was full: it drew nothing
+
+
+def test_a_starving_broken_unit_beside_the_enemy_surrenders_whole():             # 6.10.2
+    from engine.view import view
+    units = [unit(101, "axis", "foot", [70, 25], stores=0, cohesion=0, steps=6, size=2),
+             unit(102, "axis", "foot", [60, 25], stores=0, cohesion=0, steps=6),
+             unit(103, "axis", "foot", [72, 27], stores=0, cohesion=10, steps=6),
+             unit(201, "cw", "armour", [70, 24]), unit(202, "cw", "armour", [72, 26]), unit(203, "cw", "hq", [60, 24], steps=1)]
+    sc, state = start(units, sides=NO_LIFT)
+    state = begin_turn(state, GMAP, sc)
+    u = by_id(state)
+    assert u[101]["status"] == "destroyed" and u[101]["fate"] == {"cause": "surrendered", "turn": 1}   # six steps, all gone
+    assert u[102]["status"] == "on_map" and u[102]["steps"] == 5                # an HQ beside it is no threat: it starves on
+    assert u[103]["status"] == "on_map" and u[103]["cohesion"] == 0             # not yet broken: it holds a turn more
+    assert state["sides"]["cw"]["vp"] == 5 * 2                                  # counted as a unit destroyed (13.4)
+    for side in ("axis", "cw"):                                                 # both sides are told (14.6)
+        seen = [e for e in view(state, GMAP, sc, side)["events"] if e["event"] == "surrender"]
+        assert [(e["unit"], e["hex"]) for e in seen] == [(101, [70, 25])]
+    state = begin_turn(state, GMAP, sc)
+    assert by_id(state)[103]["status"] == "destroyed"                           # and the next turn it gives up too

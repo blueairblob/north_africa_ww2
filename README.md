@@ -60,7 +60,7 @@ division, and Recall, on an HQ, calls them all in. An order stands from turn to 
 and the screen steps through the units that are waiting for one. After End
 turn the turn is played back: the movement, then each formation's strike in
 turn, with the units it hits burning and a rattle as long as the damage, then
-the outcome. F plays it faster, Right arrow goes on to the next scene, and any
+the outcome, where a unit that surrenders raises a white flag. F plays it faster, Right arrow goes on to the next scene, and any
 other key skips it all. A finished game shows how its result was reached. The
 map is `art/basemap.jpg`, the generated map with its relief
 (`python -m mapgen base`). `docs/COUNTERS.md` has the hex and counter sizes and the

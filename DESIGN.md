@@ -354,7 +354,8 @@ lopsided, and situations the rules do not cover.
   of rattling, so the ear knows what is firing. When a battle's attackers have
   struck, the defenders reply the same way. Nothing is settled until every
   strike has been shown: then, in the outcome, the player sees who holds, a
-  formation destroyed bursts and is gone, and
+  formation destroyed bursts and is gone, one that surrenders raises a white
+  flag, and
   the beaten fall back and the victors follow. Any key skips it. The sounds are
   made by the program; with no sound device it is silent.
 - Optional retro look: a pixel palette and font, as a theme.

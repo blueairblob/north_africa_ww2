@@ -308,7 +308,8 @@ def test_nothing_is_settled_until_every_strike_has_been_shown():
     play, _ = played(units, cw=[{"unit": 201 + n, "order": "attack", "to": [70, 24]} for n in range(6)])
     assert len(scenes(play, "strike")) == 6                                     # six attackers; the reply did the least there is
     start, end, outcome = scenes(play, "outcome")[0]
-    assert outcome["gone"] == [101] and outcome["burst"] == [101] and ("boom", 0) in play.cues(0, play.length)
+    assert outcome["gone"] == [101] and outcome["flags"] == [101] and outcome["burst"] == []     # surrounded: it surrenders
+    assert ("fall", 0) in play.cues(0, play.length) and ("boom", 0) not in play.cues(0, play.length)
     assert at(play.stage(start - 10), 101) is not None and at(play.stage(start + 100), 101)[5] == 1.0   # still there
     assert play.stage(start + 1000)["bursts"] and at(play.stage(play.length), 101) is None
     assert at(play.stage(play.length), 201)[3] == (70, 24)                      # the victors follow up
@@ -920,7 +921,8 @@ def test_reports_are_one_a_unit_and_only_what_matters_and_a_back_button_returns_
     told = s.reports()
     words = [w for w, _ in told]
     assert told and all(isinstance(w, str) for w in words)
-    assert len({uid for _, uid in told}) == len(told)                 # one for each unit or group, no more
+    own = [uid for _, uid in told if uid is not None]
+    assert len(set(own)) == len(own)                                  # one for each unit or group, no more
     assert not any("step" in w or "haul" in w or "arrived" in w for w in words)      # no arithmetic, no routine
     kinds = ("driven back", "heavy losses", "repulsed", "drove the enemy", "lost its supply", "out of fuel", "morale is low",
              "under half strength", "enemy in contact", "destroyed", "surrendered", "starved")
@@ -1139,3 +1141,26 @@ def test_next_unit_is_greyed_when_every_unit_has_its_order_and_a_units_own_order
 
 def test_fuel_is_told_in_kilometres_with_the_hexes_beside():
     assert theme.fuel_words(30) == "300 km (30 hexes)" and theme.fuel_words(1) == "10 km (1 hex)"
+
+
+def test_a_surrender_is_reported_and_shown_as_a_white_flag():        # RULES 6.10.2, 14.6
+    from helpers import scenario, unit
+    from screen.replay import HOLD_MS
+    units = [unit(101, "axis", "foot", [70, 25], stores=0, cohesion=10, name="Lost Battalion"), unit(102, "axis", "foot", [60, 30]),
+             unit(201, "cw", "armour", [70, 24])]
+    sc = scenario(units)
+    sc["sides"]["axis"]["lift"] = [["1941-11-18", 0]]
+    s = Session(sc, GMAP, humans=["cw"], scripted={"axis": players.DoNothing(GMAP)})
+    s.done()                                                         # it starves to nothing, then gives up
+    assert "The enemy's Lost Battalion surrendered near" in " ".join(w for w, _ in s.reports())
+    play = s.playback()
+    start, end, outcome = scenes(play, "outcome")[0]
+    assert outcome["flags"] == [101] and outcome["burst"] == []
+    mid = play.stage(start + HOLD_MS + 60)
+    assert [kind for _, _, kind in mid["bursts"]] == ["flag"]
+    pygame.init()
+    app = App(s)
+    app.play, app.play_t = play, start + HOLD_MS + 60
+    app.centre_on((70, 25))
+    app.paint(pygame.Surface(theme.WINDOW))                          # the flag is drawn without error
+    assert at(play.stage(play.length), 101) is None
