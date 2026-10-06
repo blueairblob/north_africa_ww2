@@ -27,11 +27,12 @@ def zoc(state, gmap, side):
 
 def room(units_there, comers):
     """Whether a hex holding these units has room for the comers, a unit or a list of units
-    of one side: the units of at most STACK_FORMATIONS formations may share a hex (20.1.4)."""
+    of one side: the units of at most STACK_FORMATIONS formations may share a hex, and HQs do
+    not count (20.1.4)."""
     comers = comers if isinstance(comers, list) else [comers]
     ids = {u["id"] for u in comers}
-    there = {U.formation(v) for v in units_there if v["id"] not in ids}
-    return len(there | {U.formation(u) for u in comers}) <= U.STACK_FORMATIONS
+    there = U.stacked(v for v in units_there if v["id"] not in ids)
+    return len(there | U.stacked(comers)) <= U.STACK_FORMATIONS
 
 
 def regroup(state):
@@ -85,7 +86,7 @@ def remove(state, u, status):
     u["fuel"] = u["stores"] = 0
     if U.is_hq(u):
         u["dump"] = {"fuel": 0, "stores": 0}
-    u["status"], u["hex"] = status, None
+    u["status"], u["hex"], u["group"] = status, None, None
     if status == "destroyed":
         u["steps"] = 0
 

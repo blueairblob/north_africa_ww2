@@ -1,11 +1,15 @@
 """The window: mouse and keys in, frames out. Sleeps while nothing happens."""
 import math
+import time
+import traceback
 
 import pygame
 
+from engine import units as U
+
 from . import theme as T
 from .draw import UI, Painter, guess
-from .layout import Layout, areas, buttons, layers
+from .layout import Layout, areas, buttons, layers, tabs
 from .sound import Sounds
 
 GO = {pygame.K_m: "move", pygame.K_a: "attack", pygame.K_t: "road_march",        # orders with a destination
@@ -13,7 +17,7 @@ GO = {pygame.K_m: "move", pygame.K_a: "attack", pygame.K_t: "road_march",       
       pygame.K_h: "hold", pygame.K_d: "dig_in", pygame.K_r: "rest"}              # and those that stay
 AIR = {pygame.K_1: "support", pygame.K_2: "interdict", pygame.K_3: "recon"}
 SCROLL = {pygame.K_LEFT: (-1, 0), pygame.K_RIGHT: (1, 0), pygame.K_UP: (0, -1), pygame.K_DOWN: (0, 1)}
-DRAG = 6                # pixels the mouse must move with the button down to drag the map
+DRAG = 14               # pixels the mouse must move with the button down to drag the map
 FAST = 3                # how much faster the playback runs with F; its rattles are as much shorter
 GLIDE_MS = 110          # how quickly the map glides to where it is going
 CURSOR_EDGE = 2.5       # hexes from the edge of the view at which the map follows the keyboard cursor
@@ -32,6 +36,9 @@ class App:
         self.last = None                # the unit last taken up by Next, so Next goes on from it
         self.zoom_back = None           # the zoom to return to when the playback ends
         self.confirm = self.asked = False   # End turn has been pressed once with units still waiting
+        self.log = None                 # a file that records what each click and key did (--log)
+        self.clicked = None             # where the click being logged fell
+        self.refused = None             # the engine's reply code for the last order refused, for the log
         self.begin_orders()
         self.ui.message = "Click where this unit should go, or an enemy to attack. Orders stand until done."
         u = session.unit(self.ui.selected)
@@ -161,17 +168,30 @@ class App:
             order["alone"] = True                         # one of a group, ordered by itself: it splits off
         reply = self.session.give(order)
         if not reply["ok"]:                               # the order key and the cursor stay as they were
-            ui.message = reply["text"]
+            ui.message, self.refused = reply["text"], reply["code"]
             return
         ui.mode, ui.alone = None, False
         said = f"{self.session.group_name(u['id'])}: {T.order_name(name, self.session.members(u['id']))}."
+        if to is not None and self.session.crowded(u["id"], to):  # accepted, but as things stand it will not get in
+            said += f" That hex holds {U.STACK_FORMATIONS} formations already: it gets in only if one leaves."
         self.step()                                       # on to the next unit that waits, taken up and brought to the middle
         ui.hover = None                                   # no line trails the pointer for it until the pointer moves
         left = len(self.session.waiting_units())
-        ui.message = said + (f"   {left} more to order." if left else "   All units have orders: press End turn.")
+        ui.message = said + "   " + self.left_words()
+
+    def left_words(self):
+        """How many units the player has still to go through this turn, in words."""
+        s = self.session
+        left, idle = len(s.waiting_units()), len(s.idle_units())
+        if not left:
+            return "All units have orders: press End turn."
+        if left == idle:
+            return f"{left} more to order."
+        return f"{left} more to go through: {idle} with no order, {left - idle} carrying on with " \
+               f"{'its order' if left - idle == 1 else 'their orders'}."
 
     def step(self):
-        """Take up the next unit with no order, bringing it into view; none left, let go."""
+        """Take up the next unit not yet dealt with this turn, bringing it into view; none left, let go."""
         s, ui = self.session, self.ui
         ui.alone = False
         waiting = s.waiting_units()
@@ -195,9 +215,10 @@ class App:
         s = self.session
         names = {u["id"]: u["name"] for u in s.view["units"]}
         ended = [f"{names[uid]} {why}." for uid, why in s.ended[s.side] if uid in names]
-        left = len(s.waiting_units())
+        left, idle = len(s.waiting_units()), len(s.idle_units())
+        carry = f"   {left - idle} more carry on with their orders: Space keeps one, any order changes it." if left > idle else ""
         self.ui.message = ("  ".join(ended[:2]) + "   " if ended else "") + (
-            f"{T.count(left, 'unit')} {'waits' if left == 1 else 'wait'} for orders." if left
+            f"{T.count(idle, 'unit')} {'waits' if idle == 1 else 'wait'} for orders." + carry if left
             else "All units have orders: press End turn.")
 
     def watch(self):
@@ -309,8 +330,8 @@ class App:
 
     def end_turn(self):
         """End turn, asked for by key or button: once more to be sure if units still wait."""
-        left = len(self.session.waiting_units())
-        if left and not self.asked and not self.session.state["over"]:
+        left = len(self.session.idle_units())
+        if left and self.ui.remind and not self.asked and not self.session.state["over"]:
             self.confirm = True
             self.ui.message = (f"{T.count(left, 'unit')} still {'waits' if left == 1 else 'wait'} for orders and will "
                                f"hold {'its' if left == 1 else 'their'} ground. Press End turn again to end the turn.")
@@ -326,7 +347,9 @@ class App:
         if ui.chooser:                                    # the list over a hex of yours: one of its rows, or away
             picked = next((key for key, r in self.painter.chooser_rects.items() if r.collidepoint(pos)), None)
             h, ui.chooser = ui.chooser["hex"], None
-            if picked == ("group",):
+            if picked == ("move",):
+                self.give("move", h)
+            elif picked == ("group",):
                 n = s.group_all(h)
                 ui.message = f"{T.count(n + 1, 'unit or group', 'units and groups')} here will form one group when the turn is played."
             elif isinstance(picked, tuple):
@@ -334,7 +357,9 @@ class App:
                 ui.message = f"{s.group_name(picked[1])} will break up into its {n + 1} units when the turn is played."
             elif picked is not None:
                 ui.selected, ui.alone, ui.mode = picked, False, None
-                ui.message = "Now click where it should go, or an enemy to attack."
+                self.taken_words()
+            else:
+                ui.message = "The list is closed: nothing was chosen."
             return
         for name, r in layers(self.size, ui.layers_open).items():      # the Layers button and its list
             if r.collidepoint(pos) and button == 1:
@@ -343,8 +368,24 @@ class App:
                 else:
                     ui.overlays ^= {name}
                 return
-        for name, r in buttons(self.size).items():
-            if r.collidepoint(pos):
+        if not self.play and not s.state["over"] and button == 1:      # the panel's tabs, its list's arrows, the reminder box
+            for name, r in tabs(self.size).items():
+                if r.collidepoint(pos) and name == "remind":
+                    ui.remind = not ui.remind
+                    ui.message = ("End turn will ask once more when units have no order." if ui.remind
+                                  else "End turn will not ask: units with no order hold their ground.")
+                    return
+                if r.collidepoint(pos):
+                    ui.tab, ui.scroll = name, 0
+                    ui.message = "Every unit and its order. Tap one to take it up." if name == "orders" else ""
+                    return
+            for name, r in self.painter.scroll_rects.items():
+                if r.collidepoint(pos):
+                    ui.scroll += -3 if name == "up" else 3
+                    return
+        offered = s.offers(ui.selected, ui.alone) if ui.tab == "unit" else []
+        for name, r in buttons(self.size).items():        # an order is there to press only when it is shown
+            if r.collidepoint(pos) and (name in ("next", "done") or name in offered):
                 return self.press_button(name) if button == 1 else None
         if self.painter.pencil_rect and self.painter.pencil_rect.collidepoint(pos) and s.unit(ui.selected):
             ui.editing = s.group_name(ui.selected)        # the pencil: type a new name for the group
@@ -356,8 +397,9 @@ class App:
             return
         for row, uid in self.painter.report_rects.values():            # a report: go to the unit that made it
             if row.collidepoint(pos) and button == 1 and s.unit(uid):
-                ui.selected, ui.alone, ui.mode = s.leader(uid), False, None
+                ui.selected, ui.alone, ui.mode, ui.tab = s.leader(uid), False, None, "unit"
                 self.glide_to(tuple(s.unit(uid)["hex"]))
+                self.taken_words()
                 return
         for uid, r in self.painter.member_rects.items():  # a unit in the panel's list: take it up by itself
             if r.collidepoint(pos) and button == 1:
@@ -365,38 +407,49 @@ class App:
                 ui.message = "This unit alone: an order now splits it from its group. Split leaves it where it is."
                 return
         h = self.hex_under(pos)
-        if h is None or s.state["over"]:
+        if h is None or s.state["over"]:                  # nothing to order there; say so
+            if areas(self.size)["map"].collidepoint(pos):
+                ui.message = "The game is over." if s.state["over"] else "That is off the map."
             return
         if button == 3:                                   # on your own units: what can be done with the stack
             if self.mine_at(h) and not ui.mode:
-                ui.chooser = {"hex": h, "ids": s.parties_at(h)}
+                chosen = s.unit(ui.selected)
+                ui.chooser = {"hex": h, "ids": s.parties_at(h),
+                              "mover": s.leader(ui.selected) if chosen and h != tuple(chosen["hex"]) else None}
                 ui.message = "Choose a unit, or group or split the stack."
             else:                                         # elsewhere: let go
                 ui.mode, ui.selected, ui.message = (None, ui.selected, "") if ui.mode else (None, None, "")
             return
         here = self.mine_at(h)
         chosen = s.unit(ui.selected)
+        away = chosen is not None and h != tuple(chosen["hex"])          # a unit is taken up, and the click is elsewhere
         if ui.mode == "join" and chosen:
             self.join_at(h)
-        elif ui.mode and chosen:
-            self.give(ui.mode, h)
-        elif chosen and h != tuple(chosen["hex"]) and guess(s, h):       # a unit is taken up: the click ends its move,
-            self.give(guess(s, h), h)                     # even on to a hex your own units are in
-        elif here:                                        # your own units: take one, or choose from several
-            ui.alone = False
+        elif ui.mode and chosen and not (here and away and ui.mode not in ("move", "road_march")):
+            self.give(ui.mode, h)                         # an order pressed first goes where the click is
+        elif here:                                        # your own units: the click takes them up, whatever is in hand
+            ui.alone, ui.mode = False, None
             here = sorted({s.leader(i) for i in here})    # a group is taken up as one, by its leader
             if len(here) > 1:
-                ui.chooser = {"hex": h, "ids": here}
+                ui.chooser = {"hex": h, "ids": here, "mover": s.leader(ui.selected) if away else None}
                 ui.message = "Several of your units are here: choose one from the list."
+            elif chosen and here[0] == s.leader(ui.selected):
+                ui.message = (f"{s.group_name(here[0])} is taken up already, and this is where it is. "
+                              "Click another hex to move it there, or an enemy to attack.")
             else:
+                was = f"{s.group_name(ui.selected)} put down.   " if chosen else ""
                 ui.selected = here[0]
-                ui.message = "Now click where it should go, or an enemy to attack."
+                self.taken_words(was)
         elif chosen is None and s.order_at(h) is not None:               # a click on an order's line finds its unit
             ui.selected = s.order_at(h)
             self.glide_to(tuple(s.unit(ui.selected)["hex"]))
             ui.message = "This is the unit with that order. Press its lit button to cancel it."
         elif chosen and guess(s, h):
             self.give(guess(s, h), h)                     # a plain click: attack a seen enemy, else move
+        elif chosen:
+            ui.message = "No unit can go there. Click a hex on land."
+        else:
+            ui.message = "No unit is taken up. Click one of your units first."
 
     def join_at(self, h):
         """Join the unit taken up to a unit of its division in this hex."""
@@ -407,19 +460,39 @@ class App:
             self.give("join", with_unit=other)
 
     def next_unit(self):
-        """The next unit with no order yet; failing that, the next unit."""
+        """On to the next unit not yet dealt with this turn. A unit in hand whose order stands
+        from an earlier turn keeps it: this is the one key that says "carry on"."""
         s, ui = self.session, self.ui
+        said = ""
+        if s.unit(ui.selected) and s.leader(ui.selected) in s.waiting_units() and s.leader(ui.selected) in s.pending[s.side]:
+            lead = s.leader(ui.selected)
+            s.keep(lead)
+            said = f"{s.group_name(lead)} carries on: {T.order_name(s.pending[s.side][lead]['order'], s.members(lead))}.   "
         waiting = s.waiting_units()
         ui.mode, ui.alone, ui.chooser = None, False, None
         if not waiting:
-            ui.selected, ui.message = None, "All units have orders: press End turn."
+            ui.selected, ui.message = None, said + "All units have orders: press End turn."
             return
         after = [i for i in waiting if s.unit(ui.selected) and i > s.leader(ui.selected)]
         self.last = ui.selected = (after or waiting)[0] if ui.selected is not None or self.last is None else \
             ([i for i in waiting if i > self.last] or waiting)[0]
         self.glide_to(tuple(s.unit(ui.selected)["hex"]))  # it is brought to the middle, taken up and lit
-        left = len(waiting) - 1
-        ui.message = f"{s.group_name(ui.selected)} waits for an order." + (f"   {left} more after it." if left else "")
+        self.taken_words(said)
+
+    def taken_words(self, before=""):
+        """The message for a unit just taken up: what it is doing, and what a click will do."""
+        s, ui = self.session, self.ui
+        lead = s.leader(ui.selected)
+        order = s.pending[s.side].get(lead)
+        name = s.group_name(lead)
+        if order is None:
+            ui.message = before + f"{name} waits for an order: click where it should go, or an enemy to attack."
+        elif lead in s.waiting_units():
+            ui.message = before + (f"{name} carries on with its order, {T.order_name(order['order'], s.members(lead))}. "
+                                   "Space keeps it; any order changes it.")
+        else:
+            ui.message = before + (f"{name} has its order, {T.order_name(order['order'], s.members(lead))}. "
+                                   "Click somewhere else to change it, or press its lit button to cancel.")
 
     def done(self):
         ui, s = self.ui, self.session
@@ -487,8 +560,43 @@ class App:
         elif key in (pygame.K_RETURN, pygame.K_KP_ENTER):
             self.end_turn()
 
+    def note(self, what, before):
+        """One line in the play log: when, what was done, and what the screen made of it."""
+        ui, s = self.ui, self.session
+        named = lambda uid: f"{uid} {s.group_name(uid)}" if s.unit(uid) else "nothing"
+        flags = lambda mode, alone, menu: "".join(f", {k}" for k in (mode, "alone" * alone, "menu" * menu) if k)
+        order = s.pending[s.side].get(s.leader(before[0])) if s.unit(before[0]) else None
+        at = self.hex_under(self.clicked) if self.clicked else ui.hover      # the hex the click fell on, as the map stood
+        state = "".join(f" {k}" for k, on in (("playback", self.play), ("cover", ui.cover), ("over", s.state["over"]),
+                                              ("gliding", self.target), (f"tab-{ui.tab}", ui.tab != "unit")) if on)
+        self.log.write(f"{time.strftime('%H:%M:%S')} | turn {s.state['turn']} {s.side} | {what} | hex {at}{state} | "
+                       f"had {named(before[0])}{flags(*before[1:])} | has {named(ui.selected)}"
+                       f"{flags(ui.mode, ui.alone, bool(ui.chooser))} | its order {order} | "
+                       f"refused {self.refused} | to go through {len(s.waiting_units())} | {ui.message}\n")
+        self.log.flush()
+
     def handle(self, event):
-        """One event. Returns False when the window is closed."""
+        """One event, recorded in the play log if there is one: a line for each key and each
+        click, none for the button going down. Returns False when the window is closed."""
+        down = event.type == pygame.MOUSEBUTTONDOWN and event.button == 1 and not self.play
+        if self.log is None or down or event.type not in (pygame.KEYDOWN, pygame.MOUSEBUTTONDOWN, pygame.MOUSEBUTTONUP) \
+                or (event.type == pygame.MOUSEBUTTONUP and (event.button != 1 or not self.press)):
+            return self.handle_one(event)
+        ui = self.ui
+        before, self.refused = (ui.selected, ui.mode, ui.alone, bool(ui.chooser)), None
+        self.clicked = getattr(event, "pos", None)
+        what = f"key {pygame.key.name(event.key)}" if event.type == pygame.KEYDOWN else \
+            ("drag of the map, no click" if self.press and self.press[1] else
+             f"{'right click' if event.button == 3 else 'click'} at {event.pos}") + (" during the playback" if self.play else "")
+        try:
+            return self.handle_one(event)
+        except Exception:
+            self.log.write(traceback.format_exc())
+            raise
+        finally:
+            self.note(what, before)
+
+    def handle_one(self, event):
         ui = self.ui
         if event.type == pygame.QUIT:
             return False
@@ -525,6 +633,8 @@ class App:
             self.press = None
         elif event.type == getattr(pygame, "WINDOWLEAVE", -1):
             ui.mouse = self.map_rect().center             # the mouse has left: no scrolling at the edge
+        elif event.type == pygame.MOUSEWHEEL and ui.tab == "orders" and areas(self.size)["panel"].collidepoint(pygame.mouse.get_pos()):
+            ui.scroll = max(0, ui.scroll - event.y)       # over the list of orders, the wheel scrolls it
         elif event.type == pygame.MOUSEWHEEL:
             self.zoom(T.ZOOM_STEP ** event.y, pygame.mouse.get_pos())
         elif event.type == pygame.MOUSEMOTION:

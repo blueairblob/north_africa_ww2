@@ -48,6 +48,7 @@ def reinforcement_phase(state, gmap, scenario):
             if u["status"] == "on_map":
                 B.remove(state, u, "withdrawn")
             u["status"], u["fate"] = "withdrawn", {"cause": "withdrawn", "turn": turn}
+    B.regroup(state)                                                         # 20.2.8
     for rep in sorted(scenario.get("replacements", []), key=lambda r: r["unit"]):       # 12.3
         u = S.unit(state, rep["unit"])
         if S.turn_of(scenario, rep["date"]) == turn and u["status"] == "on_map" and u["traced"]:

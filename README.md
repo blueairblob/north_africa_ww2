@@ -41,6 +41,7 @@ six orders, the supply overlay and the zones overlay.
 .venv/bin/python -m screen crusader                  # two players at one screen
 .venv/bin/python -m screen crusader --axis nothing   # you are the Commonwealth
 .venv/bin/python -m screen crusader --shot frame.png # one frame to a file, no window
+.venv/bin/python -m screen crusader --log            # record every click and key, in logs/ (not published)
 ```
 
 Click one of your units, then click where it should go, or an enemy to attack
@@ -50,14 +51,22 @@ press M, A or R, choose the hex with the arrow keys and press Enter. The mouse
 wheel zooms at the pointer, dragging moves the map, and with a unit taken up
 the map scrolls when the pointer reaches its edge. Layers, in the map's
 corner, shows supply, zones and the key. Men on foot March where vehicles
-Travel: by road or track only, a little faster than across country. A greyed button says why when pointed at, and
-pressing a unit's own lit order takes it back. After an order the unit is let go; Next unit takes up the next one waiting and
-brings it to the middle. A right click on your own units opens a menu to choose
+Travel: by road or track only, a little faster than across country. The panel shows, under the unit taken up, only the orders it can take;
+pressing its own lit order takes it back. With nothing taken up the panel
+lists the units still waiting, and a tap goes to one. After an order the next unit waiting is taken up and brought to the middle. A click on
+any of your units takes it up, whatever is in hand and whether it has an order or not. To
+move a unit on to others of yours, press Move first, or use Join. A right click on your own units opens a menu to choose
 one, group the whole stack or split a group up, at once; a stack of units from more
 than one division is a Special Army Group, and the pencil by a group's name renames it. A division's units move and fight as one group until you split one off: click it in
 the panel's list and order it, or press Split. Join sends a unit back to its
-division, and Recall, on an HQ, calls them all in. An order stands from turn to turn until it is done,
-and the screen steps through the units that are waiting for one. After End
+division, and Recall, on an HQ, calls them all in. An order with somewhere to go (Move, Attack, Travel, Join)
+stands from turn to turn until it is done; Hold, Dig in and Rest are for one turn. Every turn
+the screen steps through every unit or group: Space keeps an order that stands, any other
+order changes it. An order a unit cannot take just now is greyed, with the reason under the
+unit. A hex holds the units of two formations; a unit
+may drive through a full hex but not stop in it, and one kept out says so. Every click on the map does something or says why not. The panel's Unit orders tab lists
+every unit and its order, to scroll through; a tap takes one up. Next unit is lit while any
+unit waits, End turn is always there, and a tick box turns off the reminder of units with no order. After End
 turn the turn is played back: the movement, then each formation's strike in
 turn, with the units it hits burning and a rattle as long as the damage, then
 the outcome, where a unit that surrenders raises a white flag. F plays it faster, Right arrow goes on to the next scene, and any

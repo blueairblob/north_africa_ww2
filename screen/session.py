@@ -1,10 +1,11 @@
 """A game in progress at the screen: whose turn it is to give orders, the orders given so far,
 and the step from one turn to the next. No pygame here.
 
-Orders stand. An order given once is given again every turn until the unit arrives, the
-order can no longer be carried out, or an attack fails to drive the defenders back; then the
-unit waits for a new one. The engine still
-receives one order per unit per turn (docs/RULES.md 8.1.4)."""
+Orders with somewhere to go stand. Move, Attack, Travel and Join, given once, are given again
+every turn until the unit arrives, the order can no longer be carried out, or an attack fails
+to drive the defenders back. Hold, Dig in and Rest are for one turn. Every turn the player is
+taken through every unit or group: one with a standing order is shown with it, to keep or to
+change. The engine still receives one order per unit per turn (docs/RULES.md 8.1.4)."""
 from datetime import date, timedelta
 
 from engine import board as B
@@ -29,6 +30,12 @@ def where(gmap, h):
     return f"at {name}" if p["hex"] == tuple(h) else f"near {name}"
 
 
+STANDS = ("move", "attack", "road_march", "join")      # orders that stand from turn to turn until done
+NEVER = ("A headquarters does not attack.", "A headquarters does not dig in.", "There is no other unit of yours to join.",
+         "It is not in a group.", "Only a division's HQ with units away from it can recall.")   # not shown at all
+BRIEF = {"It is not on a road or track: one cannot march in the desert.": "not on a road or track.",
+         "Its morale is too low to attack. Rest to recover.": "morale too low. Rest to recover.",
+         "No enemy in sight within its reach.": "no enemy in sight within reach."}    # beside a greyed order's name
 ROMAN = ("I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X")
 HEAVY_PCT = 25          # a unit that lost this share of its strength in a turn "took heavy losses"
 
@@ -46,6 +53,8 @@ class Session:
         self.split = {s: set() for s in S.SIDES}        # units split off this turn, shown at once
         self.names = {}                                 # names the player has given, by leader's id
         self.ended = {s: [] for s in S.SIDES}           # (unit id, why) for orders that ended this turn
+        self.said = {s: {} for s in S.SIDES}            # unit id -> what became of its order last turn, for the panel
+        self.kept = {s: set() for s in S.SIDES}         # units the player has dealt with this turn
         self._begin()
 
     def _begin(self):
@@ -55,8 +64,10 @@ class Session:
         self.views = {s: view(self.state, self.gmap, self.scenario, s) for s in S.SIDES}
         self.pending = {s: {} for s in S.SIDES}
         self.split = {s: set() for s in S.SIDES}
+        self.kept = {s: set() for s in S.SIDES}
         for s in S.SIDES:                               # standing orders are given again, if still legal
-            self.ended[s] = []
+            self.ended[s], self.said[s] = [], {}
+            fought = {uid for e in self.views[s]["events"] if e["event"] == "battle" for uid in e["attackers"]}
             repulsed = {uid for e in self.views[s]["events"] if e["event"] == "battle" and not e["retreated"]
                         for uid in e["attackers"]}      # attacked, and the defenders did not fall back
             for uid, order in sorted(self.standing[s].items()):
@@ -66,12 +77,22 @@ class Session:
                     self.ended[s].append((uid, "was repulsed"))
                 elif code is None:
                     self.pending[s][uid] = order
+                    if order["order"] == "attack" and not fought & {m["id"] for m in self.state["units"]
+                                                                    if m["id"] == uid or m.get("group") == uid}:
+                        self.said[s][uid] = "Its attack was not made last turn: it did not reach the enemy. The order stands."
                 else:
                     del self.standing[s][uid]
                     if order["order"] == "join" and code in ("E_JOIN", "E_GROUPED"):
                         self.ended[s].append((uid, "has joined"))
                     elif code not in ("E_NOT_ON_MAP", "E_GROUPED"):      # a unit now led by another needs no word
                         self.ended[s].append((uid, ENDED.get(code, "cannot carry out its order")))
+            for e in self.views[s]["events"]:                    # a mover the stacking limit kept out (9.5.4)
+                if e["event"] == "stopped" and e["why"] == "no room":
+                    lead = next((u["group"] or u["id"] for u in self.state["units"] if u["id"] == e["unit"]), e["unit"])
+                    self.said[s][lead] = (f"It could not go on: the hex ahead already holds {U.STACK_FORMATIONS} formations, "
+                                          "and has no room for another. Send one of them away, or send this unit elsewhere.")
+            for uid, why in self.ended[s]:
+                self.said[s][uid] = f"It {why}. It needs a new order."
         self.air = {s: self.state["sides"][s]["air"] for s in S.SIDES}
         self.waiting = [] if self.state["over"] else list(self.humans)
 
@@ -128,7 +149,11 @@ class Session:
         if code:
             return {"ok": False, "code": code, "text": O.REPLIES[code]}
         self.pending[self.side][order["unit"]] = order
-        self.standing[self.side][order["unit"]] = order
+        self.kept[self.side].add(order["unit"])
+        if order["order"] in STANDS:
+            self.standing[self.side][order["unit"]] = order
+        else:                                                    # Hold, Dig in and Rest are for this turn only
+            self.standing[self.side].pop(order["unit"], None)
         self._now(order)
         return {"ok": True}
 
@@ -209,6 +234,7 @@ class Session:
         """Take back a unit's order: it waits again, and holds if given none (RULES 8.1.3)."""
         lead = self.leader(uid)
         gone = self.pending[self.side].pop(lead, None)
+        self.kept[self.side].discard(lead)
         self.standing[self.side].pop(lead, None)
         return gone is not None
 
@@ -237,7 +263,7 @@ class Session:
             if not fighters:
                 return False, "A headquarters does not attack."
             if all(m["cohesion"] < O.ATTACK_MIN for m in fighters):
-                return False, "Its morale is too low to attack."
+                return False, "Its morale is too low to attack. Rest to recover."
             reach = min(ALLOWANCE[m["type"]] for m in group) // 4 + 1
             if not any(S.distance(tuple(u["hex"]), tuple(e["hex"])) <= reach for e in self.view["enemy"]):
                 return False, "No enemy in sight within its reach."
@@ -251,6 +277,22 @@ class Session:
         if name == "recall" and not self.strays(uid):
             return False, "Only a division's HQ with units away from it can recall."
         return True, ""
+
+    def offers(self, uid, alone=False):
+        """The orders to show for the unit taken up: every order a unit of its kind can take, its
+        own order whatever it is, and not those that never apply to it (a headquarters attacking).
+        One it cannot take just now is shown greyed, with the reason (blocked)."""
+        if self.unit(uid) is None:
+            return []
+        has = None if alone else self.pending[self.side].get(self.leader(uid), {}).get("order")
+        return [name for name in ("move", "attack", "road_march", "hold", "dig_in", "rest", "join", "split", "recall")
+                if name == has or self.can(uid, name, alone)[1] not in NEVER]
+
+    def blocked(self, uid, alone=False):
+        """[(order, why)] for the orders shown that the unit cannot take just now."""
+        has = None if alone else self.pending[self.side].get(self.leader(uid), {}).get("order")
+        return [(name, BRIEF.get(self.can(uid, name, alone)[1], self.can(uid, name, alone)[1])) for name in self.offers(uid, alone)
+                if name != has and not self.can(uid, name, alone)[0]]
 
     def order_at(self, h):
         """The unit whose ordered way passes through this hex, if any: to find it by its line."""
@@ -271,21 +313,27 @@ class Session:
     def reports(self):
         """What the general is told: at most one thing for each unit or group, and only what
         matters. In order of weight: destroyed, driven back, heavy losses, repulsed, the enemy
-        driven back, supply lost, out of fuel, morale low, under half strength, enemy in contact.
+        driven back, supply lost, out of fuel, morale low, under half strength, ordered to move
+        but held where it stood by the enemy, enemy in contact.
         [(words, unit id)]"""
         view, out = self.view, []
         mine = {u["id"]: u for u in view["units"]}
         battles = [e for e in view["events"] if e["event"] == "battle"]
         stopped = {e["unit"]: e["why"] for e in view["events"] if e["event"] == "stopped"}
+        stepped = {e["unit"] for e in view["events"] if e["event"] == "step"}
         repulsed = {uid for uid, why in self.ended[self.side] if why == "was repulsed"}
         for e in view["events"]:                              # those no longer on the map
             if e["event"] == "destroyed" and e["unit"] in mine:
                 how = {"starved": "starved and is lost", "surrendered": "surrendered"}.get(e["cause"], "was destroyed")
                 out.append((f"{mine[e['unit']]['name']} {how}.", e["unit"]))
         theirs = {u["id"]: u["name"] for u in self.scenario["units"] if u["id"] not in mine}
-        for e in view["events"]:                              # an enemy that gave up
+        gave_up = {}                                          # the enemy that gave up, by where
+        for e in view["events"]:
             if e["event"] == "surrender" and e["unit"] in theirs:
-                out.append((f"The enemy's {theirs[e['unit']]} surrendered {where(self.gmap, e['hex'])}.", None))
+                gave_up.setdefault(where(self.gmap, e["hex"]), []).append(theirs[e["unit"]])
+        for place, names in gave_up.items():                  # a division that gives up is one line, not five
+            out.append((f"The enemy's {names[0]} surrendered {place}." if len(names) == 1
+                        else f"{len(names)} enemy units surrendered {place}: {names[0]} and others.", None))
         for lead in sorted({self.leader(u["id"]) for u in view["units"] if u["status"] == "on_map"}):
             group = self.members(lead)
             ids = {m["id"] for m in group}
@@ -297,6 +345,8 @@ class Session:
             fell = next((b for b in fought if b["retreated"] and ids & set(b["defenders"])), None)
             won = next((b for b in fought if b["retreated"] and ids & set(b["attackers"])), None)
             weak = [m for m in group if m["type"] != "hq" and m.get("real") and m["steps"] * 2 < m["real"][2]]
+            stuck = not (ids & stepped) and any(stopped.get(i) in ("contact", "zone of control") for i in ids)   # ordered off, and never left
+            crowded = any(stopped.get(i) == "no room" for i in ids)             # the hex ahead was full when the turn ended
             if fell:
                 words = f"{name} was driven back {where(self.gmap, fell['hex'])}."
             elif heavy:
@@ -313,6 +363,10 @@ class Session:
                 words = f"{name}: morale is low. It cannot attack."
             elif weak:
                 words = f"{name} is under half strength and needs reinforcing."
+            elif crowded:
+                words = f"{name} could not go on: the hex ahead already holds {U.STACK_FORMATIONS} formations."
+            elif stuck:
+                words = f"{name} could not move: the enemy is in its way."
             elif any(stopped.get(i) == "contact" for i in ids):
                 words = f"{name}: enemy in contact."
             else:
@@ -321,9 +375,26 @@ class Session:
         return out
 
     def waiting_units(self):
-        """The side's units that have no order yet, in the order the screen steps through them."""
-        return [u["id"] for u in self.view["units"] if u["status"] == "on_map" and u["id"] not in self.pending[self.side]
-                and u["group"] in (None, u["id"])]               # a group waits as one, under its leader
+        """The side's units the player has not dealt with this turn, in the order the screen steps
+        through them: those with no order, and those whose order stands from an earlier turn
+        and has been neither kept nor changed."""
+        return [u["id"] for u in self.view["units"] if u["status"] == "on_map" and u["group"] in (None, u["id"])
+                and not (u["id"] in self.pending[self.side] and u["id"] in self.kept[self.side])]   # a group waits as one
+
+    def crowded(self, uid, to):
+        """Whether the hex is too full of your own units, as they stand now, for this unit or
+        group to enter (RULES 20.1.4). The engine does not refuse the order: the hex may empty."""
+        there = [m for m in self.view["units"] if m["status"] == "on_map" and tuple(m["hex"]) == tuple(to)]
+        return bool(there) and not B.room(there, self.members(self.leader(uid)))
+
+    def idle_units(self):
+        """Those of the waiting with no order at all: left so, they hold their ground."""
+        return [i for i in self.waiting_units() if i not in self.pending[self.side]]
+
+    def keep(self, uid):
+        """The player has seen this unit's standing order and lets it stand."""
+        if self.leader(uid) in self.pending[self.side]:
+            self.kept[self.side].add(self.leader(uid))
 
     def turns_to_go(self, uid):
         """How many turns a unit's standing order will take, or None."""

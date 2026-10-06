@@ -20,6 +20,7 @@ TOWN_PCT = 50           # added to defence in a port or town
 FORT_PCT = 25           # added to defence per fortification level
 COH_LOSS = 20           # cohesion lost by each side at even odds
 COH_MIN, COH_MAX = 5, 60
+COH_TURN_MAX = 40       # most cohesion a unit loses to all its battles of one turn
 STEP_LOSS = 10          # per cent of steps lost at even odds
 STEP_MAX = 40           # most per cent of steps lost in a battle
 RETREAT_MARGIN = 5      # how much more cohesion the defenders must lose to be driven back
@@ -207,7 +208,7 @@ def combat_phase(state, gmap, ctx):
             ctx["in_battle"].add(u["id"])
     for uid in sorted(coh):
         u = S.unit(state, uid)
-        u["cohesion"] = max(0, u["cohesion"] - coh[uid])
+        u["cohesion"] = max(0, u["cohesion"] - min(COH_TURN_MAX, coh[uid]))       # 10.5.4
         u["steps"] = max(0, u["steps"] - steps[uid])
     for uid in sorted(coh):
         u = S.unit(state, uid)

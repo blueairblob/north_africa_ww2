@@ -16,7 +16,7 @@ def test_a_meeting_of_armour_worked_by_hand():                                  
     assert (battles[70, 25]["att"], battles[70, 25]["def"]) == (756, 705)        # 10.4
     assert (battles[70, 24]["att"], battles[70, 24]["def"]) == (705, 756)
     assert (a["steps"], a["cohesion"], a["stores"]) == (11, 59, 150)             # 10.3.1, 10.5
-    assert (b["steps"], b["cohesion"], b["stores"]) == (10, 54, 450)
+    assert (b["steps"], b["cohesion"], b["stores"]) == (10, 56, 450)             # 21 + 21, limited to 40 (10.5.4)
     assert a["hex"] == [70, 24] and b["hex"] == [70, 25]                         # 10.6.1: both stand
     assert not battles[70, 25]["retreated"] and not battles[70, 24]["retreated"]
 

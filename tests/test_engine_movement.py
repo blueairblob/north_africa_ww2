@@ -1,4 +1,5 @@
 """docs/RULES.md §9: simultaneous movement in impulses."""
+from engine import invariants
 from engine import state as S
 from helpers import GMAP, by_id, start, turn, unit
 
@@ -73,7 +74,9 @@ def test_a_full_hex_refuses_the_highest_id():                                   
                        unit(203, "cw", "motorised", [69, 24]), unit(204, "cw", "hq", [71, 23], steps=1)])
     state, _ = turn(sc, state, cw=[move(uid, [70, 24]) for uid in (201, 202, 203, 204)])
     u = by_id(state)
-    assert [u[i]["hex"] for i in (201, 202, 203, 204)] == [[70, 24], [70, 24], [69, 24], [71, 23]]   # two formations a hex
+    assert [u[i]["hex"] for i in (201, 202, 203, 204)] == [[70, 24], [70, 24], [69, 24], [70, 24]]   # two formations a hex,
+    kept_out = [(e["unit"], e["at"]) for e in state["log"] if e["event"] == "stopped" and e["why"] == "no room"]   # and any HQ
+    assert kept_out == [(203, [70, 24])]                             # the one kept out is told why it did not move
 
 
 def test_a_division_fits_in_one_hex_whatever_its_size():                         # 20.1.4
@@ -114,3 +117,28 @@ def test_an_hq_that_moves_keeps_only_what_it_can_carry():                       
     hq = S.unit(state, 204)
     assert hq["dump"] == {"fuel": 300, "stores": 200} and hq["stationary"] is False
     assert state["sides"]["cw"]["lost"] == 700
+
+
+def test_a_unit_passes_through_a_full_hex_but_cannot_stop_in_it():               # 9.5.8
+    two = [unit(201, "cw", "motorised", [70, 24]), unit(202, "cw", "motorised", [70, 24])]
+    sc, state = start(two + [unit(203, "cw", "motorised", [70, 25])])
+    state, _ = turn(sc, state, cw=[move(203, [70, 22])])                         # the straight way is through the two
+    u = by_id(state)
+    assert u[203]["hex"] == [70, 22] and u[201]["hex"] == u[202]["hex"] == [70, 24]
+    steps = [(e["to"], e["impulse"]) for e in state["log"] if e["event"] == "step" and e["unit"] == 203]
+    assert [s[0] for s in steps] == [[70, 24], [70, 23], [70, 22]] and steps[0][1] == steps[1][1]    # in and out in one impulse
+    assert invariants.check(state, GMAP) == []
+
+    sc, state = start(two + [unit(203, "cw", "motorised", [70, 25])])
+    state, _ = turn(sc, state, cw=[move(203, [70, 24])])                         # to stop there is still refused
+    assert by_id(state)[203]["hex"] == [70, 25]
+    assert [(e["unit"], e["why"]) for e in state["log"] if e["event"] == "stopped"] == [(203, "no room")]
+
+
+def test_a_unit_does_not_pass_through_a_full_hex_the_enemy_watches():            # 9.5.8
+    units = [unit(201, "cw", "motorised", [70, 24]), unit(202, "cw", "motorised", [70, 24]),
+             unit(203, "cw", "motorised", [70, 25]), unit(101, "axis", "motorised", [71, 23])]
+    sc, state = start(units)
+    state, _ = turn(sc, state, cw=[move(203, [70, 22])])
+    assert by_id(state)[203]["hex"] == [70, 25]                                  # it would have to stop in the full hex
+    assert invariants.check(state, GMAP) == []

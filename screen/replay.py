@@ -11,8 +11,10 @@ A strike is one formation attacking: the map goes to it, the units it hits burn,
 rattle plays for as long as the damage was heavy. Every strike takes at least the same beat,
 so a short rattle is followed by silence, and the silence says the attack was feeble. When
 a battle's attackers have all struck, the defenders reply the same way. Nothing is settled
-until every strike of the turn has been shown; then, in the outcome, the beaten fall back,
-the destroyed burst, and the rest are seen to have held.
+until every strike of the turn has been shown. Then each battle that moved anyone has its
+outcome, in two beats a watcher can follow: first the beaten fall back and the destroyed burst,
+and the hex is seen to be empty; only then do the victors advance into it. Last, those who
+fought and stood are seen to have held.
 """
 from engine.combat import COH_MIN
 from engine.movement import IMPULSES
@@ -28,10 +30,15 @@ BEAT_MS = 2600          # every strike takes at least this long
 TAIL_MS = 400           # quiet after a rattle, before the next strike
 FLICKER_MS = 60         # a burning unit changes between yellow and red this often
 HOLD_MS = 700           # the outcome: a breath before anyone moves
-FALL_MS = 900           # falling back and following up
+FALL_MS = 900           # falling back
+EMPTY_MS = 600          # the hex left is seen empty before anyone follows up
+ADVANCE_MS = 900        # the victors advance into it
 BURST_MS = 800          # a unit destroyed
 PAUSE_MS = 300          # between scenes
 MARCH_SCALE = 0.5       # a unit on a road march is drawn at half its side: a quarter of its area
+
+
+ARMS = ("armour", "motorised", "foot", "guns", "recon", "hq")       # the arm a mixed force is heard as: its chief one
 
 
 def rattle_ms(damage):
@@ -40,13 +47,23 @@ def rattle_ms(damage):
 
 
 def strikes(battle, kinds):
-    """A battle's strikes, in order: each attacker on the defenders, with its share of the
-    cohesion they lost, by its share of the attack; then the defenders' reply on the attackers."""
+    """A battle's strikes, in order: the attackers from each hex on the defenders, with their
+    share of the cohesion the defenders lost, by their share of the attack; then the defenders'
+    reply on the attackers."""
     attackers, defenders = battle["attackers"], battle["defenders"]
     av = {int(i): v for i, v in battle["av"].items()}
     total = sum(av.values()) or 1
-    out = [{"by": [a], "arm": kinds.get(a, "foot"), "on": list(defenders), "reply": False,
-            "damage": max(1, battle["cld"] * av[a] // total) if av[a] else 0} for a in attackers]
+    where = {int(i): tuple(h) for i, h in battle["where"].items()}
+    out = []
+    first = {}                                           # each hex attacked from, by the lowest id that struck from it
+    for a in sorted(attackers):
+        first.setdefault(where[a], a)
+    for h in sorted(first, key=first.get):               # those that attacked from one hex strike as one: a group, or a pile
+        by = [a for a in attackers if where[a] == h]
+        share = sum(av[a] for a in by)
+        chief = min(by, key=lambda a: (ARMS.index(kinds.get(a, "foot")), a))
+        out.append({"by": by, "arm": kinds.get(chief, "foot"), "on": list(defenders), "reply": False,
+                    "damage": max(1, battle["cld"] * share // total) if share else 0})
     lead = max(defenders, key=lambda i: (kinds.get(i) != "hq", -i))
     if battle["cla"] > COH_MIN:                          # a reply at the rules' least loss says nothing: left out
         out.append({"by": list(defenders), "arm": kinds.get(lead, "foot"), "on": list(attackers),
@@ -143,10 +160,31 @@ def script(before, after, span=None, gmap=None):
         if e["event"] == "surrender" and e["unit"] in cast:
             place.setdefault(e["unit"], tuple(e["hex"]))
     burst = (burst | {i for b in battles for i in b["destroyed"]}) - flags
-    if slides or gone or fought:
-        scenes.append({"kind": "outcome", "slides": slides, "gone": sorted(gone), "burst": sorted(burst & gone),
-                       "flags": sorted(flags & gone),
-                       "held": [i for i in fought if i not in slides and i not in gone]})
+    name = lambda ids: cast[min(ids, key=lambda i: (kinds.get(i) != "hq", i))][0]["name"]     # a division by its HQ
+    told = set()
+    for b in battles:                                    # a battle that moved anyone: its outcome, in two beats
+        back = {i: slides[i] for i in b["defenders"] if i in slides and i not in told}
+        lost = [i for i in b["attackers"] + b["defenders"] if i in gone and i not in told]
+        forward = {i: slides[i] for i in b["attackers"] if i in slides and i not in told}
+        if not (back or lost or forward):
+            continue
+        told |= set(back) | set(lost) | set(forward)
+        words = (f"{name(back)} falls back" if back else f"{name(lost)} is destroyed" if set(lost) & burst
+                 else f"{name(lost)} surrenders" if set(lost) & flags else "The outcome")
+        scenes.append({"kind": "outcome", "slides": back, "advance": forward, "gone": sorted(lost),
+                       "burst": sorted(burst & set(lost)), "flags": sorted(flags & set(lost)), "held": [],
+                       "focus": tuple(b["hex"]), "words": words,
+                       "then": f"{name(forward)} advances into the hex" if forward else ""})
+    rest = {i: v for i, v in slides.items() if i not in told}
+    away = gone - told
+    held = [i for i in fought if i not in slides and i not in gone]
+    if rest or away or held:                             # everything else at once: who held, who was lost elsewhere
+        scenes.append({"kind": "outcome", "slides": rest, "advance": {}, "gone": sorted(away), "burst": sorted(burst & away),
+                       "flags": sorted(flags & away), "held": held, "focus": None, "words": "The outcome", "then": ""})
+    for scene in scenes:
+        if scene["kind"] == "outcome":                   # the first beat's length, and the whole scene's
+            scene["first"] = max(FALL_MS if scene["slides"] else 0, BURST_MS if scene["gone"] else 0, 300)
+            scene["long"] = HOLD_MS + scene["first"] + (EMPTY_MS + ADVANCE_MS if scene["advance"] else 0)
     return {"cast": cast, "start": {i: (fought_at.get(i) if i not in mine and i not in foes else tuple(u["hex"]))
                                     for i, (u, _) in cast.items() if i in mine or i in foes or i in fought_at},
             "scenes": scenes}
@@ -164,7 +202,7 @@ class Playback:
             elif scene["kind"] == "strike":
                 long = scene["long"]
             else:
-                long = HOLD_MS + max(FALL_MS if scene["slides"] else 0, BURST_MS if scene["gone"] else 0, 300)
+                long = scene["long"]
             self.timeline.append((t, t + long, scene))
             t += long + (PAUSE_MS if scene["kind"] != "strike" else 0)
         self.length = t
@@ -199,6 +237,8 @@ class Playback:
                     at(start + HOLD_MS, "boom")
                 if scene["flags"] and not scene["slides"]:
                     at(start + HOLD_MS, "fall")
+                if scene["advance"]:
+                    at(start + HOLD_MS + scene["first"] + EMPTY_MS, "tick")
         return out
 
     def stage(self, t):
@@ -248,13 +288,19 @@ class Playback:
                 if local >= LEAD_MS:
                     meter = (min(local - LEAD_MS, scene["rattle"]) / RATTLE_MAX, burning)
             elif scene["kind"] == "outcome":
-                title = "" if over else "The outcome"
-                part = max(0.0, min(1.0, (local - HOLD_MS) / max(1, end - start - HOLD_MS)))
+                go = HOLD_MS + scene["first"] + EMPTY_MS                 # when the victors set off
+                title = "" if over else scene["then"] if scene["advance"] and local >= go else scene["words"]
+                part = max(0.0, min(1.0, (local - HOLD_MS) / scene["first"]))
+                if not over and scene["focus"]:
+                    focus = scene["focus"]
+                    ring = scene["focus"] if scene["advance"] and HOLD_MS + scene["first"] <= local < go else None
                 for i in scene["held"]:
                     if not over and local >= HOLD_MS:
                         lit[i] = "held"
                 for i, (a, b) in scene["slides"].items():
                     place[i] = b if over else (a, b, min(1.0, max(0.0, (local - HOLD_MS) / FALL_MS)))
+                for i, (a, b) in scene["advance"].items():   # not before the hex has been seen empty
+                    place[i] = b if over else a if local < go else (a, b, min(1.0, (local - go) / ADVANCE_MS))
                 for i in scene["gone"]:
                     fade[i] = 1.0 - part
                     if i in scene["burst"] + scene["flags"] and 0 < part < 1 and i in place:

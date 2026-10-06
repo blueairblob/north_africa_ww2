@@ -5,6 +5,7 @@ import os
 
 import pygame
 
+from engine import orders as O
 from engine import paths
 from engine import units as U
 from mapgen import geo
@@ -15,7 +16,8 @@ from engine.supply import REACH, REACH_FULL
 from engine.view import SPOT_RANGE, SPOT_RANGE_RECON
 
 from . import theme as T
-from .layout import EDGE, Layout, areas, buttons, layers
+from .layout import EDGE, Layout, areas, buttons, layers, tabs
+from .session import where
 from .pictures import picture
 
 ROOT = os.path.dirname(os.path.dirname(__file__))
@@ -42,6 +44,9 @@ class UI:
         self.chooser = None             # a hex with several of your units in it, and which: a list to choose from
         self.layers_open = False        # the Layers list in the map's corner is showing
         self.editing = None             # the name being typed for the group taken up, or None
+        self.tab = "unit"               # the panel's tab: the unit taken up, or "orders", every unit's order
+        self.scroll = 0                 # how far down the list of orders is scrolled, in rows
+        self.remind = True              # End turn asks once more when units have no order
         self.preview = ""               # what a click here would do, while a unit is taken up and a hex pointed at
 
     @property
@@ -62,6 +67,7 @@ class Painter:
         self.playing = False            # the last turn is being played back
         self.member_rects = {}          # the rows of a group's units in the panel, to click
         self.chooser_rects, self.report_rects, self.back_rect, self.tips = {}, {}, None, []
+        self.scroll_rects = {}
         self.pencil_rect = None
 
     def font(self, px, bold=False):
@@ -152,6 +158,40 @@ class Painter:
             for x0, x1, tx in ((edge.x - gap, edge.x + 6 * z, edge.x - gap - size * 1.4), (edge.right - 6 * z, edge.right + gap, edge.right + gap + size * 1.4)):
                 pygame.draw.line(img, T.INK, (x0, y), (x1, y), max(1, int(1.5 * z)))
                 self.text(img, f"{lat}°N", (tx, y), size, T.INK, centre=True)
+
+    def legend(self, surface, ui):
+        """What the layers that are on are showing, beside the Layers list."""
+        rows = []
+        if "s" in ui.overlays:
+            rows += [("line", T.HAUL, "A haul to an HQ this turn: thicker, more tonnes"),
+                     ("tint", T.REACH_FULL, "Ground an HQ or port keeps fully supplied"),
+                     ("tint", T.REACH, "Ground it reaches, but only in part"),
+                     ("box", T.SUPPLY, "What a port holds; an HQ's haul when it is taken up")]
+        if "z" in ui.overlays:
+            rows += [("tint", T.ZOC_OWN, "Your zone of control"), ("tint", T.ZOC_FOE, "The enemy's, where you see him"),
+                     ("tint", T.UNSEEN, "Ground none of your units can see")]
+        if not rows:
+            return
+        anchor = layers(surface.get_size(), True)["layers"]
+        box = pygame.Rect(anchor.x + 170, anchor.bottom - len(rows) * 22 - 14, 372, len(rows) * 22 + 12)
+        pygame.draw.rect(surface, T.PAPER, box, border_radius=6)
+        pygame.draw.rect(surface, T.INK, box, 2, border_radius=6)
+        for n, (kind, colour, words) in enumerate(rows):
+            y = box.y + 8 + n * 22
+            swatch = pygame.Rect(box.x + 10, y + 2, 30, 14)
+            if kind == "line":
+                pygame.draw.line(surface, T.INK, swatch.midleft, swatch.midright, 7)
+                pygame.draw.line(surface, colour, swatch.midleft, swatch.midright, 5)
+            elif kind == "box":
+                pygame.draw.rect(surface, (250, 244, 228), swatch, border_radius=3)
+                pygame.draw.rect(surface, colour, swatch, 2, border_radius=3)
+            else:                                                    # a tint, as it looks over the desert
+                pygame.draw.rect(surface, T.TERRAIN["."], swatch)
+                veil = pygame.Surface(swatch.size, pygame.SRCALPHA)
+                veil.fill(colour)
+                surface.blit(veil, swatch.topleft)
+                pygame.draw.rect(surface, T.INK, swatch, 1)
+            self.text(surface, words, (box.x + 50, y + 1), 12)
 
     def key(self, surface):
         """The key to the map and the counters, in the map's bottom right corner."""
@@ -266,7 +306,9 @@ class Painter:
         if ui.chooser:                                               # which of the units here?
             x, y = at(ui.chooser["hex"])
             rows = [(uid, session.unit(uid)) for uid in ui.chooser["ids"] if session.unit(uid)]
-            acts = [(("group",), "Group all here into one")] if len(rows) > 1 else []        # and what can be done with them
+            mover = ui.chooser.get("mover")                              # a unit already taken up could come here
+            acts = [(("move",), f"Move {session.group_name(mover)} here")] if session.unit(mover) else []
+            acts += [(("group",), "Group all here into one")] if len(rows) > 1 else []       # and what can be done with them
             acts += [(("split", uid), "Split up " + session.group_name(uid)) for uid, u in rows if len(session.members(uid)) > 1]
             wide = max([self.font(13, True).size(row_name(session, u))[0] + 80 for _, u in rows]
                        + [self.font(13).size(words)[0] + 30 for _, words in acts])
@@ -298,6 +340,8 @@ class Painter:
                 self.tooltip(surface, session, ui, stacks.get(ui.hover, []))     # only where there is something to say
         if "k" in ui.overlays:
             self.key(surface)
+        if ui.layers_open:
+            self.legend(surface, ui)
         for name, r in layers((w + T.PANEL, h + T.BAR), ui.layers_open).items():      # the Layers button, in the corner
             label = "Layers" if name == "layers" else next(b[1] for b in T.LAYERS if b[0] == name)
             on = ui.layers_open if name == "layers" else name in ui.overlays
@@ -614,28 +658,73 @@ class Painter:
         else:
             pygame.draw.rect(surface, T.INK, (box.x, box.y, box.w // 2, box.h // 2))
 
+    def card(self, session, lead):
+        """A unit or group of yours in a few short lines: strength, morale, fuel, supply, its
+        order, and what is wrong. [(words, bold, colour)]"""
+        group, side = session.members(lead), session.side
+        lines = [(session.group_name(lead) + (f"  ({len(group)} units)" if len(group) > 1 else ""), True, T.INK)]
+        sums = {}
+        for m in group:                                              # strength, added up by kind: tanks, men, guns
+            now = T.strength_now(m)
+            if now and m["type"] != "hq" or len(group) == 1:
+                sums[now[2]] = sums.get(now[2], 0) + now[0]
+        fighters = [m for m in group if m["type"] != "hq"] or group
+        level, word = T.morale(min(m["cohesion"] for m in fighters))
+        lines.append((", ".join(f"{n:,} {what}" for what, n in sums.items()) + f"   Morale {level} {word.lower()}", False, T.INK))
+        wheels = [m for m in group if U.is_vehicle(m)]
+        fuel = f"Fuel {min(m['fuel'] // U.step_fuel(m) for m in wheels) * 10} km   " if wheels else ""
+        cut = any(not m["traced"] for m in group)
+        short = any(m["out_of_stores"] for m in group)
+        lines.append((fuel + ("OUT OF SUPPLY" if cut else "Out of stores" if short else "In supply"), False,
+                      T.SHORT if cut or short else T.INK))
+        order = session.pending[side].get(lead)
+        if order is None:
+            lines.append(("No order", False, T.ATTACK))
+        else:
+            turns = session.turns_to_go(lead)
+            lines.append(("Order: " + T.order_name(order["order"], group)
+                          + (" " + where(session.gmap, order["to"]) if "to" in order else "")
+                          + (f", {turns} turns" if turns and turns > 1 else ""), False, T.INK))
+        wrong = []                                                   # what is wrong, shortly
+        if any(U.is_vehicle(m) and m["fuel"] < U.step_fuel(m) for m in group):
+            wrong.append("no fuel to move")
+        if any(m["type"] != "hq" and m["cohesion"] < O.ATTACK_MIN for m in group):
+            wrong.append("morale too low to attack")
+        if any(m.get("real") and m["type"] != "hq" and m["steps"] * 2 < m["real"][2] for m in group):
+            wrong.append("under half strength")
+        stopped = {e["unit"]: e["why"] for e in session.view["events"] if e["event"] == "stopped"}
+        if any(stopped.get(m["id"]) == "no room" for m in group):
+            wrong.append("kept out of a full hex")
+        if wrong:
+            lines.append(("! " + "; ".join(wrong), False, T.SHORT))
+        return lines
+
     def tooltip(self, surface, session, ui, pile):
-        """What is under the mouse, in plain words."""
+        """What is under the mouse: the place, a small card for each unit or group of yours, the
+        enemy seen, the ground."""
         g, hx, view = session.gmap, ui.hover, session.view
         lines = []
         for name, p in sorted(g.places.items()):
             if p["hex"] == hx:
-                lines.append((f"{name}  ({T.SIDE_NAME[view['places'][name]]})", True))
+                lines.append((f"{name}  ({T.SIDE_NAME[view['places'][name]]})", True, T.INK))
+        for lead in sorted({session.leader(u["id"]) for u, own in pile if own}):
+            lines += self.card(session, lead)
         for u, own in pile:
-            what = f"{u['name']}: {u['type']}, strength {u.get('steps', '?')}"
-            lines.append((what if own else "Enemy  " + what, False))
+            if not own:
+                lines.append((f"Enemy  {u['name']}: {T.TYPE_NAME[u['type']].lower()}"
+                              + (f", {T.strength(u)}" if "steps" in u else ""), False, T.INK))
         fort = view["forts"].get(f"{hx[0]},{hx[1]}")
-        lines.append((T.TERRAIN_NAME[g.terrain[hx[1]][hx[0]]] + (f", fortified level {fort[0]}" if fort else ""), False))
+        lines.append((T.TERRAIN_NAME[g.terrain[hx[1]][hx[0]]] + (f", fortified level {fort[0]}" if fort else ""), False, T.DIM))
         font = self.font(13)
-        w = max(self.font(13, bold).size(s)[0] for s, bold in lines) + 14
+        w = max(self.font(13, bold).size(s)[0] for s, bold, _ in lines) + 14
         h = len(lines) * (font.get_height() + 2) + 8
         x = min(ui.mouse[0] + 18, surface.get_width() - w - 4)
         y = min(ui.mouse[1] + 18, surface.get_height() - h - 4)
         tip = pygame.Surface((w, h), pygame.SRCALPHA)
-        tip.fill((250, 244, 228, 235))
+        tip.fill((250, 244, 228, 240))
         pygame.draw.rect(tip, T.INK, tip.get_rect(), 1)
-        for n, (s, bold) in enumerate(lines):
-            self.text(tip, s, (7, 4 + n * (font.get_height() + 2)), 13, bold=bold)
+        for n, (s, bold, colour) in enumerate(lines):
+            self.text(tip, s, (7, 4 + n * (font.get_height() + 2)), 13, colour, bold)
         surface.blit(tip, (x, y))
 
     # ---- the message line and the panel --------------------------------------------------
@@ -655,8 +744,22 @@ class Painter:
         would = ui.mode or has
         if u and not would:                                          # a plain click moves, or attacks an enemy in sight
             would = (guess(session, ui.hover) if ui.hover and ui.hover != tuple(u["hex"]) else None) or "move"
+        offered = session.offers(ui.selected, ui.alone) if u else []
+        left = 0 if self.playing or session.state["over"] else len(session.waiting_units())
+        if not self.playing and not session.state["over"]:           # the box to tick: be reminded of units with no order
+            box = tabs(surface.get_size())["remind"]
+            tick = pygame.Rect(box.x, box.y + 2, 18, 18)
+            pygame.draw.rect(surface, (255, 255, 255), tick, border_radius=3)
+            pygame.draw.rect(surface, T.INK, tick, 1, border_radius=3)
+            if ui.remind:
+                pygame.draw.lines(surface, T.INK, False, [(tick.x + 4, tick.y + 9), (tick.x + 8, tick.y + 13), (tick.x + 14, tick.y + 4)], 3)
+            self.text(surface, "Remind me of units with no order", (box.x + 26, box.y + 3), 12)
         for name, r in buttons(surface.get_size()).items():
+            if name not in ("next", "done") and (name not in offered or ui.tab == "orders"):
+                continue                                             # only the orders this unit can take are shown
             label, key = next((b[1], b[2]) for b in T.BUTTONS if b[0] == name)
+            if name == "next" and u and has and session.leader(u["id"]) in session.waiting_units():
+                label = "Keep order"                                 # its order stands from before: one tap lets it
             if name == "road_march" and u:
                 label = T.order_name(name, [u] if ui.alone else session.members(u["id"]))
             usable, why = ((True, "") if name == "done" else session.can(ui.selected, name, ui.alone) if u and name != "next"
@@ -666,7 +769,8 @@ class Painter:
             if name == has and u and not ui.mode:                    # its own order is always lit, and can be taken back
                 usable = True
             lit = u is not None and usable and name == would
-            colour = T.BUTTON_GO if name == "done" else T.BUTTON_ON if lit else T.BUTTON
+            colour = (T.BUTTON_GO if name == "done"                 # End turn is always there to press
+                      else T.BUTTON_ON if lit or name == "next" else T.BUTTON)      # Next unit is lit while any unit waits
             pygame.draw.rect(surface, colour if usable else (206, 198, 178), r, border_radius=6)
             pygame.draw.rect(surface, T.INK if usable else (150, 140, 120), r, 1, border_radius=6)
             self.text(surface, label, (r.centerx - 8, r.centery), 14, T.INK if usable else (150, 140, 120), True, True)
@@ -675,6 +779,60 @@ class Painter:
                 self.tips.append((r, "This is its order. Click to take it back."))
             elif not usable:
                 self.tips.append((r, why))
+
+    def orders_list(self, surface, session, ui, x, y, w, foot):
+        """The Unit orders tab: every unit or group of the side and what it is to do this turn,
+        to scroll through. A tap on a row takes that unit up."""
+        side = session.side
+        leads = sorted({session.leader(m["id"]) for m in session.view["units"] if m["status"] == "on_map"})
+        waiting, idle = session.waiting_units(), session.idle_units()
+        self.text(surface, f"{len(leads)} units and groups: {len(idle)} with no order" if idle
+                  else f"{len(leads)} units and groups: all have orders", (x, y), 12, T.DIM)
+        y += 20
+        room = max(1, (foot - y - 26) // 25)
+        ui.scroll = max(0, min(ui.scroll, len(leads) - room))
+        for lead in leads[ui.scroll:ui.scroll + room]:
+            m, nation = session.unit(lead), session.nation[lead]
+            row = pygame.Rect(x, y, w, 23)
+            pygame.draw.rect(surface, T.BUTTON_ON if lead == session.leader(ui.selected) else T.BUTTON, row, border_radius=4)
+            mini = pygame.Rect(x + 3, y + 2, 30, 19)
+            pygame.draw.rect(surface, T.FACE[nation], mini, border_radius=3)
+            show = next((g for g in session.members(lead) if g["type"] != "hq"), m)
+            picture(surface, show["type"], mini.inflate(-6, -5), T.MARK[nation], T.FACE[nation])
+            order = session.pending[side].get(lead)
+            does = "no order" if order is None else T.order_name(order["order"], session.members(lead)) + (
+                " " + where(session.gmap, order["to"]) if "to" in order else "") + (", stands" if lead in waiting else "")
+            while self.font(12, True).size(does)[0] > w - 150:
+                does = does[:-1]
+            wide = self.font(12, True).size(does)[0]
+            self.text(surface, does, (row.right - 6 - wide, y + 4), 12, T.ATTACK if order is None else T.INK, True)
+            words = row_name(session, m)
+            while self.font(12).size(words)[0] > w - 54 - wide:              # as much of the name as fits
+                words = words[:-1]
+            self.text(surface, words, (x + 40, y + 4), 12)
+            self.report_rects[("order", lead)] = (row, lead)
+            y += 25
+        self.scroll_rects = {}
+        if len(leads) > room:                                        # more than fit: two arrows, or the wheel
+            for n, (name, points) in enumerate((("up", ((0, 12), (10, 2), (20, 12))), ("down", ((0, 2), (10, 12), (20, 2))))):
+                r = pygame.Rect(x + w - 76 + n * 40, y + 2, 36, 20)
+                usable = ui.scroll > 0 if name == "up" else ui.scroll + room < len(leads)
+                pygame.draw.rect(surface, T.BUTTON if usable else (206, 198, 178), r, border_radius=4)
+                pygame.draw.rect(surface, T.INK if usable else (150, 140, 120), r, 1, border_radius=4)
+                pygame.draw.polygon(surface, T.INK if usable else (150, 140, 120), [(r.x + 8 + px, r.y + 3 + py) for px, py in points])
+                self.scroll_rects[name] = r
+            self.text(surface, f"{ui.scroll + 1} to {min(len(leads), ui.scroll + room)} of {len(leads)}", (x, y + 5), 12, T.DIM)
+
+    def cannot(self, session, ui, u, line, w):
+        """Under the unit taken up: what became of its order last turn, and why each greyed order
+        cannot be given now. In words on the panel, not only when pointed at."""
+        said = session.said[session.side].get(session.leader(u["id"]))
+        for row in wrap(self.font(12, True), said, w) if said and not ui.alone else []:
+            line(row.strip(), 12, T.SHORT, True)
+        for name, why in session.blocked(ui.selected, ui.alone):
+            label = T.order_name(name, [u] if ui.alone else session.members(u["id"])) if name == "road_march" else T.ORDER_NAME[name]
+            for row in wrap(self.font(12), f"{label}: {why}", w):
+                line(row.strip(), 12, T.SHORT)
 
     def name_line(self, surface, session, ui, u, x, y, w):
         """A group's name, with a pencil to change it; while it is being changed, the words typed."""
@@ -712,7 +870,9 @@ class Painter:
         pygame.draw.line(surface, T.INK, rect.topleft, rect.bottomleft, 2)
         view, over = session.view, session.state["over"]
         x, y, w = rect.x + EDGE, rect.y + 12, rect.w - 2 * EDGE
-        foot = buttons(surface.get_size())["move"].y - 12           # the text stops above the buttons
+        grid = buttons(surface.get_size())
+        foot = tabs(surface.get_size())["remind"].y - 8             # the text stops above the reminder box and the two buttons
+        under = grid["recall"].bottom + 12                           # the details begin under the orders
 
         def line(s="", px=14, colour=T.INK, bold=False, gap=4):
             nonlocal y
@@ -749,7 +909,18 @@ class Painter:
         u = None if self.playing else session.unit(ui.selected)
         group = session.members(u["id"]) if u else []
         self.member_rects, self.report_rects, self.back_rect, self.tips = {}, {}, None, []
-        self.pencil_rect = None
+        self.pencil_rect, self.scroll_rects = None, {}
+        if not over and not self.playing:                            # the tabs: this unit, or every unit's order
+            for name, words in (("unit", "Unit"), ("orders", "Unit orders")):
+                r = tabs(surface.get_size())[name]
+                on = ui.tab == name
+                pygame.draw.rect(surface, T.PAPER if on else T.BUTTON, r, border_top_left_radius=6, border_top_right_radius=6)
+                pygame.draw.rect(surface, T.INK, r, 2 if on else 1, border_top_left_radius=6, border_top_right_radius=6)
+                self.text(surface, words, r.center, 13, T.INK if on else T.DIM, on, True)
+            y = tabs(surface.get_size())["unit"].bottom + 10
+            if ui.tab == "orders":
+                self.orders_list(surface, session, ui, x, y, w, foot)
+                return self.buttons(surface, session, ui)
         if over and not self.playing:                                # the result, and how it was reached
             r = session.state["result"]
             line("A draw" if r["winner"] is None else f"{T.SIDE_NAME[r['winner']]}: {r['grade']} victory", 18, T.SHORT, True)
@@ -766,6 +937,7 @@ class Painter:
             y += 24
             pygame.draw.rect(surface, T.SELECT, pygame.Rect(x - 6, y - 26, w + 12, 26 + 24), 3, border_radius=8)   # the one taken up
             line(f"{len(group)} units in a group: one order moves them all.", 12, T.DIM, gap=10)
+            y = under
             for m in group[:9]:
                 nation = session.nation[m["id"]]
                 row = pygame.Rect(x, y, w, 22)
@@ -794,17 +966,18 @@ class Painter:
                 turns = session.turns_to_go(u["id"])
                 more = f", about {turns} turns" if turns and turns > 1 else ""
                 line(f"Order: {T.ORDER_NAME[order['order']]}{more}", 15, T.PATH, True, gap=2)
+                if u["id"] in session.waiting_units():
+                    line("From an earlier turn. Space keeps it.", 12, T.DIM)
             else:
                 line("Waiting for an order", 15, T.ATTACK, True, gap=2)
+            self.cannot(session, ui, u, line, w)
             line("Click a unit above to order it by itself.", 12, T.DIM)
         elif u:
             if ui.alone and len(session.members(session.leader(u["id"]))) > 1:   # back to the group it was chosen from
-                head = session.unit(session.leader(u["id"]))
-                self.back_rect = pygame.Rect(x, y, w, 24)
+                self.back_rect = pygame.Rect(x + w - 108, y + 30, 108, 24)       # beside the unit's picture and name
                 pygame.draw.rect(surface, T.BUTTON, self.back_rect, border_radius=5)
                 pygame.draw.rect(surface, T.INK, self.back_rect, 1, border_radius=5)
-                self.text(surface, "< Back to " + row_name(session, head)[:30], (x + 8, y + 4), 12, bold=True)
-                y += 32
+                self.text(surface, "< Back to group", self.back_rect.center, 12, bold=True, centre=True)
             nation = session.nation[u["id"]]
             pygame.draw.rect(surface, T.SELECT, pygame.Rect(x - 6, y - 5, w + 12, 60), 3, border_radius=8)   # the one taken up
             card = pygame.Rect(x, y, 76, 50)                         # the unit's picture beside its name
@@ -814,7 +987,7 @@ class Painter:
             for n, row in enumerate(wrap(self.font(16, True), u["name"], w - 88)[:2]):
                 self.text(surface, row.strip(), (x + 88, y + n * 20), 16, bold=True)
             self.text(surface, f"{T.TYPE_NAME[u['type']]}, {u['xp']}", (x + 88, y + 34), 12, T.DIM)
-            y += 62
+            y = under
             level, word = T.morale(u["cohesion"])
             now = T.strength_now(u)
             meter("Strength", now[0], now[1], T.strength_colour(u), T.strength(u), T.strength_colour(u), T.strength_tip(u))
@@ -836,26 +1009,42 @@ class Painter:
                 turns = session.turns_to_go(u["id"])
                 more = f", about {turns} turns" if turns and turns > 1 else ""
                 line(f"Order: {T.ORDER_NAME[order['order']]}{more}", 15, T.PATH, True, gap=2)
-                line(T.ORDER_HELP[order["order"]], 12, T.DIM)
+                line("From an earlier turn. Space keeps it." if u["id"] in session.waiting_units()
+                     else T.ORDER_HELP[order["order"]], 12, T.DIM)
             elif ui.alone:
                 line("Chosen from its group", 15, T.ATTACK, True, gap=2)
                 line("An order now splits it off. Split leaves it here.", 12, T.DIM)
             else:
                 line("Waiting for an order", 15, T.ATTACK, True, gap=2)
-                line("Click the map, or press a button below.", 12, T.DIM)
-        elif not over and not self.playing:
-            mine = [m for m in view["units"] if m["status"] == "on_map"]
-            waiting = len(session.waiting_units())
-            line("Click one of your units,", 14, gap=2)
-            line("then click where it should go.", 14, gap=8)
-            line(f"{waiting} of {T.count(len(mine), 'unit')} {'waits' if waiting == 1 else 'wait'} for orders." if waiting
-                 else "All units have orders.", 13, T.PATH, True)
-            short = [m for m in mine if not m["traced"] or m["out_of_stores"]]
-            if short:
-                y += 4
-                line("Short of supply:", 13, T.SHORT, True)
-                for m in short[:5]:
-                    line("  " + m["name"], 12, T.SHORT, gap=2)
+                line("Click the map, or press a button above.", 12, T.DIM)
+            self.cannot(session, ui, u, line, w)
+        elif not over and not self.playing:                          # nothing taken up: who still waits, each a tap away
+            waiting = session.waiting_units()
+            line(f"{T.count(len(waiting), 'unit')} {'waits' if len(waiting) == 1 else 'wait'} for orders" if waiting
+                 else "All units have orders. Press End turn.", 15, T.PATH, True, gap=8)
+            room = max(0, (foot - y) // 2 // 25)                     # the top half of the space; reports have the rest
+            for uid in waiting[:room]:
+                m = session.unit(uid)
+                nation = session.nation[uid]
+                row = pygame.Rect(x, y, w, 23)
+                pygame.draw.rect(surface, T.BUTTON, row, border_radius=4)
+                mini = pygame.Rect(x + 3, y + 2, 30, 19)
+                pygame.draw.rect(surface, T.FACE[nation], mini, border_radius=3)
+                show = next((g for g in session.members(uid) if g["type"] != "hq"), m)
+                picture(surface, show["type"], mini.inflate(-6, -5), T.MARK[nation], T.FACE[nation])
+                words = row_name(session, m)
+                while self.font(12).size(words)[0] > w - 64:                 # as much of the name as fits
+                    words = words[:-1]
+                self.text(surface, words, (x + 40, y + 4), 12)
+                self.badge(surface, problem(session.members(uid)), (row.right - 12, row.centery), 8)
+                self.report_rects[("wait", uid)] = (row, uid)
+                y += 25
+            if len(waiting) > room:
+                line(f"and {len(waiting) - room} more: press Next unit.", 12, T.DIM)
+            carrying = len(waiting) - len(session.idle_units())
+            if carrying:                                             # those with a standing order: seen, then kept or changed
+                line(f"{carrying} of them {'carries on with its order' if carrying == 1 else 'carry on with their orders'} "
+                     "unless changed.", 12, T.DIM)
         rule()
         font = self.font(12)
         room = (foot - y) // 21 - 1

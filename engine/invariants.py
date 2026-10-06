@@ -10,7 +10,7 @@ def check(state, gmap):
     for h, us in sorted(there.items()):
         if len({u["side"] for u in us}) > 1:
             bad.append(f"I-2 both sides in {h}")
-        if len({U.formation(u) for u in us}) > U.STACK_FORMATIONS:
+        if len(U.stacked(us)) > U.STACK_FORMATIONS:
             bad.append(f"I-3 too many formations in {h}")
         if not gmap.passable(h):
             bad.append(f"I-4 units in impassable {h}")

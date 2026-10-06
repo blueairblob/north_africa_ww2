@@ -13,6 +13,9 @@ def play(scenario, gmap, players, turns=None, check=True):
     while not state["over"] and (turns is None or state["turn"] <= turns):
         audit = [] if check else None
         state = shown = begin_turn(state, gmap, scenario, audit)
+        if check:                                         # the Supply phase can lose units too: check after it as well
+            bad = invariants.check(state, gmap)
+            assert not bad, f"turn {state['turn']}, after the Supply phase: {bad}"
         views = {side: view(state, gmap, scenario, side) for side in S.SIDES}
         submissions = {side: players[side].orders(views[side]) for side in S.SIDES}
         record.append(submissions)

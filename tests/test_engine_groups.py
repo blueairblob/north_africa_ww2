@@ -154,3 +154,21 @@ def test_a_group_follows_up_as_one_with_its_hq():                               
     u = by_id(state)
     assert [u[i]["hex"] for i in (HQ, TANKS, RIFLES, GUNS)] == [[70, 25]] * 4     # the HQ went in with them
     assert [u[i]["group"] for i in (HQ, TANKS, RIFLES, GUNS)] == [HQ] * 4 and invariants.check(state, GMAP) == []
+
+
+def test_a_group_that_loses_its_leader_outside_combat_closes_up_and_can_still_be_ordered():   # 20.2.8
+    from engine.turn import begin_turn as supply_phase
+    specs = division((70, 25))
+    specs[0].update(stores=0, cohesion=0)                                       # the HQ starves, broken, beside the enemy
+    sc, state = start(specs + [unit(201, "cw", "armour", [70, 24])])
+    sc["sides"]["axis"]["lift"] = [["1941-11-18", 0]]
+    state = supply_phase(state, GMAP, sc)
+    u = by_id(state)
+    assert u[HQ]["status"] == "destroyed" and u[HQ]["group"] is None             # it surrendered (6.10.2)
+    assert [u[i]["group"] for i in (TANKS, RIFLES, GUNS)] == [TANKS] * 3         # the rest close up under the next
+    assert invariants.check(state, GMAP) == []
+    _, _, replies = orders.check(state, GMAP, "axis", {"orders": [move(TANKS, [70, 27])], "air": "support"})
+    assert replies[0]["ok"]                                                      # and can be ordered
+    sc, state = start(division((70, 25)), withdrawals=[{"date": "1941-11-18", "unit": HQ}])
+    state, _ = turn(sc, state)
+    assert [x["group"] for x in state["units"]] == [None, TANKS, TANKS, TANKS] and invariants.check(state, GMAP) == []

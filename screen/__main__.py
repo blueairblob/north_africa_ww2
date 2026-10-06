@@ -3,11 +3,13 @@
     python -m screen crusader                       two players at one screen
     python -m screen crusader --axis nothing        you are the Commonwealth
     python -m screen crusader --shot frame.png      draw one frame to a file, with no window
+    python -m screen crusader --log                 record what every click and key did, under logs/
 """
 import argparse
 import json
 import os
 import sys
+import time
 from pathlib import Path
 
 DATA = Path(__file__).parent.parent / "data"
@@ -24,6 +26,8 @@ def main(argv):
     p.add_argument("--at", default="Tobruk", help="the place to centre on, for --shot")
     p.add_argument("--overlay", default="", help="overlays for --shot: s, z or sz")
     p.add_argument("--select", type=int, help="the unit selected, for --shot")
+    p.add_argument("--log", metavar="FILE", nargs="?", const="", help="record what every click and key did, to find a "
+                   "fault; with no FILE, in a file named by the date and time under logs/")
     a = p.parse_args(argv)
     if a.shot:
         os.environ.setdefault("SDL_VIDEODRIVER", "dummy")
@@ -49,6 +53,11 @@ def main(argv):
                  f"    python -m engine {a.scenario} {a.axis} {a.cw}")
     session = Session(scenario, gmap, humans, {s: PLAYERS[k](gmap) for s, k in kinds.items() if k != "human"})
     app = App(session)
+    if a.log is not None:
+        path = Path(a.log) if a.log else Path(__file__).parent.parent / "logs" / time.strftime("play-%Y%m%d-%H%M%S.log")
+        path.parent.mkdir(parents=True, exist_ok=True)
+        app.log = open(path, "w", encoding="utf-8")
+        print(f"Recording this sitting in {path}")
     if not a.shot:
         return app.run()
     pygame.init()

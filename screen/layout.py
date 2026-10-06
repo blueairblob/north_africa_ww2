@@ -46,23 +46,38 @@ def areas(size):
 
 
 BUTTON_H, GAP, EDGE = 36, 7, 16
+TABS_Y, TAB_H = 128, 26  # the panel's tabs: the unit taken up, and the list of every unit's order
+ORDERS_Y = 230          # where the orders begin in the panel: under the header of the unit taken up
 
 
 def buttons(size):
-    """name -> its rectangle in the window: at the foot of the panel, the six orders in two rows
-    of three, Join, Split and Recall in a third, and Next unit and End turn at the bottom."""
+    """name -> its rectangle in the window: under the unit's header, the six orders in two rows
+    of three and Join, Split and Recall in a third, each always in its own place; and at the
+    foot of the panel, Next unit and End turn."""
     panel = areas(size)["panel"]
     names = [b[0] for b in T.BUTTONS]
     x0, w = panel.x + EDGE, panel.w - 2 * EDGE
     third, half = (w - 2 * GAP) // 3, (w - GAP) // 2
-    y = panel.bottom - EDGE - 4 * BUTTON_H - 3 * GAP - 6
+    y = panel.y + ORDERS_Y                                               # the orders: under the unit's header
     out = {}
     for i, name in enumerate(names[:9]):
         out[name] = pygame.Rect(x0 + (i % 3) * (third + GAP), y + (i // 3) * (BUTTON_H + GAP), third, BUTTON_H)
-    y += 3 * (BUTTON_H + GAP)
+    y = panel.bottom - EDGE - BUTTON_H - 6
     out[names[9]] = pygame.Rect(x0, y, half, BUTTON_H + 6)                 # Next unit, and End turn beside it
     out[names[10]] = pygame.Rect(x0 + half + GAP, y, half, BUTTON_H + 6)
     return out
+
+
+def tabs(size):
+    """The panel's tabs and, above Next unit and End turn, the box to tick for a reminder of
+    units with no order: name -> rectangle."""
+    panel = areas(size)["panel"]
+    x0, w = panel.x + EDGE, panel.w - 2 * EDGE
+    half = (w - GAP) // 2
+    foot = buttons(size)["next"].y
+    return {"unit": pygame.Rect(x0, panel.y + TABS_Y, half, TAB_H),
+            "orders": pygame.Rect(x0 + half + GAP, panel.y + TABS_Y, half, TAB_H),
+            "remind": pygame.Rect(x0, foot - 28, w, 22)}
 
 
 def layers(size, opened):

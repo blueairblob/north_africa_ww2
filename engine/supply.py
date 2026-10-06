@@ -242,6 +242,7 @@ def upkeep(state, gmap):
                     B.destroy(state, u, "starved")
             else:
                 u["cohesion"] = max(0, u["cohesion"] - STARVE_COHESION)
+    B.regroup(state)                                          # 20.2.8: a group that lost a unit closes up
     for u in S.on_map(state):                                 # 20.3.3
         if u["cohesion"] > u["ceiling"]:
             u["cohesion"] = max(u["ceiling"], u["cohesion"] - MORALE_FALL)

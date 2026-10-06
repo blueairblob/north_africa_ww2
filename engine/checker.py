@@ -88,7 +88,7 @@ def problems(scenario, gmap):
     for h, specs in sorted(where.items()):
         if len({s["side"] for s in specs}) > 1:
             bad.append(f"{h}: both sides start here")
-        if len({U.formation(s) for s in specs}) > U.STACK_FORMATIONS:
+        if len(U.stacked(specs)) > U.STACK_FORMATIONS:
             bad.append(f"{h}: too many formations start here")
     for side in S.SIDES:
         n = sum(s["side"] == side for s in scenario["units"])

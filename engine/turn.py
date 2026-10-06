@@ -17,7 +17,7 @@ GONE = {"unit.status", "unit.hex", "unit.steps", "unit.fuel", "unit.stores", "un
         "sides.vp", "sides.kills"}
 CAPTURE = {"places", "ports", "forts"}
 MAY_CHANGE = {                                       # what each phase may change (5.1)
-    "supply": {"ports", "tripoli", "unit.dump", "unit.fuel", "unit.stores", "unit.out_of_stores",
+    "supply": {"ports", "tripoli", "unit.dump", "unit.fuel", "unit.stores", "unit.out_of_stores", "unit.group",
                "unit.traced", "unit.cohesion", "unit.ceiling"} | GONE,
     "orders": {"unit.group"},
     "air": {"sides.air", "sides.interdiction", "sides.recon"},

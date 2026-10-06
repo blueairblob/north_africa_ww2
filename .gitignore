@@ -5,3 +5,6 @@ __pycache__/
 # downloaded source data (python -m mapgen fetch)
 cache/
 .pytest_cache/
+# a record of one sitting at the screen (python -m screen --log)
+play.log
+logs/

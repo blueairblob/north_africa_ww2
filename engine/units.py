@@ -43,6 +43,12 @@ def steps_of(spec):
     raise ValueError(f"unit {spec.get('id')} has neither steps nor a real strength")
 
 
+def stacked(units):
+    """The formations these units count as for the stacking limit: an HQ is a few hundred men
+    and takes no ground, so only the others count (20.1.4)."""
+    return {formation(u) for u in units if u["type"] != "hq"}
+
+
 def formation(u):
     """What a unit belongs to: its division's HQ, or itself if it is independent (20.1.2)."""
     return u.get("parent") or u["id"]

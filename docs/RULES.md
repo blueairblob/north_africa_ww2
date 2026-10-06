@@ -606,7 +606,12 @@ of up to `VIA_MAX` hexes to pass through in the order given.
 
 **8.1.4** Orders for a whole corps, and orders that stand from turn to turn
 until they are done, are conveniences of the screen. The engine receives one
-order per unit per turn. The screen shows a split, and a join of units already
+order per unit per turn. At the screen only an order with somewhere to go
+stands (Move, Attack, Travel or March, Join), and only until the unit arrives,
+the order can no longer be carried out, or its attack is repulsed. Hold, Dig in
+and Rest are for one turn. Every turn the screen takes the player through every
+unit or group: one whose order stands is shown with it, kept with one key or
+tap and changed by any other order. The screen shows a split, and a join of units already
 in one hex, as soon as it is ordered: the rules do both in the Orders phase,
 before anything moves (20.2.2, 20.2.4), so nothing in the game is changed by
 showing them early, and a game replays the same from its orders.
@@ -800,7 +805,19 @@ in standard order that would be over the limit, the units trying to enter it
 are refused, highest id first (combat units for the combat limit, HQs for the
 HQ limit), until it is not. A refused unit stays where it is, which may put
 another hex over the limit; repeat until no hex is over. A refused unit has
-not stopped: it keeps its MP and tries again in the next impulse.
+not stopped: it keeps its MP and tries again in the next impulse. A unit still
+refused when the phase ends is told so: a `stopped` event with the cause
+`no room`.
+
+**9.5.8 Passing through.** At 10 km to the hex a column drives through
+another formation's ground; the limit is on where units stop. A unit whose
+next hex is full for it goes on through it, and through any full hexes after
+it on its path, to the first hex with room, as one step: it pays the MP and
+fuel of every hex, and takes the step in the first impulse in which it has the
+MP for the whole passage. It does not pass if it could not come out: its path
+ends in a full hex, the enemy holds the hex beyond or exerts a zone of control
+into a full hex of the passage, or it lacks the MP this turn or the fuel. Then
+it is refused as in 9.5.4.
 
 **9.5.5 The steps happen.** Every unit still trying enters its next hex, and
 spends the MP and fuel.
@@ -969,7 +986,8 @@ most steps left (ties: lowest id), counting only losses in this battle. An HQ
 loses its step only when every combat unit of its side in the battle has
 none left.
 
-**10.5.4** A unit in two battles takes the losses of both. Its step losses are
+**10.5.4** A unit in two battles takes the losses of both, but loses no more
+than `COH_TURN_MAX` cohesion to all its battles of one turn. Its step losses are
 worked out separately in each from its steps at the start of the phase, then
 added, and cannot exceed the steps it has.
 
@@ -1089,6 +1107,7 @@ roughness.
 | `FORT_PCT` | 25 | added to defence per fortification level | to be tuned |
 | `COH_LOSS` | 20 | cohesion lost by each side at even odds | to be tuned |
 | `COH_MIN`, `COH_MAX` | 5, 60 | least and most cohesion lost in a battle | to be tuned |
+| `COH_TURN_MAX` | 40 | most cohesion a unit loses to all its battles of one turn | owner's decision, October 2026; to be tuned |
 | `STEP_LOSS` | 10 | per cent of steps lost at even odds | to be tuned |
 | `STEP_MAX` | 40 | most per cent of steps lost in a battle | to be tuned |
 | `RETREAT_MARGIN` | 5 | how much more cohesion the defenders must lose than the attackers to be driven back | to be tuned |
@@ -1278,7 +1297,8 @@ lift, enemy schedules, unspotted enemy units.
 ## 15. Invariants
 
 These hold after every phase unless a narrower point is named, and are
-asserted after every turn of every test game.
+asserted after the Supply phase and after the last phase of every turn of
+every test game.
 
 - **I-1 Replay.** The same scenario and the same submitted orders give the
   same state, byte for byte when serialised.
@@ -1462,8 +1482,9 @@ adjacent, and each is the other's target: two battles (10.8.2).
   loses 1 step.
 - Battle for `A`'s hex: `Att` 705, `Def` 756. `CLd` 18, `CLa` 21. Each side
   loses 1 step.
-- Together: `A` ends with 11 steps and cohesion 59; `B` with 10 steps and
-  cohesion 54.
+- Together: `A` loses 36 cohesion and ends with 11 steps and cohesion 59. `B`
+  would lose 42, which 10.5.4 limits to 40: it ends with 10 steps and
+  cohesion 56.
 - Retreat (10.6.1): in neither battle do the defenders lose 5 more cohesion
   than the attackers, so both stand.
 - Recovery (11.1): each side holds the field of the battle it defended, and
@@ -1500,7 +1521,9 @@ independent HQs only.
 
 **20.1.4 Stacking** (in place of 4.3.1). A hex may hold the units of at most
 `STACK_FORMATIONS` formations, all of one side. There is no limit on the
-units of one formation in a hex.
+units of one formation in a hex. An HQ does not count: it is a few hundred men
+and takes no ground, so any number of HQs may be in a hex with the units of
+two formations.
 
 ### 20.2 Groups
 
@@ -1549,8 +1572,8 @@ after combat as one, its HQ with it. A group retreats as
 one: the hex is chosen for its leader; if any member would go two hexes, all
 do; if there is no hex, all surrender.
 
-**20.2.8** A member destroyed or withdrawn leaves the group; the rest stay
-grouped.
+**20.2.8** A member destroyed or withdrawn, in any phase, leaves the group;
+the rest stay grouped, under the lowest id left. One left alone is no group.
 
 **20.2.9 Recall** is not an order in the rules. It is the screen giving every
 unit of an HQ's formation a join order naming that HQ.

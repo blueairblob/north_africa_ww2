@@ -252,10 +252,11 @@ order).
 A whole corps can be ordered at once (its divisions keep formation). That is the
 complete list: six orders.
 
-**Orders stand.** An order is given once and holds from turn to turn until the
-formation arrives or can no longer carry it out; then it waits for a new one.
-The screen takes the player through the formations that are waiting, one after
-another, so a quiet turn is a glance and one key. A click on a formation and a
+**Orders stand.** An order with somewhere to go is given once and holds from
+turn to turn until the formation arrives or can no longer carry it out; then it
+waits for a new one. Hold, Dig in and Rest are for one turn. The screen takes
+the player through every formation each turn, one after another: one key keeps
+an order that stands, so a quiet turn is a glance and a key for each. A click on a formation and a
 click on a hex is an order: move, or attack if an enemy is seen there.
 
 ## 9. Winning
@@ -318,6 +319,11 @@ lopsided, and situations the rules do not cover.
   cohesion as morale in nine named levels.
 - Overlays: **S** supply, **Z** zones of control and fog of war, **F** the front
   line history; a Layers button in the map's corner lists them.
+- The panel puts the orders directly under the header of the unit taken up,
+  and shows only those it can take, each always in its own place. With
+  nothing taken up it lists the units still waiting, each a tap that takes the
+  map there. End turn is plain until every unit has its order. The Layers
+  list explains what each layer that is on is showing.
 - The unit taken up is lifted and ringed with a pulsing border. A counter
   carries a badge when its unit is in trouble: a drop for no fuel, otherwise
   an exclamation mark. Orders that do not apply are greyed and say why.
