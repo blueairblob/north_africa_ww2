@@ -466,7 +466,8 @@ class App:
                     return
                 if r.collidepoint(pos):
                     ui.tab, ui.scroll = name, 0
-                    ui.message = "Every unit and its order. Tap one to take it up." if name == "orders" else ""
+                    ui.message = {"orders": "Every unit and its order. Tap one to take it up.",
+                                  "timetable": "What arrives, is made good and is called away, on the dates it happened."}.get(name, "")
                     return
             for name, r in self.painter.scroll_rects.items():
                 if r.collidepoint(pos):
@@ -735,8 +736,8 @@ class App:
             self.press = None
         elif event.type == getattr(pygame, "WINDOWLEAVE", -1):
             ui.mouse = self.map_rect().center             # the mouse has left: no scrolling at the edge
-        elif event.type == pygame.MOUSEWHEEL and ui.tab == "orders" and areas(self.size)["panel"].collidepoint(pygame.mouse.get_pos()):
-            ui.scroll = max(0, ui.scroll - event.y)       # over the list of orders, the wheel scrolls it
+        elif event.type == pygame.MOUSEWHEEL and ui.tab != "unit" and areas(self.size)["panel"].collidepoint(pygame.mouse.get_pos()):
+            ui.scroll = max(0, ui.scroll - event.y)       # over the list of orders or the timetable, the wheel scrolls it
         elif event.type == pygame.MOUSEWHEEL:
             self.zoom(T.ZOOM_STEP ** event.y, pygame.mouse.get_pos())
         elif event.type == pygame.MOUSEMOTION:

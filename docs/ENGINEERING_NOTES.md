@@ -62,7 +62,7 @@ Experience says the bugs are rarely misunderstandings. They are:
 | Periodic rules ("every N turns", "on day D") off by one | test the turn before, the turn, and the turn after |
 | Two code paths for the same thing (a special case for roads, for ports, for HQs) | one general rule wherever possible |
 | A side effect in the wrong phase | each phase in its own function; state what it may change |
-| Data in the wrong place (an objective on the wrong hex) | a **scenario checker** that asserts every place, unit and objective is on the map, on passable ground and where its name says |
+| Data in the wrong place (an objective on the wrong hex) | a **scenario checker** that asserts every place, unit and objective is on the map, on passable ground and where its name says, and that every arrival, withdrawal and replacement names the source of its date and falls inside the game (RULES 12.7) |
 | Ties resolved by accident | see section 1 |
 
 ## 6. Data people can read

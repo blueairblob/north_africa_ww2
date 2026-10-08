@@ -80,6 +80,88 @@ def test_replacements_reach_a_unit_in_supply_up_to_its_full_strength():         
     assert [u["steps"] for u in state["units"]] == [12, 10]
 
 
+def test_a_replacement_is_counted_as_the_histories_count_it_and_the_side_is_told():   # 12.3, 12.8
+    units = [unit(201, "cw", "armour", [70, 24], steps=10, tanks=100, max=16), unit(101, "axis", "armour", "Derna", steps=10, tanks=100, max=16),
+             unit(102, "axis", "armour", "Benghazi", steps=10, tanks=100, max=16),
+             unit(103, "axis", "armour", "Gazala", steps=10, tanks=100, max=11)]
+    sc, state = start(units, objectives=[], replacements=[
+        {"date": "1941-11-18", "unit": 201, "tanks": 33}, {"date": "1941-11-18", "unit": 101, "tanks": 22, "via": "Tobruk"},
+        {"date": "1941-11-18", "unit": 102, "tanks": 22, "via": "Benghazi"}, {"date": "1941-11-18", "unit": 103, "tanks": 38}])
+    state = play(sc, state, 1)
+    u = by_id(state)
+    assert [u[i]["steps"] for i in (201, 101, 102, 103)] == [13, 10, 12, 11]    # 33 tanks are 3 steps; Tobruk is not the Axis's; a full unit takes what it can
+    told = [(e["unit"], e["event"], e.get("steps", e.get("why"))) for e in state["log"] if "replaced" in e["event"]]
+    assert told == [(101, "not_replaced", "port"), (102, "replaced", 2), (103, "replaced", 1), (201, "replaced", 3)]
+    assert [e["side"] for e in state["log"] if "replaced" in e["event"]] == ["axis", "axis", "axis", "cw"]
+
+
+def test_a_division_that_arrives_together_arrives_as_a_group():                  # 12.4, 20.2.1
+    come = dict(arrives="1941-11-18", entry="Sidi Barrani")
+    units = [unit(210, "cw", "hq", "Sidi Barrani", steps=1, **come), unit(211, "cw", "foot", "Sidi Barrani", parent=210, **come),
+             unit(212, "cw", "foot", "Sidi Barrani", parent=210, **come), unit(220, "cw", "foot", "Sidi Barrani", **come)]
+    sc, state = start(units, objectives=[])
+    assert all(u["group"] is None and u["status"] == "not_arrived" for u in state["units"])
+    state = play(sc, state, 1)
+    u = by_id(state)
+    assert [u[i]["group"] for i in (210, 211, 212, 220)] == [210, 210, 210, None]
+    assert len({tuple(u[i]["hex"]) for i in (210, 211, 212)}) == 1
+    from engine import invariants
+    from helpers import GMAP
+    assert invariants.check(state, GMAP) == []
+
+
+def test_units_whose_hq_is_withdrawn_do_not_count_it_lost():                     # 12.2, 20.3.2
+    from engine.turn import begin_turn
+    from helpers import GMAP
+
+    def ceilings(**more):
+        units = [unit(210, "cw", "hq", "Mersa Matruh", steps=1), unit(211, "cw", "foot", "Mersa Matruh", parent=210)]   # at a port: fed with or without the HQ
+        sc, state = start(units, objectives=[], **more)
+        state = play(sc, state, 1)
+        return by_id(begin_turn(state, GMAP, sc))
+    stays = ceilings()
+    left = ceilings(withdrawals=[{"date": "1941-11-18", "unit": 210}])
+    assert left[210]["status"] == "withdrawn" and left[211]["ceiling"] == stays[211]["ceiling"]
+    from engine import board, supply
+    sc, state = start([unit(210, "cw", "hq", "Mersa Matruh", steps=1), unit(211, "cw", "foot", "Mersa Matruh", parent=210)], objectives=[])
+    board.destroy(state, S.unit(state, 210), "destroyed")                        # an HQ lost in battle is another matter
+    assert by_id(begin_turn(state, GMAP, sc))[211]["ceiling"] == stays[211]["ceiling"] - supply.MORALE_ORPHAN
+
+
+def test_a_side_is_shown_its_own_timetable_in_the_order_it_falls_due():          # 12.8, 14.2, 14.8
+    from engine.view import view
+    from helpers import GMAP
+    units = [unit(201, "cw", "armour", [70, 24], tanks=100), unit(202, "cw", "foot", "Tobruk"),
+             unit(203, "cw", "foot", "Sidi Barrani", arrives="1941-11-22", entry="Sidi Barrani", arrives_note="From the Delta."),
+             unit(101, "axis", "foot", "Derna")]
+    sc, state = start(units, withdrawals=[{"date": "1941-11-24", "unit": 202, "note": "To Syria."}, {"date": "1941-11-20", "unit": 101}],
+                      replacements=[{"date": "1941-11-20", "unit": 201, "tanks": 30, "via": "Tobruk"}])
+    assert view(state, GMAP, sc, "cw")["timetable"] == [
+        {"kind": "replacement", "unit": 201, "date": "1941-11-20", "n": 30, "what": "tanks", "via": "Tobruk", "turn": 2},
+        {"kind": "arrival", "unit": 203, "date": "1941-11-22", "entry": "Sidi Barrani", "note": "From the Delta.", "turn": 3},
+        {"kind": "withdrawal", "unit": 202, "date": "1941-11-24", "note": "To Syria.", "turn": 4}]
+    assert view(state, GMAP, sc, "axis")["timetable"] == [{"kind": "withdrawal", "unit": 101, "date": "1941-11-20", "turn": 2}]
+
+
+def test_the_checker_refuses_a_dated_event_with_no_source_or_outside_the_game():  # 12.7
+    from engine import checker
+    from helpers import GMAP, small
+    assert checker.problems(small(), GMAP) == []
+    sc = small()
+    del sc["withdrawals"][0]["src"]
+    sc["replacements"][0]["src"] = "Z"                                           # a letter the scenario does not explain
+    sc["replacements"] += [{"date": "1942-06-01", "unit": 201, "steps": 1, "src": "T"},
+                           {"date": "1941-11-20", "unit": 201, "men": 500, "src": "T"},
+                           {"date": "1941-11-20", "unit": 201, "steps": 1, "tanks": 10, "src": "T"},
+                           {"date": "1941-11-20", "unit": 201, "steps": 1, "via": "Atlantis", "src": "T"}]
+    del next(u for u in sc["units"] if u["id"] == 105)["arrives_src"]
+    found = "\n".join(checker.problems(sc, GMAP))
+    for clue in ("withdrawal for unit 107: its date names no source", "replacement for unit 201: its date names no source",
+                 "arrival: its date names no source", "1942-06-01 falls after the last turn", "brings men, which is not what the unit is counted in",
+                 "needs one whole number", "Atlantis is not a place"):
+        assert clue in found, clue
+
+
 def test_objectives_score_every_turn_and_again_at_the_end():                     # 13.2, 13.3
     sc, state = start([unit(201, "cw", "foot", "Tobruk"), unit(101, "axis", "foot", "Bardia")], turns=3,
                       objectives=[{"place": "Tobruk", "turn": 2, "end": 7}, {"place": "Bardia", "turn": 1, "end": 4}])

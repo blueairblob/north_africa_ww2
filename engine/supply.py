@@ -170,8 +170,8 @@ def distribute(state, gmap, scenario, side, audit):
         u["ceiling"] = 100 - (MORALE_THIN * (100 - fill(depots[u["id"]][0][0])) // 50 if found else MORALE_UNSUPPLIED)
         if u.get("parent"):                                   # 20.3.2: its own HQ gone, or out of reach
             hq = S.unit(state, u["parent"])
-            if hq["status"] != "on_map" or h not in hq_dist[hq["id"]]:
-                u["ceiling"] -= MORALE_ORPHAN
+            if hq["status"] != "withdrawn" and (hq["status"] != "on_map" or h not in hq_dist[hq["id"]]):
+                u["ceiling"] -= MORALE_ORPHAN                 # an HQ withdrawn (12.2) leaves its units to their corps
         u["ceiling"] -= MORALE_WEAK * (u["max"] - u["steps"]) // u["max"]
 
     for o in outs:                                            # 6.7.5: what a port keeps for its own

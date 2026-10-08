@@ -1593,3 +1593,60 @@ def test_the_weather_is_shown_and_felt_and_a_tap_says_what_it_does():           
     rain.click(chip.center)
     assert rain.ui.message.startswith("Rain: no aircraft fly") and "Outlook for the next two days" in rain.ui.message
     assert rain.ui.selected == 201                                                # the tap ordered nothing
+
+
+def test_the_timetable_tab_lists_what_history_sends_and_takes_and_a_tap_goes_to_the_unit():   # RULES 12.8
+    pygame.init()
+    surface = pygame.Surface(theme.WINDOW)
+    app = App(Session(regiments(), GMAP, humans=["cw"], scripted={"axis": players.DoNothing(GMAP)}))
+    s = app.session
+    seen = []
+    text = app.painter.text
+    app.painter.text = lambda surface, words, *a, **k: (seen.append(words), text(surface, words, *a, **k))
+    app.click(layout.tabs(app.size)["timetable"].center)             # by a tap on its tab, like everything else
+    app.paint(surface)
+    assert app.ui.tab == "timetable"
+    assert [(f"{r['day']:%d %b}", r["when"], r["words"]) for r in s.timetable()] == [
+        ("27 Nov", "in 4 turns", "7th Armoured Brigade is withdrawn."),
+        ("27 Nov", "in 4 turns", "4th Armoured Brigade receives 33 tanks."),
+        ("01 Dec", "in 6 turns", "4 units of 2nd New Zealand Division are withdrawn."),
+        ("02 Dec", "in 7 turns", "5 units of 2nd South African Division arrive at Buq Buq."),
+        ("06 Dec", "in 9 turns", "4th Armoured Brigade receives 38 tanks."),
+        ("22 Dec", "in 17 turns", "22nd Armoured Brigade receives 60 tanks.")]     # its own side's, and nothing of the enemy's
+    for words in ("27 November", "in 4 turns", "7th Armoured Brigade is withdrawn.", "Tanks from the reserve and the workshops."):
+        assert words in seen, words
+    assert not [b for b in ("move", "attack", "hold") if b in seen]  # no order buttons on this tab
+    box = next(row for key, (row, uid) in app.painter.report_rects.items() if key[0] == "due" and uid == 312)
+    app.click(box.center)                                            # a tap on an event goes to its unit
+    assert app.ui.tab == "unit" and app.ui.selected == s.leader(312)
+    axis = Session(regiments(), GMAP, humans=["axis"], scripted={"cw": players.DoNothing(GMAP)})
+    assert [r["words"] for r in axis.timetable()] == ["Panzer-Regiment 8 receives 22 tanks through Benghazi.",
+                                                      "Panzer-Regiment 8 receives 23 tanks."]
+
+
+def test_the_reports_say_what_the_timetable_will_do_this_turn_and_what_it_did():   # RULES 12.8
+    s = Session(regiments(), GMAP, humans=["cw"], scripted={"axis": players.DoNothing(GMAP)})
+    while s.state["turn"] < 5:
+        s.done()
+    told = [words for words, _ in s.reports()]
+    assert "At the end of this turn: 7th Armoured Brigade is withdrawn." in told
+    assert "At the end of this turn: 4th Armoured Brigade receives 33 tanks." in told
+    S.unit(s.state, 311)["steps"] = 5                               # the brigade has been in a fight
+    s.done()
+    told = dict(s.reports())
+    assert "7th Armoured Brigade has been withdrawn." in told and s.unit(312) is None
+    assert told["4th Armoured Brigade received replacements: it now has about 78 tanks."] == 311
+    first = s.timetable()[0]
+    assert (first["past"], first["when"], first["words"]) == (True, "turn 5", "7th Armoured Brigade was withdrawn.")
+    while s.state["turn"] < 9:
+        s.done()
+    assert dict(s.reports())["5 units of 2nd South African Division have arrived at Buq Buq."] == 360
+    assert s.leader(364) == 360 and len(s.members(360)) == 5         # the division came up as one group
+    assert s.leader(335) == 332 and s.unit(330) is None              # the New Zealanders left behind carry on together
+    s = Session(regiments(), GMAP, humans=["axis"], scripted={"cw": players.DoNothing(GMAP)})
+    while s.state["turn"] < 16:
+        s.done()
+    s.state["places"]["Benghazi"] = "cw"                             # the port the tanks were to land at has fallen
+    s.done()
+    assert dict(s.reports())["Replacements for Panzer-Regiment 8 were lost: Benghazi is in enemy hands."] == 111
+

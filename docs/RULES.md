@@ -249,7 +249,7 @@ state listed for it; anything else is a defect in the engine.
 | 4 | Movement (§9) | unit hexes, fuel, cohesion, the `stationary` flag, HQ dumps (9.9), place owners, port condition and stock (on capture), fortification (on capture) |
 | 5 | Combat (§10) | steps, cohesion, stores, unit hexes (retreat, advance), unit status, what a destroyed unit held, HQ dumps, the `stationary` flag, victory points, place owners, port condition and stock, fortification |
 | 6 | Recovery (§11) | steps (recovered tanks), cohesion, stores (digging), fortification |
-| 7 | Reinforcement and withdrawal (§12) | unit status, hexes of arriving units, steps (replacements), what a withdrawn unit held, the `stationary` flag, an enemy fortification where a unit arrives |
+| 7 | Reinforcement and withdrawal (§12) | unit status, hexes of arriving units, steps (replacements), what a withdrawn unit held, the `stationary` flag, which arriving units are grouped, an enemy fortification where a unit arrives |
 | 8 | Victory (§13) | victory points, the turn number, whether the game has ended |
 
 Any phase may also add to the event log and to the sides' running supply
@@ -1185,17 +1185,26 @@ empty, and goes only when an enemy unit enters (9.5.6).
 ## 12. Reinforcement and withdrawal
 
 **12.1** The scenario lists, by date (1.9): **arrivals** (a unit and its entry
-place or hex), **withdrawals** (a unit) and **replacements** (a unit and a
-number of steps). Each is handled in the Reinforcement phase of its turn, in
+place or hex), **withdrawals** (a unit) and **replacements** (a unit and what
+it is sent). Each is handled in the Reinforcement phase of its turn, in
 the order withdrawals, replacements, arrivals, and within each by unit id.
+The dates are those of the campaign and are fixed: no player chooses what
+comes or goes, or when (12.7).
 
 **12.2 Withdrawal.** The unit, if on the map, is removed wherever it is and
 whatever it is doing; its status becomes `withdrawn`. It does not count as
 destroyed. What it holds, and an HQ's dump, are lost (6.11.4). A unit that
 has not yet arrived never does. A unit already destroyed is not affected.
+The units of a division whose HQ is withdrawn and which stay behind are not
+counted as having lost it (20.3.2).
 
-**12.3 Replacement.** The unit, if on the map and traced, gains the steps, up
-to its maximum. Otherwise the replacement is lost.
+**12.3 Replacement.** The scenario gives what is sent as a number of steps
+or, as the histories do, of tanks, men, guns or cars; the second is turned
+into steps as a unit's strength is (20.4.1), to the nearest and at least one,
+and must be what the unit is counted in. It may name the place it comes
+**through**. The unit gains the steps, up to its maximum, if it is on the map
+and traced and its side owns that place. Otherwise the replacement is lost:
+none is kept for a later turn.
 
 **12.4 Arrival.** The unit arrives with full fuel and stores and the cohesion
 the scenario gives, at the first of these that is possible:
@@ -1208,6 +1217,9 @@ the scenario gives, at the first of these that is possible:
 3. its side's base hex, by the same tests as 1, then its neighbours by 2;
 4. otherwise it does not arrive, and tries again next turn.
 
+Units of one formation (20.1.2) that arrive in the same hex in the same phase
+arrive as a group (20.2.1).
+
 **12.5** An arriving unit has the order `hold` until the next Orders phase.
 
 **12.6** Scenario values that change by date (lift, air points, `sea_pct`,
@@ -1216,10 +1228,24 @@ date belongs to.
 
 | Name | Value | Meaning | Status |
 | --- | --- | --- | --- |
+**12.7 Dates and sources.** Every arrival, withdrawal and replacement names
+the source of its date: a letter explained in the scenario's `sources`. A
+scenario with one that names none, or one dated after its last turn, is
+refused by the checker. Where the source gives the date but the event's size
+or the day it took effect is worked out from it, the event says how in its
+`basis`. The sources are set out in `docs/SOURCES.md`.
+
+**12.8** A side is told of its own units withdrawn, arrived and replaced, and
+of a replacement lost and why: the unit gone, the place it came through in
+enemy hands, or the unit cut off (14.6). Its view holds its own timetable, in
+the order the events fall due (14.2).
+
+| Name | Value | Meaning | Status |
+| --- | --- | --- | --- |
 | `ARRIVE_RADIUS` | 3 | how far from its entry hex a unit may arrive | to be tuned |
 
-Arrival and withdrawal dates are scenario data, each from the sources in
-`docs/SOURCES.md`; none is fixed in this document.
+Arrival, withdrawal and replacement dates are scenario data; none is fixed in
+this document.
 
 ---
 
@@ -1271,8 +1297,8 @@ and the outlook for the next (21.5); everything about the
 side's own units, ports, dumps, Tripoli stock and pipeline, lift, air points
 and fortifications; the owner of every place; both sides' victory points, how many of them came
 from destroying units, and the scenario's par;
-the scenario's schedule for the side's own arrivals and withdrawals; the
-objectives.
+the scenario's timetable for the side's own arrivals, withdrawals and
+replacements, each with its date and turn (12.8); the objectives.
 
 **14.3 Spotted enemy units.** An enemy unit is spotted if it is within
 `SPOT_RANGE` hexes (1.4) of any unit of the side, or within
@@ -1291,7 +1317,8 @@ in: for each battle with its units, the battle hex, both sides' units in it,
 both sides' step and cohesion losses, each attacker's attack value, where
 each unit fought, which were destroyed, who
 retreated, surrendered and advanced; the replies and events for its own
-units, with every hex each entered and in which impulse; and its own hauls in the Supply phase
+units, with every hex each entered and in which impulse; what the timetable
+did to its own units (12.8); and its own hauls in the Supply phase
 just run, each with its source, HQ, tonnes, fuel burnt, haul cost and route.
 A surrender, in battle (10.6.5) or from hunger (6.10.2), is told to both
 sides, with the unit and the hex. It gives no other enemy event.
@@ -1625,7 +1652,8 @@ Fair, Normal, Good, Very good, Excellent. The rules go on counting 0 to 100.
   first depot (6.6.5): nothing close to its depot or its road, `MORALE_THIN`
   at the limit of reach;
 - `MORALE_ORPHAN` if it has a parent and that HQ is not on the map, or the
-  haul distance from that HQ to the unit is more than `REACH`;
+  haul distance from that HQ to the unit is more than `REACH`; but nothing
+  if that HQ was withdrawn (12.2): its units answer to their corps;
 - `floor(MORALE_WEAK × (maximum steps − steps) / maximum steps)`.
 
 **20.3.3** A unit whose cohesion is above its ceiling loses `MORALE_FALL`, but

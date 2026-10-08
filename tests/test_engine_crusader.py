@@ -5,7 +5,7 @@ import pytest
 
 from engine import checker, players, runner
 from engine import state as S
-from engine.turn import begin_turn
+from engine.turn import begin_turn, finish_turn
 from helpers import GMAP, ROOT, small
 
 
@@ -70,6 +70,41 @@ def test_crusader_shows_each_division_as_its_units_grouped_under_its_hq():      
     tanks = {side: sum(x["real"][0] for x in state["units"] if x["side"] == side and x["real"] and x["real"][1] == "tanks")
              for side in S.SIDES}
     assert tanks == {"axis": 395, "cw": 680}
+
+
+def test_crusaders_timetable_is_the_campaigns_and_every_date_names_its_source():  # 12.1, 12.7
+    sc = crusader()
+    name = {spec["id"]: spec["name"] for spec in sc["units"]}
+    assert [(e["date"], name[e["unit"]]) for e in sc["withdrawals"]] == [
+        ("1941-11-27", "7th Armoured Brigade"), ("1941-12-01", "2nd New Zealand Division"),
+        ("1941-12-01", "4th New Zealand Brigade"), ("1941-12-01", "6th New Zealand Brigade"),
+        ("1941-12-01", "New Zealand Divisional Artillery")]
+    assert [(e["date"], name[e["unit"]], e["tanks"], e.get("via")) for e in sc["replacements"]] == [
+        ("1941-11-27", "4th Armoured Brigade", 33, None), ("1941-12-06", "4th Armoured Brigade", 38, None),
+        ("1941-12-22", "22nd Armoured Brigade", 60, None), ("1941-12-19", "Panzer-Regiment 8", 22, "Benghazi"),
+        ("1941-12-27", "Panzer-Regiment 8", 23, None)]
+    coming = [spec for spec in sc["units"] if "arrives" in spec]
+    assert [(spec["arrives"], spec["entry"]) for spec in coming] == [("1941-12-02", "Buq Buq")] * 5
+    assert [spec["name"] for spec in coming][0] == "2nd South African Division" and {spec.get("parent", 360) for spec in coming} == {360}
+    dated = sc["withdrawals"] + sc["replacements"]
+    assert all(e["src"] in sc["sources"] for e in dated) and all(spec["arrives_src"] in sc["sources"] for spec in coming)
+    assert all("basis" in e for e in sc["replacements"])            # each size is worked out from the source, and says how
+
+
+def test_the_timetable_falls_on_its_days_when_nobody_moves():                    # 12.2 to 12.4, 1.9
+    sc = crusader()
+    state = S.new_game(sc, GMAP)
+    seen = {}
+    for _ in range(sc["turns"]):
+        state, _ = finish_turn(begin_turn(state, GMAP, sc), GMAP, sc, {})
+        for e in state["log"]:
+            if e["event"] in ("withdrawn", "arrived", "replaced", "not_replaced"):
+                seen.setdefault((state["turn"] - 1, e["event"]), []).append(e["unit"])
+    assert seen == {(5, "withdrawn"): [312], (5, "replaced"): [311], (7, "withdrawn"): [330, 331, 333, 334],
+                    (8, "arrived"): [360, 361, 362, 363, 364], (10, "replaced"): [311], (16, "replaced"): [111],
+                    (18, "replaced"): [313], (20, "replaced"): [111]}
+    u = {x["id"]: x for x in state["units"]}
+    assert u[332]["status"] == u[335]["status"] == "on_map" and u[360]["group"] == u[364]["group"] == 360
 
 
 @pytest.mark.parametrize("axis, cw", [("nothing", "attack"), ("attack", "attack"), ("explore", "explore")])

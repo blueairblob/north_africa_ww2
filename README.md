@@ -83,7 +83,9 @@ may drive through a full hex but not stop in it, and one kept out says so. Every
 chance: some turns bring rain or a sandstorm, told as the turn opens with an outlook for
 the next that is often wrong. It shows as a wash over the map and a chip in its corner; a tap on
 the chip says what it does. The screen prints the game's weather seed when it starts. The panel's Unit orders tab lists
-every unit and its order, to scroll through; a tap takes one up. Next unit is lit while any
+every unit and its order, to scroll through; a tap takes one up. Its Timetable tab lists what arrives, what is
+made good and what is called away, each on the day it happened in 1941 and with the reason; the reports say so a turn
+before each falls due and again when it has happened (`docs/SOURCES.md` gives the source of every date). Next unit is lit while any
 unit waits, End turn is always there, and a tick box turns off the reminder of units not gone through. After End
 turn the turn is played back: the movement, then each formation's strike in
 turn, with the units it hits burning and a rattle as long as the damage, then

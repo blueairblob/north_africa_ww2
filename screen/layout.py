@@ -46,7 +46,7 @@ def areas(size):
 
 
 BUTTON_H, GAP, EDGE = 36, 7, 16
-TABS_Y, TAB_H = 128, 26  # the panel's tabs: the unit taken up, and the list of every unit's order
+TABS_Y, TAB_H = 128, 26  # the panel's tabs: the unit taken up, every unit's order, and the timetable
 ORDERS_Y = 230          # where the orders begin in the panel: under the header of the unit taken up
 
 
@@ -69,15 +69,16 @@ def buttons(size):
 
 
 def tabs(size):
-    """The panel's tabs and, above Next unit and End turn, the box to tick for a reminder of
-    units with no order: name -> rectangle."""
+    """The panel's three tabs and, above Next unit and End turn, the box to tick for a
+    reminder of units with no order: name -> rectangle."""
     panel = areas(size)["panel"]
     x0, w = panel.x + EDGE, panel.w - 2 * EDGE
-    half = (w - GAP) // 2
+    third = (w - 2 * GAP) // 3
     foot = buttons(size)["next"].y
-    return {"unit": pygame.Rect(x0, panel.y + TABS_Y, half, TAB_H),
-            "orders": pygame.Rect(x0 + half + GAP, panel.y + TABS_Y, half, TAB_H),
-            "remind": pygame.Rect(x0, foot - 28, w, 22)}
+    out = {name: pygame.Rect(x0 + n * (third + GAP), panel.y + TABS_Y, third, TAB_H)
+           for n, name in enumerate(("unit", "orders", "timetable"))}
+    out["remind"] = pygame.Rect(x0, foot - 28, w, 22)
+    return out
 
 
 def game(size, opened):

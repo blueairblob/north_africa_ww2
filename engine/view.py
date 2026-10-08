@@ -1,5 +1,6 @@
 """What each side can see (docs/RULES.md §14). A player is given this and nothing else."""
 from . import state as S
+from .reinforce import timetable
 from . import weather as W
 from .gamemap import distance
 
@@ -43,6 +44,7 @@ def view(state, gmap, scenario, side):
         "arrivals": [{"unit": u["id"], "date": specs[u["id"]]["arrives"]} for u in state["units"]
                      if u["side"] == side and u["status"] == "not_arrived"],
         "withdrawals": [w for w in scenario.get("withdrawals", []) if S.unit(state, w["unit"])["side"] == side],
+        "timetable": timetable(scenario, side),                              # 14.2: its own dated events, in order
         "enemy": seen, "forts": forts, "places": dict(state["places"]),
         "ports": {n: dict(p) for n, p in state["ports"].items() if state["places"][n] == side},
         "tripoli": {k: (v if k != "pipeline" else [list(x) for x in v]) for k, v in state["tripoli"].items()}

@@ -22,6 +22,8 @@ from engine.recovery import FORT_MAX
 from engine.turn import begin_turn, finish_turn
 from engine.view import view
 
+from . import theme as T
+
 
 # why a standing order ended, to follow the unit's name: "15. Panzer-Division has arrived"
 ENDED = {"E_SAME_HEX": "has arrived", "E_COHESION": "is too disorganised to attack", "E_JOIN": "has joined",
@@ -391,15 +393,90 @@ class Session:
         return {"armour": f"about {steps * 10} tanks", "guns": f"about {steps * 12} guns",
                 "recon": f"about {steps * 15} armoured cars"}.get(u["type"], f"about {steps * 800:,} men")
 
+    def _together(self, rows):
+        """Dated events gathered so that the units of one division sharing one are one line:
+        [(the rows, the name to call them by)]. A replacement is always its unit's own."""
+        specs = {spec["id"]: spec for spec in self.scenario["units"]}
+        sets = {}
+        for r in rows:
+            spec = specs[r["unit"]]
+            whose = r["unit"] if r["kind"] == "replacement" else spec.get("parent") or r["unit"]
+            sets.setdefault((r["turn"], r["kind"], r.get("date"), str(r.get("entry", r.get("hex"))), whose), []).append(r)
+        return [(rs, specs[rs[0]["unit"]]["name"] if len(rs) == 1 else specs[key[4]]["name"]) for key, rs in sets.items()]
+
+    def timetable(self):
+        """The side's dated events as the player reads them, soonest first: what arrives, what
+        is made good and what is called away, on the day it happened in 1941 (RULES 12).
+        [{"day", "turn", "when", "words", "note", "unit", "past"}]; unit is one to go to, or None."""
+        now, out = self.view["turn"], []
+        for rows, name in self._together(self.view["timetable"]):
+            r, n, past = rows[0], len(rows), rows[0]["turn"] < now
+            if r["kind"] == "arrival":
+                entry = r["entry"] if isinstance(r["entry"], str) else where(self.gmap, r["entry"])[3:].strip()
+                late = [x for x in rows if self.state_of(x["unit"]) == "not_arrived"]
+                words = (f"{name} is held up: there is no room at {entry}. It tries again each turn." if past and late
+                         else f"{n} units of {name} {'arrived' if past else 'arrive'} at {entry}." if n > 1
+                         else f"{name} {'arrived' if past else 'arrives'} at {entry}.")
+            elif r["kind"] == "withdrawal":
+                words = (f"{n} units of {name} {'were' if past else 'are'} withdrawn." if n > 1
+                         else f"{name} {'was' if past else 'is'} withdrawn.")
+            else:
+                what = T.count(r["n"], r["what"][:-1], r["what"])
+                words = (f"{name} {'was sent' if past else 'receives'} {what}"
+                         + (f" through {r['via']}." if "via" in r else "."))
+            here = next((x["unit"] for x in rows if self.unit(x["unit"])), None)
+            due = r["turn"] - now
+            out.append({"day": date.fromisoformat(r["date"]), "turn": r["turn"], "past": past, "words": words,
+                        "note": r.get("note", ""), "unit": here,
+                        "when": f"turn {r['turn']}" if past else "end of this turn" if due == 0
+                        else "next turn" if due == 1 else f"in {due} turns"})
+        return out
+
+    def state_of(self, uid):
+        """A unit of the side's, wherever it is: on_map, not_arrived, withdrawn or destroyed."""
+        return next((u["status"] for u in self.view["units"] if u["id"] == uid), None)
+
+    def schedule_news(self):
+        """What the timetable did at the end of last turn, and what it will do at the end of
+        this one: [(words, unit id)]."""
+        view, out = self.view, []
+        mine = {u["id"]: u for u in view["units"]}
+        told = [dict(e, kind={"withdrawn": "withdrawal", "arrived": "arrival"}[e["event"]], turn=0)
+                for e in view["events"] if e["event"] in ("withdrawn", "arrived") and e["unit"] in mine]
+        for rows, name in self._together(told):
+            n, here = len(rows), next((x["unit"] for x in rows if self.unit(x["unit"])), None)
+            if rows[0]["kind"] == "withdrawal":
+                out.append((f"{n} units of {name} have been withdrawn." if n > 1 else f"{name} has been withdrawn.", None))
+            else:
+                place = where(self.gmap, rows[0]["hex"])
+                out.append((f"{n} units of {name} have arrived {place}." if n > 1 else f"{name} has arrived {place}.", here))
+        due = {r["unit"]: r for r in view["timetable"] if r["kind"] == "replacement" and r["turn"] == view["turn"] - 1}
+        for e in view["events"]:
+            u = mine.get(e["unit"]) if e["event"] in ("replaced", "not_replaced") else None
+            if u is None or e.get("why") == "gone":
+                continue
+            if e["event"] == "replaced":
+                out.append((f"{u['name']} received replacements: it now has {T.strength(u)}." if e["steps"]
+                            else f"{u['name']} is at full strength: its replacements were not needed.", u["id"]))
+            else:
+                out.append((f"Replacements for {u['name']} were lost: {due.get(u['id'], {}).get('via', 'their port')} is in enemy hands."
+                            if e["why"] == "port" else f"Replacements for {u['name']} could not reach it: it is cut off.", u["id"]))
+        for row in self.timetable():
+            if row["turn"] == view["turn"] and not row["past"]:
+                out.append(("At the end of this turn: " + row["words"], row["unit"]))
+        return out
+
     def reports(self):
         """What the general is told: at most one thing for each unit or group, and only what
         matters. In order of weight: destroyed, driven back, heavy losses, repulsed, the enemy
         driven back, supply lost, out of fuel, morale low, under half strength, ordered to move
-        but held where it stood by the enemy, enemy in contact.
+        but held where it stood by the enemy, enemy in contact. Before them, the weather and
+        what the timetable has done or is about to do.
         [(words, unit id)]"""
         view, out = self.view, []
         if self.weather not in (None, "clear"):               # the weather first: it shapes the whole turn
             out.append((WEATHER[self.weather], None))
+        out += self.schedule_news()
         mine = {u["id"]: u for u in view["units"]}
         battles = [e for e in view["events"] if e["event"] == "battle"]
         stopped = {e["unit"]: e["why"] for e in view["events"] if e["event"] == "stopped"}

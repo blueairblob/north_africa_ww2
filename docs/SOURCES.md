@@ -77,6 +77,58 @@ return; the split of the German tanks between the two panzer regiments,
 Ariete's share of the Italian tanks and 32nd Army Tank Brigade's strength are
 from memory. All are marked in the scenario file.
 
+## Dated events (arrivals, withdrawals, replacements)
+
+Looked up on 8 October 2026 for `data/scenarios/crusader.json`. Each event in
+the scenario carries the letter of its source (`docs/RULES.md` 12.7). Murphy's
+*The Relief of Tobruk* (New Zealand official history, 1961) was read at first
+hand, in the New Zealand Electronic Text Collection's edition; the others at
+second hand, through the pages named. Chapter numbers are given for Murphy
+because the electronic edition's pages are not those of the printed book.
+
+Used:
+
+| Date | Event | Source | How sure |
+| --- | --- | --- | --- |
+| 27 November 1941 | 7th Armoured Brigade leaves the battle | R. Palmer, *7 Armoured Division (1941-42)*, britishmilitaryhistory.co.uk (2020), note 6: "the surviving details of the brigade came under command of G.H.Q. Middle East Forces". Murphy ch. 7 and 10: 28 tanks left of 160-odd on 21 November, 10 or none on the 23rd | the date from one modern compilation; the wreck of the brigade from the official history |
+| 27 November 1941 | 4th Armoured Brigade: 33 tanks | Murphy ch. 17: "4 Armoured Brigade, the latter with 37 tanks" on the night of 24 November; ch. 20: on the 27th "4 Armoured Brigade (with nearly seventy Stuarts)" | the two strengths are stated; the 33 is their difference. How many were new and how many repaired or rejoined is not stated |
+| 1 December 1941 | 2nd New Zealand Division goes back to Egypt: its HQ, 4th and 6th Brigades and the field regiments | Murphy ch. 24: the column formed at 5.30 p.m. on 1 December, "3500 men and 700 vehicles"; ch. 25: "the rest of the New Zealand Division (other than 5 Brigade) had returned to Baggush" | stated. 5th Brigade and the Divisional Cavalry stayed and are left on the map |
+| 2 December 1941 | 2nd South African Division comes up | Wikipedia, "2nd South African Infantry Division": it "took over responsibility for the Frontier area on 2 December 1941", having guarded the railway and the coast between Alexandria and Mersa Matruh | the date at second hand. That it enters at Buq Buq is this game's choice; whether all three brigades came on the one day was not found |
+| 6 December 1941 | 4th Armoured Brigade: 38 tanks | Murphy ch. 25: "The tank strength of 4 Armoured Brigade on 4 December was 98; on the 6th it was 136", after "Weapons and equipment were similarly renewed" | the two strengths are stated; the 38 is their difference |
+| 19 December 1941 | Panzer-Regiment 8: 22 tanks, through Benghazi | rommelsriposte.com, "German tank deliveries" pages, from shipping returns: 5 Panzer II and 17 Panzer III for 3./Pz.Rgt. 8, landed at Benghazi from the *Ankara* | the landing at second hand. That the tanks were with the regiment within the turn is assumed. historyofwar.org gives "fifteen new tanks" for 15. Panzer-Division on 19 December: the two do not agree |
+| 22 December 1941 | 22nd Armoured Brigade: 60 tanks | Wikipedia, "22nd Armoured Brigade (United Kingdom)", citing Joslen pp. 168-9: by 22 December "80 Crusaders" and "30 M3 Stuart"; Murphy: fewer than 50 tanks in a composite regiment on 27 November | 110 on the day is stated; its strength just before was not found, so 60 is the least it can have been sent |
+| 27 December 1941 | Panzer-Regiment 8: 23 tanks | the same pages: 6 Panzer II and 17 Panzer III for 7./Pz.Rgt. 8, landed at Tripoli on 19 December (the ship is named differently in two summaries). Murphy ch. 26: the Afrika Korps "with 70 tanks" struck 22nd Armoured Brigade after 27 December; Wikipedia, "Operation Crusader", citing Murphy p. 501: eight tanks fit on the 15th | the landing is dated; **the day the tanks reached the regiment was not found** and is taken as the 27th from the strength on the 28th |
+
+Found and not used, each for the reason given:
+
+- **Italian tanks.** The *Fabio Filzi* landed 10 M13/40 at Tripoli on 23
+  November and the *Sebastiano Venier* 14 at Benghazi on 1 December (the
+  Italian Navy's official history, vol. VIII, as given on rommelsriposte.com).
+  Which regiment received them, and when, was not found.
+- **4th Armoured Brigade's relief.** An Axis intelligence summary of 28
+  December says it "has been relieved a few days ago". No date was found.
+- **5th New Zealand Brigade** was told on 18 December that it would go back
+  "as soon as other transport became available" (Murphy ch. 26). No date was
+  found. The Divisional Cavalry left on 6 January 1942, after the scenario.
+- **The amalgamation of the armoured brigades.** 22nd Armoured Brigade's
+  composite regiment and 4th Armoured Brigade fought as one brigade from the
+  night of 29 November (Murphy ch. 23). The game keeps them as two units.
+- **7th Armoured Division's relief** by 1st Armoured Division, 1 January 1942
+  (Palmer), and 2nd Armoured Brigade's arrival on 4 January (Murphy): after
+  the scenario's last day.
+- **Division z.b.V. Afrika** was renamed 90. leichte Afrika-Division during
+  the battle. A change of name only; the date is from memory and unchecked.
+
+Two of the withdrawals were the result of the fighting and not of a plan made
+beforehand: 7th Armoured Brigade and the New Zealand Division left because
+they had been wrecked. The game takes them off on the historical day whatever
+state the player has kept them in. That is a decision of the owner's
+("replacements: fixed historical", 7 October 2026) which he may wish to look
+at again for these two.
+
+Not found at all: how many replacement tanks Eighth Army issued in the whole
+battle, and any dated replacement of men or guns for either side.
+
 ## Art
 
 Generated for this game: hex terrain tiles drawn from the terrain types, and

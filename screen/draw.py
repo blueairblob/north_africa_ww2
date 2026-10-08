@@ -46,7 +46,7 @@ class UI:
         self.game_open = False          # the Game list beside it is showing: Save game, Load game
         self.saves = None               # the saved games listed to choose from, [(file, words)], or None
         self.editing = None             # the name being typed for the group taken up, or None
-        self.tab = "unit"               # the panel's tab: the unit taken up, or "orders", every unit's order
+        self.tab = "unit"               # the panel's tab: the unit taken up, "orders", every unit's order, or "timetable"
         self.scroll = 0                 # how far down the list of orders is scrolled, in rows
         self.remind = True              # End turn asks once more when units with no order were not gone through
         self.preview = ""               # what a click here would do, while a unit is taken up and a hex pointed at
@@ -845,7 +845,7 @@ class Painter:
                 pygame.draw.lines(surface, T.INK, False, [(tick.x + 4, tick.y + 9), (tick.x + 8, tick.y + 13), (tick.x + 14, tick.y + 4)], 3)
             self.text(surface, "Remind me of units not gone through", (box.x + 26, box.y + 3), 12)
         for name, r in buttons(surface.get_size()).items():
-            if name not in ("next", "done") and (name not in offered or ui.tab == "orders"):
+            if name not in ("next", "done") and (name not in offered or ui.tab != "unit"):
                 continue                                             # only the orders this unit can take are shown
             label, key = next((b[1], b[2]) for b in T.BUTTONS if b[0] == name)
             if name == "next" and u and has and session.leader(u["id"]) in session.waiting_units():
@@ -905,16 +905,57 @@ class Painter:
             self.text(surface, words, (x + 40, y + 4), 12)
             self.report_rects[("order", lead)] = (row, lead)
             y += 25
+        self.arrows(surface, ui, x, y, w, len(leads), room)
+
+    def arrows(self, surface, ui, x, y, w, n, room):
+        """Under a list longer than its room: two arrows to tap, and which rows are showing."""
         self.scroll_rects = {}
-        if len(leads) > room:                                        # more than fit: two arrows, or the wheel
-            for n, (name, points) in enumerate((("up", ((0, 12), (10, 2), (20, 12))), ("down", ((0, 2), (10, 12), (20, 2))))):
-                r = pygame.Rect(x + w - 76 + n * 40, y + 2, 36, 20)
-                usable = ui.scroll > 0 if name == "up" else ui.scroll + room < len(leads)
+        if n > room:                                                 # more than fit: two arrows, or the wheel
+            for k, (name, points) in enumerate((("up", ((0, 12), (10, 2), (20, 12))), ("down", ((0, 2), (10, 12), (20, 2))))):
+                r = pygame.Rect(x + w - 76 + k * 40, y + 2, 36, 20)
+                usable = ui.scroll > 0 if name == "up" else ui.scroll + room < n
                 pygame.draw.rect(surface, T.BUTTON if usable else (206, 198, 178), r, border_radius=4)
                 pygame.draw.rect(surface, T.INK if usable else (150, 140, 120), r, 1, border_radius=4)
                 pygame.draw.polygon(surface, T.INK if usable else (150, 140, 120), [(r.x + 8 + px, r.y + 3 + py) for px, py in points])
                 self.scroll_rects[name] = r
-            self.text(surface, f"{ui.scroll + 1} to {min(len(leads), ui.scroll + room)} of {len(leads)}", (x, y + 5), 12, T.DIM)
+            self.text(surface, f"{ui.scroll + 1} to {min(n, ui.scroll + room)} of {n}", (x, y + 5), 12, T.DIM)
+
+    def timetable_list(self, surface, session, ui, x, y, w, foot):
+        """The Timetable tab: what arrives, what is made good and what is called away, each on
+        the day it happened, soonest first, to scroll through. A tap on a row goes to its unit."""
+        rows = session.timetable()
+        ahead = [r for r in rows if not r["past"]]
+        self.text(surface, f"{T.count(len(ahead), 'event')} to come, on the dates of 1941" if ahead
+                  else "Nothing more is due before the end" if rows else "Nothing is due in this battle", (x, y), 12, T.DIM)
+        y += 22
+        font, blocks = self.font(12), []
+        for r in rows:                                               # each event: its day, its words, why it happened
+            lines = [s.strip() for s in wrap(font, r["words"], w - 12)]
+            lines += [s.strip() for s in wrap(font, r["note"], w - 12)] if r["note"] else []
+            blocks.append((r, lines, len(wrap(font, r["words"], w - 12))))
+        room, used = 0, 0                                            # as many whole events as fit from where it is scrolled to
+        ui.scroll = max(0, min(ui.scroll, len(blocks) - 1))
+        for _, lines, _ in blocks[ui.scroll:]:
+            used += 20 + len(lines) * 15 + 9
+            if y + used > foot - 26:
+                break
+            room += 1
+        room = max(1, room)
+        for r, lines, plain in blocks[ui.scroll:ui.scroll + room]:
+            ink = T.DIM if r["past"] else T.INK
+            box = pygame.Rect(x, y, w, 20 + len(lines) * 15 + 5)
+            pygame.draw.rect(surface, T.BUTTON, box, border_radius=4)
+            if r["turn"] == session.view["turn"]:                    # due as this turn ends
+                pygame.draw.rect(surface, T.PATH, box, 2, border_radius=4)
+            self.text(surface, f"{r['day'].day} {r['day']:%B}", (x + 6, y + 3), 12, ink, True)
+            self.text(surface, r["when"], (box.right - 6 - font.size(r["when"])[0], y + 3), 12, T.DIM if r["past"] else T.PATH)
+            for k, text in enumerate(lines):
+                self.text(surface, text, (x + 6, y + 20 + k * 15), 12, ink if k < plain else T.DIM)
+            if r["unit"] is not None:
+                self.report_rects[("due", r["turn"], r["words"])] = (box, r["unit"])
+                self.tips.append((box, "Click to go to this unit."))
+            y += box.h + 4
+        self.arrows(surface, ui, x, y, w, len(blocks), room)
 
     def cannot(self, session, ui, u, line, w):
         """Under the unit taken up: what became of its order last turn, and why each greyed order
@@ -1004,15 +1045,15 @@ class Painter:
         self.member_rects, self.report_rects, self.back_rect, self.tips = {}, {}, None, []
         self.pencil_rect, self.scroll_rects = None, {}
         if not over and not self.playing:                            # the tabs: this unit, or every unit's order
-            for name, words in (("unit", "Unit"), ("orders", "Unit orders")):
+            for name, words in (("unit", "Unit"), ("orders", "Unit orders"), ("timetable", "Timetable")):
                 r = tabs(surface.get_size())[name]
                 on = ui.tab == name
                 pygame.draw.rect(surface, T.PAPER if on else T.BUTTON, r, border_top_left_radius=6, border_top_right_radius=6)
                 pygame.draw.rect(surface, T.INK, r, 2 if on else 1, border_top_left_radius=6, border_top_right_radius=6)
                 self.text(surface, words, r.center, 13, T.INK if on else T.DIM, on, True)
             y = tabs(surface.get_size())["unit"].bottom + 10
-            if ui.tab == "orders":
-                self.orders_list(surface, session, ui, x, y, w, foot)
+            if ui.tab != "unit":
+                (self.orders_list if ui.tab == "orders" else self.timetable_list)(surface, session, ui, x, y, w, foot)
                 return self.buttons(surface, session, ui)
         if over and not self.playing:                                # the result, and how it was reached
             r = session.state["result"]

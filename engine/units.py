@@ -37,10 +37,24 @@ def steps_of(spec):
     """A unit's steps: as given, or worked out from its real strength, to the nearest, at least one."""
     if "steps" in spec:
         return spec["steps"]
-    for what, each in REAL:
+    for what, _ in REAL:
         if what in spec:
-            return max(1, (spec[what] + each // 2) // each)
+            return steps_for(spec[what], what)
     raise ValueError(f"unit {spec.get('id')} has neither steps nor a real strength")
+
+
+def steps_for(n, what):
+    """The steps a number of tanks, men, guns or cars stands for, to the nearest and at least
+    one; a number of steps is itself (20.4.1)."""
+    each = dict(REAL).get(what)
+    return n if each is None else max(1, (n + each // 2) // each)
+
+
+def counted(event):
+    """What a replacement brings, as the scenario gives it: [number, what], what being steps
+    or tanks, men, guns or cars; None if it gives none or more than one (12.3)."""
+    given = [[event[what], what] for what in ("steps",) + tuple(w for w, _ in REAL) if what in event]
+    return given[0] if len(given) == 1 else None
 
 
 def stacked(units):

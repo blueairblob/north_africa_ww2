@@ -171,7 +171,12 @@ happened in a day of desert war. Each turn (2 days):
    knocked-out tanks there (historically decisive: the British workshops and the
    German recovery teams). Units that rested regain cohesion.
 7. **Reinforcement and withdrawal** — formations arrive at their entry ports or
-   the map edge on their historical dates; others leave.
+   the map edge on their historical dates; others leave; replacement tanks and
+   men reach the units that got them. The dates are the backbone of the game:
+   each comes from a named source (`docs/SOURCES.md`), none is chosen by a
+   player, and the scenario checker refuses an event with no source. The
+   player is shown the timetable from the first turn, and told of each event
+   a turn before it falls and when it has happened.
 8. **Victory check.**
 
 There are no dice, with one exception: the weather. The result of every other

@@ -1,12 +1,17 @@
 {
   "id": "crusader",
   "name": "Operation Crusader",
-  "about": "The relief of Tobruk, 18 November to 30 December 1941. Each division is shown as the units that fought within it, under its HQ; units of one division that start in one hex start as a group. Formations from the published orders of battle (docs/SOURCES.md). Each unit's strength is its figure on the first day with a source letter (see sources). Positions are approximate, to a hex or two. Lift, air points, sea_pct and the opening stocks are first guesses, to be tuned. Left out: Oasis Force at Jarabub.",
+  "about": "The relief of Tobruk, 18 November to 30 December 1941. Each division is shown as the units that fought within it, under its HQ; units of one division that start in one hex start as a group. Formations from the published orders of battle (docs/SOURCES.md). Each unit's strength is its figure on the first day with a source letter (see sources). Positions are approximate, to a hex or two. Lift, air points, sea_pct and the opening stocks are first guesses, to be tuned. Arrivals, withdrawals and replacements fall on their historical dates, each with a source letter; where a date or a number is worked out and not stated by the source, its basis says so. Left out: Oasis Force at Jarabub.",
   "sources": {
     "W": "Wikipedia, Operation Crusader: 7th Armoured Brigade, 129 tanks",
     "H": "historyofwar.org, Operation Crusader: 4th Armoured Brigade 166 Stuarts; 22nd Armoured Brigade 155; 1st Army Tank Brigade about 130; 249 German and 189 Italian medium tanks in all",
     "E": "worked out from the unit's establishment, not from a strength return: about 800 men to a battalion, 12 guns to a battery group, 15 cars to a squadron",
-    "M": "from memory and unverified: the split of the German 249 between the two panzer regiments, Ariete's 146 of the Italian 189, and 32nd Army Tank Brigade's 100"
+    "M": "from memory and unverified: the split of the German 249 between the two panzer regiments, Ariete's 146 of the Italian 189, and 32nd Army Tank Brigade's 100",
+    "N": "W. E. Murphy, The Relief of Tobruk (New Zealand official history, 1961): the New Zealand Division's return to Egypt on the night of 1 December 1941 without 5th Brigade and the Divisional Cavalry; 4th Armoured Brigade's tanks, 37 on the night of 24 November, 70 on the 27th, 98 on 4 December, 136 on the 6th; the Afrika Korps with 70 tanks on 28 December",
+    "P": "R. Palmer, 7 Armoured Division (1941-42), britishmilitaryhistory.co.uk, 2020: on 27 November 1941 what was left of 7th Armoured Brigade came under GHQ Middle East Forces",
+    "S": "Wikipedia, 2nd South African Infantry Division: it guarded the railway and the coast behind the army until it took over the frontier area on 2 December 1941",
+    "J": "Wikipedia, 22nd Armoured Brigade (United Kingdom), citing Joslen pp. 168-9: 80 Crusaders and 30 Stuarts by 22 December 1941",
+    "R": "rommelsriposte.com (the Crusader Project), from shipping returns: on 19 December 1941 the Ankara landed 22 tanks at Benghazi and a second ship 23 at Tripoli, both lots for Panzer-Regiment 8"
   },
   "start": "1941-11-18",
   "turns": 22,
@@ -128,20 +133,26 @@
     {"id": 352, "side": "cw", "name": "16th Brigade", "type": "foot", "size": 1, "parent": 350, "men": 2400, "src": "E", "at": "Tobruk"},
     {"id": 353, "side": "cw", "name": "23rd Brigade", "type": "foot", "size": 1, "parent": 350, "men": 2400, "src": "E", "at": "Tobruk"},
     {"id": 354, "side": "cw", "name": "70th Division artillery", "type": "guns", "size": 1, "parent": 350, "guns": 72, "src": "E", "at": "Tobruk"},
-    {"id": 360, "side": "cw", "name": "2nd South African Division", "type": "hq", "size": 1, "steps": 1, "at": "Mersa Matruh"},
-    {"id": 361, "side": "cw", "name": "3rd South African Brigade", "type": "foot", "size": 1, "parent": 360, "xp": "green", "men": 2400, "src": "E", "at": "Mersa Matruh"},
-    {"id": 362, "side": "cw", "name": "4th South African Brigade", "type": "foot", "size": 1, "parent": 360, "xp": "green", "men": 2400, "src": "E", "at": "Mersa Matruh"},
-    {"id": 363, "side": "cw", "name": "6th South African Brigade", "type": "foot", "size": 1, "parent": 360, "xp": "green", "men": 2400, "src": "E", "at": "Mersa Matruh"},
-    {"id": 364, "side": "cw", "name": "2nd South African Division artillery", "type": "guns", "size": 1, "parent": 360, "xp": "green", "guns": 48, "src": "E", "at": "Mersa Matruh"}
+    {"id": 360, "side": "cw", "name": "2nd South African Division", "type": "hq", "size": 1, "steps": 1, "arrives": "1941-12-02", "entry": "Buq Buq", "arrives_src": "S", "arrives_note": "Released from guarding the railway and the coast to take over the frontier."},
+    {"id": 361, "side": "cw", "name": "3rd South African Brigade", "type": "foot", "size": 1, "parent": 360, "xp": "green", "men": 2400, "src": "E", "arrives": "1941-12-02", "entry": "Buq Buq", "arrives_src": "S"},
+    {"id": 362, "side": "cw", "name": "4th South African Brigade", "type": "foot", "size": 1, "parent": 360, "xp": "green", "men": 2400, "src": "E", "arrives": "1941-12-02", "entry": "Buq Buq", "arrives_src": "S"},
+    {"id": 363, "side": "cw", "name": "6th South African Brigade", "type": "foot", "size": 1, "parent": 360, "xp": "green", "men": 2400, "src": "E", "arrives": "1941-12-02", "entry": "Buq Buq", "arrives_src": "S"},
+    {"id": 364, "side": "cw", "name": "2nd South African Division artillery", "type": "guns", "size": 1, "parent": 360, "xp": "green", "guns": 48, "src": "E", "arrives": "1941-12-02", "entry": "Buq Buq", "arrives_src": "S"}
   ],
   "replacements": [
-    {"date": "1941-11-26", "unit": 311, "steps": 4},
-    {"date": "1941-11-26", "unit": 313, "steps": 4},
-    {"date": "1941-12-02", "unit": 312, "steps": 4},
-    {"date": "1941-12-21", "unit": 111, "steps": 2},
-    {"date": "1941-12-21", "unit": 121, "steps": 2}
+    {"date": "1941-11-27", "unit": 311, "tanks": 33, "src": "N", "note": "Tanks from the reserve and the workshops.", "basis": "the difference between 37 tanks on the night of 24 November and 70 on the 27th; the source does not say how many were new and how many repaired"},
+    {"date": "1941-12-06", "unit": 311, "tanks": 38, "src": "N", "note": "Tanks from the reserve and the workshops.", "basis": "the difference between 98 tanks on 4 December and 136 on the 6th; the source says only that equipment was renewed"},
+    {"date": "1941-12-22", "unit": 313, "tanks": 60, "src": "J", "note": "Re-equipped with fresh Crusaders and Stuarts.", "basis": "110 tanks by 22 December against fewer than 50 on 27 November (N); its strength just before it was re-equipped was not found, so 60 is the least it can have been"},
+    {"date": "1941-12-19", "unit": 111, "tanks": 22, "via": "Benghazi", "src": "R", "note": "Landed at Benghazi from the Ankara.", "basis": "the date is the landing; that the tanks joined the regiment within the two days of the turn is assumed"},
+    {"date": "1941-12-27", "unit": 111, "tanks": 23, "src": "R", "note": "Landed at Tripoli on 19 December and brought up the coast road.", "basis": "the landing is dated; the day the tanks reached the regiment was not found. The Afrika Korps attacked with 70 tanks on 28 December (N), so they are taken to have joined by the 27th"}
   ],
-  "withdrawals": [],
+  "withdrawals": [
+    {"date": "1941-11-27", "unit": 312, "src": "P", "note": "Wrecked at Sidi Rezegh. What was left went back to Egypt and later to Burma."},
+    {"date": "1941-12-01", "unit": 330, "src": "N", "note": "Back to Egypt after Sidi Rezegh and Belhamed. 5th Brigade and the Divisional Cavalry stayed."},
+    {"date": "1941-12-01", "unit": 331, "src": "N", "note": "Back to Egypt after Sidi Rezegh and Belhamed. 5th Brigade and the Divisional Cavalry stayed."},
+    {"date": "1941-12-01", "unit": 333, "src": "N", "note": "Back to Egypt after Sidi Rezegh and Belhamed. 5th Brigade and the Divisional Cavalry stayed."},
+    {"date": "1941-12-01", "unit": 334, "src": "N", "note": "Back to Egypt after Sidi Rezegh and Belhamed. 5th Brigade and the Divisional Cavalry stayed."}
+  ],
   "objectives": [
     {"place": "Tobruk", "turn": 2, "end": 30},
     {"place": "Sidi Rezegh", "turn": 1, "end": 5},

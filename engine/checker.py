@@ -22,7 +22,15 @@ def problems(scenario, gmap):
         except (TypeError, ValueError):
             bad.append(f"{what}: {d!r} is not a date")
 
-    day(scenario.get("start"), "start")
+    first = day(scenario.get("start"), "start")
+    known = scenario.get("sources", {})
+
+    def dated(d, src, what):                                     # 12.7: a date in the game, from a named source
+        when = day(d, what)
+        if when and first and (when - first).days >= 2 * scenario["turns"]:
+            bad.append(f"{what}: {d} falls after the last turn")
+        if src not in known:
+            bad.append(f"{what}: its date names no source (one of the letters in the scenario's sources)")
     for entry in scenario.get("weather", []):                    # 21.3.1: the scenario's own odds
         ok = isinstance(entry, list) and len(entry) == 2 and isinstance(entry[1], dict)
         if ok:
@@ -86,7 +94,7 @@ def problems(scenario, gmap):
             bad.append(f"{tag}: {h} is not ground a unit can stand on and leave")
             continue
         if "arrives" in spec:
-            day(spec["arrives"], tag)
+            dated(spec["arrives"], spec.get("arrives_src"), f"{tag}: arrival")
         else:
             where.setdefault(h, []).append(spec)
     hqs = {s["id"]: s for s in scenario["units"] if s.get("type") == "hq"}
@@ -109,8 +117,21 @@ def problems(scenario, gmap):
             bad.append(f"fort at {(c, r)}: bad hex, level or side")
         if any(s["side"] != side for s in where.get((c, r), [])):
             bad.append(f"fort at {(c, r)}: the other side's units start in it")
-    for event in scenario.get("withdrawals", []) + scenario.get("replacements", []):
-        if event["unit"] not in ids:
-            bad.append(f"event for unit {event['unit']}, which does not exist")
-        day(event["date"], "event")
+    specs = {s["id"]: s for s in scenario["units"]}
+    for kind in ("withdrawals", "replacements"):
+        for event in scenario.get(kind, []):
+            what = f"{kind[:-1]} for unit {event.get('unit')}"
+            if event.get("unit") not in ids:
+                bad.append(f"{what}, which does not exist")
+                continue
+            dated(event.get("date"), event.get("src"), what)
+            if kind == "withdrawals":
+                continue
+            given, real = U.counted(event), U.real_of(specs[event["unit"]])
+            if not given or not isinstance(given[0], int) or given[0] < 1:
+                bad.append(f"{what}: needs one whole number of steps, tanks, men, guns or cars")
+            elif given[1] != "steps" and (real is None or real[1] != given[1]):
+                bad.append(f"{what}: brings {given[1]}, which is not what the unit is counted in")
+            if "via" in event and event["via"] not in gmap.places:
+                bad.append(f"{what}: {event['via']} is not a place")
     return bad

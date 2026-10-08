@@ -49,11 +49,21 @@ def reinforcement_phase(state, gmap, scenario):
                 B.remove(state, u, "withdrawn")
             u["status"], u["fate"] = "withdrawn", {"cause": "withdrawn", "turn": turn}
     B.regroup(state)                                                         # 20.2.8
-    for rep in sorted(scenario.get("replacements", []), key=lambda r: r["unit"]):       # 12.3
+    for rep in sorted(scenario.get("replacements", []), key=lambda r: (r["unit"], r["date"])):   # 12.3
         u = S.unit(state, rep["unit"])
-        if S.turn_of(scenario, rep["date"]) == turn and u["status"] == "on_map" and u["traced"]:
-            u["steps"] = min(u["max"], u["steps"] + rep["steps"])
+        if S.turn_of(scenario, rep["date"]) != turn:
+            continue
+        via = rep.get("via")
+        why = ("gone" if u["status"] != "on_map" else "port" if via and state["places"][via] != u["side"]
+               else "cut off" if not u["traced"] else None)
+        if why:
+            S.log(state, "not_replaced", side=u["side"], unit=u["id"], why=why)
+            continue
+        got = min(u["max"] - u["steps"], U.steps_for(*U.counted(rep)))
+        u["steps"] += got
+        S.log(state, "replaced", side=u["side"], unit=u["id"], steps=got)
     specs = {spec["id"]: spec for spec in scenario["units"]}
+    came = {}
     for u in state["units"]:                                                 # 12.4
         spec = specs[u["id"]]
         if u["status"] != "not_arrived" or S.turn_of(scenario, spec["arrives"]) > turn:
@@ -68,3 +78,31 @@ def reinforcement_phase(state, gmap, scenario):
             u["stationary"] = True
         state["sides"][u["side"]]["brought"] += S.carried(u)
         S.log(state, "arrived", side=u["side"], unit=u["id"], hex=list(h))
+        came.setdefault((h, U.formation(u)), []).append(u)
+    for together in came.values():                                           # 12.4: a division comes up as one
+        if len(together) > 1:
+            for u in together:
+                u["group"] = together[0]["id"]
+
+
+def timetable(scenario, side):
+    """A side's dated events in the order they fall due: what arrives, what is made good and
+    what is called away, each with its turn (12.1, 14.2)."""
+    specs = {spec["id"]: spec for spec in scenario["units"]}
+    rows = []
+    for spec in scenario["units"]:
+        if "arrives" in spec:
+            rows.append(dict({"kind": "arrival", "unit": spec["id"], "date": spec["arrives"], "entry": spec["entry"]},
+                             **({"note": spec["arrives_note"]} if "arrives_note" in spec else {})))
+    for kind, key in (("withdrawal", "withdrawals"), ("replacement", "replacements")):
+        for e in scenario.get(key, []):
+            row = {"kind": kind, "unit": e["unit"], "date": e["date"]}
+            if kind == "replacement":
+                row["n"], row["what"] = U.counted(e)
+                if "via" in e:
+                    row["via"] = e["via"]
+            if "note" in e:
+                row["note"] = e["note"]
+            rows.append(row)
+    rows = [dict(r, turn=S.turn_of(scenario, r["date"])) for r in rows if specs[r["unit"]]["side"] == side]
+    return sorted(rows, key=lambda r: (r["turn"], ("withdrawal", "replacement", "arrival").index(r["kind"]), r["unit"]))
