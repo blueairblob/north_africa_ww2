@@ -46,6 +46,7 @@ BUTTONS = (("move", "Move", "M"), ("attack", "Attack", "A"), ("road_march", "Tra
            ("join", "Join", "J"), ("split", "Split", "X"), ("recall", "Recall", "C"),
            ("next", "Next unit", "Space"), ("done", "End turn", "Enter"))
 LAYERS = (("s", "Supply", "S"), ("z", "Zones", "Z"), ("k", "Key", "K"))   # the map's layers, behind the button in its corner
+GAME = (("save", "Save game", "F5"), ("load", "Load game", "F9"))         # behind the Game button beside it
 MARGIN = 46             # base-map pixels of paper shown beyond the map's edge, for its border
 HQ_STAFF = 300          # a headquarters' nominal strength in men, for show: it has one step in the rules
 STRONG, WORN, WEAK = (40, 90, 190), (214, 126, 24), (200, 40, 30)   # strength: under full, under 70%, under 50%

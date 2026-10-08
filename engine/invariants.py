@@ -2,10 +2,13 @@
 from . import state as S
 from . import units as U
 from .recovery import FORT_MAX
+from .weather import KINDS, MODULUS
 
 
 def check(state, gmap):
     bad = []
+    if state["weather"] not in KINDS or not 0 <= state["seed"] < MODULUS or (state["seed"] == 0 and state["weather"] != "clear"):
+        bad.append(f"I-20 weather {state['weather']!r} with seed {state['seed']}")
     there = S.at(state)
     for h, us in sorted(there.items()):
         if len({u["side"] for u in us}) > 1:

@@ -80,6 +80,29 @@ def tabs(size):
             "remind": pygame.Rect(x0, foot - 28, w, 22)}
 
 
+def game(size, opened):
+    """The Game button beside Layers and, when opened, a row above it for each thing it does:
+    name -> rectangle. The button itself is "game"."""
+    area = areas(size)["map"]
+    out = {"game": pygame.Rect(area.x + 124, area.bottom - 46, 92, 34)}
+    if opened:
+        for n, (name, _, _) in enumerate(reversed(T.GAME)):
+            out[name] = pygame.Rect(area.x + 124, area.bottom - 46 - (n + 1) * 36, 170, 32)
+    return out
+
+
+def saves_list(size, n):
+    """The list of saved games, over the middle of the map: "box", a row for each numbered
+    from 0, and "close"."""
+    area = areas(size)["map"]
+    box = pygame.Rect(0, 0, min(860, area.w - 40), 46 + max(n, 1) * 36 + 50)
+    box.center = area.center
+    out = {"box": box, "close": pygame.Rect(box.centerx - 60, box.bottom - 44, 120, 34)}
+    for k in range(n):
+        out[k] = pygame.Rect(box.x + 10, box.y + 42 + k * 36, box.w - 20, 32)
+    return out
+
+
 def layers(size, opened):
     """The Layers button in the map's bottom-left corner and, when opened, a row above it for
     each layer: name -> rectangle. The button itself is "layers"."""

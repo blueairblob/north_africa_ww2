@@ -174,10 +174,22 @@ happened in a day of desert war. Each turn (2 days):
    the map edge on their historical dates; others leave.
 8. **Victory check.**
 
-There are no dice. The result of every rule is determined by the situation, so
-the same orders always give the same outcome — the game can be replayed, tested
-and played by e-mail exactly. (Friction comes from *simultaneous* movement and
+There are no dice, with one exception: the weather. The result of every other
+rule is determined by the situation, so the same orders in the same weather
+always give the same outcome. (Friction comes from *simultaneous* movement and
 hidden orders, not from random numbers.)
+
+**Weather** (owner's decision, October 2026) is drawn by chance, because a
+storm on a known date would be known to every player who had seen the scenario
+before. Most turns are clear; some bring rain or a sandstorm, by the season.
+In either no aircraft fly; rain bogs vehicles off the roads; a sandstorm halves
+all movement and cuts sight to the next hex. Three things keep it inside the
+game's character. It is drawn from a seed fixed when the game begins, so a game
+is its scenario, its seed and its orders, and can still be replayed, tested and
+played by e-mail exactly. It is settled and told *before* the orders are given,
+so chance shapes the problem and never undoes a decision already made. And
+nobody knows the next turn's: there is only an outlook, one word, often wrong.
+The rules are in `docs/RULES.md` §21.
 
 ## 6. Supply — the heart of the game
 
@@ -253,11 +265,14 @@ A whole corps can be ordered at once (its divisions keep formation). That is the
 complete list: six orders.
 
 **Orders stand.** An order with somewhere to go is given once and holds from
-turn to turn until the formation arrives or can no longer carry it out; then it
-waits for a new one. Hold, Dig in and Rest are for one turn. The screen takes
-the player through every formation each turn, one after another: one key keeps
-an order that stands, so a quiet turn is a glance and a key for each. A click on a formation and a
-click on a hex is an order: move, or attack if an enemy is seen there.
+turn to turn until the formation arrives or can no longer carry it out; Dig in
+holds until the defences are complete. A formation with no order holds its
+ground: Hold is what it does unless told otherwise, and Rest is for one turn.
+The screen takes the player through every formation each turn, one after
+another: one key lets it carry on as it is, so a quiet turn is a glance and a
+key for each. To send a formation somewhere the player presses Move or Attack
+and then the hex; a click on the map alone gives no order, so a formation on
+its way keeps its route.
 
 ## 9. Winning
 
@@ -342,7 +357,7 @@ lopsided, and situations the rules do not cover.
   order key, the arrow keys to move a hex cursor, Enter to confirm. The unit
   being ordered is brought to the middle of the map. The six orders, the
   overlays and End turn are buttons under the map; End turn asks once more if
-  units still wait for orders.
+  units with no order have not been gone through.
 - In the playback, what moves together is shown together: the movers are
   taken in groups that fit in view, and the map goes to each group before it
   sets off, so every formation is on the screen while it moves.
@@ -364,13 +379,19 @@ lopsided, and situations the rules do not cover.
   flag, and
   the beaten fall back and the victors follow. Any key skips it. The sounds are
   made by the program; with no sound device it is silent.
+- **Weather is seen.** Rain or a sandstorm lays a wash over the map, under the
+  counters; a chip in the map's corner names it and gives the outlook, and a
+  tap says what it does. It is the first of the turn's reports.
+- **A game can be put down and taken up.** It is saved when the player asks,
+  each time orders are handed in, and on leaving; a saved game goes on exactly
+  as it would have, in the middle of a turn's orders or at its start.
 - Optional retro look: a pixel palette and font, as a theme.
 
 ## 13. Technical shape
 
 - **Engine** (pure Python, no input/output): map, units, rules, supply, AI.
-  Deterministic and fully serialisable, so a game is a scenario plus a list of
-  orders, and every rule is unit-tested.
+  Deterministic and fully serialisable, so a game is a scenario, the seed its
+  weather is drawn from, and a list of orders; and every rule is unit-tested.
 - **The rules are solid enough for machines to play.** That means:
   - *complete*: every situation has exactly one defined outcome — simultaneous
     moves into the same hex, retreats with nowhere to go, a supply route cut in
@@ -383,8 +404,8 @@ lopsided, and situations the rules do not cover.
   - *checked*: properties that must always hold (supply delivered never exceeds
     supply landed; no two enemy units in one hex; strength never negative) are
     asserted after every turn of every test game;
-  - *replayable*: a finished game is its scenario plus both sides' orders, and
-    replays to the identical result.
+  - *replayable*: a finished game is its scenario, its weather's seed and both
+    sides' orders, and replays to the identical result.
 - **Players** are a small interface — *see your side's view, give orders* —
   with three kinds behind it: a person at the screen, a computer opponent, and
   a recorded game. A runner plays any two against each other without a screen
@@ -400,7 +421,7 @@ lopsided, and situations the rules do not cover.
 
 To stay small and neat: no individual tanks or battalions on the map, no
 detailed logistics accounting (trucks are an abstraction), no naval or air units
-as counters, no weather beyond a scheduled sandstorm or two, no random events,
+as counters, no weather beyond rain and sandstorm (§5), no random events but the weather,
 no unit editor in the game.
 
 ### 14.1 The complexity budget

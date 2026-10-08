@@ -36,11 +36,15 @@ def side_value(scenario, side, name, turn, default=0):
     return value_at(scenario, scenario["sides"][side].get(name, []), turn, default)
 
 
-def new_game(scenario, gmap):
-    """The state at the start of turn 1."""
+def new_game(scenario, gmap, seed=0):
+    """The state at the start of turn 1. The seed is what the weather is drawn from; with
+    none, every turn is clear (21.2)."""
+    if not (isinstance(seed, int) and 0 <= seed < 2147483647):
+        raise ValueError("the seed must be a whole number from 0 to 2147483646")
     owner = {name: side for side in SIDES for name in scenario["owners"][side]}
     state = {
         "scenario": scenario["id"], "turn": 1, "over": False, "result": None,
+        "seed": seed, "weather": "clear",
         "units": [], "places": {name: owner[name] for name in sorted(gmap.places)},
         "ports": {name: {"condition": 100, "fuel": 0, "stores": 0} for _, name in gmap.ports},
         "tripoli": {"fuel": 0, "stores": 0, "pipeline": []},

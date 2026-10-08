@@ -82,3 +82,49 @@ from memory. All are marked in the scenario file.
 Generated for this game: hex terrain tiles drawn from the terrain types, and
 unit symbols drawn from NATO military symbology (APP-6 / MIL-STD-2525, public
 standards). No art from any other game.
+
+## Weather
+
+Looked up on 7 October 2026 by web search, reading summaries and encyclopaedia
+articles, not the official histories themselves. `docs/RULES.md` §21 is built
+on it: the kinds of effect from the dated events below, the odds of rain from
+the climate figures after them. These are the dated events found for the
+map's area, with what each did. Check each against the source named before a
+scenario relies on it.
+
+| When | Where | What | Effect | Found in |
+| --- | --- | --- | --- | --- |
+| 9 December 1940 | Tummar West (Compass) | sandstorm | 7th Royal Tank Regiment's attack delayed | historyofwar.org, Operation Compass |
+| 13 March 1941 | on the way to Sirte | sandstorm | Rommel's aircraft turned back; he went by car | historyofwar.org, Rommel's first offensive |
+| night of 17/18 November 1941 | the coast, hardest on the Axis fields in the west | rainstorms and floods | aircraft of both sides grounded on the first day of Crusader; Axis air reconnaissance blind; British raids on Axis airfields cancelled; Axis signal cables washed out, men and stores lost in wadis; fields usable again by light aircraft on the 18th | Wikipedia, Operation Crusader, citing Playfair vol. III pp. 38–39; rommelsriposte.com |
+| late January 1942 | Antelat and Msus | rain, sodden landing grounds | British aircraft grounded during Rommel's second offensive | historyofwar.org, Rommel's second offensive |
+| 1–2 June 1942 | Gazala | sandstorms | British replies hampered; nothing seen | warfarehistorynetwork.com, Clash of Armor at Gazala |
+| 13 June 1942 | Rigel Ridge (Gazala) | sandstorm | 21. Panzer-Division attacked under its cover | Wikipedia, Battle of Gazala |
+| 1 July 1942 | El Alamein | sandstorm | 15. and 21. Panzer-Division delayed | Wikipedia, First Battle of El Alamein |
+| afternoon of 6 November 1942 | east of Mersa Matruh | heavy rain | Eighth Army's pursuit bogged off the road; the Axis reached Matruh | historyofwar.org and others, Second Battle of El Alamein |
+
+What the record suggests a weather rule would do: ground the air, shorten
+sight, and slow or stop movement off the roads. Nothing found gives heat a
+dated effect on a battle; the articles read do not mention it, though the
+summer lulls and the midday haze are commonly described. That is from memory
+and unchecked.
+
+Within the Crusader scenario (18 November to 30 December 1941) one event is
+dated: the storm of the night before it opened. The same source speaks of
+"violent rainstorms in November and December" on the forward airfields without
+dates.
+
+Climate, for the odds by month (RULES 21.3.1), all at second hand:
+
+- Days a month with 1 mm of rain or more at Tobruk, normals for 1991 to 2020
+  (NOAA, as given in Wikipedia's article on Tobruk): January 5.9, February
+  4.2, March 2.0, April 0.8, May 0.6, June 0.1, July and August 0, September
+  0.4, October 2.0, November 2.7, December 5.2. Benghazi has more: January
+  8.9, December 9.7, November 4.8 (Wikipedia, Benghazi, the same source). The
+  rules use Tobruk, which is nearer the middle of the fighting.
+- These are modern normals, not the weather of 1940 to 1942.
+- The khamsin (Wikipedia, Khamsin): "usually arrives in April but occasionally
+  can occur between March and May"; "rarely occurs more than once a week and
+  lasts for just a few hours at a time". The same article says Allied and
+  German troops "were several times forced to halt in mid-battle because of
+  sandstorms". No count of storm days by month was found.

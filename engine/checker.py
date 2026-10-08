@@ -8,6 +8,7 @@ from .paths import FOOT, least_path
 from .recovery import FORT_MAX
 from .supply import PORT_CAP
 from .victory import par
+from .weather import KINDS
 
 COUNTERS = 60           # no more than about this many a side (DESIGN.md §14.1)
 
@@ -22,6 +23,14 @@ def problems(scenario, gmap):
             bad.append(f"{what}: {d!r} is not a date")
 
     day(scenario.get("start"), "start")
+    for entry in scenario.get("weather", []):                    # 21.3.1: the scenario's own odds
+        ok = isinstance(entry, list) and len(entry) == 2 and isinstance(entry[1], dict)
+        if ok:
+            day(entry[0], "weather")
+            ok = (set(entry[1]) <= set(KINDS[1:]) and all(isinstance(v, int) and v >= 0 for v in entry[1].values())
+                  and sum(entry[1].values()) <= 100)
+        if not ok:
+            bad.append(f"weather: {entry!r} must be a date and the per cent of turns with rain and with sandstorm")
     owned = [n for side in S.SIDES for n in scenario["owners"][side]]
     if sorted(owned) != sorted(gmap.places):
         odd = set(owned) ^ set(gmap.places) | {n for n in owned if owned.count(n) > 1}

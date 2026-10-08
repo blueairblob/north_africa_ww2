@@ -85,6 +85,7 @@ the start belongs to turn 1.
 the rules read and change, nothing else:
 
 - the scenario id and the turn number;
+- the seed the weather is drawn from, and the weather of the turn (§21);
 - for each unit: id, side, name, type, size, experience, steps, maximum
   steps, hex, cohesion, fuel, stores, the flags `out_of_stores`, `traced` and
   `stationary`, the unit's status (`on_map`, `not_arrived`, `withdrawn`,
@@ -103,8 +104,9 @@ the rules read and change, nothing else:
 state. Schedules in the scenario (reinforcements, lift, air points, sea
 percentage, fuel percentage, railhead) are looked up by turn number.
 
-**2.3** A game is its scenario plus, for each turn, each side's submitted
-orders. Replaying them gives the identical state (section 15, invariant I-1).
+**2.3** A game is its scenario, its seed (21.2) and, for each turn, each
+side's submitted orders. Replaying them gives the identical state (section 15,
+invariant I-1).
 
 ---
 
@@ -261,6 +263,9 @@ time. Where a rule must take things one after another, it states the order.
 
 **5.4** This order differs from `DESIGN.md` §5 in one place: Orders comes
 before Air, because the air choice is given with the orders (18.6).
+
+**5.5** As a turn begins, before its Supply phase, its weather is settled
+(21.3.3). That changes the weather and nothing else.
 
 ---
 
@@ -582,6 +587,8 @@ of the side spots `AIR_RECON_HEXES × points` hexes further (14.3).
 
 **7.6** With 0 air points every choice has no effect.
 
+**7.7** In rain or a sandstorm a side has 0 air points (21.4.1).
+
 | Name | Value | Meaning | Status |
 | --- | --- | --- | --- |
 | `AIR_SUPPORT_PCT` | 5 | per cent on combat totals per air point | to be tuned |
@@ -606,12 +613,15 @@ of up to `VIA_MAX` hexes to pass through in the order given.
 
 **8.1.4** Orders for a whole corps, and orders that stand from turn to turn
 until they are done, are conveniences of the screen. The engine receives one
-order per unit per turn. At the screen only an order with somewhere to go
-stands (Move, Attack, Travel or March, Join), and only until the unit arrives,
-the order can no longer be carried out, or its attack is repulsed. Hold, Dig in
-and Rest are for one turn. Every turn the screen takes the player through every
-unit or group: one whose order stands is shown with it, kept with one key or
-tap and changed by any other order. The screen shows a split, and a join of units already
+order per unit per turn. At the screen an order with somewhere to go stands
+(Move, Attack, Travel or March, Join) until the unit arrives, the order can no
+longer be carried out, or its attack is repulsed; Dig in stands until the
+defences in the hex are at `FORT_MAX`. Rest is for one turn. A unit with no
+order holds (8.1.3), and the screen shows Hold as its order. Every turn the
+screen takes the player through every unit or group: each is shown with what
+it will do, let stand with one key or tap and changed by any order. A click on
+the map gives an order only after Move, Attack, Travel or March, or Join has
+been pressed. The screen shows a split, and a join of units already
 in one hex, as soon as it is ordered: the rules do both in the Orders phase,
 before anything moves (20.2.2, 20.2.4), so nothing in the game is changed by
 showing them early, and a game replays the same from its orders.
@@ -720,7 +730,8 @@ sections 9 and 10, and is reported in the event log.
 ### 9.1 Allowance
 
 **9.1.1** Each unit has a movement allowance in movement points (MP) per
-turn, by type (9.10). Cohesion and supply do not change it.
+turn, by type (9.10). Cohesion and supply do not change it. A sandstorm
+does (21.4.3).
 
 **9.1.2** Units ordered `hold`, `dig_in` or `rest` do not move in the Movement
 phase.
@@ -759,7 +770,8 @@ four across country: one cannot march in the open desert. Caught on the
 march it is as helpless as a column of lorries (10.4.4).
 
 Path-finding (9.2) ignores the fortification cost; it is paid when the step is
-taken.
+taken. In rain a vehicle pays more for a step that is not along a road, and
+path-finding counts it (21.4.4).
 
 ### 9.4 Impulses
 
@@ -1254,7 +1266,8 @@ victory (`|d| < T3`) or a decisive victory.
 **14.1** A player is given only its side's **view**, built at the start of the
 Orders phase. Computer players get exactly this and nothing else.
 
-**14.2 Always in the view:** the map; the turn and date; everything about the
+**14.2 Always in the view:** the map; the turn and date; the turn's weather
+and the outlook for the next (21.5); everything about the
 side's own units, ports, dumps, Tripoli stock and pipeline, lift, air points
 and fortifications; the owner of every place; both sides' victory points, how many of them came
 from destroying units, and the scenario's par;
@@ -1263,7 +1276,8 @@ objectives.
 
 **14.3 Spotted enemy units.** An enemy unit is spotted if it is within
 `SPOT_RANGE` hexes (1.4) of any unit of the side, or within
-`SPOT_RANGE_RECON` of a `recon` unit, each raised by air recon (7.5).
+`SPOT_RANGE_RECON` of a `recon` unit, each raised by air recon (7.5). In a
+sandstorm it is `STORM_SIGHT` for every unit (21.4.2).
 
 **14.4** For a spotted enemy unit the view gives its id, name, type, hex and
 experience. If it is adjacent to a unit of the side, it also gives its steps.
@@ -1285,7 +1299,8 @@ sides, with the unit and the hex. It gives no other enemy event.
 **14.7** The view holds no memory of earlier turns. A player may keep its own.
 
 **14.8** Never in the view: enemy orders, enemy supply of any kind, enemy
-lift, enemy schedules, unspotted enemy units.
+lift, enemy schedules, unspotted enemy units. Nor the seed, nor the weather of any turn
+after this one.
 
 | Name | Value | Meaning | Status |
 | --- | --- | --- | --- |
@@ -1300,8 +1315,8 @@ These hold after every phase unless a narrower point is named, and are
 asserted after the Supply phase and after the last phase of every turn of
 every test game.
 
-- **I-1 Replay.** The same scenario and the same submitted orders give the
-  same state, byte for byte when serialised.
+- **I-1 Replay.** The same scenario, the same seed and the same submitted
+  orders give the same state, byte for byte when serialised.
 - **I-2** No hex holds units of both sides.
 - **I-3** No hex holds the units of more than `STACK_FORMATIONS` formations.
 - **I-4** Every unit on the map is in a passable hex on the map.
@@ -1331,6 +1346,8 @@ every test game.
 - **I-18** No phase changes state outside its list in 5.1.
 - **I-19** Every group is two or more units of one side on the map in one
   hex, led by the one with the lowest id.
+- **I-20** The weather is one of the three kinds of 21.1.1, the seed is from 0
+  to `MODULUS` − 1, and with seed 0 the weather is clear.
 
 I-10, I-11, I-15, I-16 and I-18 are about what happens inside a turn, so the
 engine notes any breach as the turn runs; the rest are checked on the state
@@ -1353,6 +1370,8 @@ after it.
 | Reinforcement | 12 (table at its end) |
 | Victory | 13 (table at its end) |
 | Fog of war | 14 (table at its end) |
+| Formations, groups and morale | 20.6 |
+| Weather | 21.6 |
 
 In the engine each table is one block of named constants in the module for
 that subject (`docs/ENGINEERING_NOTES.md` §4).
@@ -1364,14 +1383,16 @@ that subject (`docs/ENGINEERING_NOTES.md` §4).
 *This page is the whole of it. Everything else the machine does and shows.*
 
 **The turn.** A turn is two days. You give every formation one order. Both
-sides' orders then run at the same time. Nothing is left to chance.
+sides' orders then run at the same time. Nothing is left to chance but the
+weather.
 
 **The six orders.**
 
 - **Move** — go to a hex, across country.
 - **Attack** — go there and attack what you meet. One hex is attacked by
   everything you send at it, and it counts for more from several sides.
-- **Hold** — stay; scrape a first line of defences; recover a little.
+- **Hold** — stay; scrape a first line of defences; recover a little. A unit
+  given no order holds.
 - **Dig in** — stay and build defences, up to four levels. It costs stores.
 - **Road march** — far and fast along roads and tracks. Caught in column, you
   fight at a quarter of your strength.
@@ -1400,6 +1421,12 @@ so much, and they burn fuel themselves: twice as far is less than half as
 much. An enemy across the road stops it. A headquarters that stays put builds
 up a dump for the next push. Out of fuel, you do not move. Out of stores, you
 fall apart. Press **S** to see all of it.
+
+**Weather.** Most days are clear. Some turns bring rain or a sandstorm; you
+are told as the turn opens, with a word on the next two days that is often
+wrong. In either, no aircraft fly. In rain, vehicles off the roads crawl. In a
+sandstorm everything moves at half pace and nothing is seen beyond the next
+hex: a bad day to march, and a good one to slip away or to close unseen.
 
 **Winning.** Hold the named places, turn after turn, and do not lose
 formations.
@@ -1446,6 +1473,12 @@ still be changed in one place if play shows it wrong.
   hexes with a port or town (3.4.1).
 - **18.13 Withdrawal** removes a unit on its date even if it is in contact
   (12.2).
+- **18.14 Weather is drawn by chance** (§21). Taken by the owner on 7 October
+  2026, after 18.1 to 18.13: a storm on a fixed date would be known to anyone
+  who had played the scenario before, "which can never happen". It is the one
+  thing in the game not settled by the orders. It is drawn from a seed, so a
+  game still replays; and it is settled and told before the orders are given,
+  so that no order is undone by a draw made after it.
 
 ---
 
@@ -1623,3 +1656,149 @@ has left of those it began with.
 | `MEN_STEP` | 800 | men in a step: about a battalion | derived; to be checked against establishments |
 | `TANKS_STEP` | 10 | tanks in a step | from 4.2.1 |
 | `GUNS_STEP` | 12 | guns in a step: about a regiment's battery group | to be tuned |
+
+---
+
+## 21. Weather
+
+Weather is the one thing in the game that is drawn by chance. Everything else
+in these rules follows from the scenario and the orders, and so does the
+weather once its seed is fixed.
+
+### 21.1 What it is
+
+**21.1.1** Each turn has one weather, the same over the whole map and for
+both sides: `clear`, `rain` or `sandstorm`.
+
+**21.1.2** The weather of a turn is settled as the turn begins and holds
+until it ends. It does not carry over: each turn is drawn afresh.
+
+### 21.2 The seed
+
+**21.2.1** A game has a **seed**, a whole number from 0 to `MODULUS` − 1,
+fixed when the game begins and never changed. With seed 0 there is no
+weather: every turn is clear and every outlook is fair. The seed is part of
+the game state and is in no side's view (14.8).
+
+**21.2.2 The numbers.** A turn's two numbers come from one generator, so that
+any engine in any language gives the same. Begin with `x` equal to the seed.
+One round makes `x` into `x × MULTIPLIER` modulo `MODULUS`. Make
+`WARM + 2 × turn − 1` rounds; the turn's **first number** is
+`floor(x × 100 / MODULUS)`. Make one round more; its **second number** is
+`floor(x × 100 / MODULUS)`. Each is from 0 to 99. No product in this passes
+2 to the power 47.
+
+**21.2.3 Worked by hand.** With seed 1, turn 1 takes nine rounds and its
+numbers are 26 and 74; turn 2's are 8 and 56.
+
+### 21.3 The draw
+
+**21.3.1 The odds.** The per cent of turns with rain and with sandstorm are
+`ODDS`, by the month of the turn's first day:
+
+| Month | Rain | Sandstorm |
+| --- | --- | --- |
+| January | 12 | 3 |
+| February | 10 | 3 |
+| March | 4 | 8 |
+| April | 2 | 14 |
+| May | 1 | 10 |
+| June | 0 | 6 |
+| July | 0 | 4 |
+| August | 0 | 3 |
+| September | 1 | 3 |
+| October | 4 | 3 |
+| November | 6 | 3 |
+| December | 11 | 3 |
+
+A scenario may give its own odds by date, in place of these (2.2).
+
+**21.3.2** With `r` the turn's first number: the weather is rain if `r` is
+less than the odds of rain; a sandstorm if `r` is less than the odds of rain
+and of sandstorm together; otherwise clear.
+
+**21.3.3** The weather is settled before the Supply phase (5.5).
+
+### 21.4 What it does
+
+**21.4.1 Nothing flies.** In rain or a sandstorm both sides have 0 air points
+this turn (7.7): no support, no interdiction, no reconnaissance. The air
+choice is still given and recorded.
+
+**21.4.2 Sight.** In a sandstorm every unit spots at `STORM_SIGHT` hexes,
+whatever its type, and air reconnaissance adds nothing (14.3). Rain does not
+change sight.
+
+**21.4.3 Movement in a sandstorm.** Every unit's allowance is
+`floor(allowance × STORM_MOVE_PCT / 100)` (9.1.1).
+
+**21.4.4 Movement in rain.** A vehicle's step that is not along a road link
+costs `floor(cost × RAIN_COST_PCT / 100)`, the cost being that of 9.3 with
+any pass. A step along a road costs what it always does. A group with any
+vehicle in it pays as a vehicle (20.2.6). Units on foot are not slowed. The
+least-cost way (9.2) is found with these costs, so in rain it keeps to the
+roads where that is quicker.
+
+**21.4.5** Weather changes nothing else: not supply, not combat values, not
+recovery.
+
+### 21.5 What a side is told
+
+**21.5.1** Both sides' views give the weather of the turn they are ordering
+(14.2).
+
+**21.5.2 The outlook.** Both views also give one word about the next turn,
+`fair` or `unsettled`, the same for both sides. With `s` the next turn's
+second number (21.2.2): if the next turn's weather is not clear, the outlook
+is `unsettled` when `s` is less than `OUTLOOK_HIT`; if it is clear, the
+outlook is `unsettled` when `s` is less than `OUTLOOK_FALSE`; otherwise it is
+`fair`. So the outlook is often right and sometimes wrong, and "fair" is no
+promise.
+
+**21.5.3** Nothing else about later weather is told to anyone (14.8).
+
+### 21.6 Constants
+
+| Name | Value | Meaning | Status |
+| --- | --- | --- | --- |
+| `MODULUS` | 2147483647 | the generator's modulus, 2 to the power 31, less 1 | from source: the Lehmer generator of Park and Miller |
+| `MULTIPLIER` | 48271 | the generator's multiplier | from source: the same |
+| `WARM` | 8 | rounds made before the first number is taken, so that a small seed gives no small first number | derived |
+| `ODDS` | the table in 21.3.1 | per cent of turns with rain and with sandstorm, by month | derived for rain; to be tuned for sandstorm (see below) |
+| `OUTLOOK_HIT` | 80 | per cent of bad turns that the outlook before them calls unsettled | to be tuned |
+| `OUTLOOK_FALSE` | 15 | per cent of clear turns that the outlook before them calls unsettled | to be tuned |
+| `STORM_SIGHT` | 1 | hexes at which any unit spots in a sandstorm | to be tuned |
+| `STORM_MOVE_PCT` | 50 | per cent of its allowance a unit has in a sandstorm | to be tuned |
+| `RAIN_COST_PCT` | 200 | per cent of its cost a vehicle pays in rain for a step not along a road | to be tuned |
+
+**Where the figures come from** (`docs/SOURCES.md`, Weather).
+
+- *What weather did.* The dated events in the record show three effects:
+  aircraft grounded, sight cut, and movement off the roads slowed or stopped.
+  The three rules of 21.4 are those and no more.
+- *Rain, by month.* From the days a month with a millimetre of rain or more
+  at Tobruk (climate normals for 1991 to 2020, at second hand): about 3 in
+  November, 5 in December, 6 in January, 4 in February, 2 in March and in
+  October, under 1 in every other month. From those, the chance that a turn
+  of two days has such a day; and of those turns one in three is taken to be
+  bad enough to stop aircraft and bog vehicles. The one in three is a
+  judgement, not a figure from a source.
+- *Sandstorm, by month.* Not from figures. The khamsin is described as a wind
+  of March to May, most of all April, coming at most about once a week and
+  lasting hours; the record has storms in December, March, June and July as
+  well. The odds follow that shape and nothing firmer.
+- *The effects' sizes* (half movement, double cost, sight of one hex) are
+  first guesses, chosen to be felt.
+
+**Not in these rules**, and why:
+
+- *Heat.* No dated effect of heat on a battle was found, so none is given.
+- *Supply.* Rain bogged lorries as it bogged tanks, but hauls are not slowed
+  here: supply is the part of the game most easily upset, and it should be
+  changed on its own, with test games.
+- *Weather over part of the map.* The storm before Crusader fell harder on
+  the Axis airfields than the British; here it is the same everywhere.
+- *Weather lasting more than a turn*, and mud after rain.
+- *Fixed historical weather.* A scenario could give its own odds for the days
+  it is known (21.3.1), but then a player who knows the history knows the
+  weather.

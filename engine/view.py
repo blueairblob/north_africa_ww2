@@ -1,9 +1,15 @@
 """What each side can see (docs/RULES.md §14). A player is given this and nothing else."""
 from . import state as S
+from . import weather as W
 from .gamemap import distance
 
 SPOT_RANGE = 2          # hexes at which any unit spots
 SPOT_RANGE_RECON = 4    # hexes at which a recon unit spots
+
+
+def spot_range(state, u, extra):
+    """How far this unit spots: by its type, further with air recon, less in a sandstorm (14.3, 21.4.2)."""
+    return W.sight(state["weather"], (SPOT_RANGE_RECON if u["type"] == "recon" else SPOT_RANGE) + extra)
 
 
 def view(state, gmap, scenario, side):
@@ -11,8 +17,7 @@ def view(state, gmap, scenario, side):
     extra = state["sides"][side]["recon"]                                    # 7.5
 
     def spotted(h):                                                          # 14.3
-        return any(distance(h, tuple(u["hex"])) <= (SPOT_RANGE_RECON if u["type"] == "recon" else SPOT_RANGE) + extra
-                   for u in mine)
+        return any(distance(h, tuple(u["hex"])) <= spot_range(state, u, extra) for u in mine)
 
     def adjacent(h):
         return any(distance(h, tuple(u["hex"])) == 1 for u in mine)
@@ -32,6 +37,8 @@ def view(state, gmap, scenario, side):
     specs = {spec["id"]: spec for spec in scenario["units"]}
     return {
         "side": side, "turn": state["turn"], "over": state["over"], "result": state["result"],
+        "weather": state["weather"],                                         # 21.5: this turn's, and a word on the next
+        "outlook": W.outlook(state["seed"], state["turn"], scenario),
         "units": [dict(u) for u in state["units"] if u["side"] == side],
         "arrivals": [{"unit": u["id"], "date": specs[u["id"]]["arrives"]} for u in state["units"]
                      if u["side"] == side and u["status"] == "not_arrived"],
@@ -54,6 +61,8 @@ def view(state, gmap, scenario, side):
 def leaks(v, state):
     """What a view holds that it must not (invariant I-17, 14.8)."""
     side, out = v["side"], []
+    if "seed" in v:
+        out.append("the seed the weather is drawn from")
     for e in v["enemy"]:
         if set(e) - {"id", "name", "type", "hex", "xp", "steps"}:
             out.append(f"enemy unit {e['id']} shows {sorted(e)}")

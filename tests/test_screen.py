@@ -9,6 +9,7 @@ os.environ.setdefault("SDL_VIDEODRIVER", "dummy")
 pygame = pytest.importorskip("pygame")
 
 from engine import players                                        # noqa: E402
+from engine import state as S                                     # noqa: E402
 from engine.view import view                                     # noqa: E402
 from helpers import GMAP, ROOT, small                             # noqa: E402
 from screen import layout, theme                                  # noqa: E402
@@ -162,13 +163,19 @@ def test_keys_and_clicks_give_orders():
     assert app.session.order_of(101)["order"] == "rest" and app.ui.selected == 102      # and on to the next
     app.ui.selected = None
     app.click(spot((59, 11)))
-    app.click(spot((60, 12)))                                      # a plain click on open ground: move
+    app.click(spot((60, 12)))                                      # a plain click on open ground gives no order
+    assert app.session.order_of(101)["order"] == "rest" and "press Move or Attack first" in app.ui.message
+    app.key(pygame.K_m)
+    app.click(spot((60, 12)))                                      # Move pressed first: the click is where it goes
     assert app.session.order_of(101) == {"unit": 101, "order": "move", "to": [60, 12]}
     app.ui.selected = None
     app.click(spot((57, 11)))                                      # nothing taken up: a click on your own unit takes it up
     assert app.ui.selected == 109
     assert (55, 10) in {tuple(e["hex"]) for e in app.session.view["enemy"]}
-    app.click(spot((55, 10)))                                      # ...and on an enemy in sight: attack
+    app.click(spot((55, 10)))                                      # a plain click on an enemy in sight gives no order either
+    assert 109 not in app.session.pending["axis"]
+    app.key(pygame.K_a)
+    app.click(spot((55, 10)))                                      # Attack pressed first
     assert app.session.order_of(109) == {"unit": 109, "order": "attack", "to": [55, 10]}
     app.ui.selected = None
     app.click(spot((57, 11)))
@@ -181,7 +188,7 @@ def test_keys_and_clicks_give_orders():
     app.key(pygame.K_3)
     assert app.session.air["axis"] == "recon"
     app.click(layout.buttons(app.size)["done"].center)
-    assert "still wait for orders" in app.ui.message and app.session.side == "axis"   # units wait: asked once
+    assert "not been gone through" in app.ui.message and app.session.side == "axis"   # units not looked at: asked once
     app.click(layout.buttons(app.size)["done"].center)
     assert app.ui.cover and app.session.side == "cw"                # the screen is covered between players
     app.key(pygame.K_SPACE)
@@ -196,7 +203,8 @@ def test_an_order_stands_until_the_unit_arrives():               # RULES 8.1.4
     assert 101 not in s.waiting_units() and 102 in s.waiting_units()
     s.done()
     assert s.pending["axis"][101]["to"] == far                   # given again
-    assert 106 not in s.pending["axis"] and 106 in s.idle_units()      # Dig in was for one turn: it is offered again
+    assert s.pending["axis"][106] == {"unit": 106, "order": "dig_in"}  # Dig in stands too, until the works are complete
+    assert 106 in s.waiting_units() and 106 not in s.idle_units()      # and is shown again with its order
     assert 101 in s.waiting_units() and 101 not in s.idle_units()      # the mover is shown again too, with its order
     s.keep(101)
     assert 101 not in s.waiting_units()                          # kept: dealt with for this turn
@@ -205,11 +213,56 @@ def test_an_order_stands_until_the_unit_arrives():               # RULES 8.1.4
     assert s.unit(101)["hex"] == far and 101 not in s.pending["axis"]            # arrived: it waits again
     assert s.ended["axis"] == [(101, "has arrived")] and 101 in s.waiting_units()
     assert "has arrived" in s.said["axis"][101]
-    assert s.record[1]["axis"]["orders"] == [{"unit": 101, "order": "move", "to": far}]
+    assert s.record[1]["axis"]["orders"] == [{"unit": 101, "order": "move", "to": far}, {"unit": 106, "order": "dig_in"}]
+
+
+def test_dig_in_stands_until_the_works_are_complete():
+    from engine.recovery import FORT_MAX
+    s = Session(crusader(), GMAP, humans=["axis"], scripted={"cw": players.DoNothing(GMAP)})
+    assert s.give({"unit": 106, "order": "dig_in"})["ok"]
+    s.done()
+    assert s.standing["axis"][106]["order"] == "dig_in" and s.ended["axis"] == []
+    s.state["forts"][S.fort_key(tuple(s.unit(106)["hex"]))] = [FORT_MAX, "axis"]      # nothing more can be dug here
+    s.done()
+    assert 106 not in s.standing["axis"] and 106 not in s.pending["axis"] and 106 in s.idle_units()
+    assert s.ended["axis"] == [(106, "has finished digging in")] and "It holds" in s.said["axis"][106]
+
+
+def test_a_click_on_the_map_gives_no_order_until_an_order_is_pressed():
+    """With no order a unit holds, and Hold is the button lit. A unit trails no line under the
+    pointer, and a click on the map changes nothing, until Move, Attack or March is pressed:
+    so a unit on its way keeps its route whatever is clicked."""
+    pygame.init()
+    surface = pygame.Surface(theme.WINDOW)
+    app = App(Session(crusader(), GMAP, humans=["axis"], scripted={"cw": players.DoNothing(GMAP)}))
+    s, grid = app.session, layout.buttons(app.size)
+    inside = lambda name: tuple(surface.get_at((grid[name].x + 6, grid[name].centery)))[:3]
+    app.ui.hover = (62, 14)
+    app.paint(surface)
+    assert app.ui.selected == 101 and app.ui.preview == ""           # taken up with no order: no way is tried out
+    assert inside("hold") == theme.BUTTON_ON and inside("move") == theme.BUTTON
+    assert (grid["hold"], "With no other order it holds.") in app.painter.tips
+    app.centre_on((59, 11))
+    app.click(app.spot((62, 14)))
+    assert 101 not in s.pending["axis"] and app.ui.selected == 101 and "keeps to its order, Hold" in app.ui.message
+    far = list(GMAP.places["Bardia"]["hex"])
+    assert s.give({"unit": 101, "order": "move", "to": far})["ok"]
+    app.ui.selected, app.ui.hover = 101, (62, 14)
+    app.paint(surface)
+    assert app.ui.preview == "" and inside("move") == theme.BUTTON_ON and inside("hold") == theme.BUTTON
+    app.centre_on((59, 11))
+    app.click(app.spot((62, 14)))                                    # a stray click: its route is as it was
+    assert s.pending["axis"][101]["to"] == far and "keeps to its order, Move" in app.ui.message
+    app.key(pygame.K_m)
+    app.ui.hover = (62, 14)
+    app.paint(surface)
+    assert app.ui.preview.startswith("Move here")                    # Move pressed: now the way is tried out
+    app.click(app.spot((62, 14)))
+    assert s.pending["axis"][101]["to"] == [62, 14] and app.ui.mode is None
 
 
 def test_a_formation_told_to_hold_is_offered_again_next_turn():
-    """Hold, Dig in and Rest are for one turn, and every formation is stepped to every turn."""
+    """Hold and Rest are for one turn, and every formation is stepped to every turn."""
     pygame.init()
     app = App(Session(regiments(), GMAP, humans=["cw"], scripted={"axis": players.DoNothing(GMAP)}))
     s = app.session
@@ -219,15 +272,22 @@ def test_a_formation_told_to_hold_is_offered_again_next_turn():
     for lead in everyone[1:]:
         assert s.give({"unit": lead, "order": ("hold", "rest", "dig_in")[lead % 3] if s.can(lead, "dig_in")[0] else "hold"})["ok"]
     assert s.waiting_units() == []
+    dug = {lead for lead in everyone[1:] if s.pending["cw"][lead]["order"] == "dig_in"}
     app.key(pygame.K_RETURN)
     assert s.state["turn"] == 2 and set(everyone) <= set(s.waiting_units())       # every one of them is stepped to again
-    assert set(everyone[1:]) <= set(s.idle_units()) and s.standing["cw"].keys() == {everyone[0]}
+    done = {uid for uid, why in s.ended["cw"] if why == "has finished digging in"}      # Tobruk's works, made complete
+    assert done and done < dug and s.standing["cw"].keys() == {everyone[0]} | dug - done    # Dig in stands until then
+    assert set(everyone[1:]) - (dug - done) <= set(s.idle_units())                          # the rest hold again
     app.stop_watching()
     app.ui.selected = everyone[0]
     app.paint(pygame.Surface(theme.WINDOW))
     app.key(pygame.K_SPACE)                                         # one key keeps the order that stands
     assert everyone[0] not in s.waiting_units() and "carries on" in app.ui.message
     assert s.pending["cw"][everyone[0]]["to"] == far and app.ui.selected == everyone[1]
+    idle = next(lead for lead in everyone[1:] if lead not in s.pending["cw"])
+    app.ui.selected = idle
+    app.key(pygame.K_SPACE)                                         # and lets a unit with no order stand as it is: it holds
+    assert idle not in s.waiting_units() and idle not in s.pending["cw"] and "holds" in app.ui.message
 
 
 def test_a_formation_with_low_morale_shows_attack_greyed_with_its_reason():
@@ -275,10 +335,11 @@ def test_the_screen_steps_through_the_units_that_wait():
     app = App(Session(crusader(), GMAP, humans=["axis"], scripted={"cw": players.DoNothing(GMAP)}))
     assert app.ui.selected == 101                                 # the first unit is taken up for you
     app.key(pygame.K_h)
-    assert app.session.order_of(101)["order"] == "hold" and app.ui.selected == 102 and "more to order" in app.ui.message
+    assert app.session.order_of(101)["order"] == "hold" and app.ui.selected == 102 and "more to go through" in app.ui.message
     assert app.ui.hover is None                                     # the next is taken up, with no line trailing the pointer
-    app.click(layout.buttons(app.size)["next"].center)              # Next unit skips one: on to the one after
-    assert app.ui.selected == 103 and app.target is not None and "waits for an order" in app.ui.message
+    app.click(layout.buttons(app.size)["next"].center)              # Next unit lets it hold: on to the one after
+    assert app.ui.selected == 103 and app.target is not None and "holds" in app.ui.message
+    assert 102 not in app.session.waiting_units() and 102 not in app.session.pending["axis"]
     while app.session.waiting_units():
         app.key(pygame.K_h)                                         # each order goes on to the next that waits
     assert "End turn" in app.ui.message and app.ui.selected is None
@@ -421,7 +482,7 @@ def test_the_window_plays_the_turn_back_goes_faster_with_f_and_any_other_key_end
     app.advance(40)
     assert app.fast and app.play_t == 30 * 50 + 40 * 3
     app.handle(pygame.event.Event(pygame.KEYDOWN, key=pygame.K_SPACE))
-    assert app.play is None and not app.fast and "wait for orders" in app.ui.message
+    assert app.play is None and not app.fast and "hold unless ordered" in app.ui.message
     app.done()
     assert app.session.state["turn"] == 3
 
@@ -435,7 +496,7 @@ def test_when_the_playback_runs_out_the_message_goes_back_to_the_orders():
     assert "skip" in app.ui.message
     while app.play:
         app.advance(50)
-    assert "skip" not in app.ui.message and "wait for orders" in app.ui.message
+    assert "skip" not in app.ui.message and "hold unless ordered" in app.ui.message
 
 
 def test_panel_text_is_wrapped_between_words_never_cut():
@@ -544,7 +605,7 @@ def test_a_keyboard_only_player_can_choose_a_destination_and_enter_does_not_end_
     keys(app, "m", "RETURN")                                         # Enter with no hex chosen: nothing happens
     assert app.session.state["turn"] == 1 and "Choose the hex" in app.ui.message
     keys(app, "ESCAPE", "RETURN")
-    assert app.session.state["turn"] == 1 and "still wait for orders" in app.ui.message    # asked once
+    assert app.session.state["turn"] == 1 and "not been gone through" in app.ui.message    # asked once
     keys(app, "RIGHT", "RETURN")
     assert app.session.state["turn"] == 1                            # another key in between: asked again
     keys(app, "RETURN")
@@ -638,11 +699,11 @@ def test_one_of_a_thing_is_not_plural():
                           unit(202, "cw", "foot", [72, 24])]), GMAP, humans=["cw"])
     app = App(s)
     keys(app, "h")
-    assert "1 more to order" in app.ui.message
+    assert "1 more to go through" in app.ui.message
     app.begin_message()
-    assert app.ui.message == "1 unit waits for orders."
+    assert app.ui.message.startswith("1 unit holds unless ordered.")
     keys(app, "RETURN")
-    assert app.ui.message.startswith("1 unit still waits for orders and will hold its ground.")
+    assert app.ui.message.startswith("1 unit has not been gone through and will hold its ground.")
     told = describe({"event": "battle", "hex": [55, 10], "lost": {"1": 1, "2": 0}, "retreated": False}, s)
     assert told == "Battle at Tobruk" and "step" not in s.lost_words({"type": "armour", "real": [100, "tanks", 10]}, 2)
     assert s.lost_words({"type": "armour", "real": [100, "tanks", 10]}, 2) == "about 20 tanks"
@@ -707,7 +768,7 @@ def test_a_key_skips_one_scene_and_leaves_the_rest_playing():       # A
     assert app.play_t == starts[2]
     for _ in starts[2:]:
         keys(app, "RIGHT")
-    assert app.play is None and "wait" in app.ui.message             # past the last scene: back to the orders
+    assert app.play is None and "hold unless ordered" in app.ui.message      # past the last scene: back to the orders
 
 
 def test_fast_playback_keeps_a_shorter_rattle():                     # A
@@ -799,7 +860,7 @@ def test_the_way_shows_how_far_the_fuel_goes():
     assert p["range"] == 5 and len(p["path"]) == 10 and p["reach"] == 8          # five hexes of fuel, ten to go
     pygame.init()
     app = App(s)
-    app.ui.hover = (76, 24)
+    app.ui.mode, app.ui.hover = "move", (76, 24)
     app.paint(pygame.Surface(theme.WINDOW))
     assert "about 2 turns" in app.ui.preview and "fuel gives out after 50 km (5 hexes)" in app.ui.preview
     assert s.preview(101, "move", (68, 24))["range"] == 5 and "foot" not in app.ui.message
@@ -1226,10 +1287,14 @@ def test_next_unit_is_greyed_when_every_unit_has_its_order_and_a_units_own_order
     s.give({"unit": 101, "order": "attack", "to": [80, 24]})        # an attack far away: no enemy near, yet it is its order
     app.ui.selected = 101
     app.paint(pygame.Surface(theme.WINDOW))
-    assert (nxt, "Every unit has its order.") in app.painter.tips
-    assert (layout.buttons(app.size)["attack"], "This is its order. Click to take it back.") in app.painter.tips
-    app.click(layout.buttons(app.size)["attack"].center)
-    assert 101 not in s.pending["axis"] and "cancelled" in app.ui.message
+    assert (nxt, "Every unit has been gone through.") in app.painter.tips
+    assert (layout.buttons(app.size)["attack"], "This is its order. Click to send it elsewhere; Hold stops it.") in app.painter.tips
+    app.click(layout.buttons(app.size)["attack"].center)            # pressed again: a new place to attack is asked for
+    assert app.ui.mode == "attack" and s.pending["axis"][101]["to"] == [80, 24] and "as it was" in app.ui.message
+    app.click(layout.buttons(app.size)["attack"].center)            # and once more: let be
+    assert app.ui.mode is None and s.pending["axis"][101]["to"] == [80, 24] and "as it was" in app.ui.message
+    app.click(layout.buttons(app.size)["hold"].center)              # Hold stops it
+    assert s.pending["axis"][101] == {"unit": 101, "order": "hold"} and 101 not in s.standing["axis"]
 
 
 def test_fuel_is_told_in_kilometres_with_the_hexes_beside():
@@ -1279,8 +1344,11 @@ def test_the_instruction_line_follows_the_state_and_the_tooltip_keeps_quiet_on_e
     surface = pygame.Surface(theme.WINDOW)
     app.ui.hover = (60, 30)
     app.paint(surface)
-    assert app.ui.preview.startswith("Move here")                    # a unit is taken up: what a click would do
-    app.ui.selected = None
+    assert app.ui.preview == ""                                      # a unit is taken up, and holds: nothing claimed
+    app.ui.mode = "move"
+    app.paint(surface)
+    assert app.ui.preview.startswith("Move here")                    # Move pressed: what a click would do
+    app.ui.selected, app.ui.mode = None, None
     app.paint(surface)
     assert app.ui.preview == ""                                      # nothing taken up: nothing claimed
     said = []
@@ -1400,7 +1468,7 @@ def test_the_unit_orders_tab_lists_every_unit_and_its_order_and_a_tap_takes_one_
     app.painter.text = lambda surface, words, *a, **k: (seen.append(words), text(surface, words, *a, **k))
     app.click(layout.tabs(app.size)["orders"].center)
     app.paint(surface)
-    assert app.ui.tab == "orders" and "Dig in" in seen and "no order" in seen
+    assert app.ui.tab == "orders" and "Dig in" in seen and "Hold" in seen
     leads = sorted({s.leader(u["id"]) for u in s.view["units"] if u["status"] == "on_map"})
     rows = {uid for _, uid in app.painter.report_rects.values()}
     assert rows == set(leads)                                        # all of them fit at this size
@@ -1441,7 +1509,7 @@ def test_next_unit_is_lit_while_units_wait_end_turn_is_always_green_and_the_remi
     app.stop_watching()
     app.click(layout.tabs(app.size)["remind"].center)                # and on again
     app.key(pygame.K_RETURN)
-    assert s.state["turn"] == 2 and "still" in app.ui.message
+    assert s.state["turn"] == 2 and "not been gone through" in app.ui.message
 
 
 def test_a_move_the_stacking_limit_keeps_out_is_warned_of_and_then_reported():
@@ -1484,7 +1552,7 @@ def test_the_tooltip_over_your_own_units_is_a_small_card_for_each_unit_or_group(
         if m["id"] == 307 or m.get("group") == 307:
             m["cohesion"], m["traced"] = 10, False
     card = app.painter.card(s, 307)
-    assert ("No order", False, theme.ATTACK) in card and any("OUT OF SUPPLY" in w for w, _, _ in card)
+    assert ("Order: Hold", False, theme.INK) in card and any("OUT OF SUPPLY" in w for w, _, _ in card)
     assert card[-1][0] == "! morale too low to attack" and card[-1][2] == theme.SHORT
     seen = []
     text = app.painter.text
@@ -1494,3 +1562,34 @@ def test_the_tooltip_over_your_own_units_is_a_small_card_for_each_unit_or_group(
     app.ui.hover, app.ui.mouse = h, tuple(int(v) for v in app.spot(h))
     app.paint(pygame.Surface(theme.WINDOW))
     assert "32nd Army Tank Brigade" in seen and "70th Division  (5 units)" in seen
+
+
+def test_the_weather_is_shown_and_felt_and_a_tap_says_what_it_does():            # RULES 21.4, 21.5
+    from helpers import scenario, unit
+    pygame.init()
+    surface = pygame.Surface(theme.WINDOW)
+    units = [unit(201, "cw", "armour", [70, 21]), unit(101, "axis", "foot", [70, 24]), unit(102, "axis", "foot", [70, 22])]
+
+    def game(kind, seed=5):
+        sc = scenario(units, weather=[["1941-11-18", {kind: 100} if kind else {}]])
+        return App(Session(sc, GMAP, humans=["cw"], scripted={"axis": players.DoNothing(GMAP)}, seed=seed))
+
+    clear, storm, rain, none = game(None), game("sandstorm"), game("rain"), game("sandstorm", seed=0)
+    assert [a.session.weather for a in (clear, storm, rain, none)] == ["clear", "sandstorm", "rain", None]
+    reach = lambda a: a.session.preview(201, "move", (78, 21))["reach"]
+    assert [reach(a) for a in (clear, storm, rain, none)] == [8, 4, 4, 8]         # half the allowance; double the cost; no weather
+    assert storm.session.reports()[0] == ("Sandstorm: no aircraft fly, nothing is seen beyond the next hex, "
+                                          "and all movement is halved.", None)
+    assert [e["id"] for e in storm.session.view["enemy"]] == [102] and len(clear.session.view["enemy"]) == 1   # 101 is three off
+    assert "A sandstorm today." in storm.ui.message and "today" not in clear.ui.message
+    for app in (clear, storm, rain, none):
+        app.stop_watching()
+        app.centre_on((70, 22))
+        app.paint(surface)
+    assert none.painter.weather_rect is None and clear.painter.weather_rect is not None      # no seed: no weather shown at all
+    pale = lambda a: tuple(surface.get_at((30, 300)))[:3] if a.paint(surface) is None else None
+    assert pale(storm) != pale(clear) != pale(rain)                               # the wash over the map
+    chip = rain.painter.weather_rect.move(rain.map_rect().topleft)
+    rain.click(chip.center)
+    assert rain.ui.message.startswith("Rain: no aircraft fly") and "Outlook for the next two days" in rain.ui.message
+    assert rain.ui.selected == 201                                                # the tap ordered nothing

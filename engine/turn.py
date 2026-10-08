@@ -11,12 +11,14 @@ from .recovery import recovery_phase
 from .reinforce import reinforcement_phase
 from .supply import supply_phase
 from .victory import victory_phase
+from .weather import weather_step
 
 LOG = {"log"} | {f"sides.{t}" for t in S.TOTALS}     # any phase may log and count supply (5.1)
 GONE = {"unit.status", "unit.hex", "unit.steps", "unit.fuel", "unit.stores", "unit.dump", "unit.fate", "unit.group",
         "sides.vp", "sides.kills"}
 CAPTURE = {"places", "ports", "forts"}
 MAY_CHANGE = {                                       # what each phase may change (5.1)
+    "weather": {"weather"},
     "supply": {"ports", "tripoli", "unit.dump", "unit.fuel", "unit.stores", "unit.out_of_stores", "unit.group",
                "unit.traced", "unit.cohesion", "unit.ceiling"} | GONE,
     "orders": {"unit.group"},
@@ -71,9 +73,11 @@ def run(name, phase, state, audit):
 
 
 def begin_turn(state, gmap, scenario, audit=None):
-    """Phase 1, Supply. The state it returns is what the players are shown (5.2)."""
+    """The weather is settled, then phase 1, Supply. The state it returns is what the players
+    are shown (5.2)."""
     state = copy.deepcopy(state)
     notes = [] if audit is None else audit
+    run("weather", lambda: weather_step(state, scenario), state, audit)          # 21.3.3
     run("supply", lambda: supply_phase(state, gmap, scenario, notes), state, audit)
     return state
 

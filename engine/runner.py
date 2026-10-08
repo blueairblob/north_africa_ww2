@@ -5,10 +5,11 @@ from .turn import begin_turn, finish_turn
 from .view import leaks, view
 
 
-def play(scenario, gmap, players, turns=None, check=True):
+def play(scenario, gmap, players, turns=None, check=True, seed=0):
     """Play to the end, or for so many turns. Returns the final state and the record:
-    one entry per turn holding each side's submission. The scenario and the record are the game."""
-    state = S.new_game(scenario, gmap)
+    one entry per turn holding each side's submission. The scenario, the seed and the record
+    are the game."""
+    state = S.new_game(scenario, gmap, seed)
     record = []
     while not state["over"] and (turns is None or state["turn"] <= turns):
         audit = [] if check else None

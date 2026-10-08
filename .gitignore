@@ -8,3 +8,7 @@ cache/
 # a record of one sitting at the screen (python -m screen --log)
 play.log
 logs/
+# market notes for the phone version: kept out of the public repo for now
+docs/MARKETING.md
+# saved games (python -m screen: the Game button, and an autosave each turn)
+saves/

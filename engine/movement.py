@@ -2,6 +2,7 @@
 from . import board as B
 from . import state as S
 from . import units as U
+from . import weather as W
 from .orders import MOVING, full_path, mode
 from .paths import step_cost
 
@@ -31,8 +32,8 @@ def movement_phase(state, gmap, ctx):
             continue
         units = S.party(state, u)
         movers[u["id"]] = {"units": units, "side": u["side"], "path": full_path(gmap, u, order, state) or [],
-                           "i": 0, "spent": 0, "stopped": False, "mode": mode(units, order["order"]),
-                           "allowance": min(ALLOWANCE[v["type"]] for v in units),   # 20.2.6
+                           "i": 0, "spent": 0, "stopped": False, "mode": mode(units, order["order"], state["weather"]),
+                           "allowance": W.allowance(state["weather"], min(ALLOWANCE[v["type"]] for v in units)),   # 20.2.6, 21.4.3
                            "attack": order["order"] == "attack"}
 
     def stop(m, why=None):

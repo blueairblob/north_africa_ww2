@@ -7,9 +7,11 @@ import pygame
 
 from engine import units as U
 
+from . import saves
 from . import theme as T
-from .draw import UI, Painter, guess
-from .layout import Layout, areas, buttons, layers, tabs
+from .draw import UI, Painter
+from .layout import Layout, areas, buttons, game, layers, saves_list, tabs
+from .session import GOES
 from .sound import Sounds
 
 GO = {pygame.K_m: "move", pygame.K_a: "attack", pygame.K_t: "road_march",        # orders with a destination
@@ -39,8 +41,9 @@ class App:
         self.log = None                 # a file that records what each click and key did (--log)
         self.clicked = None             # where the click being logged fell
         self.refused = None             # the engine's reply code for the last order refused, for the log
+        self.saves = None               # the folder games are saved in; with none (tests) nothing is written
         self.begin_orders()
-        self.ui.message = "Click where this unit should go, or an enemy to attack. Orders stand until done."
+        self.ui.message = self.sky_words() + "Each unit holds unless ordered: press Move or Attack, then click the hex. Space goes on to the next."
         u = session.unit(self.ui.selected)
         if u:
             self.centre_on(tuple(u["hex"]))               # the first unit to order starts in the middle
@@ -184,10 +187,10 @@ class App:
         s = self.session
         left, idle = len(s.waiting_units()), len(s.idle_units())
         if not left:
-            return "All units have orders: press End turn."
+            return "Every unit has been gone through: press End turn."
         if left == idle:
-            return f"{left} more to order."
-        return f"{left} more to go through: {idle} with no order, {left - idle} carrying on with " \
+            return f"{left} more to go through: they hold unless ordered."
+        return f"{left} more to go through: {idle} holding, {left - idle} carrying on with " \
                f"{'its order' if left - idle == 1 else 'their orders'}."
 
     def step(self):
@@ -211,15 +214,20 @@ class App:
         self.begin_message()
         self.watch()
 
+    def sky_words(self):
+        """Bad weather, said first as a side begins its orders."""
+        return {"rain": "Rain today.   ", "sandstorm": "A sandstorm today.   "}.get(self.session.weather, "")
+
     def begin_message(self):
         s = self.session
         names = {u["id"]: u["name"] for u in s.view["units"]}
         ended = [f"{names[uid]} {why}." for uid, why in s.ended[s.side] if uid in names]
         left, idle = len(s.waiting_units()), len(s.idle_units())
-        carry = f"   {left - idle} more carry on with their orders: Space keeps one, any order changes it." if left > idle else ""
-        self.ui.message = ("  ".join(ended[:2]) + "   " if ended else "") + (
-            f"{T.count(idle, 'unit')} {'waits' if idle == 1 else 'wait'} for orders." + carry if left
-            else "All units have orders: press End turn.")
+        carry = f"   {left - idle} more carry on with their orders." if left > idle else ""
+        self.ui.message = self.sky_words() + ("  ".join(ended[:2]) + "   " if ended else "") + (
+            f"{T.count(idle, 'unit')} {'holds' if idle == 1 else 'hold'} unless ordered." + carry +
+            "   Space goes on to the next; press an order to change one." if left
+            else "Every unit has been gone through: press End turn.")
 
     def watch(self):
         """Play back the last turn as this side saw it, if it has not watched it yet."""
@@ -275,6 +283,57 @@ class App:
         else:
             self.look_at_own()
 
+    # ---- saved games ---------------------------------------------------------------------
+
+    def save(self, auto=False):
+        """Save the game as it stands; returns the file, or None. An autosave says nothing."""
+        ui = self.ui
+        if self.saves is None:
+            ui.message = ui.message if auto else "This game was started with nowhere to save."
+            return None
+        try:
+            path = saves.write(self.session, self.saves, auto)
+        except OSError as e:
+            ui.message = ui.message if auto else f"The game could not be saved: {e.strerror or e}."
+            return None
+        if not auto:
+            ui.message = f"Game saved, with the orders given so far: {path.name}"
+        return path
+
+    def open_saves(self):
+        """List the saved games over the map, to choose one."""
+        self.ui.saves = saves.listing(self.saves) if self.saves is not None else []
+        self.ui.message = ("Tap a saved game to go on with it. It takes the place of the game on the screen: save that first to keep it."
+                           if self.ui.saves else "No games have been saved yet.")
+
+    def load(self, path):
+        """Take up the game in a file in place of this one; True if it was. A file that cannot be
+        read leaves this game as it is, and says why."""
+        try:
+            session = saves.read(path, self.session.gmap)
+        except ValueError as e:
+            self.ui.message = str(e)
+            return False
+        self.take(session)
+        if not self.play:
+            self.ui.message = "Loaded: " + saves.about(session.to_save()) + ".   " + self.left_words()
+        return True
+
+    def take(self, session):
+        """Go on with another game: the map is looked at as before, everything else begins anew."""
+        old, self.session, self.ui = self.ui, session, UI()
+        self.ui.zoom, self.ui.symbols, self.ui.remind, self.ui.overlays = old.zoom, old.symbols, old.remind, old.overlays
+        self.painter.reach_cache = self.painter.zone_cache = (None, None)
+        self.play, self.target, self.last, self.zoom_back = None, None, None, None
+        self.confirm = self.asked = False
+        if len(session.humans) > 1 and not session.state["over"]:    # two at one screen: covered until the right one sits down
+            self.ui.cover = f"{T.SIDE_NAME[session.side]}: your orders. Click or press Space."
+        else:
+            self.begin_orders()
+        u = session.unit(self.ui.selected)
+        if u and not self.play:
+            self.centre_on(tuple(u["hex"]))
+
     def press_button(self, name):
         ui = self.ui
         s = self.session
@@ -287,12 +346,12 @@ class App:
             return
         has = None if ui.alone else s.pending[s.side].get(s.leader(ui.selected), {}).get("order")
         ok, why = s.can(ui.selected, name, ui.alone)
-        if not ok and not (has == name and ui.mode is None):       # a button that is greyed says why
+        if not ok and has != name:                        # a button that is greyed says why
             ui.message = why
             return
-        if has == name and ui.mode is None:               # its own order, pressed again: taken back
+        if has == name and ui.mode is None and name not in GOES:      # Hold, Dig in or Rest, pressed again: taken back
             s.cancel(ui.selected)
-            ui.message = f"{T.ORDER_NAME[name]} cancelled. It waits for an order."
+            ui.message = f"{T.ORDER_NAME[name]} cancelled. It holds unless given another order."
         elif name == "split":                             # leave the group, and stay
             if ui.alone:
                 self.give("hold")
@@ -308,13 +367,22 @@ class App:
             ui.mode = None if ui.mode == name else name
             ui.hover = tuple(self.session.unit(ui.selected)["hex"]) if ui.mode else ui.hover
             ui.message = "Join: click a unit of the same division, or choose it with the arrow keys and press Enter." if ui.mode else ""
+            ui.message += self.as_it_was(has, name)
         elif name in ("hold", "dig_in", "rest"):
             self.give(name)
         elif name in ("move", "attack", "road_march"):
             ui.mode = None if ui.mode == name else name
             ui.hover = tuple(self.session.unit(ui.selected)["hex"]) if ui.mode else ui.hover     # the cursor starts on the unit
             ui.message = (f"{T.ORDER_NAME[name]}: click the hex, or choose it with the arrow keys and press Enter."
-                          if ui.mode else "")
+                          if ui.mode else "") + self.as_it_was(has, name)
+
+    def as_it_was(self, has, name):
+        """Said when the button of the order a unit already has is pressed: it is sent somewhere
+        else only by the click that follows, and until then its order is as it was."""
+        if has != name:
+            return ""
+        return ("   Until then its order is as it was; Hold stops it." if self.ui.mode
+                else f"Its order is as it was: {T.ORDER_NAME[name]}.")
 
     def cursor(self, dx, dy):
         """Move the keyboard's hex cursor. Up and down go along the column. Left and right go to
@@ -333,7 +401,7 @@ class App:
         left = len(self.session.idle_units())
         if left and self.ui.remind and not self.asked and not self.session.state["over"]:
             self.confirm = True
-            self.ui.message = (f"{T.count(left, 'unit')} still {'waits' if left == 1 else 'wait'} for orders and will "
+            self.ui.message = (f"{T.count(left, 'unit')} {'has' if left == 1 else 'have'} not been gone through and will "
                                f"hold {'its' if left == 1 else 'their'} ground. Press End turn again to end the turn.")
             return
         self.done()
@@ -361,10 +429,31 @@ class App:
             else:
                 ui.message = "The list is closed: nothing was chosen."
             return
+        if ui.saves is not None:                          # the list of saved games: one of its rows, or away
+            rows = saves_list(self.size, len(ui.saves))
+            picked = next((k for k, r in rows.items() if isinstance(k, int) and r.collidepoint(pos)), None)
+            found, ui.saves = ui.saves, None
+            if picked is None:
+                ui.message = "The list is closed: no game was loaded."
+            else:
+                self.load(found[picked][0])
+            return
+        for name, r in game(self.size, ui.game_open).items():          # the Game button and its list
+            if r.collidepoint(pos) and button == 1:
+                ui.game_open, ui.layers_open = name == "game" and not ui.game_open, False
+                if name == "save":
+                    self.save()
+                elif name == "load":
+                    self.open_saves()
+                return
+        chip = self.painter.weather_rect                  # the weather on the map: a tap says what it does
+        if chip and not self.play and chip.move(self.map_rect().topleft).collidepoint(pos):
+            ui.message = s.weather_words()
+            return
         for name, r in layers(self.size, ui.layers_open).items():      # the Layers button and its list
             if r.collidepoint(pos) and button == 1:
                 if name == "layers":
-                    ui.layers_open = not ui.layers_open
+                    ui.layers_open, ui.game_open = not ui.layers_open, False
                 else:
                     ui.overlays ^= {name}
                 return
@@ -372,7 +461,7 @@ class App:
             for name, r in tabs(self.size).items():
                 if r.collidepoint(pos) and name == "remind":
                     ui.remind = not ui.remind
-                    ui.message = ("End turn will ask once more when units have no order." if ui.remind
+                    ui.message = ("End turn will ask once more when units with no order have not been gone through." if ui.remind
                                   else "End turn will not ask: units with no order hold their ground.")
                     return
                 if r.collidepoint(pos):
@@ -435,7 +524,7 @@ class App:
                 ui.message = "Several of your units are here: choose one from the list."
             elif chosen and here[0] == s.leader(ui.selected):
                 ui.message = (f"{s.group_name(here[0])} is taken up already, and this is where it is. "
-                              "Click another hex to move it there, or an enemy to attack.")
+                              "Press Move or Attack, then click where it should go.")
             else:
                 was = f"{s.group_name(ui.selected)} put down.   " if chosen else ""
                 ui.selected = here[0]
@@ -443,11 +532,12 @@ class App:
         elif chosen is None and s.order_at(h) is not None:               # a click on an order's line finds its unit
             ui.selected = s.order_at(h)
             self.glide_to(tuple(s.unit(ui.selected)["hex"]))
-            ui.message = "This is the unit with that order. Press its lit button to cancel it."
-        elif chosen and guess(s, h):
-            self.give(guess(s, h), h)                     # a plain click: attack a seen enemy, else move
-        elif chosen:
-            ui.message = "No unit can go there. Click a hex on land."
+            ui.message = "This is the unit with that order. Press its lit button to send it elsewhere, or Hold to stop it."
+        elif chosen:                                      # a plain click gives no order: the unit keeps to what it has
+            order = s.pending[s.side].get(s.leader(ui.selected))
+            doing = T.order_name(order["order"], s.members(ui.selected)) if order else "Hold"
+            ui.message = (f"{s.group_name(ui.selected)} keeps to its order, {doing}. "
+                          "To send it there, press Move or Attack first, then click the hex.")
         else:
             ui.message = "No unit is taken up. Click one of your units first."
 
@@ -460,18 +550,21 @@ class App:
             self.give("join", with_unit=other)
 
     def next_unit(self):
-        """On to the next unit not yet dealt with this turn. A unit in hand whose order stands
-        from an earlier turn keeps it: this is the one key that says "carry on"."""
+        """On to the next unit not yet dealt with this turn. The unit in hand is let stand as it
+        is, with its standing order or, with none, holding: this is the one key that says
+        "carry on"."""
         s, ui = self.session, self.ui
         said = ""
-        if s.unit(ui.selected) and s.leader(ui.selected) in s.waiting_units() and s.leader(ui.selected) in s.pending[s.side]:
+        if s.unit(ui.selected) and s.leader(ui.selected) in s.waiting_units():
             lead = s.leader(ui.selected)
             s.keep(lead)
-            said = f"{s.group_name(lead)} carries on: {T.order_name(s.pending[s.side][lead]['order'], s.members(lead))}.   "
+            order = s.pending[s.side].get(lead)
+            said = (f"{s.group_name(lead)} carries on: {T.order_name(order['order'], s.members(lead))}.   " if order
+                    else f"{s.group_name(lead)} holds.   ")
         waiting = s.waiting_units()
         ui.mode, ui.alone, ui.chooser = None, False, None
         if not waiting:
-            ui.selected, ui.message = None, said + "All units have orders: press End turn."
+            ui.selected, ui.message = None, said + "Every unit has been gone through: press End turn."
             return
         after = [i for i in waiting if s.unit(ui.selected) and i > s.leader(ui.selected)]
         self.last = ui.selected = (after or waiting)[0] if ui.selected is not None or self.last is None else \
@@ -480,25 +573,27 @@ class App:
         self.taken_words(said)
 
     def taken_words(self, before=""):
-        """The message for a unit just taken up: what it is doing, and what a click will do."""
+        """The message for a unit just taken up: what it will do, and how to change that."""
         s, ui = self.session, self.ui
         lead = s.leader(ui.selected)
         order = s.pending[s.side].get(lead)
         name = s.group_name(lead)
         if order is None:
-            ui.message = before + f"{name} waits for an order: click where it should go, or an enemy to attack."
+            ui.message = before + f"{name} holds. Space goes on; press an order to change it."
         elif lead in s.waiting_units():
             ui.message = before + (f"{name} carries on with its order, {T.order_name(order['order'], s.members(lead))}. "
                                    "Space keeps it; any order changes it.")
         else:
-            ui.message = before + (f"{name} has its order, {T.order_name(order['order'], s.members(lead))}. "
-                                   "Click somewhere else to change it, or press its lit button to cancel.")
+            ui.message = before + (f"{name} has its order, {T.order_name(order['order'], s.members(lead))}. " + (
+                "Press its lit button to send it elsewhere, or Hold to stop it." if order["order"] in GOES
+                else "Press an order to change it, or its lit button to take it back."))
 
     def done(self):
         ui, s = self.ui, self.session
         if s.state["over"]:
             return
         what = s.done()
+        self.save(auto=True)                              # every time orders are handed in: the game can be gone on with
         ui.selected, ui.mode = None, None
         self.painter.reach_cache = (None, None)
         if what == "over":
@@ -518,7 +613,13 @@ class App:
                 ui.cover = None
                 self.begin_orders()
             return
-        if ui.mode and self.session.unit(ui.selected) and key in SCROLL:       # choosing a destination
+        if ui.saves is not None:                          # the list of saved games is up: any key puts it away
+            ui.saves, ui.message = None, "The list is closed: no game was loaded."
+        elif key == pygame.K_F5:
+            self.save()
+        elif key == pygame.K_F9:
+            self.open_saves()
+        elif ui.mode and self.session.unit(ui.selected) and key in SCROLL:     # choosing a destination
             self.cursor(*SCROLL[key])
         elif ui.mode and self.session.unit(ui.selected) and key in (pygame.K_RETURN, pygame.K_KP_ENTER):
             if ui.mode == "join" and ui.hover:
@@ -553,8 +654,8 @@ class App:
         elif key in (pygame.K_TAB, pygame.K_SPACE, pygame.K_n):
             self.next_unit()
         elif key == pygame.K_ESCAPE:
-            if ui.chooser or ui.layers_open:
-                ui.chooser, ui.layers_open = None, False
+            if ui.chooser or ui.layers_open or ui.game_open:
+                ui.chooser, ui.layers_open, ui.game_open = None, False, False
             else:
                 ui.mode, ui.selected = (None, ui.selected) if ui.mode else (None, None)
         elif key in (pygame.K_RETURN, pygame.K_KP_ENTER):
@@ -599,6 +700,7 @@ class App:
     def handle_one(self, event):
         ui = self.ui
         if event.type == pygame.QUIT:
+            self.save(auto=True)                          # left in the middle of a turn: the orders given so far are kept
             return False
         if event.type == pygame.VIDEORESIZE:
             self.size = (max(900, event.w), max(560, event.h))

@@ -1,19 +1,24 @@
 """A game in progress at the screen: whose turn it is to give orders, the orders given so far,
 and the step from one turn to the next. No pygame here.
 
-Orders with somewhere to go stand. Move, Attack, Travel and Join, given once, are given again
-every turn until the unit arrives, the order can no longer be carried out, or an attack fails
-to drive the defenders back. Hold, Dig in and Rest are for one turn. Every turn the player is
-taken through every unit or group: one with a standing order is shown with it, to keep or to
-change. The engine still receives one order per unit per turn (docs/RULES.md 8.1.4)."""
+Orders stand. Move, Attack, Travel and Join, given once, are given again every turn until the
+unit arrives, the order can no longer be carried out, or an attack fails to drive the
+defenders back; Dig in is given again until the works are complete. Rest is for one turn. A
+unit with no order holds, and needs none to be given. Every turn the player is taken through
+every unit or group: each is shown with what it will do, to let stand or to change. The engine
+still receives one order per unit per turn (docs/RULES.md 8.1.4)."""
 from datetime import date, timedelta
 
 from engine import board as B
+from engine import checker, invariants
 from engine import orders as O
 from engine import paths
 from engine import state as S
 from engine import units as U
+from engine import weather as W
 from engine.movement import ALLOWANCE, IMPULSES
+from engine.players import SCRIPTED
+from engine.recovery import FORT_MAX
 from engine.turn import begin_turn, finish_turn
 from engine.view import view
 
@@ -30,23 +35,32 @@ def where(gmap, h):
     return f"at {name}" if p["hex"] == tuple(h) else f"near {name}"
 
 
-STANDS = ("move", "attack", "road_march", "join")      # orders that stand from turn to turn until done
+GOES = ("move", "attack", "road_march", "join")        # orders with somewhere to go
+STANDS = GOES + ("dig_in",)                            # orders that stand from turn to turn until done
 NEVER = ("A headquarters does not attack.", "A headquarters does not dig in.", "There is no other unit of yours to join.",
          "It is not in a group.", "Only a division's HQ with units away from it can recall.")   # not shown at all
 BRIEF = {"It is not on a road or track: one cannot march in the desert.": "not on a road or track.",
          "Its morale is too low to attack. Rest to recover.": "morale too low. Rest to recover.",
          "No enemy in sight within its reach.": "no enemy in sight within reach."}    # beside a greyed order's name
+WEATHER = {"clear": "Clear.",                           # what the weather does, as the player is told it (RULES 21.4)
+           "rain": "Rain: no aircraft fly, and off the roads vehicles are slowed by mud.",
+           "sandstorm": "Sandstorm: no aircraft fly, nothing is seen beyond the next hex, and all movement is halved."}
 ROMAN = ("I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X")
 HEAVY_PCT = 25          # a unit that lost this share of its strength in a turn "took heavy losses"
+SAVE_FORMAT = 1         # the layout of a saved game; one of another number is not read
+BY_UNIT = ("standing", "pending", "said")              # kept by side, then by unit id: text turns the ids into words
 
 
 class Session:
-    def __init__(self, scenario, gmap, humans=S.SIDES, scripted=None):
+    def __init__(self, scenario, gmap, humans=S.SIDES, scripted=None, seed=0, saved=None):
         self.scenario, self.gmap = scenario, gmap
         self.humans = [s for s in S.SIDES if s in humans]
         self.scripted = scripted or {}
         self.nation = {u["id"]: u.get("nation", "cw" if u["side"] == "cw" else "de") for u in scenario["units"]}
-        self.state = S.new_game(scenario, gmap)
+        if saved is not None:                           # a game taken up again (from_save)
+            self._restore(saved)
+            return
+        self.state = S.new_game(scenario, gmap, seed)   # the seed draws the weather; with none every turn is clear
         self.record, self.replies = [], {}
         self.before, self.watched = None, set()         # last turn's views, and who has watched it
         self.standing = {s: {} for s in S.SIDES}        # the orders that stand from turn to turn
@@ -72,7 +86,10 @@ class Session:
                         for uid in e["attackers"]}      # attacked, and the defenders did not fall back
             for uid, order in sorted(self.standing[s].items()):
                 code = O.check_one(self.state, self.gmap, s, order, {})
-                if order["order"] == "attack" and uid in repulsed and code != "E_NOT_ON_MAP":
+                if order["order"] == "dig_in" and code is None and self._dug(uid):
+                    del self.standing[s][uid]           # the works are complete: nothing more to dig
+                    self.ended[s].append((uid, "has finished digging in"))
+                elif order["order"] == "attack" and uid in repulsed and code != "E_NOT_ON_MAP":
                     del self.standing[s][uid]           # to attack again is a new decision
                     self.ended[s].append((uid, "was repulsed"))
                 elif code is None:
@@ -92,9 +109,57 @@ class Session:
                     self.said[s][lead] = (f"It could not go on: the hex ahead already holds {U.STACK_FORMATIONS} formations, "
                                           "and has no room for another. Send one of them away, or send this unit elsewhere.")
             for uid, why in self.ended[s]:
-                self.said[s][uid] = f"It {why}. It needs a new order."
+                self.said[s][uid] = f"It {why}. It holds until it is given an order."
         self.air = {s: self.state["sides"][s]["air"] for s in S.SIDES}
         self.waiting = [] if self.state["over"] else list(self.humans)
+
+    # ---- saving ----------------------------------------------------------------------------
+
+    def to_save(self):
+        """The game as it stands, as plain data to write out as text: the scenario, who plays,
+        the state, the orders of the turns played, and what the screen keeps between turns and
+        within this one (orders given so far, orders that stand, names). A game taken up from
+        it goes on exactly as this one would."""
+        kinds = {made: kind for kind, made in SCRIPTED.items()}
+        return {"format": SAVE_FORMAT, "scenario": self.scenario, "humans": list(self.humans),
+                "scripted": {s: kinds[type(p)] for s, p in self.scripted.items()},
+                "state": self.state, "record": self.record, "replies": self.replies, "before": self.before,
+                "watched": sorted(self.watched), "waiting": list(self.waiting), "air": self.air,
+                "names": self.names, "standing": self.standing, "pending": self.pending, "said": self.said,
+                "ended": self.ended, "split": {s: sorted(v) for s, v in self.split.items()},
+                "kept": {s: sorted(v) for s, v in self.kept.items()}}
+
+    @classmethod
+    def from_save(cls, data, gmap):
+        """The game a save holds, to go on with. ValueError, in words for the player, if it is
+        not a save this version can read."""
+        if not isinstance(data, dict) or data.get("format") != SAVE_FORMAT:
+            raise ValueError("That is not a saved game this version can read.")
+        try:
+            if checker.problems(data["scenario"], gmap):
+                raise KeyError("scenario")              # not a scenario this map and these rules take
+            return cls(data["scenario"], gmap, data["humans"],
+                       {s: SCRIPTED[kind](gmap) for s, kind in data["scripted"].items()}, saved=data)
+        except (KeyError, TypeError, IndexError, AttributeError, ValueError):
+            raise ValueError("That saved game does not fit this version of the game: it was saved by another.") from None
+
+    def _restore(self, data):
+        ids = lambda by_side: {s: {int(uid): v for uid, v in by_side[s].items()} for s in S.SIDES}
+        self.state = data["state"]
+        if self.state["scenario"] != self.scenario["id"] or invariants.check(self.state, self.gmap):
+            raise KeyError("state")                     # not a state these rules could have reached
+        self.record, self.replies, self.before = data["record"], data["replies"], data["before"]
+        self.watched, self.waiting, self.air = set(data["watched"]), list(data["waiting"]), dict(data["air"])
+        self.names = {int(uid): name for uid, name in data["names"].items()}
+        self.standing, self.pending, self.said = (ids(data[key]) for key in BY_UNIT)
+        self.ended = {s: [(uid, why) for uid, why in data["ended"][s]] for s in S.SIDES}
+        self.split, self.kept = ({s: set(data[key][s]) for s in S.SIDES} for key in ("split", "kept"))
+        self.views = {s: view(self.state, self.gmap, self.scenario, s) for s in S.SIDES}
+
+    def _dug(self, uid):
+        """Whether the works in the unit's hex are as strong as they can be made (RULES 11.3.3)."""
+        fort = self.state["forts"].get(S.fort_key(tuple(S.unit(self.state, uid)["hex"])))
+        return fort is not None and fort[0] >= FORT_MAX
 
     @property
     def side(self):
@@ -109,6 +174,20 @@ class Session:
     def day(self):
         start = date.fromisoformat(self.scenario["start"])
         return start + timedelta(days=2 * (self.state["turn"] - 1))
+
+    @property
+    def weather(self):
+        """This turn's weather as the side is told it, or None in a game with no weather."""
+        return self.view["weather"] if self.state["seed"] else None
+
+    def weather_words(self):
+        """The weather and what it does, and the word on the next turn."""
+        return (f"{WEATHER[self.view['weather']]}   Outlook for the next two days: {self.view['outlook']}. "
+                "The outlook is often wrong.")
+
+    def allowance(self, group):
+        """The MP a unit or group has this turn: its slowest member's, less in a sandstorm."""
+        return W.allowance(self.view["weather"], min(ALLOWANCE[m["type"]] for m in group))
 
     def unit(self, uid):
         return next((u for u in self.view["units"] if u["id"] == uid and u["status"] == "on_map"), None)
@@ -152,7 +231,7 @@ class Session:
         self.kept[self.side].add(order["unit"])
         if order["order"] in STANDS:
             self.standing[self.side][order["unit"]] = order
-        else:                                                    # Hold, Dig in and Rest are for this turn only
+        else:                                                    # Hold and Rest are for this turn only
             self.standing[self.side].pop(order["unit"], None)
         self._now(order)
         return {"ok": True}
@@ -231,7 +310,7 @@ class Session:
         return sum(self.give({"unit": i, "order": "join", "with": hq["id"]})["ok"] for i in strays)
 
     def cancel(self, uid):
-        """Take back a unit's order: it waits again, and holds if given none (RULES 8.1.3)."""
+        """Take back a unit's order: it is to be gone through again, and holds if given none (RULES 8.1.3)."""
         lead = self.leader(uid)
         gone = self.pending[self.side].pop(lead, None)
         self.kept[self.side].discard(lead)
@@ -264,11 +343,13 @@ class Session:
                 return False, "A headquarters does not attack."
             if all(m["cohesion"] < O.ATTACK_MIN for m in fighters):
                 return False, "Its morale is too low to attack. Rest to recover."
-            reach = min(ALLOWANCE[m["type"]] for m in group) // 4 + 1
+            reach = self.allowance(group) // 4 + 1
             if not any(S.distance(tuple(u["hex"]), tuple(e["hex"])) <= reach for e in self.view["enemy"]):
                 return False, "No enemy in sight within its reach."
         if name == "dig_in" and not fighters:
             return False, "A headquarters does not dig in."
+        if name == "dig_in" and self._dug(u["id"]):
+            return False, "The defences here are as strong as they can be made."
         if name == "join" and not any(m["status"] == "on_map" and m["id"] not in {g["id"] for g in group}
                                       for m in self.view["units"]):
             return False, "There is no other unit of yours to join."
@@ -317,6 +398,8 @@ class Session:
         but held where it stood by the enemy, enemy in contact.
         [(words, unit id)]"""
         view, out = self.view, []
+        if self.weather not in (None, "clear"):               # the weather first: it shapes the whole turn
+            out.append((WEATHER[self.weather], None))
         mine = {u["id"]: u for u in view["units"]}
         battles = [e for e in view["events"] if e["event"] == "battle"]
         stopped = {e["unit"]: e["why"] for e in view["events"] if e["event"] == "stopped"}
@@ -376,10 +459,10 @@ class Session:
 
     def waiting_units(self):
         """The side's units the player has not dealt with this turn, in the order the screen steps
-        through them: those with no order, and those whose order stands from an earlier turn
-        and has been neither kept nor changed."""
+        through them: those with no order, which hold, and those whose order stands from an
+        earlier turn. One is dealt with when it is given an order or let stand as it is."""
         return [u["id"] for u in self.view["units"] if u["status"] == "on_map" and u["group"] in (None, u["id"])
-                and not (u["id"] in self.pending[self.side] and u["id"] in self.kept[self.side])]   # a group waits as one
+                and u["id"] not in self.kept[self.side]]          # a group waits as one
 
     def crowded(self, uid, to):
         """Whether the hex is too full of your own units, as they stand now, for this unit or
@@ -392,8 +475,9 @@ class Session:
         return [i for i in self.waiting_units() if i not in self.pending[self.side]]
 
     def keep(self, uid):
-        """The player has seen this unit's standing order and lets it stand."""
-        if self.leader(uid) in self.pending[self.side]:
+        """The player has seen what this unit will do, its standing order or Hold with none, and
+        lets it stand."""
+        if self.unit(uid):
             self.kept[self.side].add(self.leader(uid))
 
     def turns_to_go(self, uid):
@@ -414,8 +498,9 @@ class Session:
         way = O.full_path(self.gmap, u, order, self.state)
         here, mp, reach = tuple(u["hex"]), 0, 0
         for nxt in way[:IMPULSES]:
-            cost = paths.step_cost(self.gmap, here, nxt, self.gmap.side_between(here, nxt), O.mode(group, name))
-            if mp + cost > min(ALLOWANCE[m["type"]] for m in group):         # a group goes at its slowest pace
+            cost = paths.step_cost(self.gmap, here, nxt, self.gmap.side_between(here, nxt),
+                                   O.mode(group, name, self.view["weather"]))
+            if mp + cost > self.allowance(group):                            # a group goes at its slowest pace
                 break
             mp, reach, here = mp + cost, reach + 1, nxt
         wheels = [m for m in group if U.is_vehicle(m)]

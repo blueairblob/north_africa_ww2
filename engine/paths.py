@@ -1,6 +1,9 @@
 """What a step costs and the least-cost way (docs/RULES.md §6.4, §9.2, §9.3)."""
 import heapq
 
+from .gamemap import ROAD
+from .weather import RAIN_COST_PCT
+
 PASS_COST = 2           # crossing a pass, in addition
 FOOT_CLIFF_COST = 8     # a foot unit crossing a cliff, in addition
 OPEN_COST = 4           # into desert or oasis; along any link for a vehicle not on a road march
@@ -10,12 +13,17 @@ FOOT_ROAD_COST = 3      # a foot unit on a road march, along a road link
 FOOT_TRACK_COST = 4     # ...and along a track link: no faster than the open desert
 
 VEHICLE, MARCH, FOOT, HAUL, FOOT_MARCH = "vehicle", "march", "foot", "haul", "foot_march"
+MUD = {"vehicle_mud": VEHICLE, "march_mud": MARCH}      # a vehicle's two ways of going, in rain (21.4.4)
+IN_RAIN = {dry: wet for wet, dry in MUD.items()}
 
 
 def step_cost(gmap, a, b, hexside, mode):
     """The cost of the step from a into the adjacent passable hex b, or None if it cannot be made.
     9.3 for units (MP), 6.4.1 for supply (haul cost)."""
     link = gmap.links.get((a, b))
+    if mode in MUD:                                      # rain: off the road a vehicle is in mud
+        cost = step_cost(gmap, a, b, hexside, MUD[mode])
+        return cost if cost is None or link == ROAD else cost * RAIN_COST_PCT // 100
     if hexside in gmap.cliffs:
         if mode != FOOT:
             return None

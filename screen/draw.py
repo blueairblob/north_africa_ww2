@@ -13,11 +13,11 @@ from mapgen import hexgrid as H
 from engine.gamemap import distance
 from engine.movement import ALLOWANCE
 from engine.supply import REACH, REACH_FULL
-from engine.view import SPOT_RANGE, SPOT_RANGE_RECON
+from engine.view import spot_range
 
 from . import theme as T
-from .layout import EDGE, Layout, areas, buttons, layers, tabs
-from .session import where
+from .layout import EDGE, Layout, areas, buttons, game, layers, saves_list, tabs
+from .session import GOES, where
 from .pictures import picture
 
 ROOT = os.path.dirname(os.path.dirname(__file__))
@@ -43,10 +43,12 @@ class UI:
         self.alone = False              # the unit taken up is one of a group, to be ordered by itself
         self.chooser = None             # a hex with several of your units in it, and which: a list to choose from
         self.layers_open = False        # the Layers list in the map's corner is showing
+        self.game_open = False          # the Game list beside it is showing: Save game, Load game
+        self.saves = None               # the saved games listed to choose from, [(file, words)], or None
         self.editing = None             # the name being typed for the group taken up, or None
         self.tab = "unit"               # the panel's tab: the unit taken up, or "orders", every unit's order
         self.scroll = 0                 # how far down the list of orders is scrolled, in rows
-        self.remind = True              # End turn asks once more when units have no order
+        self.remind = True              # End turn asks once more when units with no order were not gone through
         self.preview = ""               # what a click here would do, while a unit is taken up and a hex pointed at
 
     @property
@@ -68,6 +70,8 @@ class Painter:
         self.member_rects = {}          # the rows of a group's units in the panel, to click
         self.chooser_rects, self.report_rects, self.back_rect, self.tips = {}, {}, None, []
         self.scroll_rects = {}
+        self.weather_rect = None        # the weather's chip on the map, to tap
+        self.skies = {}                 # the wash laid over the map in bad weather, by size and kind
         self.pencil_rect = None
 
     def font(self, px, bold=False):
@@ -239,10 +243,65 @@ class Painter:
 
     # ---- the map -------------------------------------------------------------------------
 
+    def sky(self, surface, kind):
+        """Bad weather seen on the map: a wash over the ground, under the counters, which stay
+        the loudest thing on it. Sand-coloured with streaks for a storm, grey with slanting
+        lines for rain. Made once for a size and kept."""
+        if kind in (None, "clear"):
+            return
+        w, h = surface.get_size()
+        if (w, h, kind) not in self.skies:
+            wash = pygame.Surface((w, h), pygame.SRCALPHA)
+            wash.fill((214, 172, 96, 74) if kind == "sandstorm" else (62, 84, 112, 60))
+            n = 0
+            for y in range(-h, h, 9 if kind == "rain" else 13):      # a stated pattern, the same every time
+                n += 1
+                x = (n * 197) % 61
+                if kind == "rain":
+                    for x0 in range(x - 60, w, 61):
+                        pygame.draw.line(wash, (214, 226, 240, 70), (x0, y + x0 // 3), (x0 - 7, y + x0 // 3 + 21), 1)
+                else:
+                    for x0 in range(x - 200, w, 233):
+                        pygame.draw.line(wash, (246, 222, 170, 60), (x0, y + h), (x0 + 150 + n % 5 * 20, y + h - 4), 3)
+            self.skies = {(w, h, kind): wash}
+        surface.blit(self.skies[w, h, kind], (0, 0))
+
+    def weather_chip(self, surface, kind, outlook, top=10):
+        """The weather, in the map's top right corner: a small picture, its name, and the word
+        on the next two days. A tap says what it does."""
+        if kind is None:
+            self.weather_rect = None
+            return
+        name = {"clear": "Clear", "rain": "Rain", "sandstorm": "Sandstorm"}[kind]
+        wide = max(self.font(15, True).size(name)[0], self.font(12).size("Outlook: " + outlook)[0]) + 62
+        r = pygame.Rect(surface.get_width() - wide - 10, top, wide, 46)
+        chip = pygame.Surface(r.size, pygame.SRCALPHA)
+        pygame.draw.rect(chip, (250, 244, 228, 235), chip.get_rect(), border_radius=8)
+        pygame.draw.rect(chip, T.SHORT if kind != "clear" else T.INK, chip.get_rect(), 2 if kind != "clear" else 1, border_radius=8)
+        cx, cy = 26, 23
+        if kind == "clear":                                          # a sun
+            pygame.draw.circle(chip, (236, 170, 40), (cx, cy), 9)
+            for k in range(8):
+                v = pygame.math.Vector2(15, 0).rotate(k * 45)
+                pygame.draw.line(chip, (236, 170, 40), (cx + v.x * 0.8, cy + v.y * 0.8), (cx + v.x, cy + v.y), 2)
+        elif kind == "rain":                                         # a cloud, and what falls from it
+            for dx, dy, rad in ((-7, -3, 7), (2, -6, 9), (9, -2, 6)):
+                pygame.draw.circle(chip, (96, 110, 130), (cx + dx, cy + dy), rad)
+            for dx in (-8, 0, 8):
+                pygame.draw.line(chip, (50, 96, 170), (cx + dx, cy + 6), (cx + dx - 4, cy + 15), 2)
+        else:                                                        # blown sand
+            for dy, long in ((-9, 26), (-2, 34), (5, 22), (11, 30)):
+                pygame.draw.line(chip, (190, 140, 60), (cx - 16 + (dy % 5), cy + dy), (cx - 16 + (dy % 5) + long, cy + dy), 3)
+        surface.blit(chip, r.topleft)
+        self.text(surface, name, (r.x + 52, r.y + 5), 15, T.SHORT if kind != "clear" else T.INK, True)
+        self.text(surface, "Outlook: " + outlook, (r.x + 52, r.y + 26), 12, T.DIM)
+        self.weather_rect = r
+
     def map(self, surface, session, ui):
         g, lay, view, z = session.gmap, ui.layout, session.view, ui.zoom
         w, h = surface.get_size()
         surface.blit(self.background((w, h), ui), (0, 0))
+        self.sky(surface, session.weather)
         ox, oy = int(ui.cam[0]) * z, int(ui.cam[1]) * z
 
         def at(hx):
@@ -338,6 +397,7 @@ class Painter:
             pygame.draw.polygon(surface, T.SELECT, poly(ui.hover), 2)
             if stacks.get(ui.hover) or ui.hover in self.named or f"{ui.hover[0]},{ui.hover[1]}" in view["forts"]:
                 self.tooltip(surface, session, ui, stacks.get(ui.hover, []))     # only where there is something to say
+        self.weather_chip(surface, session.weather, view["outlook"])
         if "k" in ui.overlays:
             self.key(surface)
         if ui.layers_open:
@@ -357,12 +417,40 @@ class Painter:
                 if on:
                     pygame.draw.lines(surface, T.INK, False, [(r.x + 12, r.y + 16), (r.x + 16, r.y + 21), (r.x + 23, r.y + 10)], 3)
                 self.text(surface, label, (r.x + 34, r.y + 7), 14, bold=True)
+        for name, r in game((w + T.PANEL, h + T.BAR), ui.game_open).items():           # the Game button, beside it
+            pygame.draw.rect(surface, T.BUTTON_ON if r.collidepoint(ui.mouse) and name != "game" else T.PAPER, r, border_radius=6)
+            pygame.draw.rect(surface, T.INK, r, 2, border_radius=6)
+            if name == "game":                                       # three lines: a list of things to do
+                for k in range(3):
+                    pygame.draw.line(surface, T.INK, (r.x + 11, r.y + 11 + k * 6), (r.x + 25, r.y + 11 + k * 6), 2)
+                self.text(surface, "Game", (r.x + 34, r.y + 8), 14, bold=True)
+            else:
+                label, key = next((b[1], b[2]) for b in T.GAME if b[0] == name)
+                self.text(surface, label, (r.x + 12, r.y + 7), 14, bold=True)
+                self.text(surface, key, (r.right - 8 - self.font(10).size(key)[0], r.y + 4), 10, T.DIM)
+        if ui.saves is not None:                                     # the saved games, to choose one
+            rows = saves_list((w + T.PANEL, h + T.BAR), len(ui.saves))
+            pygame.draw.rect(surface, T.PAPER, rows["box"], border_radius=8)
+            pygame.draw.rect(surface, T.INK, rows["box"], 2, border_radius=8)
+            self.text(surface, "Load a saved game" if ui.saves else "No games have been saved yet",
+                      (rows["box"].x + 14, rows["box"].y + 10), 16, bold=True)
+            for k, (_, words) in enumerate(ui.saves):
+                while self.font(13).size(words)[0] > rows[k].w - 20:             # as much as fits
+                    words = words[:-1]
+                pygame.draw.rect(surface, T.BUTTON_ON if rows[k].collidepoint(ui.mouse) else T.BUTTON, rows[k], border_radius=4)
+                pygame.draw.rect(surface, T.INK, rows[k], 1, border_radius=4)
+                self.text(surface, words, (rows[k].x + 10, rows[k].y + 7), 13)
+            pygame.draw.rect(surface, T.BUTTON, rows["close"], border_radius=6)
+            pygame.draw.rect(surface, T.INK, rows["close"], 1, border_radius=6)
+            self.text(surface, "Close", rows["close"].center, 14, T.INK, True, True)
 
     def stage(self, surface, session, ui, stage):
         """A moment of the last turn being played back (screen/replay.py)."""
         lay, z = ui.layout, ui.zoom
         w, h = surface.get_size()
         surface.blit(self.background((w, h), ui), (0, 0))
+        then = session.before[session.side] if session.before and session.state["seed"] else None
+        self.sky(surface, then and then["weather"])                 # the weather of the turn being played back
         ox, oy = int(ui.cam[0]) * z, int(ui.cam[1]) * z
 
         def at(where):
@@ -428,6 +516,8 @@ class Painter:
             band.fill((45, 38, 30, 190))
             surface.blit(band, (0, 0))
             self.text(surface, stage["title"].upper(), (w // 2, 22), 22, T.SELECT, True, True)
+        if then:
+            self.weather_chip(surface, then["weather"], then["outlook"], top=54)
         if stage["meter"]:                                           # the rattle seen: one block for each beat of it
             share, live = stage["meter"]
             blocks, lit_n = 40, int(share * 40 + 0.999)
@@ -445,7 +535,7 @@ class Painter:
             for u in units:
                 if u["type"] != "hq":
                     zone |= {n for _, n, hexside in g.around(tuple(u["hex"])) if hexside not in g.cliffs}
-        eyes = [(tuple(u["hex"]), (SPOT_RANGE_RECON if u["type"] == "recon" else SPOT_RANGE) + extra) for u in mine]
+        eyes = [(tuple(u["hex"]), spot_range(session.state, u, extra)) for u in mine]
         key = (tuple(eyes), tuple(sorted(own)), tuple(sorted(foe)))
         if self.zone_cache[0] != key:                                # worked out once for a position
             tint = {}
@@ -521,7 +611,9 @@ class Painter:
                 self.text(surface, r, (box.x + 7, box.y + 4 + n * (font.get_height() + 2)), 12, T.INK if n else T.SUPPLY, n == 0)
 
     def ways(self, surface, session, ui, at, z):
-        """The paths of the orders given, and of the one being chosen."""
+        """The paths of the orders given, and of the one being chosen: a way is tried out under
+        the pointer only once Move, Attack or March has been pressed. A unit that holds, or
+        is already on its way, trails no line."""
         def draw(u, order, colour):
             p = session.preview(u["id"], order["order"], order["to"]) if "to" in order else None
             if p:
@@ -549,9 +641,9 @@ class Painter:
             if u:
                 draw(u, order, T.ATTACK if order["order"] == "attack" else T.PATH)
         u = session.unit(ui.selected)
-        if u and ui.hover and ui.hover != tuple(u["hex"]) and not ui.cover:
-            name = ui.mode or guess(session, ui.hover)
-            p = draw(u, {"order": name, "to": ui.hover}, T.PREVIEW) if name and name != "join" else None
+        if u and ui.mode and ui.hover and ui.hover != tuple(u["hex"]) and not ui.cover:
+            name = ui.mode
+            p = draw(u, {"order": name, "to": ui.hover}, T.PREVIEW) if name != "join" else None
             if p:
                 turns = -(-len(p["path"]) // p["reach"]) if p["reach"] else 0
                 when = "this turn" if turns == 1 else f"about {turns} turns" if turns else "it cannot set off"
@@ -679,7 +771,7 @@ class Painter:
                       T.SHORT if cut or short else T.INK))
         order = session.pending[side].get(lead)
         if order is None:
-            lines.append(("No order", False, T.ATTACK))
+            lines.append(("Order: Hold", False, T.INK))
         else:
             turns = session.turns_to_go(lead)
             lines.append(("Order: " + T.order_name(order["order"], group)
@@ -737,13 +829,11 @@ class Painter:
 
     def buttons(self, surface, session, ui):
         """The orders and End turn, at the foot of the panel. The unit's own order is lit, and a
-        click on it takes the order back; with none, the order a click on the map would give is
-        lit. A button that cannot be used is greyed, and says why when pointed at."""
+        click on it takes the order back; with none, Hold is lit, which is what it will do. A
+        button that cannot be used is greyed, and says why when pointed at."""
         u = None if self.playing else session.unit(ui.selected)
         has = session.pending[session.side].get(session.leader(u["id"]), {}).get("order") if u and not ui.alone else None
-        would = ui.mode or has
-        if u and not would:                                          # a plain click moves, or attacks an enemy in sight
-            would = (guess(session, ui.hover) if ui.hover and ui.hover != tuple(u["hex"]) else None) or "move"
+        would = ui.mode or has or "hold"                             # with no order a unit holds (RULES 8.1.3)
         offered = session.offers(ui.selected, ui.alone) if u else []
         left = 0 if self.playing or session.state["over"] else len(session.waiting_units())
         if not self.playing and not session.state["over"]:           # the box to tick: be reminded of units with no order
@@ -753,7 +843,7 @@ class Painter:
             pygame.draw.rect(surface, T.INK, tick, 1, border_radius=3)
             if ui.remind:
                 pygame.draw.lines(surface, T.INK, False, [(tick.x + 4, tick.y + 9), (tick.x + 8, tick.y + 13), (tick.x + 14, tick.y + 4)], 3)
-            self.text(surface, "Remind me of units with no order", (box.x + 26, box.y + 3), 12)
+            self.text(surface, "Remind me of units not gone through", (box.x + 26, box.y + 3), 12)
         for name, r in buttons(surface.get_size()).items():
             if name not in ("next", "done") and (name not in offered or ui.tab == "orders"):
                 continue                                             # only the orders this unit can take are shown
@@ -765,7 +855,7 @@ class Painter:
             usable, why = ((True, "") if name == "done" else session.can(ui.selected, name, ui.alone) if u and name != "next"
                            else (False, "Choose one of your units first."))
             if name == "next":                                       # nobody left to order: nothing to go on to
-                usable, why = (True, "") if session.waiting_units() and not self.playing else (False, "Every unit has its order.")
+                usable, why = (True, "") if session.waiting_units() and not self.playing else (False, "Every unit has been gone through.")
             if name == has and u and not ui.mode:                    # its own order is always lit, and can be taken back
                 usable = True
             lit = u is not None and usable and name == would
@@ -776,7 +866,10 @@ class Painter:
             self.text(surface, label, (r.centerx - 8, r.centery), 14, T.INK if usable else (150, 140, 120), True, True)
             self.text(surface, key, (r.right - 6 - self.font(10).size(key)[0], r.y + 3), 10, T.DIM)
             if lit and name == has and not ui.mode:
-                self.tips.append((r, "This is its order. Click to take it back."))
+                self.tips.append((r, "This is its order. Click to send it elsewhere; Hold stops it." if name in GOES
+                                  else "This is its order. Click to take it back."))
+            elif lit and not has and not ui.mode:
+                self.tips.append((r, "With no other order it holds."))
             elif not usable:
                 self.tips.append((r, why))
 
@@ -785,9 +878,9 @@ class Painter:
         to scroll through. A tap on a row takes that unit up."""
         side = session.side
         leads = sorted({session.leader(m["id"]) for m in session.view["units"] if m["status"] == "on_map"})
-        waiting, idle = session.waiting_units(), session.idle_units()
-        self.text(surface, f"{len(leads)} units and groups: {len(idle)} with no order" if idle
-                  else f"{len(leads)} units and groups: all have orders", (x, y), 12, T.DIM)
+        waiting = session.waiting_units()
+        self.text(surface, f"{len(leads)} units and groups: {len(waiting)} still to go through" if waiting
+                  else f"{len(leads)} units and groups: all gone through", (x, y), 12, T.DIM)
         y += 20
         room = max(1, (foot - y - 26) // 25)
         ui.scroll = max(0, min(ui.scroll, len(leads) - room))
@@ -800,12 +893,12 @@ class Painter:
             show = next((g for g in session.members(lead) if g["type"] != "hq"), m)
             picture(surface, show["type"], mini.inflate(-6, -5), T.MARK[nation], T.FACE[nation])
             order = session.pending[side].get(lead)
-            does = "no order" if order is None else T.order_name(order["order"], session.members(lead)) + (
+            does = "Hold" if order is None else T.order_name(order["order"], session.members(lead)) + (
                 " " + where(session.gmap, order["to"]) if "to" in order else "") + (", stands" if lead in waiting else "")
             while self.font(12, True).size(does)[0] > w - 150:
                 does = does[:-1]
             wide = self.font(12, True).size(does)[0]
-            self.text(surface, does, (row.right - 6 - wide, y + 4), 12, T.ATTACK if order is None else T.INK, True)
+            self.text(surface, does, (row.right - 6 - wide, y + 4), 12, T.DIM if order is None else T.INK, True)
             words = row_name(session, m)
             while self.font(12).size(words)[0] > w - 54 - wide:              # as much of the name as fits
                 words = words[:-1]
@@ -969,7 +1062,7 @@ class Painter:
                 if u["id"] in session.waiting_units():
                     line("From an earlier turn. Space keeps it.", 12, T.DIM)
             else:
-                line("Waiting for an order", 15, T.ATTACK, True, gap=2)
+                line("Order: Hold", 15, T.PATH, True, gap=2)
             self.cannot(session, ui, u, line, w)
             line("Click a unit above to order it by itself.", 12, T.DIM)
         elif u:
@@ -1015,13 +1108,13 @@ class Painter:
                 line("Chosen from its group", 15, T.ATTACK, True, gap=2)
                 line("An order now splits it off. Split leaves it here.", 12, T.DIM)
             else:
-                line("Waiting for an order", 15, T.ATTACK, True, gap=2)
-                line("Click the map, or press a button above.", 12, T.DIM)
+                line("Order: Hold", 15, T.PATH, True, gap=2)
+                line("With no other order it holds. Space goes on.", 12, T.DIM)
             self.cannot(session, ui, u, line, w)
         elif not over and not self.playing:                          # nothing taken up: who still waits, each a tap away
             waiting = session.waiting_units()
-            line(f"{T.count(len(waiting), 'unit')} {'waits' if len(waiting) == 1 else 'wait'} for orders" if waiting
-                 else "All units have orders. Press End turn.", 15, T.PATH, True, gap=8)
+            line(f"{T.count(len(waiting), 'unit')} still to go through" if waiting
+                 else "Every unit gone through. Press End turn.", 15, T.PATH, True, gap=8)
             room = max(0, (foot - y) // 2 // 25)                     # the top half of the space; reports have the rest
             for uid in waiting[:room]:
                 m = session.unit(uid)
@@ -1043,8 +1136,8 @@ class Painter:
                 line(f"and {len(waiting) - room} more: press Next unit.", 12, T.DIM)
             carrying = len(waiting) - len(session.idle_units())
             if carrying:                                             # those with a standing order: seen, then kept or changed
-                line(f"{carrying} of them {'carries on with its order' if carrying == 1 else 'carry on with their orders'} "
-                     "unless changed.", 12, T.DIM)
+                line(f"{carrying} of them {'carries on with its order' if carrying == 1 else 'carry on with their orders'}; "
+                     "the rest hold.", 12, T.DIM)
         rule()
         font = self.font(12)
         room = (foot - y) // 21 - 1
@@ -1093,12 +1186,6 @@ class Painter:
         if not stage:
             self.tip(surface, ui)
 
-
-def guess(session, hx):
-    """The order a plain click on this hex gives: attack a seen enemy, otherwise move."""
-    if not session.gmap.passable(hx):
-        return None
-    return "attack" if any(tuple(e["hex"]) == hx for e in session.view["enemy"]) else "move"
 
 
 def star(x, y, r):

@@ -31,13 +31,16 @@ REPLIES = {
 }
 
 
-def mode(members, name):
+def mode(members, name, weather="clear"):
     """How the steps of a unit, or of a group moving as one, are costed under this order
-    (9.3, 20.2.6): a group with any vehicle in it goes where vehicles can."""
+    (9.3, 20.2.6): a group with any vehicle in it goes where vehicles can. In rain a vehicle
+    is costed for the mud (21.4.4)."""
     members = members if isinstance(members, list) else [members]
     if name == "road_march":                             # men on foot march the road more slowly than lorries drive it
-        return paths.MARCH if all(U.is_vehicle(u) for u in members) else paths.FOOT_MARCH
-    return paths.VEHICLE if any(U.is_vehicle(u) for u in members) else paths.FOOT
+        how = paths.MARCH if all(U.is_vehicle(u) for u in members) else paths.FOOT_MARCH
+    else:
+        how = paths.VEHICLE if any(U.is_vehicle(u) for u in members) else paths.FOOT
+    return paths.IN_RAIN.get(how, how) if weather == "rain" else how
 
 
 def members_of(state, u, order):
@@ -54,7 +57,7 @@ def full_path(gmap, u, order, state=None):
     """The hexes the unit, or its group, is to enter, in order, or None if there is no way (9.2).
     A join order goes to the hex the unit joined is in (20.2.2)."""
     here, out = tuple(u["hex"]), []
-    how = mode(members_of(state, u, order) if state else u, order["order"])
+    how = mode(members_of(state, u, order) if state else u, order["order"], state["weather"] if state else "clear")
     if order["order"] == "join":
         stops = [tuple(S.unit(state, order["with"])["hex"])]
     else:
