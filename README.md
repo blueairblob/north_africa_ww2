@@ -13,12 +13,14 @@ real tempo of a desert battle and, above all, the real supply problem.
 - **`docs/CLEAN_ROOM.md`** — what this project may and may not use.
 
 Status: the **map generator**, the **rules specification**, the **engine
-core** on one scenario (Crusader) and a first **screen**. No computer opponent
+core** on Operation Crusader and on a short scenario cut from it, and a first
+**screen**. No computer opponent
 yet beyond scripted test players.
 
 ## The engine
 
-`engine/` is pure Python with no input or output: the same scenario and the
+`engine/` is pure Python with no input or output but the reading of a scenario
+file: the same scenario and the
 same orders always give the same game. A turn is the eight phases of
 `docs/RULES.md` §5; each function names the rule it follows and each test the
 rule it checks.
@@ -32,6 +34,11 @@ division shown as its regiments and brigades under its HQ) between two scripted
 players (`nothing`, `attack`, `retreat`, `explore`) and asserts the rules'
 invariants after every turn.
 
+`sidi_rezegh` in place of `crusader` plays the short scenario: Crusader's first
+five turns, 18 to 27 November 1941, with one aim, the road into Tobruk. Its file
+(`data/scenarios/sidi_rezegh.json`) names Crusader as its base and gives only
+what differs (`docs/RULES.md` 2.4), so the two cannot drift apart.
+
 ## The screen
 
 `screen/` is a pygame window on top of the engine: the map, the counters, the
@@ -40,6 +47,7 @@ six orders, the supply overlay and the zones overlay.
 ```
 .venv/bin/python -m screen crusader                  # two players at one screen
 .venv/bin/python -m screen crusader --axis nothing   # you are the Commonwealth
+.venv/bin/python -m screen sidi_rezegh --axis attack # the short scenario: five turns, one aim
 .venv/bin/python -m screen crusader --shot frame.png # one frame to a file, no window
 .venv/bin/python -m screen crusader --log            # record every click and key, in logs/ (not published)
 .venv/bin/python -m screen crusader --seed 1941      # the same weather as an earlier game; --seed 0 for none
@@ -76,15 +84,19 @@ the panel's list and order it, or press Split. Join sends a unit back to its
 division, and Recall, on an HQ, calls them all in. An order with somewhere to go (Move, Attack, Travel, Join)
 stands from turn to turn until it is done, and Dig in until the defences are complete; Rest is
 for one turn, and a unit with no order holds. Every turn the screen steps through every unit
-or group: Space lets it carry on as it is, and any order changes it. Pressing the lit button of
-a unit on its way asks for a new place to go; Hold stops it. An order a unit cannot take just now is greyed, with the reason under the
+or group: Space lets it carry on as it is, and any order changes it. With the pointer on the unit's tile in the panel, the mouse wheel or Up and Down go through
+everything of yours in its hex: each group, then each of its units by itself. Page Up and Page Down do so
+wherever the pointer is, and the arrows beside "3 of 6" under the orders by a tap. Every order's button
+unpresses: pressing a unit's lit button takes its order back, and it holds unless given another. An order a unit cannot take just now is greyed, with the reason under the
 unit. A hex holds the units of two formations; a unit
 may drive through a full hex but not stop in it, and one kept out says so. Every click on the map does something or says why not. The weather is the one thing left to
 chance: some turns bring rain or a sandstorm, told as the turn opens with an outlook for
 the next that is often wrong. It shows as a wash over the map and a chip in its corner; a tap on
 the chip says what it does. The screen prints the game's weather seed when it starts. The panel's Unit orders tab lists
-every unit and its order, to scroll through; a tap takes one up. Its Timetable tab lists what arrives, what is
-made good and what is called away, each on the day it happened in 1941 and with the reason; the reports say so a turn
+every unit and its order, to scroll through; a tap takes one up. Its Timetable tab lists what is called
+away, what arrives or is made good, and anything else, each kind under its own heading (Withdrawals,
+Reinforcements, Other), on the day it happened in 1941 and with the reason. A red bubble on the tab counts
+the events that fall as this turn ends, to plan for now; the reports say so a turn
 before each falls due and again when it has happened (`docs/SOURCES.md` gives the source of every date). Next unit is lit while any
 unit waits, End turn is always there, and a tick box turns off the reminder of units not gone through. After End
 turn the turn is played back: the movement, then each formation's strike in
@@ -92,7 +104,8 @@ turn, with the units it hits burning and a rattle as long as the damage, then
 the outcome, where a unit that surrenders raises a white flag. F plays it faster, Right arrow goes on to the next scene, and any
 other key skips it all. A finished game shows how its result was reached. The
 map is `art/basemap.jpg`, the generated map with its relief
-(`python -m mapgen base`). `docs/COUNTERS.md` has the hex and counter sizes and the
+(`python -m mapgen base`). The pictures on the counters are in `art/counters/`, drawn by
+`python -m countergen`; `docs/COUNTERS.md` has the hex and counter sizes and the
 notes on counter art.
 
 ## The map

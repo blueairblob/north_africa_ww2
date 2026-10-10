@@ -351,6 +351,152 @@ stages and the whole map, each needing its own tuning.
 rules freeze depends on tuning that has barely begun. And "learned in ten
 minutes" has not been tried on anyone.
 
+## Four rules ideas (proposed 10 October 2026; the fourth agreed and built)
+
+The owner showed the counters of a published tactical board game and asked
+what its rules might teach this one. Four ideas came out of that. They are
+ideas about how a game can work, written here in this game's own terms. No
+number, table or wording is taken from that game, and its rulebook was not
+read: the ideas come from a general memory of how it plays. Each must stand
+on the history, and each value would be set from sources or marked "to be
+tuned", as everywhere else. `DESIGN.md` and `docs/RULES.md` are not changed
+until the owner agrees to one.
+
+The historical statements below are from memory and are **not yet checked
+against a source**. Each would be checked, and the source named in
+`docs/SOURCES.md`, before the idea is built.
+
+### 1. The enemy's strength is an estimate, never a figure
+
+**Now.** A spotted enemy unit shows its name, type and experience; if it is
+next to one of yours it also shows its exact steps (RULES 14.4). After a
+battle both sides are told both sides' exact step losses (14.6).
+
+**Proposal.** The view never gives an enemy unit's steps. Next to one of
+yours it gives a word: at strength, worn or weak, by the share of its
+starting steps it has left. After a battle a side is told its own losses
+exactly and the enemy's as a claim: the tanks knocked out. What the enemy's
+recovery teams bring back afterwards (the Recovery phase, which the engine
+already runs) is not told. So a claim is honest and still too high, by a
+rule and with no dice.
+
+**History.** Both armies misjudged the other's tank strength throughout
+Crusader. Eighth Army believed in the first days that the German armour had
+been badly hurt when it had not, and Rommel's drive to the frontier on
+24 November rested on a belief that the British armour was finished. The gap
+between tanks knocked out and tanks lost for good, because the side holding
+the field recovered its own, is a large part of the reason.
+
+**Cost.** None to the player: fewer numbers, not more. In the engine, the
+view (`engine/view.py`) and what the reports say. The computer opponent
+would have to work from the same words.
+
+**Open.** How many words, and where the lines fall. Whether a reconnaissance
+unit or air reconnaissance earns a closer estimate.
+
+### 2. A headquarters gives weight to an attack
+
+**Now.** An HQ distributes supply and can recall its division's units. It has
+no effect on a battle.
+
+**Proposal, in its plain form.** An attack counts for more when the
+attackers' corps or army HQ is in reach of the battle, in supply, and did
+not move this turn. Nothing is chosen: the HQ's reach is already drawn on
+the supply overlay, so the player can see where his attacks will be
+co-ordinated and where they will not. A second form, in which each corps HQ
+names one hex a turn as its main effort, gives the player a real choice but
+adds a thing to do every turn and a control to do it with.
+
+**History.** An attack with corps artillery and reserves behind it was a
+different thing from the same units attacking on their own. German practice
+was to form a point of main effort; British command of artillery in 1941 was
+dispersed among brigade groups and columns, and was centralised under
+division and corps in 1942. So the size of the effect could differ by side
+and by scenario date.
+
+**Cost.** The plain form adds nothing to learn beyond "keep your HQ up and
+still when you attack", and one more term in the attack value (RULES
+10.4.5). The second form is over the complexity budget as it stands
+(`DESIGN.md` 14.1).
+
+**Open.** Whether to have it at all: of the four this fits the game least.
+If so, the plain form is the one recommended. The size of the effect cannot
+be derived from a source and would be "to be tuned".
+
+### 3. If combat is given chance, make it bunch round the expected result
+
+**Now.** There are no dice but the weather (`DESIGN.md` 5). The owner has
+said that the Hard level needs a random factor in combat and that he will
+say more; nothing is designed, and this note does not design it.
+
+**The one thing to carry in.** A single draw spreads results evenly, so a
+freak result is as likely as the expected one. The sum of two draws bunches
+them: most battles come out near what the preview said, and a wild result is
+rare. That is a property of adding draws together, not of any game's table.
+
+**What it would have to respect.** The draws come from the game's seed, by
+the generator the weather already uses (RULES 21.2.2), so a game is still
+its scenario, its seed and its orders. The spread is bounded. The preview
+then shows a likely range and no longer one result.
+
+**What it changes.** The weather is settled before orders are given, "so
+chance shapes the problem and never undoes a decision already made"
+(`DESIGN.md` 5). Chance in combat does undo decisions. That is a change to
+the game's character and to sections 5 and 14 of `DESIGN.md`, and it is the
+owner's to make.
+
+**Open, all for the owner.** Which levels have it; how wide the spread is;
+whether both sides or only the enemy benefit; how it is shown.
+
+### 4. Short scenarios with one clear aim
+
+**Now.** One scenario, Crusader, of 22 turns. Objectives already score for
+every turn they are held (`DESIGN.md` 9). This plan already proposes the
+campaign as a series of stages on smaller maps.
+
+**Proposal.** A few scenarios of four to eight turns, each with one aim that
+can be said in a sentence, as the way into the game and as an evening's
+play. The scenario file already carries its start date, its number of
+turns, its units and its objectives, so a short scenario is data and a par,
+with no new rule.
+
+**The limit of the scale.** A turn is two days. Brevity (15 to 16 May 1941)
+is one turn and Battleaxe (15 to 17 June 1941) is two: neither is a game at
+this scale. Candidates that are long enough: the first phase of Crusader, up
+to the fighting at Sidi Rezegh (18 to about 27 November 1941, five turns);
+Bir Hakeim and the opening of Gazala (26 May to 11 June 1942, eight turns).
+The dates are from memory and each needs its source before a file is
+written.
+
+**Cheapest first.** "Sidi Rezegh": Crusader's own units and map, ended after
+five turns, with the objectives round Sidi Rezegh, El Adem and Tobruk and a
+par found by running games. It needs no new order of battle.
+
+**Open.** Which battles. Whether a short scenario is played on the whole map
+or on a part of it.
+
+**Built, 10 October 2026**, on the owner's word. `data/scenarios/sidi_rezegh.json`
+names Crusader as its base and gives only its name, its five turns, its
+objectives, each side's aim, its par and its thresholds (`docs/RULES.md` 2.4,
+13.1). The dates are sourced in `docs/SOURCES.md`. The aim is shown on the
+Timetable tab. Still open:
+
+- The points and thresholds are first guesses. Scripted players are no test
+  of balance; it needs trial play.
+- Points for units destroyed can outweigh the aim: a side that takes nothing
+  but destroys eight sizes of units has a tactical victory. Whether a short
+  scenario should count losses for less is the owner's to say.
+- The aim is on the Timetable tab only. Whether it should also be said when
+  the game opens, and whether the objectives should be marked on the map.
+- It is played on the whole map. The frontier is in play but scores nothing.
+- 7th Armoured Brigade leaves on the last turn, as in Crusader.
+
+### Order recommended
+
+4 first: it is the cheapest, it needs no rule, and it serves "easy and
+gratifying to play". Then 1, which is small and historical. 2 only after
+trial play shows the HQs have too little to do. 3 waits for the owner.
+
 ## DESIGN.md: what would change
 
 Proposals. `DESIGN.md` is not edited until the owner agrees.
@@ -416,6 +562,8 @@ Changed:
 
 ## Open, for the owner
 
+- The four rules ideas of 10 October 2026, above: the fourth is built; which
+  of the other three, if any, to take up.
 - In Simple mode, are a division's regiments hidden entirely or shown on a long
   press?
 - Which battles are the stages, and how many for a first release?

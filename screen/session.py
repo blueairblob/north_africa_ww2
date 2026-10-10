@@ -59,6 +59,14 @@ class Session:
         self.humans = [s for s in S.SIDES if s in humans]
         self.scripted = scripted or {}
         self.nation = {u["id"]: u.get("nation", "cw" if u["side"] == "cw" else "de") for u in scenario["units"]}
+        heads = {side: sorted({u["parent"] for u in scenario["units"] if u.get("parent") and u["side"] == side}) for side in S.SIDES}
+        self.title = {u["id"]: u["name"] for u in scenario["units"]}
+        # a unit -> (its division's HQ, the division's place among its side's by HQ id); a unit of no division is not in it
+        self.division = {u["id"]: (U.formation(u), heads[u["side"]].index(U.formation(u)))
+                         for u in scenario["units"] if U.formation(u) in heads[u["side"]]}
+        self.flag = {u["id"]: T.flag_of(self.nation[u["id"]], u["name"],
+                                        self.title[self.division[u["id"]][0]] if u["id"] in self.division else "")
+                     for u in scenario["units"]}
         if saved is not None:                           # a game taken up again (from_save)
             self._restore(saved)
             return
@@ -275,6 +283,16 @@ class Session:
         """The leaders of your groups and single units in a hex."""
         return sorted({self.leader(u["id"]) for u in self.view["units"] if u["status"] == "on_map" and tuple(u["hex"]) == tuple(h)})
 
+    def stack(self, uid):
+        """What can be taken up in a unit's hex, in the order it is gone through: each group or
+        single unit of yours there and, after a group, each of its units by itself; as (unit, alone)."""
+        u = self.unit(uid)
+        out = []
+        for lead in self.parties_at(u["hex"]) if u else []:
+            group = self.members(lead)
+            out += [(lead, False)] + ([(m["id"], True) for m in group] if len(group) > 1 else [])
+        return out
+
     def group_all(self, h):
         """Everything of yours in this hex becomes one group, when the turn is played
         (RULES 20.2.2: joined at once, in the Orders phase). Returns how many joined."""
@@ -407,7 +425,7 @@ class Session:
     def timetable(self):
         """The side's dated events as the player reads them, soonest first: what arrives, what
         is made good and what is called away, on the day it happened in 1941 (RULES 12).
-        [{"day", "turn", "when", "words", "note", "unit", "past"}]; unit is one to go to, or None."""
+        [{"day", "turn", "when", "words", "note", "unit", "past", "kind"}]; unit is one to go to, or None."""
         now, out = self.view["turn"], []
         for rows, name in self._together(self.view["timetable"]):
             r, n, past = rows[0], len(rows), rows[0]["turn"] < now
@@ -426,11 +444,15 @@ class Session:
                          + (f" through {r['via']}." if "via" in r else "."))
             here = next((x["unit"] for x in rows if self.unit(x["unit"])), None)
             due = r["turn"] - now
-            out.append({"day": date.fromisoformat(r["date"]), "turn": r["turn"], "past": past, "words": words,
+            out.append({"day": date.fromisoformat(r["date"]), "turn": r["turn"], "past": past, "words": words, "kind": r["kind"],
                         "note": r.get("note", ""), "unit": here,
                         "when": f"turn {r['turn']}" if past else "end of this turn" if due == 0
                         else "next turn" if due == 1 else f"in {due} turns"})
         return out
+
+    def due_now(self):
+        """How many of the timetable's events fall as this turn ends: in force when orders are next given."""
+        return sum(r["turn"] == self.view["turn"] for r in self.timetable())
 
     def state_of(self, uid):
         """A unit of the side's, wherever it is: on_map, not_arrived, withdrawn or destroyed."""

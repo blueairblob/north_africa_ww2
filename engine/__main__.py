@@ -2,14 +2,15 @@
 
     python -m engine crusader attack nothing
     python -m engine crusader attack nothing --seed 1941     with the weather drawn from this seed
+    python -m engine sidi_rezegh attack attack               the short scenario: five turns
 
-The only input and output of the engine package is here.
+The only input and output of the engine package is here and in scenarios.py, which reads the files.
 """
 import json
 import sys
 from pathlib import Path
 
-from . import checker, players, runner
+from . import checker, players, runner, scenarios
 from . import state as S
 from . import weather as W
 from .gamemap import GameMap
@@ -27,7 +28,9 @@ def main(argv):
         sys.exit("usage: python -m engine <scenario> <axis player> <cw player> [--seed N]   "
                  f"players: {', '.join(PLAYERS)}")
     gmap = GameMap(json.loads((DATA / "map.json").read_text()))
-    scenario = json.loads((DATA / "scenarios" / f"{argv[0]}.json").read_text())
+    if argv[0] not in scenarios.names():
+        sys.exit(f"no scenario {argv[0]}; there are: {', '.join(scenarios.names())}")
+    scenario = scenarios.load(argv[0])
     wrong = checker.problems(scenario, gmap)
     if wrong:
         sys.exit("\n".join(wrong))

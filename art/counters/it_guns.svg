@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="480" height="288" viewBox="0 0 480 288">
+<g stroke="#2c2014" stroke-width="9" stroke-linejoin="round" stroke-linecap="round">
+<polygon points="39.1,249.4 262.8,192.4 258.7,176.4 35,233.4" fill="#968a54"/>
+<circle cx="267.3" cy="191" r="57" fill="#968a54"/>
+<circle cx="267.3" cy="191" r="41.7" fill="#d9cb96"/>
+<line x1="227.9" y1="191" x2="306.8" y2="191" stroke="#4a3220" stroke-width="6.6"/>
+<line x1="239.4" y1="218.9" x2="295.3" y2="163.1" stroke="#4a3220" stroke-width="6.6"/>
+<line x1="267.3" y1="230.5" x2="267.3" y2="151.5" stroke="#4a3220" stroke-width="6.6"/>
+<line x1="295.3" y1="218.9" x2="239.4" y2="163.1" stroke="#4a3220" stroke-width="6.6"/>
+<circle cx="267.3" cy="191" r="13.2" fill="#c4b47a"/>
+<polygon points="256.4,142.7 366,142.7 366,129.6 256.4,129.6" fill="#968a54"/>
+<polygon points="225.7,126.8 445,126.8 445,110.4 225.7,110.4" fill="#d9cb96"/>
+<polygon points="205.9,133.9 205.9,103.2 238.8,103.2 238.8,133.9" fill="#c4b47a"/>
+<polygon points="287.1,164.7 273.9,81.3 293.7,76.9 309,160.3" fill="#c4b47a"/>
+</g>
+</svg>

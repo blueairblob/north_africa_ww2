@@ -297,12 +297,18 @@ the losses on both sides.
 | Sonnenblume | Mar – Apr 1941 | Rommel's first offensive; Tobruk besieged |
 | Brevity & Battleaxe | May – Jun 1941 | the frontier battles at Halfaya and Sollum |
 | Crusader | Nov – Dec 1941 | the relief of Tobruk; Sidi Rezegh |
+| Sidi Rezegh | 18 – 27 Nov 1941 | a short one, cut from Crusader: its first five turns and one aim, the road into Tobruk |
 | Gazala | May – Jun 1942 | the Gazala line, Bir Hakeim, the fall of Tobruk |
 | First Alamein | Jul 1942 | the line between the sea and the Qattara Depression |
 | Alam Halfa & Second Alamein | Aug – Nov 1942 | Montgomery's battles |
 | The Desert War | Sep 1940 – Nov 1942 | the whole campaign |
 
 Plus a 10-minute **tutorial**: a small Compass scenario with a guided first turn.
+
+A **short scenario** is four to eight turns with one aim that can be said in a
+sentence, and the game says it to each side. It is the way into the game and an
+evening's play. It is cut from a longer scenario's data, so it needs no order
+of battle of its own and no rule of its own.
 
 ## 11. The computer opponent
 
@@ -337,6 +343,11 @@ lopsided, and situations the rules do not cover.
   flag for an HQ); NATO-style symbols are an option. Commonwealth blue, German
   dark grey, Italian green. Strength is told in real terms (tanks, men), and
   cohesion as morale in nine named levels.
+- A unit of a division carries a notch in its division's colour. At the
+  closest zoom a counter also carries its unit's short name and how many
+  hexes it can go in a turn. The unit taken up is shown in the panel as one
+  large tile: its picture, with its strength, pace, morale, fuel, experience
+  and stores round it, each with its word (`docs/COUNTERS.md`).
 - Overlays: **S** supply, **Z** zones of control and fog of war, **F** the front
   line history; a Layers button in the map's corner lists them.
 - The panel puts the orders directly under the header of the unit taken up,

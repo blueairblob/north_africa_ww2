@@ -49,6 +49,9 @@ def problems(scenario, gmap):
     for obj in scenario["objectives"]:
         if obj["place"] not in gmap.places:
             bad.append(f"objective {obj['place']} is not a place")
+    aim = scenario.get("aim")
+    if aim is not None and not (isinstance(aim, dict) and set(aim) == set(S.SIDES) and all(isinstance(v, str) and v for v in aim.values())):
+        bad.append("aim: a sentence for each side is needed")
     if sorted(scenario["thresholds"]) != scenario["thresholds"] or len(scenario["thresholds"]) != 3:
         bad.append("thresholds: three rising numbers are needed")
     if not bad and scenario.get("par") != par(scenario):

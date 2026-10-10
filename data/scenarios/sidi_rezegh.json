@@ -1,0 +1,19 @@
+{
+  "id": "sidi_rezegh",
+  "base": "crusader",
+  "name": "Sidi Rezegh",
+  "about": "The road to Tobruk, 18 to 27 November 1941: the first ten days of Operation Crusader, in five turns. The Commonwealth is to open the road into Tobruk through Sidi Rezegh and Belhamed and to have it open on the evening of the 27th; the Axis is to keep it shut. On the night of 26 to 27 November 1941 the New Zealand Division and the garrison of Tobruk met at Ed Duda, between the two (W. E. Murphy, The Relief of Tobruk, ch. 15). Ed Duda is not a place on this map: Belhamed stands for the join. The units, their strengths, the map and the supply are Operation Crusader's, with what falls after the 27th left out. The points are set so that one of Sidi Rezegh and Belhamed held at the end is a tactical victory, both a major one, and both with El Adem a decisive one, before losses are counted; they are first guesses, to be tuned.",
+  "aim": {
+    "cw": "Open the road into Tobruk: hold Sidi Rezegh and Belhamed on the evening of 27 November.",
+    "axis": "Keep Tobruk shut in: hold Sidi Rezegh and Belhamed on the evening of 27 November."
+  },
+  "turns": 5,
+  "objectives": [
+    {"place": "Sidi Rezegh", "turn": 3, "end": 30},
+    {"place": "Belhamed", "turn": 3, "end": 30},
+    {"place": "El Adem", "turn": 2, "end": 20},
+    {"place": "Tobruk", "turn": 4, "end": 60}
+  ],
+  "par": 40,
+  "thresholds": [40, 100, 160]
+}

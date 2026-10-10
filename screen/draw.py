@@ -56,11 +56,137 @@ class UI:
         return Layout(T.BASE_HEX * self.zoom)
 
 
+def tint(colour, k):
+    """A colour made paler (k above 0) or darker (k below 0)."""
+    return tuple(int(c + (255 - c) * k) if k > 0 else int(c * (1 + k)) for c in colour)
+
+
+def slab(base, w, h, edge, corner, grain=True, band=None, strip=0):
+    """A flat piece lit from the top left: paler at the top, its edge bevelled, a speckle in it
+    that is the same every time, its corners rounded; and a band of another colour across the
+    top, strip pixels deep, if one is given."""
+    img = pygame.Surface((w, h), pygame.SRCALPHA)
+    for cy in range(h):
+        row = tint(band if band and cy < strip else base, 0.16 - 0.34 * cy / h)       # lighter at the top
+        for cx in range(w):
+            speck = (cx * 73856093 ^ cy * 19349663) % 13 - 6 if grain else 0
+            img.set_at((cx, cy), tuple(max(0, min(255, c + speck)) for c in row))
+    if band:
+        pygame.draw.line(img, tint(band, -0.42), (0, strip), (w, strip), 1)
+    top = band or base
+    pygame.draw.polygon(img, tint(top, 0.5), [(0, 0), (w, 0), (w - edge, edge), (edge, edge)])
+    pygame.draw.polygon(img, tint(base, 0.5), [(0, 0), (edge, edge), (edge, h - edge), (0, h)])
+    pygame.draw.polygon(img, tint(base, -0.42), [(w, h), (0, h), (edge, h - edge), (w - edge, h - edge), (w - edge, edge), (w, 0)])
+    shape = pygame.Surface((w, h), pygame.SRCALPHA)
+    pygame.draw.rect(shape, (255, 255, 255, 255), shape.get_rect(), border_radius=corner)
+    img.blit(shape, (0, 0), special_flags=pygame.BLEND_RGBA_MIN)                       # round the corners off
+    pygame.draw.rect(img, T.INK, img.get_rect(), 1, border_radius=corner)
+    return img
+
+
+def pointed(surface, colour, centre, r, points=5, inner=0.42):
+    """A star of so many points, one of them upward."""
+    cx, cy = centre
+    pygame.draw.polygon(surface, colour, [(cx + (r if n % 2 == 0 else r * inner) * math.sin(math.pi * n / points),
+                                           cy - (r if n % 2 == 0 else r * inner) * math.cos(math.pi * n / points))
+                                          for n in range(2 * points)])
+
+
+def union(surface, box):
+    """The Union Flag, filling the box: its two saltires, then the cross over them."""
+    part = pygame.Surface(box.size)
+    part.fill(T.FLAG_BLUE)
+    w, h = box.size
+    for thick, colour in ((0.22, T.FLAG_WHITE), (0.08, T.FLAG_RED)):
+        for a, b in (((-w, -h), (2 * w, 2 * h)), ((-w, 2 * h), (2 * w, -h))):
+            pygame.draw.line(part, colour, a, b, max(1, int(h * thick)))
+    for thick, colour in ((0.34, T.FLAG_WHITE), (0.2, T.FLAG_RED)):
+        pygame.draw.rect(part, colour, (w / 2 - h * thick / 2, 0, h * thick, h))
+        pygame.draw.rect(part, colour, (0, h / 2 - h * thick / 2, w, h * thick))
+    surface.blit(part, box)
+
+
+def flag(which, w, h):
+    """A flag as it was in 1941 (docs/COUNTERS.md, with the source of each): the Union Flag; New
+    Zealand's and Australia's blue ensigns; India's red ensign with the Star of India; the Union
+    of South Africa's flag of 1928; Poland's; the Kingdom of Italy's tricolour with the arms of
+    Savoy; and for Germany the black cross its army painted on its vehicles, which is not the
+    flag it flew. Drawn large and brought down, so that its edges are smooth."""
+    k = 4
+    big, wide, high = pygame.Surface((w * k, h * k)), w * k, h * k
+    white, red, blue = T.FLAG_WHITE, T.FLAG_RED, T.FLAG_BLUE
+    canton = pygame.Rect(0, 0, wide // 2, high // 2)
+    if which == "uk":
+        union(big, big.get_rect())
+    elif which == "nz":                                              # the Southern Cross: four red stars edged white
+        big.fill(blue)
+        union(big, canton)
+        for fx, fy, r in ((0.75, 0.2, 0.1), (0.865, 0.42, 0.085), (0.64, 0.46, 0.1), (0.75, 0.78, 0.115)):
+            pointed(big, white, (wide * fx, high * fy), high * (r + 0.035))
+            pointed(big, red, (wide * fx, high * fy), high * r)
+    elif which == "au":                                              # the Commonwealth Star of seven points, and the Southern Cross
+        big.fill(blue)
+        union(big, canton)
+        pointed(big, white, (wide * 0.25, high * 0.75), high * 0.19, 7, 0.5)
+        for fx, fy, r, points in ((0.75, 0.83, 0.09, 7), (0.625, 0.44, 0.09, 7), (0.75, 0.17, 0.09, 7), (0.86, 0.37, 0.09, 7),
+                                  (0.8, 0.54, 0.05, 5)):
+            pointed(big, white, (wide * fx, high * fy), high * r, points, 0.5)
+    elif which == "in":                                              # the Star of India under its crown, on the fly
+        big.fill(red)
+        union(big, canton)
+        cx, cy = wide * 0.75, high * 0.56
+        pointed(big, (236, 190, 60), (cx, cy), high * 0.27, 16, 0.6)
+        pygame.draw.circle(big, (120, 180, 226), (cx, cy), high * 0.14)
+        pointed(big, white, (cx, cy), high * 0.09)
+        pygame.draw.polygon(big, (236, 190, 60), [(cx - high * 0.1, cy - high * 0.3), (cx - high * 0.13, cy - high * 0.46),
+                                                  (cx - high * 0.05, cy - high * 0.39), (cx, cy - high * 0.5),
+                                                  (cx + high * 0.05, cy - high * 0.39), (cx + high * 0.13, cy - high * 0.46),
+                                                  (cx + high * 0.1, cy - high * 0.3)])
+    elif which == "sa":                                              # orange, white and blue, and the three small flags on the white
+        for n, colour in enumerate(((240, 116, 22), white, blue)):
+            pygame.draw.rect(big, colour, (0, n * high // 3, wide, high - n * high // 3))
+        fw, fh = int(wide * 0.15), int(high * 0.25)
+        first = pygame.Rect(wide // 2 - fw * 3 // 2 - 2, high // 2 - fh // 2, fw, fh)
+        union(big, first)
+        free = first.move(fw + 2, 0)                                 # the Orange Free State's, hung downward
+        for n in range(7):
+            pygame.draw.rect(big, white if n % 2 == 0 else (240, 116, 22), (free.x + n * fw // 7, free.y, fw - n * fw // 7, fh))
+        for n, colour in enumerate((red, white, blue)):
+            pygame.draw.rect(big, colour, (free.x + fw * 4 // 7 + n * fw // 7, free.y, fw // 7 + 1, fh * 3 // 7))
+        vier = free.move(fw + 2, 0)                                  # the South African Republic's: green at the hoist
+        for n, colour in enumerate((red, white, blue)):
+            pygame.draw.rect(big, colour, (vier.x, vier.y + n * fh // 3, fw, fh - n * fh // 3))
+        pygame.draw.rect(big, (0, 122, 77), (vier.x, vier.y, fw // 4, fh))
+        for box in (first, free, vier):
+            pygame.draw.rect(big, T.INK, box, 1)
+    elif which == "pl":
+        big.fill(white)
+        pygame.draw.rect(big, (212, 33, 61), (0, high // 2, wide, high - high // 2))
+    elif which == "it":
+        for n, colour in enumerate(((0, 140, 69), white, (205, 33, 42))):
+            pygame.draw.rect(big, colour, (n * wide // 3, 0, wide - n * wide // 3, high))
+        arms = pygame.Rect(0, 0, high * 0.36, high * 0.46)
+        arms.center = (wide // 2, high // 2)
+        pygame.draw.rect(big, (0, 70, 160), arms.inflate(high * 0.1, high * 0.1), border_bottom_left_radius=arms.w // 2,
+                         border_bottom_right_radius=arms.w // 2)
+        pygame.draw.rect(big, (205, 33, 42), arms, border_bottom_left_radius=arms.w // 2, border_bottom_right_radius=arms.w // 2)
+        pygame.draw.rect(big, white, (arms.centerx - arms.w * 0.14, arms.y, arms.w * 0.28, arms.h))
+        pygame.draw.rect(big, white, (arms.x, arms.centery - arms.w * 0.22, arms.w, arms.w * 0.28))
+    else:
+        big.fill(T.FACE["de"])
+        for thick, colour in ((0.36, white), (0.2, T.INK)):
+            pygame.draw.rect(big, colour, (wide / 2 - high * thick / 2, high * 0.12, high * thick, high * 0.76))
+            pygame.draw.rect(big, colour, (wide / 2 - high * 0.38, high / 2 - high * thick / 2, high * 0.76, high * thick))
+    img = pygame.transform.smoothscale(big, (w, h))
+    pygame.draw.rect(img, T.INK, img.get_rect(), 1)
+    return img
+
+
 class Painter:
     def __init__(self, gmap):
         pygame.font.init()
         self.gmap = gmap
-        self.fonts, self.sprites = {}, {}
+        self.fonts, self.sprites, self.faces, self.shadows = {}, {}, {}, {}
         self.base = self.load_base()
         self.back = (None, None)        # the scaled background and what it was made for
         self.reach_cache = (None, None)
@@ -69,7 +195,7 @@ class Painter:
         self.playing = False            # the last turn is being played back
         self.member_rects = {}          # the rows of a group's units in the panel, to click
         self.chooser_rects, self.report_rects, self.back_rect, self.tips = {}, {}, None, []
-        self.scroll_rects = {}
+        self.scroll_rects, self.cycle_rects = {}, {}
         self.weather_rect = None        # the weather's chip on the map, to tap
         self.skies = {}                 # the wash laid over the map in bad weather, by size and kind
         self.pencil_rect = None
@@ -348,9 +474,7 @@ class Painter:
                 x, y = at(hx)
                 size, nation = lay.counter, session.nation[u["id"]]
                 for k in range(min(len(pile), 3) - 1, 0, -1):        # the edges of the units beneath it, close in
-                    edge = pygame.Rect(x - size / 2 + k * size * 0.055, y - size / 2 - k * size * 0.055, size, size)
-                    pygame.draw.rect(surface, T.FACE[nation], edge, border_radius=4)
-                    pygame.draw.rect(surface, T.INK, edge, 1, border_radius=4)
+                    surface.blit(self.face(nation, size), (x - size / 2 + k * size * 0.055, y - size / 2 - k * size * 0.055))
                 if taken:                                            # the unit taken up floats above the map
                     size, y = int(size * 1.14), y - size * 0.07
                 self.counter(surface, session, ui, u, own, (x, y), size, bool(taken), len(pile),
@@ -654,68 +778,182 @@ class Painter:
     # ---- a counter -----------------------------------------------------------------------
 
     def sprite(self, nation, kind, size):
-        """A counter picture from art/counters, if there is one (docs/COUNTERS.md)."""
+        """A counter picture from art/counters, if there is one: the artist's before the drawn one
+        (docs/COUNTERS.md)."""
         key = (nation, kind, size)
         if key not in self.sprites:
-            path = os.path.join(ART, f"{nation}_{kind}.png")
-            self.sprites[key] = (pygame.transform.smoothscale(pygame.image.load(path), size)
-                                 if os.path.exists(path) else None)
+            paths = [os.path.join(ART, where, f"{nation}_{kind}.png") for where in ("artist", "")]
+            path = next((p for p in paths if os.path.exists(p)), None)
+            self.sprites[key] = pygame.transform.smoothscale(pygame.image.load(path), size) if path else None
         return self.sprites[key]
+
+    def face(self, nation, size):
+        """A counter's face as a thing lying on the map: lit from the top left, its edge bevelled,
+        a little grain in it (docs/COUNTERS.md)."""
+        key = (nation, size)
+        if key not in self.faces:
+            self.faces[key] = slab(T.FACE[nation], size, size, max(1, size // 16), max(3, size // 9), size >= 24)
+        return self.faces[key]
+
+    def shadow(self, w, h, reach, corner):
+        """The soft shadow a counter or a tile casts, reach pixels beyond its edge."""
+        key = (w, h, reach, corner)
+        if key not in self.shadows:
+            img = pygame.Surface((w + 2 * reach, h + 2 * reach), pygame.SRCALPHA)
+            for k in range(reach):                                   # darker ring inside paler ring
+                pygame.draw.rect(img, (24, 18, 10, 110 * (k + 1) // reach), img.get_rect().inflate(-2 * k, -2 * k),
+                                 border_radius=corner + reach - k)
+            self.shadows[key] = img
+        return self.shadows[key]
+
+    def notch(self, surface, session, uid, x, y, w, span, deep):
+        """The mark of a unit's division in the middle of the top edge, span pixels wide: one
+        colour to each division of a side."""
+        if uid not in session.division:
+            return
+        mid = x + w / 2
+        pts = [(mid - span / 2, y + 1), (mid - span * 0.39, y + deep), (mid + span * 0.39, y + deep), (mid + span / 2, y + 1)]
+        pygame.draw.polygon(surface, T.DIVISION[session.division[uid][1] % len(T.DIVISION)], pts)
+        pygame.draw.lines(surface, T.INK, False, pts, 1)
+
+    def fitted(self, surface, words, centre, px, colour, room, least=9):
+        """Bold words centred here, in the largest size from px down that fits the room; at the
+        least size, as many letters as fit."""
+        words = str(words)
+        while px > least and self.font(px, True).size(words)[0] > room:
+            px -= 1
+        while len(words) > 1 and self.font(px, True).size(words)[0] > room:
+            words = words[:-1]
+        self.text(surface, words, centre, px, colour, True, True)
 
     def counter(self, surface, session, ui, u, own, centre, size, taken=None, pile=1, ours=(), hq=False):
         nation = session.nation[u["id"]]
         x, y = int(centre[0] - size / 2), int(centre[1] - size / 2)
         face = pygame.Rect(x, y, size, size)
         chosen = u["id"] == ui.selected if taken is None else taken
-        drop = max(4, size // 9) if chosen else 2                                          # taken up, it casts a longer shadow
-        pygame.draw.rect(surface, (30, 26, 20), face.move(drop, drop), border_radius=4)
-        pygame.draw.rect(surface, T.FACE[nation], face, border_radius=4)
-        mark = T.MARK[nation]
+        reach = max(2, size // 14) * (2 if chosen else 1)                                  # taken up, it casts a longer shadow
+        surface.blit(self.shadow(size, size, reach, max(3, size // 9)), (x - reach // 2, y - reach // 3))
+        surface.blit(self.face(nation, size), face)
+        mark, edge = T.MARK[nation], max(1, size // 16)
         if chosen:                                                   # a bold yellow border that pulses gently
             beat = 0.5 + 0.5 * math.sin(pygame.time.get_ticks() / 260)
             glow = tuple(int(c + (255 - c) * 0.7 * beat) for c in T.SELECT)
             pygame.draw.rect(surface, T.INK, face.inflate(4, 4), max(5, size // 9) + 2, border_radius=6)
             pygame.draw.rect(surface, glow, face.inflate(2, 2), max(5, size // 9), border_radius=6)
-        else:
-            pygame.draw.rect(surface, T.INK, face, 1, border_radius=4)
-        big = size >= 34
-        box = pygame.Rect(x + size * 0.17, y + size * (0.1 if big else 0.2), size * 0.66, size * (0.42 if big else 0.6))
-        art = self.sprite(nation, u["type"], (int(size * 0.9), int(size * 0.54)))
+        big, named = size >= 34, size >= T.NAMED                     # named: at the closest zoom, its name along the top
+        if size >= 22:
+            self.notch(surface, session, u["id"], x, y, size, size * 0.4, max(3, size // 18))
+        if named:
+            inset = max(5, size // 9) if chosen else edge            # the border of the one taken up is wider
+            self.fitted(surface, T.short(u["name"]), (x + size * 0.5, y + size * 0.15), size * 0.125, mark, size - 2 * inset - 4)
+        low = 0.1 if named else 0                                    # the picture makes room for the name
+        box = pygame.Rect(x + size * 0.17, y + size * (0.22 if named else 0.1 if big else 0.2), size * 0.66,
+                          size * (0.36 if named else 0.42 if big else 0.6))
+        art = ui.symbols != "nato" and self.sprite(nation, u["type"], (int(size * (0.92 - low)), int(size * (0.552 - low * 0.6))))
         if art:
-            surface.blit(art, (x + size * 0.05, y + size * 0.03))
+            surface.blit(art, (x + size * (0.04 + low / 2), y + size * (0.045 + low * 1.5)))
         elif ui.symbols == "nato":
             self.symbol(surface, u["type"], box, T.BOX[nation], 2 if size >= 30 else 1)
         else:
-            area = pygame.Rect(x + size * 0.12, y + size * (0.08 if big else 0.2), size * 0.76, size * (0.5 if big else 0.6))
+            area = pygame.Rect(x + size * 0.12, y + size * (0.2 if named or not big else 0.08), size * 0.76,
+                               size * (0.44 if named else 0.5 if big else 0.6))
             picture(surface, u["type"], area, mark, T.FACE[nation])
-        if big:
-            self.text(surface, u.get("steps", "?"), (x + size * 0.5, y + size * 0.7), size * 0.27, mark, True, True)
+        flag = hq and u["type"] != "hq" and own                      # a headquarters is in the pile
+        if named:                                                    # strength on the left, and on the right its pace
+            self.text(surface, u.get("steps", "?"), (x + size * (0.37 if flag else 0.3), y + size * 0.77), size * 0.19, mark, True, True)
+        elif big:
+            self.text(surface, u.get("steps", "?"), (x + size * 0.5, y + size * 0.71), size * 0.25, mark, True, True)
+        tag = pygame.Rect(x - 6, y - 14, 26, 22) if named else pygame.Rect(x - size * 0.08, y - size * 0.08, size * 0.36, size * 0.34)
         if pile > 1 and size >= 22:                                  # how many units are in the pile
-            tag = pygame.Rect(x - size * 0.08, y - size * 0.08, size * 0.36, size * 0.34)
             pygame.draw.rect(surface, T.PAPER, tag, border_radius=3)
             pygame.draw.rect(surface, T.INK, tag, 1, border_radius=3)
-            self.text(surface, pile, tag.center, size * 0.24, T.INK, True, True)
+            self.text(surface, pile, tag.center, min(size * 0.24, 15), T.INK, True, True)
         if not own:
             return
+        if named:                                                    # hexes of open desert in a turn, in this weather
+            pace = session.allowance(session.members(u["id"])) // paths.OPEN_COST
+            ax, my, r = x + size * 0.52, y + size * 0.77, size * 0.055
+            pygame.draw.polygon(surface, T.PACE[nation], [(ax, my - r), (ax + r * 1.5, my), (ax, my + r)])     # an arrowhead: it goes
+            self.text(surface, pace, (x + size * 0.775, my), size * 0.19, T.PACE[nation], True, True)
         if big:                                                      # stores and cohesion, side by side
-            half = (size - 12) // 2
+            half = (size - 2 * edge - 12) // 2                       # inside the bevelled edge
             for n, (share, colour) in enumerate(((u["stores"] / U.stores_cap(u), T.STORES),
                                                  (u["cohesion"] / 100, T.GOOD if u["cohesion"] >= 40 else T.POOR))):
-                bx = x + 4 + n * (half + 4)
-                pygame.draw.rect(surface, T.PAPER, (bx, y + size - 7, half, 4))
-                pygame.draw.rect(surface, colour, (bx, y + size - 7, int(half * share), 4))
+                bx = x + edge + 4 + n * (half + 4)
+                pygame.draw.rect(surface, T.PAPER, (bx, y + size - edge - 6, half, 4))
+                pygame.draw.rect(surface, colour, (bx, y + size - edge - 6, int(half * share), 4))
         order = session.order_of(session.leader(u["id"]))["order"]
         if order != "hold" and size >= 22:
-            tag = pygame.Rect(x + size - size * 0.3, y - size * 0.08, size * 0.38, size * 0.34)
+            tag = tag.move(size - 14, 0) if named else pygame.Rect(x + size - size * 0.3, y - size * 0.08, size * 0.38, size * 0.34)
             pygame.draw.rect(surface, T.ATTACK if order == "attack" else T.PATH, tag, border_radius=3)
-            self.text(surface, T.ORDER_KEY[order], tag.center, size * 0.24, T.PAPER, True, True)
-        if hq and u["type"] != "hq" and size >= 22:                  # a headquarters is in the pile: a small flag
-            fx, fy, fh = x + size * 0.07, y + size * 0.44, size * 0.26
+            self.text(surface, T.ORDER_KEY[order], tag.center, min(size * 0.24, 15), T.PAPER, True, True)
+        if flag and size >= 22:                                      # a small flag
+            fx, fy, fh = x + size * (0.12 if named else 0.1), y + size * (0.66 if named else 0.61), size * (0.2 if named else 0.26)   # beside the number, clear of the picture
             pygame.draw.line(surface, mark, (fx, fy), (fx, fy + fh), max(1, size // 30))
             pygame.draw.polygon(surface, mark, [(fx, fy), (fx + fh * 0.7, fy + fh * 0.25), (fx, fy + fh * 0.5)])
         if size >= 18:
             r = max(5, int(size * 0.17))
             self.badge(surface, problem(ours or [u]) if own else None, (x + size - r * 0.6, y + size * 0.5), r)
+
+    def tile(self, surface, session, u, rect):
+        """The unit taken up as one large tile in the panel: its name and division, its picture,
+        and round it what the player needs of it, each with its word (docs/COUNTERS.md)."""
+        nation, (x, y, w, h), strip = session.nation[u["id"]], rect, 44
+        key = ("tile", nation, w, h)
+        if key not in self.faces:
+            self.faces[key] = slab(T.TILE, w, h, 5, 14, band=T.FACE[nation], strip=strip)
+        surface.blit(self.shadow(w, h, 6, 14), (x - 3, y - 2))
+        surface.blit(self.faces[key], rect)
+        self.notch(surface, session, u["id"], x, y, w, 110, 7)
+        head = session.division.get(u["id"])
+        flies = session.flag[u["id"]]
+        if ("flag", flies) not in self.faces:
+            self.faces["flag", flies] = flag(flies, *T.FLAG)
+        spot = pygame.Rect((x + w - T.FLAG[0] - 11, y + 8), T.FLAG)                  # its country's flag, top right
+        surface.blit(self.faces["flag", flies], spot)
+        self.tips.append((spot, T.FLAG_NAME[flies]))
+        clear = w - 2 * (T.FLAG[0] + 18)                              # centred clear of the flag; a long name moves left of it
+        if self.font(11, True).size(u["name"])[0] <= clear:
+            self.fitted(surface, u["name"], (x + w / 2, y + 20), 17, T.MARK[nation], clear, 11)
+        else:
+            self.fitted(surface, u["name"], (x + (w - T.FLAG[0] - 11) / 2 + 4, y + 20), 17, T.MARK[nation], w - T.FLAG[0] - 34, 11)
+        under = session.title[head[0]] if head and head[0] != u["id"] else T.TYPE_NAME[u["type"]]
+        self.text(surface, under, (x + w / 2, y + 35), 12, T.MARK[nation], False, True)
+        area = pygame.Rect(x + w / 2 - 90, y + strip + 4, 180, 108)
+        art = self.sprite(nation, u["type"], area.size)
+        if art:
+            surface.blit(art, area)
+        else:
+            picture(surface, u["type"], area.inflate(-30, -24), T.INK, T.TILE)
+        now, level = T.strength_now(u), T.morale(u["cohesion"])
+        hexes = u["fuel"] // U.step_fuel(u) if U.is_vehicle(u) else None
+        pace = session.allowance([u]) // paths.OPEN_COST
+        slots = [(44, 88, f"{now[0]:,}", now[2], "", T.strength_colour(u), T.strength_tip(u)),
+                 (w - 44, 88, pace, "move" if pace == 1 else "moves", "", T.STRONG,
+                  "Hexes a turn across open desert in this weather. Travel by road goes farther."),
+                 (44, 146, level[0], "morale", level[1].lower(), T.GOOD if u["cohesion"] >= 40 else T.POOR,
+                  f"Morale {level[0]} of 9: {level[1].lower()}" + ("" if u["cohesion"] >= 40 else ". Too low to attack"))]
+        if hexes is not None:
+            slots.append((w - 44, 146, f"{hexes * 10:,}", "km of fuel", "", T.FUEL if hexes else T.SHORT, "Fuel for " + T.fuel_words(hexes)))
+        for cx, cy, figure, word, more, colour, tip in slots:
+            self.fitted(surface, figure, (x + cx, y + cy), 30, colour, 80, 14)
+            self.text(surface, word, (x + cx, y + cy + 22), 12, T.DIM, False, True)
+            if more:
+                self.text(surface, more, (x + cx, y + cy + 36), 11, T.DIM, False, True)
+            self.tips.append((pygame.Rect(x + cx - 42, y + cy - 20, 84, 64), tip))
+        rank = U.EXPERIENCE.index(u["xp"]) + 1                       # experience: one pip green, three veteran
+        for k in range(len(U.EXPERIENCE)):
+            c = (x + w / 2 - 44 + 13 * k, y + 168)
+            pygame.draw.circle(surface, T.INK if k < rank else T.TILE, c, 4)
+            pygame.draw.circle(surface, T.INK, c, 4, 1)
+        self.text(surface, u["xp"], (x + w / 2 - 2, y + 161), 11, T.DIM)
+        bar = pygame.Rect(x + w / 2 - 46, y + 180, 92, 7)
+        pygame.draw.rect(surface, T.PAPER, bar)
+        pygame.draw.rect(surface, T.STORES, (bar.x, bar.y, int(bar.w * min(1, u["stores"] / U.stores_cap(u))), bar.h))
+        pygame.draw.rect(surface, T.INK, bar, 1)
+        self.text(surface, "stores", (x + w / 2, y + 196), 11, T.DIM, False, True)
+        self.tips.append((pygame.Rect(bar.x, y + 158, bar.w, 20), f"Experience: {u['xp']}"))
+        self.tips.append((pygame.Rect(bar.x, bar.y - 2, bar.w, 26), f"{u['stores']} tonnes of stores"))
 
     def badge(self, surface, trouble, centre, r):
         """The trouble badge: a black drop on yellow for no fuel, otherwise "!"; nothing if all is well."""
@@ -866,8 +1104,7 @@ class Painter:
             self.text(surface, label, (r.centerx - 8, r.centery), 14, T.INK if usable else (150, 140, 120), True, True)
             self.text(surface, key, (r.right - 6 - self.font(10).size(key)[0], r.y + 3), 10, T.DIM)
             if lit and name == has and not ui.mode:
-                self.tips.append((r, "This is its order. Click to send it elsewhere; Hold stops it." if name in GOES
-                                  else "This is its order. Click to take it back."))
+                self.tips.append((r, "This is its order. Click to take it back."))
             elif lit and not has and not ui.mode:
                 self.tips.append((r, "With no other order it holds."))
             elif not usable:
@@ -921,29 +1158,48 @@ class Painter:
             self.text(surface, f"{ui.scroll + 1} to {min(n, ui.scroll + room)} of {n}", (x, y + 5), 12, T.DIM)
 
     def timetable_list(self, surface, session, ui, x, y, w, foot):
-        """The Timetable tab: what arrives, what is made good and what is called away, each on
-        the day it happened, soonest first, to scroll through. A tap on a row goes to its unit."""
+        """The Timetable tab: what is called away, what arrives or is made good, and anything
+        else, each kind under its heading and on the day it happened, soonest first, to scroll
+        through. A tap on an event goes to its unit."""
+        aim = session.scenario.get("aim", {}).get(session.side)
+        if aim:                                                      # a short scenario has one aim: said here, in its words
+            self.text(surface, "Your aim", (x, y), 13, bold=True)
+            y += 19
+            for row in wrap(self.font(12), aim, w):
+                self.text(surface, row.strip(), (x, y), 12)
+                y += 15
+            y += 9
         rows = session.timetable()
         ahead = [r for r in rows if not r["past"]]
         self.text(surface, f"{T.count(len(ahead), 'event')} to come, on the dates of 1941" if ahead
                   else "Nothing more is due before the end" if rows else "Nothing is due in this battle", (x, y), 12, T.DIM)
         y += 22
-        font, blocks = self.font(12), []
-        for r in rows:                                               # each event: its day, its words, why it happened
-            lines = [s.strip() for s in wrap(font, r["words"], w - 12)]
-            lines += [s.strip() for s in wrap(font, r["note"], w - 12)] if r["note"] else []
-            blocks.append((r, lines, len(wrap(font, r["words"], w - 12))))
-        room, used = 0, 0                                            # as many whole events as fit from where it is scrolled to
-        ui.scroll = max(0, min(ui.scroll, len(blocks) - 1))
-        for _, lines, _ in blocks[ui.scroll:]:
-            used += 20 + len(lines) * 15 + 9
+        font, items = self.font(12), []                              # each section's heading, then its events, soonest first
+        for kinds, title in T.TIMETABLE:
+            mine = [r for r in rows if (r["kind"] in kinds if kinds else not any(r["kind"] in k for k, _ in T.TIMETABLE))]
+            items.append((None, [title, "" if mine else "none"], 0, 24))
+            for r in mine:                                           # each event: its day, its words, why it happened
+                lines = [s.strip() for s in wrap(font, r["words"], w - 12)]
+                plain = len(lines)
+                lines += [s.strip() for s in wrap(font, r["note"], w - 12)] if r["note"] else []
+                items.append((r, lines, plain, 20 + len(lines) * 15 + 9))
+        room, used = 0, 0                                            # as many whole rows as fit from where it is scrolled to
+        ui.scroll = max(0, min(ui.scroll, len(items) - 1))
+        for item in items[ui.scroll:]:
+            used += item[3]
             if y + used > foot - 26:
                 break
             room += 1
         room = max(1, room)
-        for r, lines, plain in blocks[ui.scroll:ui.scroll + room]:
+        for r, lines, plain, high in items[ui.scroll:ui.scroll + room]:
+            if r is None:                                            # a heading: the kind of event under it
+                self.text(surface, lines[0], (x, y + 4), 13, bold=True)
+                self.text(surface, lines[1], (x + self.font(13, True).size(lines[0])[0] + 10, y + 5), 12, T.DIM)
+                pygame.draw.line(surface, T.DIM, (x, y + 21), (x + w, y + 21), 1)
+                y += high
+                continue
             ink = T.DIM if r["past"] else T.INK
-            box = pygame.Rect(x, y, w, 20 + len(lines) * 15 + 5)
+            box = pygame.Rect(x, y, w, high - 4)
             pygame.draw.rect(surface, T.BUTTON, box, border_radius=4)
             if r["turn"] == session.view["turn"]:                    # due as this turn ends
                 pygame.draw.rect(surface, T.PATH, box, 2, border_radius=4)
@@ -954,8 +1210,8 @@ class Painter:
             if r["unit"] is not None:
                 self.report_rects[("due", r["turn"], r["words"])] = (box, r["unit"])
                 self.tips.append((box, "Click to go to this unit."))
-            y += box.h + 4
-        self.arrows(surface, ui, x, y, w, len(blocks), room)
+            y += high
+        self.arrows(surface, ui, x, y, w, len(items), room)
 
     def cannot(self, session, ui, u, line, w):
         """Under the unit taken up: what became of its order last turn, and why each greyed order
@@ -1043,7 +1299,7 @@ class Painter:
         u = None if self.playing else session.unit(ui.selected)
         group = session.members(u["id"]) if u else []
         self.member_rects, self.report_rects, self.back_rect, self.tips = {}, {}, None, []
-        self.pencil_rect, self.scroll_rects = None, {}
+        self.pencil_rect, self.scroll_rects, self.cycle_rects = None, {}, {}
         if not over and not self.playing:                            # the tabs: this unit, or every unit's order
             for name, words in (("unit", "Unit"), ("orders", "Unit orders"), ("timetable", "Timetable")):
                 r = tabs(surface.get_size())[name]
@@ -1051,6 +1307,14 @@ class Painter:
                 pygame.draw.rect(surface, T.PAPER if on else T.BUTTON, r, border_top_left_radius=6, border_top_right_radius=6)
                 pygame.draw.rect(surface, T.INK, r, 2 if on else 1, border_top_left_radius=6, border_top_right_radius=6)
                 self.text(surface, words, r.center, 13, T.INK if on else T.DIM, on, True)
+                due = session.due_now() if name == "timetable" else 0
+                if due:                                              # what the timetable does as this turn ends: plan for it now
+                    spot = (r.right - 9, r.y + 3)
+                    pygame.draw.circle(surface, T.SHORT, spot, 10)
+                    pygame.draw.circle(surface, T.INK, spot, 10, 1)
+                    self.text(surface, str(due), spot, 12, T.PAPER, True, True)
+                    self.tips.append((pygame.Rect(spot[0] - 10, spot[1] - 10, 20, 20),
+                                      f"{T.count(due, 'timetable event')} at the end of this turn: plan for {'it' if due == 1 else 'them'} now."))
             y = tabs(surface.get_size())["unit"].bottom + 10
             if ui.tab != "unit":
                 (self.orders_list if ui.tab == "orders" else self.timetable_list)(surface, session, ui, x, y, w, foot)
@@ -1071,20 +1335,20 @@ class Painter:
             y += 24
             pygame.draw.rect(surface, T.SELECT, pygame.Rect(x - 6, y - 26, w + 12, 26 + 24), 3, border_radius=8)   # the one taken up
             line(f"{len(group)} units in a group: one order moves them all.", 12, T.DIM, gap=10)
-            y = under
+            pitch = min(23, (grid["move"].y - 8 - y) // min(len(group), 9))      # its units, above the orders: closer if many
             for m in group[:9]:
                 nation = session.nation[m["id"]]
-                row = pygame.Rect(x, y, w, 22)
-                mini = pygame.Rect(x, y + 1, 30, 19)
+                row = pygame.Rect(x, y, w, pitch - 1)
+                mini = pygame.Rect(x, y + 1, 30, pitch - 4)
                 pygame.draw.rect(surface, T.FACE[nation], mini, border_radius=3)
                 picture(surface, m["type"], mini.inflate(-6, -5), T.MARK[nation], T.FACE[nation])
-                self.text(surface, m["name"][:25], (x + 38, y + 3), 12)
+                self.text(surface, m["name"][:25], (x + 38, y + (pitch - 17) // 2), 12)
                 words = T.strength(m).replace("about ", "")
-                self.text(surface, words, (x + w - self.font(12).size(words)[0], y + 3), 12, T.strength_colour(m))
+                self.text(surface, words, (x + w - self.font(12).size(words)[0], y + (pitch - 17) // 2), 12, T.strength_colour(m))
                 self.member_rects[m["id"]] = row
                 self.tips.append((row, T.strength_tip(m) + ". Click to order it by itself."))
-                y += 23
-            y += 4
+                y += pitch
+            y = under
             low = min(group, key=lambda m: m["cohesion"])
             level, word = T.morale(low["cohesion"])
             meter("Morale", level, 9, T.GOOD if low["cohesion"] >= 40 else T.POOR, word + " (the lowest)")
@@ -1107,29 +1371,10 @@ class Painter:
             self.cannot(session, ui, u, line, w)
             line("Click a unit above to order it by itself.", 12, T.DIM)
         elif u:
-            if ui.alone and len(session.members(session.leader(u["id"]))) > 1:   # back to the group it was chosen from
-                self.back_rect = pygame.Rect(x + w - 108, y + 30, 108, 24)       # beside the unit's picture and name
-                pygame.draw.rect(surface, T.BUTTON, self.back_rect, border_radius=5)
-                pygame.draw.rect(surface, T.INK, self.back_rect, 1, border_radius=5)
-                self.text(surface, "< Back to group", self.back_rect.center, 12, bold=True, centre=True)
-            nation = session.nation[u["id"]]
-            pygame.draw.rect(surface, T.SELECT, pygame.Rect(x - 6, y - 5, w + 12, 60), 3, border_radius=8)   # the one taken up
-            card = pygame.Rect(x, y, 76, 50)                         # the unit's picture beside its name
-            pygame.draw.rect(surface, T.FACE[nation], card, border_radius=6)
-            pygame.draw.rect(surface, T.INK, card, 1, border_radius=6)
-            picture(surface, u["type"], card.inflate(-14, -12), T.MARK[nation], T.FACE[nation])
-            for n, row in enumerate(wrap(self.font(16, True), u["name"], w - 88)[:2]):
-                self.text(surface, row.strip(), (x + 88, y + n * 20), 16, bold=True)
-            self.text(surface, f"{T.TYPE_NAME[u['type']]}, {u['xp']}", (x + 88, y + 34), 12, T.DIM)
+            card = pygame.Rect(x, y, w, T.TILE_H)                    # its tile is its header: the orders are under it
+            pygame.draw.rect(surface, T.SELECT, card.inflate(10, 10), 3, border_radius=18)                  # the one taken up
+            self.tile(surface, session, u, card)
             y = under
-            level, word = T.morale(u["cohesion"])
-            now = T.strength_now(u)
-            meter("Strength", now[0], now[1], T.strength_colour(u), T.strength(u), T.strength_colour(u), T.strength_tip(u))
-            meter("Morale", level, 9, T.GOOD if u["cohesion"] >= 40 else T.POOR,
-                  word + ("" if u["cohesion"] >= 40 else ": too low to attack"))
-            if U.is_vehicle(u):
-                meter("Fuel", u["fuel"], U.fuel_cap(u), T.FUEL, "for " + T.fuel_words(u["fuel"] // U.step_fuel(u)))
-            meter("Stores", u["stores"], U.stores_cap(u), T.STORES, f"{u['stores']} tonnes")
             if u["type"] == "hq":
                 line(f"Dump: {u['dump']['fuel']} t fuel, {u['dump']['stores']} t stores", 13)
             if not u["traced"]:
@@ -1138,6 +1383,26 @@ class Painter:
                 line("OUT OF STORES: morale is falling", 13, T.SHORT, True)
             else:
                 line("In supply", 13, T.GOOD, True)
+            grouped = ui.alone and len(session.members(session.leader(u["id"]))) > 1
+            stops = session.stack(u["id"])
+            if grouped:                                              # chosen from a group: the button back to it says so
+                self.back_rect = pygame.Rect(x, y + 2, 150, 26)
+                pygame.draw.rect(surface, T.BUTTON, self.back_rect, border_radius=5)
+                pygame.draw.rect(surface, T.INK, self.back_rect, 1, border_radius=5)
+                self.text(surface, "< Back to group", self.back_rect.center, 13, bold=True, centre=True)
+                self.tips.append((self.back_rect, "This unit was chosen from its group. Go back to the whole group."))
+            if len(stops) > 1:                                       # more of yours in its hex: which this is, an arrow each way
+                now = (u["id"], True) if ui.alone else (session.leader(u["id"]), False)
+                chip = pygame.Rect(x + 160, y + 2, 96, 26)           # to the right of Back to group, clear of the tile
+                pygame.draw.rect(surface, T.BUTTON, chip, border_radius=5)
+                pygame.draw.rect(surface, T.INK, chip, 1, border_radius=5)
+                self.text(surface, f"{stops.index(now) + 1 if now in stops else 1} of {len(stops)}", chip.center, 13, bold=True, centre=True)
+                for step, cx in ((-1, chip.x + 11), (1, chip.right - 11)):
+                    pygame.draw.polygon(surface, T.INK, [(cx + 5 * step, chip.centery), (cx - 3 * step, chip.centery - 6), (cx - 3 * step, chip.centery + 6)])
+                    self.cycle_rects[step] = pygame.Rect(chip.x if step < 0 else chip.centerx, chip.y, chip.w // 2, chip.h)
+                self.tips.append((chip, "The units of yours in this hex. The arrows, the mouse wheel over the tile, or Page Up and Page Down go through them."))
+            if grouped or len(stops) > 1:
+                y += 34
             if u["id"] in session.pending[session.side]:
                 order = session.order_of(u["id"])
                 turns = session.turns_to_go(u["id"])
@@ -1146,7 +1411,6 @@ class Painter:
                 line("From an earlier turn. Space keeps it." if u["id"] in session.waiting_units()
                      else T.ORDER_HELP[order["order"]], 12, T.DIM)
             elif ui.alone:
-                line("Chosen from its group", 15, T.ATTACK, True, gap=2)
                 line("An order now splits it off. Split leaves it here.", 12, T.DIM)
             else:
                 line("Order: Hold", 15, T.PATH, True, gap=2)

@@ -1,9 +1,10 @@
 """Colours and sizes (docs/COUNTERS.md for the hex and counter sizes)."""
+import re
 
 BASE_HEX = 64                       # a hex, corner to corner, in the base map (mapgen.render.BASE_HEX)
 ZOOM_MAX, ZOOM_START = 2.0, 1.0     # the base map is scaled by the zoom; the least zoom shows the whole map
 ZOOM_STEP = 1.2
-COUNTER = 0.64                      # a counter's side as a share of the hex
+COUNTER = 0.74                      # a counter's side as a share of the hex: the most that keeps neighbours apart
 PANEL = 360                         # the side panel's width: everything to read and to press is in it
 BAR = 32                            # the message line under the map
 WINDOW = (1400, 860)
@@ -54,6 +55,36 @@ PREVIEW = (70, 150, 255)                                           # the way bei
 HAUL = (255, 214, 40)                                              # a supply haul: yellow
 BADGE = (255, 214, 40)                                             # the trouble badge on a counter
 ARM = ("armour", "motorised", "foot", "guns", "recon", "hq")       # which unit of a pile is shown on top
+NAMED = 90              # a counter this many pixels across or more carries its unit's short name and its pace
+TILE = (218, 207, 172)  # the pale face of the tile in the panel
+TILE_H = 210            # ...and its height; it is as wide as the panel's text
+FLAG = (42, 28)         # the flag in its top right corner
+FLAG_BLUE, FLAG_RED, FLAG_WHITE = (1, 33, 105), (200, 16, 46), (244, 242, 236)
+FLAG_NAME = {"uk": "United Kingdom", "nz": "New Zealand", "au": "Australia", "in": "India", "sa": "Union of South Africa",
+             "pl": "Poland", "de": "Germany", "it": "Italy"}
+# a Commonwealth unit flies its own country's flag: told from its name, or failing that its division's
+CONTINGENT = (("New Zealand", "nz"), ("South African", "sa"), ("Indian", "in"), ("Australian", "au"), ("Polish", "pl"))
+PACE = {"cw": PAPER, "de": (160, 204, 240), "it": PAPER}           # the pace on a counter: not the strength's colour
+# a division's notch on its units' counters, in the order of the divisions' HQs within a side: the
+# strongest against any face first (docs/COUNTERS.md)
+DIVISION = ((200, 44, 36), (246, 206, 48), (246, 242, 230), (34, 30, 26), (236, 130, 30), (140, 70, 170),
+            (240, 140, 170), (130, 82, 40), (70, 200, 210), (170, 220, 60))
+# a unit's name cut down for its counter, the first that matches first: the British Army's own
+# short forms, the German Army's, and for the Italians the arm alone (docs/COUNTERS.md)
+BRIEF = (("Armoured car regiments", "Armd Cars"), ("Reconnaissance battalions", "Recce"), ("Reconnaissance", "Recce"),
+         ("Polish Carpathian", "Carpathian"), ("Support Group", "Sp Gp"), ("Divisional Artillery", "Div Arty"),
+         ("Divisional Cavalry", "Div Cav"), ("Division artillery", "Div Arty"), ("South African", "SA"),
+         ("New Zealand", "NZ"), ("Army Tank", "Army Tk"), ("Army tank", "Army Tk"), ("Armoured", "Armd"),
+         ("Motorised", "Mot"), ("Infantry", "Inf"), ("Indian", "Ind"), ("Guards", "Gds"),
+         ("Panzerjaeger-Abteilungen", "Pz.Jg."), ("Aufklaerungs-Abteilung", "Aufkl.Abt."),
+         ("Panzer-Regiment", "Pz.Rgt."), ("Schuetzen-Regiment", "S.R."), ("Artillerie-Regiment", "Art.Rgt."),
+         ("Infanterie-Regiment", "Inf.Rgt."), ("Afrika-Regiment", "Afr.Rgt."), ("Panzer-Division", "Pz.Div."),
+         ("Panzergruppe", "Pz.Gr."), ("Panzer group", "Pz Gp"), ("Artillerie der Division", "Art."), ("Division z.b.V.", "zbV"),
+         ("Artillery Group", "Gp"), ("III./255 und III./347", "III/255+347"), (" und ", ", "),
+         ("Corpo d'Armata di Manovra", "CAM"), ("Corpo d'Armata", "Corpo"), ("Reggimento artiglieria celere", "Art. Celere"),
+         ("Reggimento artiglieria", "Artigl."), ("Reggimento fanteria", "Fanteria"), ("Reggimento bersaglieri", "Bersaglieri"),
+         ("Reggimento carri", "Carri"), ("Brigade", "Bde"), ("brigade", "Bde"), ("Division", "Div"), ("division", "Div"),
+         ("garrison", "Garr"), ("Regiment", "Regt"))
 
 
 def order_name(name, units=()):
@@ -62,6 +93,24 @@ def order_name(name, units=()):
     if name == "road_march" and any(u["type"] == "foot" for u in units):
         return "March"
     return ORDER_NAME[name]
+
+
+# the Timetable tab's sections: the kinds of event under each heading; the last takes whatever is left
+TIMETABLE = ((("withdrawal",), "Withdrawals"), (("arrival", "replacement"), "Reinforcements"), ((), "Other"))
+
+
+def flag_of(nation, name, division=""):
+    """Whose flag a unit flies: Germany's, Italy's, or for the Commonwealth its own country's."""
+    if nation != "cw":
+        return nation
+    return next((code for words in (name, division) for part, code in CONTINGENT if part in words), "uk")
+
+
+def short(name):
+    """A unit's name as its counter carries it: "4th Armoured Brigade" is "4 Armd Bde"."""
+    for long, cut in BRIEF:
+        name = name.replace(long, cut)
+    return re.sub(r"\b(\d+)(st|nd|rd|th)\b", r"\1", name)
 
 
 def morale(cohesion):

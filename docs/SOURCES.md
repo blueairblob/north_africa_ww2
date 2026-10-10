@@ -99,6 +99,33 @@ Used:
 | 22 December 1941 | 22nd Armoured Brigade: 60 tanks | Wikipedia, "22nd Armoured Brigade (United Kingdom)", citing Joslen pp. 168-9: by 22 December "80 Crusaders" and "30 M3 Stuart"; Murphy: fewer than 50 tanks in a composite regiment on 27 November | 110 on the day is stated; its strength just before was not found, so 60 is the least it can have been sent |
 | 27 December 1941 | Panzer-Regiment 8: 23 tanks | the same pages: 6 Panzer II and 17 Panzer III for 7./Pz.Rgt. 8, landed at Tripoli on 19 December (the ship is named differently in two summaries). Murphy ch. 26: the Afrika Korps "with 70 tanks" struck 22nd Armoured Brigade after 27 December; Wikipedia, "Operation Crusader", citing Murphy p. 501: eight tanks fit on the 15th | the landing is dated; **the day the tanks reached the regiment was not found** and is taken as the 27th from the strength on the 28th |
 
+For `data/scenarios/sidi_rezegh.json`, looked up on 10 October 2026. The
+scenario is Crusader's first five turns, so it has Crusader's start; these
+dates are why it ends where it does. Murphy was read at first hand again,
+this time in a copy of the book on 22battalion.org.nz; the others are at
+second hand.
+
+| Date | Event | Source | How sure |
+| --- | --- | --- | --- |
+| 18 November 1941 | Eighth Army crosses the frontier | Wikipedia, "Operation Crusader": "Before dawn on 18 November, the Eighth Army advanced westwards"; historyofwar.org, "Operation Crusader" | two pages at second hand, which agree |
+| 19 November 1941 | 7th Armoured Brigade takes the airfield at Sidi Rezegh | historyofwar.org: "capturing the airfield at Sidi Rezegh intact"; Wikipedia | the same two pages |
+| 21 November 1941 | the garrison of Tobruk breaks out towards Ed Duda | Wikipedia: "The 70th Infantry Division was to break out from Tobruk on 21 November"; historyofwar.org | the same two pages |
+| 23 November 1941 | Totensonntag: the armour's battle south of Sidi Rezegh | both pages; Murphy ch. 10 is named for it | the day is not in doubt |
+| 24 November 1941 | Rommel's armour leaves for the frontier | historyofwar.org: "The 'dash to the wire' began at around midday on 24 November"; Wikipedia | the same two pages |
+| dawn, 26 November 1941 | 4th New Zealand Brigade is on Belhamed | Murphy ch. 15: "Dawn of 26 November was unwelcome on the bald top of Belhamed" | stated. The hour it was taken, in the night before, was not read |
+| night of 26 to 27 November 1941 | the New Zealand Division joins the garrison of Tobruk at Ed Duda: 44th Royal Tank Regiment and 19th Battalion | Murphy ch. 15: "At 9.30 p.m. the first wave of tanks drove off and a quarter of an hour later 19 Battalion set out"; "By 4 a.m. on 27 November the line was complete and Brennan reported that 19 Battalion was on Ed Duda". Ch. 16: Scobie at 2.30 p.m. on the 27th, "Corridor is open" | stated, at first hand |
+| morning, 27 November 1941 | Sidi Rezegh is in 6th New Zealand Brigade's hands after a night attack | Murphy ch. 16, of the morning of the 27th: "Sidi Rezegh was ours" | stated. The hour was not read |
+| 27 November 1941 | the Afrika Korps is ordered back to Tobruk | Murphy ch. 18: "Africa Corps had to return to the Tobruk front this day, 27 November" | stated. historyofwar.org has "By 28 November": a day apart |
+
+So the scenario ends on the evening of 27 November, its fifth turn: the road
+into Tobruk stood open that day, and the armour that would shut it had only
+been ordered back. When it was shut again is outside the scenario and the
+pages read do not agree: 1 December (Wikipedia, historyofwar.org) or 29
+November (rommelsriposte.com, "So when did the siege of Tobruk end?").
+
+Ed Duda, where the two forces met, is not a place on this game's map.
+Belhamed, beside it, stands for the join. That is this game's choice.
+
 Found and not used, each for the reason given:
 
 - **Italian tanks.** The *Fabio Filzi* landed 10 M13/40 at Tripoli on 23

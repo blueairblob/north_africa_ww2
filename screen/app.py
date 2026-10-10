@@ -10,7 +10,7 @@ from engine import units as U
 from . import saves
 from . import theme as T
 from .draw import UI, Painter
-from .layout import Layout, areas, buttons, game, layers, saves_list, tabs
+from .layout import HEAD_Y, Layout, areas, buttons, game, layers, saves_list, tabs
 from .session import GOES
 from .sound import Sounds
 
@@ -349,9 +349,10 @@ class App:
         if not ok and has != name:                        # a button that is greyed says why
             ui.message = why
             return
-        if has == name and ui.mode is None and name not in GOES:      # Hold, Dig in or Rest, pressed again: taken back
+        if has == name and ui.mode is None:               # its own order's button, pressed again: the order is taken back
             s.cancel(ui.selected)
-            ui.message = f"{T.ORDER_NAME[name]} cancelled. It holds unless given another order."
+            ui.message = f"{T.ORDER_NAME[name]} cancelled. It holds unless given another order." + (
+                f" Press {T.ORDER_NAME[name]} again to send it elsewhere." if name in GOES else "")
         elif name == "split":                             # leave the group, and stay
             if ui.alone:
                 self.give("hold")
@@ -367,22 +368,34 @@ class App:
             ui.mode = None if ui.mode == name else name
             ui.hover = tuple(self.session.unit(ui.selected)["hex"]) if ui.mode else ui.hover
             ui.message = "Join: click a unit of the same division, or choose it with the arrow keys and press Enter." if ui.mode else ""
-            ui.message += self.as_it_was(has, name)
         elif name in ("hold", "dig_in", "rest"):
             self.give(name)
         elif name in ("move", "attack", "road_march"):
             ui.mode = None if ui.mode == name else name
             ui.hover = tuple(self.session.unit(ui.selected)["hex"]) if ui.mode else ui.hover     # the cursor starts on the unit
             ui.message = (f"{T.ORDER_NAME[name]}: click the hex, or choose it with the arrow keys and press Enter."
-                          if ui.mode else "") + self.as_it_was(has, name)
+                          if ui.mode else f"{T.ORDER_NAME[name]} let go: no order was given.")
 
-    def as_it_was(self, has, name):
-        """Said when the button of the order a unit already has is pressed: it is sent somewhere
-        else only by the click that follows, and until then its order is as it was."""
-        if has != name:
-            return ""
-        return ("   Until then its order is as it was; Hold stops it." if self.ui.mode
-                else f"Its order is as it was: {T.ORDER_NAME[name]}.")
+    def over_icon(self, pos):
+        """Is this point on the header of the unit taken up in the panel: its tile, or its group's units?"""
+        panel = areas(self.size)["panel"]
+        return (self.ui.tab == "unit" and self.play is None and self.session.unit(self.ui.selected) is not None
+                and pygame.Rect(panel.x, HEAD_Y - 6, panel.w, T.TILE_H + 12).collidepoint(pos))
+
+    def cycle(self, step):
+        """Take up the next thing of yours in the hex of the unit taken up, or the one before:
+        each group, then each of its units by itself, and round again (Session.stack)."""
+        ui, s = self.ui, self.session
+        stops = s.stack(ui.selected)
+        if len(stops) < 2:
+            ui.message = "Nothing else of yours is in this hex."
+            return
+        now = (ui.selected, True) if ui.alone else (s.leader(ui.selected), False)
+        at = (stops.index(now) if now in stops else 0) + step
+        (ui.selected, ui.alone), ui.mode = stops[at % len(stops)], None
+        name = s.unit(ui.selected)["name"] if ui.alone else s.group_name(ui.selected)
+        ui.message = f"{at % len(stops) + 1} of {len(stops)} in this hex: {name}" + (
+            " by itself. An order now splits it from its group." if ui.alone else ".")
 
     def cursor(self, dx, dy):
         """Move the keyboard's hex cursor. Up and down go along the column. Left and right go to
@@ -491,6 +504,9 @@ class App:
                 self.glide_to(tuple(s.unit(uid)["hex"]))
                 self.taken_words()
                 return
+        for step, r in self.painter.cycle_rects.items():  # the arrows on the tile: the one before in its hex, or the next
+            if r.collidepoint(pos) and button == 1:
+                return self.cycle(step)
         for uid, r in self.painter.member_rects.items():  # a unit in the panel's list: take it up by itself
             if r.collidepoint(pos) and button == 1:
                 ui.selected, ui.alone, ui.mode = uid, True, None
@@ -585,9 +601,8 @@ class App:
             ui.message = before + (f"{name} carries on with its order, {T.order_name(order['order'], s.members(lead))}. "
                                    "Space keeps it; any order changes it.")
         else:
-            ui.message = before + (f"{name} has its order, {T.order_name(order['order'], s.members(lead))}. " + (
-                "Press its lit button to send it elsewhere, or Hold to stop it." if order["order"] in GOES
-                else "Press an order to change it, or its lit button to take it back."))
+            ui.message = before + (f"{name} has its order, {T.order_name(order['order'], s.members(lead))}. "
+                                   "Press an order to change it, or its lit button to take it back.")
 
     def done(self):
         ui, s = self.ui, self.session
@@ -631,6 +646,8 @@ class App:
                 ui.message = "Choose the hex with the arrow keys first, or press Escape."
         elif key in GO:
             self.press_button(GO[key])
+        elif key in (pygame.K_PAGEUP, pygame.K_PAGEDOWN) or (key in (pygame.K_UP, pygame.K_DOWN) and self.over_icon(ui.mouse)):
+            self.cycle(-1 if key in (pygame.K_PAGEUP, pygame.K_UP) else 1)    # through the units in its hex
         elif key in AIR:
             self.session.set_air(AIR[key])
             ui.message = f"Air force: {AIR[key]}."
@@ -738,6 +755,8 @@ class App:
             ui.mouse = self.map_rect().center             # the mouse has left: no scrolling at the edge
         elif event.type == pygame.MOUSEWHEEL and ui.tab != "unit" and areas(self.size)["panel"].collidepoint(pygame.mouse.get_pos()):
             ui.scroll = max(0, ui.scroll - event.y)       # over the list of orders or the timetable, the wheel scrolls it
+        elif event.type == pygame.MOUSEWHEEL and self.over_icon(ui.mouse):
+            self.cycle(-1 if event.y > 0 else 1)          # over the unit's tile, the wheel goes through the units in its hex
         elif event.type == pygame.MOUSEWHEEL:
             self.zoom(T.ZOOM_STEP ** event.y, pygame.mouse.get_pos())
         elif event.type == pygame.MOUSEMOTION:

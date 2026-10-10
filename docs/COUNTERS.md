@@ -1,11 +1,9 @@
 # Counters: sizes, sprites and what the first trials showed
 
-Notes on the design of the unit counters, from the first work on them
-(October 2026). Nothing here is built yet: there is no counter art in the
-repository and no screen to show it. `DESIGN.md` §4.2 still describes
-NATO-style symbols; the idea explored here is a picture of the formation's
-typical equipment instead — a tank, a gun, a lorry. Which of the two the game
-uses is still to be decided (see "Open decisions").
+Notes on the design of the unit counters. The first part (sizes, the prompt,
+the trials) dates from the first work on them in October 2026, before there
+was a screen. The pictures the game now uses are described under "The drawn
+set" below.
 
 ## Sizes
 
@@ -13,8 +11,10 @@ Hexes are flat-topped, so a hex is 0.866 as high as it is wide. These sizes
 were set for a screen with two zoom levels, the far one half the near one.
 The screen as built zooms smoothly instead, from the whole map (about 20 px
 to the hex) to 128 px, over a base map drawn at 64 px to the hex
-(`python -m mapgen base`); a counter is always 0.64 of the hex. The two sizes
-below are still the ones to test a sprite at: a close view and a far one.
+(`python -m mapgen base`); a counter is always 0.74 of the hex, the most that
+keeps the counters of neighbouring hexes apart. So a counter is 47 px at the
+opening zoom and 94 px at the closest, and its picture is 43 × 26 and
+86 × 52. The master size and the 5:3 shape below still hold.
 
 | | Near zoom | Far zoom | Master to draw at |
 | --- | --- | --- | --- |
@@ -165,6 +165,149 @@ The screen would load a sprite from `art/counters/` when one exists and draw a
 NATO-style symbol when it does not, so the game is playable before the art is
 complete.
 
+## The drawn set
+
+`python -m countergen` draws all eighteen pictures and writes them to
+`art/counters/`: `<nation>_<kind>.svg`, a true vector drawing, and the
+`.png` made from it, which is what the screen loads. Each is built from a few
+shapes written out in `countergen/__init__.py`, so the set shares one outline
+weight, one ground line and one palette, and a picture is changed by changing
+a few numbers. They were drawn from the known shapes of the vehicles, not
+from any other game's art.
+
+| Kind | Commonwealth | German | Italian |
+| --- | --- | --- | --- |
+| `armour` | Crusader | Panzer III, short 50 mm gun | M13/40 |
+| `foot` | three riflemen, flat-brimmed helmet, shorts | three riflemen, flared helmet | three riflemen, domed helmet |
+| `guns` | 25-pounder | 88 mm Flak on its mount | 75 mm field gun, spoked wheel |
+| `motorised` | Bedford 3-ton lorry | Opel Blitz | Lancia 3Ro |
+| `recon` | Marmon-Herrington | SdKfz 222 | AB 41 |
+| `hq` | staff car with a pennant | Kübelwagen with a pennant | Fiat staff car with a pennant |
+
+- Plain colours, no camouflage and no markings. The nation is told by the
+  counter's face, the kind by the outline.
+- Three men, not one, stand for the infantry: one figure in a 5:3 space is
+  about 18 px high in play and does not read.
+- A headquarters is told from a lorry by its red pennant.
+- These are likenesses at 36 px, not scale drawings. Which vehicle stands for
+  which arm is a choice: German divisional artillery was mostly 105 mm
+  howitzers, and a Matilda or Stuart brigade shows a Crusader.
+- A picture from an artist goes in `art/counters/artist/` under the same
+  name, `<nation>_<kind>.png`, on the same 480 × 288 canvas. The screen takes
+  it before the drawn one, so the drawn set stays whole underneath and fills
+  whatever the artist has not done.
+
+### The artist's first sheets (a stopgap)
+
+An artist's first trial came as two sheets, each a single picture of eighteen
+sprites (`art/counters_sheet_1.png`, `art/counters_sheet_1_1.png`): infantry,
+light tank, medium tank, artillery, anti-tank gun and transport for each
+nation. They are richer than the drawn set and read as well at 47 px, so
+`python -m countergen cut` cuts twelve of them into `art/counters/artist/`:
+infantry, tank, gun and lorry for each nation. It clears the tip of a
+neighbour's gun where two sprites touch, sets three of the one soldier in
+file, and fits each to the canvas and ground line of the drawn set.
+
+What this leaves, until the pictures come one to a file and drawn to the
+brief:
+
+- The sheets have no armoured car and no headquarters, so those six counters
+  show the drawn pictures, in a plainer style beside the artist's.
+- The German gun is the sheet's anti-tank gun: its German "artillery" is an
+  assault gun, not a gun on a carriage. The German soldier comes from the
+  first sheet, the only one that gives him his own cap.
+- Not checked against a source, and doubtful: the striped camouflage on the
+  British and Italian tanks, the British gun (spoked wooden wheels, so not a
+  25-pounder), and which marks of tank are shown. The British tank is a
+  Matilda, not the Crusader the drawn set has.
+- Where the artist's pictures come from has to be known before they are
+  published: the repository is clean-room (`docs/CLEAN_ROOM.md`).
+
+## The counter as a thing
+
+The counter is drawn to look like a piece lying on the map, not a flat
+square (`Painter.face` and `Painter.shadow` in `screen/draw.py`): its face is
+lit from the top left, lighter at the top than the bottom, with a bevelled
+edge, a little grain and a soft shadow; a counter taken up casts a longer
+one. The owner chose this, in October 2026, over tilting the board: a mock
+showed that a tilt made the numbers harder to read and the piles more
+crowded for the sake of mood alone. The face, the picture, the strength
+number and the two bars are laid out as shares of the counter's side, so
+they hold at every zoom. The face and the panel's tile are cut from the same
+slab (`slab` in `screen/draw.py`).
+
+## The tile layout
+
+In October 2026 the owner showed the counters of a published tactical board
+game as a look he liked: a large picture in the middle, the name along the
+top, a coloured notch, and numbers in fixed places round the picture. That
+game's numbers (range, armour to the front and the flank, the cost of
+firing) describe one tank or one squad and have no meaning for a brigade, so
+none of them was taken; `DESIGN.md` also holds a counter to a symbol, a name
+and at most three numbers. What was taken is the arrangement, and every
+figure shown is one this game's engine already keeps. A mock
+(`logs/counter-tile-mock.png`, not kept in the repository) offered a
+nation-coloured face and a pale one; the owner chose the nation colour for
+the map, where three pale counters could hardly be told apart at 47 px, and
+the pale face for the panel.
+
+**On the map.**
+
+- A unit of a division carries the division's **notch** in the middle of its
+  top edge, at every size from 22 px: one colour to each division of a side,
+  given in the order of the divisions' HQs (`DIVISION` in `screen/theme.py`,
+  `Session.division`). A unit of no division (a corps HQ, a garrison, an army
+  tank brigade) has none. There are ten colours and the Axis has ten
+  divisions in Crusader; an eleventh would repeat the first. Some are weak
+  against one face (lime on the Italian green, pale blue on the Commonwealth
+  blue), which is why the notch has a dark outline.
+- At the closest zoom only (a counter of `NAMED` = 90 px or more; the one
+  taken up, being drawn larger, is named a zoom step sooner) the counter also
+  carries the unit's **short name** along the top and, for the player's own
+  units, its **pace** beside the strength: an arrowhead and the hexes of open
+  desert it can cross in a turn in this turn's weather (a group's is its
+  slowest member's, `docs/RULES.md` 9.1.1, 20.2.6, 21.4.3). The picture is a
+  little smaller to make room, and the tags for the pile and the order sit
+  above the top edge so that they do not cover the name.
+- The strength on the counter is still in steps, as before; the tile gives it
+  in tanks, men or guns.
+
+**Short names** come from a rule, not from the scenario file (`short` and
+`BRIEF` in `screen/theme.py`): "4th Armoured Brigade" is "4 Armd Bde",
+"Panzer-Regiment 8" is "Pz.Rgt. 8", "132 Reggimento carri" is "132 Carri". A
+test holds every unit of Crusader to the width of the counter. The British
+and German forms are meant to be those armies' own abbreviations, written
+from memory and **not checked against a source**; the Italian ones simply
+keep the number and the arm.
+
+**In the panel.** The unit taken up by itself is shown as one tile, as wide
+as the panel's text and 210 px high (`Painter.tile`): a pale face with a band
+of the nation's colour holding the name and the division, the picture, and
+round it the strength in real terms, the pace, the morale
+level with its word, the fuel in kilometres (vehicles only), the experience
+as one to three pips, and the stores as a bar. Each figure has its word under
+it, and pointing at one gives the fuller figure. The pace's word is "moves"
+(the owner's, 10 October 2026): the hexes of open desert the unit can cross
+in a turn, which its tip says in full. The nation's flag is in the top right
+corner of the band (`flag` in `screen/draw.py`, 42 by 28 px), and a name too
+long to sit centred clear of it moves left. Which flag is told from the
+unit's name, or failing that its division's (`flag_of` and `CONTINGENT` in
+`screen/theme.py`): a rule, like the short names, and not scenario data. See
+"The flags" below. When more of the player's units are in the hex, a chip
+under the orders, to the right of "Back to group" and off the tile (the
+owner's place for it), says which this is ("3 of 6") with an arrow each way. The
+arrows, the mouse wheel or Up and Down with the pointer on the tile, and Page
+Up and Page Down anywhere, go through them: each group, then each of its
+units by itself (`Session.stack`). The tile is the unit's
+header, and the orders are directly under it (`HEAD_Y` and `ORDERS_Y` in
+`screen/layout.py`); it replaces the small card and name that were the header
+and the four bars that were under the orders. It was first put under the
+orders, where it left room for hardly one report. A group taken up has its
+name and the list of its units in the same place above the orders, the rows
+closer together when there are more than seven. A unit chosen from its
+group has a "Back to group" button under the orders, which is also what says
+it came from a group; the owner moved it there from the tile's corner.
+
 ## Decided since (October 2026)
 
 - **Pictures are the default**, NATO-style symbols the option (F3). Until
@@ -190,3 +333,29 @@ complete.
   an army tank brigade, a Crusader for an armoured brigade). The complexity
   budget (`DESIGN.md` §14.1) allows a counter a symbol, a name and at most
   three numbers; the picture is the symbol, so either fits.
+
+## The flags
+
+The owner asked on 10 October 2026 for each Commonwealth country's flag as it
+was at the time. Looked up that day in Wikipedia's article on each flag
+(facts only). The drawings are this game's own, made by `flag` in
+`screen/draw.py` from each flag's description, and simplified for 42 by 28
+pixels.
+
+| Flies | Flag | Found | How sure |
+| --- | --- | --- | --- |
+| United Kingdom | the Union Flag | | not in doubt. The red saltire is drawn plain, not counterchanged |
+| New Zealand | the blue ensign with four red stars edged white | "Flag of New Zealand": in use since 1869, by law from 1902 | the flag is right for 1941. The Union Flag was the "superior flag" until 1965 and was flown above it |
+| Australia | the blue ensign with the Commonwealth Star of seven points and the Southern Cross | "Flag of Australia": the seventh point was added in 1908; "From 1911 it was the saluting flag of the Australian army" | right for the army in 1941. It was declared the national flag only in 1953. No Australian unit is in Crusader, so it is not yet seen in play |
+| India | the red ensign with the Star of India under a crown | "Flag of India": this flag stood for India abroad | **which flag the Indian Army served under was not found.** The star is simplified |
+| Union of South Africa | orange, white and blue with three small flags on the white | "Flag of South Africa (1928–1994)": from 1928 to 1957 this flag and the Union Flag had equal standing | right for 1941. The three small flags are only suggested at this size |
+| Poland | white over red | | from memory, unchecked |
+| Italy | the tricolour with the arms of Savoy | | from memory, unchecked |
+| Germany | the army's black cross | | **not the flag of 1941**, which carried the swastika. A choice made for the shops and the laws a published game meets; the owner's to change |
+
+Two things for the owner to know. South Africa's flag of 1928 is the right
+one for 1941, and in South Africa today its gratuitous display is unlawful
+(Equality Court, 2019, upheld on appeal in 2023), with exceptions that include
+artistic and historical use. And the rule gives a whole division one flag:
+the British regiments that served in the Indian and other divisions are not
+told apart, because the game's units are brigades.

@@ -108,6 +108,14 @@ percentage, fuel percentage, railhead) are looked up by turn number.
 side's submitted orders. Replaying them gives the identical state (section 15,
 invariant I-1).
 
+**2.4 A scenario cut from another.** A scenario file may name a `base`,
+another scenario, and give only what differs: its id, name, number of turns,
+objectives, par and thresholds, or any other entry. What it does not give is
+the base's. It has the base's units less those that arrive after its own last
+turn, and the base's withdrawals and replacements up to its last turn (1.9).
+The checker and the engine are given the result and treat it as any other
+scenario; the saved game holds the result, not the name of the base.
+
 ---
 
 ## 3. The map
@@ -1252,7 +1260,8 @@ this document.
 ## 13. Victory
 
 **13.1** The scenario lists **objectives**: a place, points per turn, and
-points at the end.
+points at the end. It may also give each side its **aim** in a sentence. The
+aim is words for the player, shown on the Timetable tab; no rule reads it.
 
 **13.2** In each Victory phase, each side gains the per-turn points of every
 objective it owns (3.4.2).

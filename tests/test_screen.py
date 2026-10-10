@@ -31,7 +31,7 @@ def regiments():
 def test_a_hex_is_as_many_pixels_across_as_asked_and_the_counter_fits_in_it():   # docs/COUNTERS.md
     lay = Layout(96)
     (x0, _), (x1, _) = lay.corners((10, 10))[0], lay.corners((10, 10))[3]
-    assert round(x0 - x1) == 96 and lay.counter == 61
+    assert round(x0 - x1) == 96 and lay.counter == 71
     _, y0 = lay.centre((10, 10))
     _, y1 = lay.centre((10, 11))
     assert round(y1 - y0) == 83
@@ -253,6 +253,9 @@ def test_a_click_on_the_map_gives_no_order_until_an_order_is_pressed():
     app.centre_on((59, 11))
     app.click(app.spot((62, 14)))                                    # a stray click: its route is as it was
     assert s.pending["axis"][101]["to"] == far and "keeps to its order, Move" in app.ui.message
+    app.key(pygame.K_m)                                              # its lit order pressed: taken back, and it holds
+    app.paint(surface)
+    assert 101 not in s.pending["axis"] and inside("hold") == theme.BUTTON_ON and inside("move") == theme.BUTTON
     app.key(pygame.K_m)
     app.ui.hover = (62, 14)
     app.paint(surface)
@@ -1078,7 +1081,7 @@ def test_reports_are_one_a_unit_and_only_what_matters_and_a_back_button_returns_
     app.paint(pygame.Surface(theme.WINDOW))
     app.click(app.painter.member_rects[312].center)
     app.paint(pygame.Surface(theme.WINDOW))
-    assert app.ui.alone and app.painter.back_rect is not None
+    assert app.ui.alone and app.painter.back_rect.y > layout.buttons(app.size)["recall"].bottom   # the way back, under the orders
     app.click(app.painter.back_rect.center)
     assert app.ui.selected == 310 and not app.ui.alone
 
@@ -1288,13 +1291,22 @@ def test_next_unit_is_greyed_when_every_unit_has_its_order_and_a_units_own_order
     app.ui.selected = 101
     app.paint(pygame.Surface(theme.WINDOW))
     assert (nxt, "Every unit has been gone through.") in app.painter.tips
-    assert (layout.buttons(app.size)["attack"], "This is its order. Click to send it elsewhere; Hold stops it.") in app.painter.tips
-    app.click(layout.buttons(app.size)["attack"].center)            # pressed again: a new place to attack is asked for
-    assert app.ui.mode == "attack" and s.pending["axis"][101]["to"] == [80, 24] and "as it was" in app.ui.message
-    app.click(layout.buttons(app.size)["attack"].center)            # and once more: let be
-    assert app.ui.mode is None and s.pending["axis"][101]["to"] == [80, 24] and "as it was" in app.ui.message
-    app.click(layout.buttons(app.size)["hold"].center)              # Hold stops it
-    assert s.pending["axis"][101] == {"unit": 101, "order": "hold"} and 101 not in s.standing["axis"]
+    assert (layout.buttons(app.size)["attack"], "This is its order. Click to take it back.") in app.painter.tips
+    app.click(layout.buttons(app.size)["attack"].center)            # its lit button pressed again: the attack is taken back
+    assert app.ui.mode is None and 101 not in s.pending["axis"] and 101 not in s.standing["axis"]
+    assert app.ui.message.startswith("Attack cancelled. It holds") and 101 in s.waiting_units()
+    app.paint(pygame.Surface(theme.WINDOW))
+    assert (layout.buttons(app.size)["hold"], "With no other order it holds.") in app.painter.tips     # Hold is lit again
+    app.click(layout.buttons(app.size)["move"].center)              # Move pressed with no order: a place to go is asked for
+    assert app.ui.mode == "move" and 101 not in s.pending["axis"]
+    app.click(layout.buttons(app.size)["move"].center)              # and unpressed before a hex is chosen: nothing is ordered
+    assert app.ui.mode is None and 101 not in s.pending["axis"] and "no order was given" in app.ui.message
+    for name, order in (("move", {"to": [72, 24]}), ("road_march", {"to": [72, 24]}), ("rest", {})):   # every order's button is the same
+        if not s.give({"unit": 101, "order": name, **order})["ok"]:
+            continue
+        app.ui.selected = 101
+        app.click(layout.buttons(app.size)[name].center)
+        assert 101 not in s.pending["axis"] and "cancelled" in app.ui.message, name
 
 
 def test_fuel_is_told_in_kilometres_with_the_hexes_beside():
@@ -1367,7 +1379,7 @@ def test_the_orders_sit_under_the_units_header_and_only_those_it_can_take():
     app = App(Session(regiments(), GMAP, humans=["cw"], scripted={"axis": players.DoNothing(GMAP)}))
     s = app.session
     where = layout.buttons(app.size)
-    assert where["move"].y < 260 and where["next"].y > 700          # orders near the top, under the header; Next and End at the foot
+    assert where["move"].y == layout.HEAD_Y + theme.TILE_H + 12 < 400 and where["next"].y > 700   # orders directly under the unit's tile; Next and End at the foot
     assert s.offers(310) == ["move", "attack", "road_march", "hold", "dig_in", "rest", "join", "split"]     # no strays to recall
     assert s.offers(301) == ["move", "road_march", "hold", "rest", "join"]                    # an army HQ alone, at Fort Maddalena
     assert s.offers(None) == [] and s.offers(999) == []
@@ -1472,8 +1484,10 @@ def test_the_unit_orders_tab_lists_every_unit_and_its_order_and_a_tap_takes_one_
     leads = sorted({s.leader(u["id"]) for u in s.view["units"] if u["status"] == "on_map"})
     rows = {uid for _, uid in app.painter.report_rects.values()}
     assert rows == set(leads)                                        # all of them fit at this size
-    app.click(layout.buttons(app.size)["hold"].center)               # no order buttons on this tab
-    assert app.ui.selected not in s.pending["cw"]
+    app.click(layout.buttons(app.size)["hold"].center)               # no order buttons on this tab: a row of the list is there
+    assert not s.pending["cw"].keys() - {310}                        # so the click gives no order
+    app.click(layout.tabs(app.size)["orders"].center)
+    app.paint(surface)
     row = next(r for r, uid in app.painter.report_rects.values() if uid == 310)
     app.click(row.center)
     assert app.ui.selected == 310 and app.ui.tab == "unit" and "has its order, Dig in" in app.ui.message
@@ -1615,6 +1629,12 @@ def test_the_timetable_tab_lists_what_history_sends_and_takes_and_a_tap_goes_to_
         ("22 Dec", "in 17 turns", "22nd Armoured Brigade receives 60 tanks.")]     # its own side's, and nothing of the enemy's
     for words in ("27 November", "in 4 turns", "7th Armoured Brigade is withdrawn.", "Tanks from the reserve and the workshops."):
         assert words in seen, words
+    heads = [seen.index(w) for w in ("Withdrawals", "7th Armoured Brigade is withdrawn.", "4 units of 2nd New Zealand Division are withdrawn.",
+                                     "Reinforcements", "4th Armoured Brigade receives 33 tanks.", "22nd Armoured Brigade receives 60 tanks.",
+                                     "Other", "none")]
+    assert heads == sorted(heads)                                    # each kind under its heading, soonest first; nothing else is due
+    assert [r["kind"] for r in s.timetable()] == ["withdrawal", "replacement", "withdrawal", "arrival", "replacement", "replacement"]
+    assert s.due_now() == 0 and not [tip for _, tip in app.painter.tips if "at the end of this turn" in tip]   # no bubble on the tab yet
     assert not [b for b in ("move", "attack", "hold") if b in seen]  # no order buttons on this tab
     box = next(row for key, (row, uid) in app.painter.report_rects.items() if key[0] == "due" and uid == 312)
     app.click(box.center)                                            # a tap on an event goes to its unit
@@ -1629,6 +1649,12 @@ def test_the_reports_say_what_the_timetable_will_do_this_turn_and_what_it_did():
     while s.state["turn"] < 5:
         s.done()
     told = [words for words, _ in s.reports()]
+    assert s.due_now() == 2                                         # the tab's bubble: two events fall as this turn ends
+    pygame.init()
+    app = App(s)
+    app.paint(pygame.Surface(theme.WINDOW))
+    spot = next(r for r, tip in app.painter.tips if tip == "2 timetable events at the end of this turn: plan for them now.")
+    assert spot.colliderect(layout.tabs(app.size)["timetable"])
     assert "At the end of this turn: 7th Armoured Brigade is withdrawn." in told
     assert "At the end of this turn: 4th Armoured Brigade receives 33 tanks." in told
     S.unit(s.state, 311)["steps"] = 5                               # the brigade has been in a fight
@@ -1650,3 +1676,158 @@ def test_the_reports_say_what_the_timetable_will_do_this_turn_and_what_it_did():
     s.done()
     assert dict(s.reports())["Replacements for Panzer-Regiment 8 were lost: Benghazi is in enemy hands."] == 111
 
+
+
+# ---- the tile layout: a name, a division's notch, and the unit taken up as a tile (docs/COUNTERS.md) ----
+
+def test_a_units_name_is_cut_down_for_its_counter_and_fits_it_whole():
+    pygame.init()
+    assert theme.short("4th Armoured Brigade") == "4 Armd Bde" and theme.short("1st South African Division artillery") == "1 SA Div Arty"
+    assert theme.short("Panzer-Regiment 8") == "Pz.Rgt. 8" and theme.short("132 Reggimento carri") == "132 Carri"
+    assert theme.short("Eighth Army") == "Eighth Army"              # nothing to cut: it stays
+    app = App(Session(regiments(), GMAP, humans=["cw"], scripted={"axis": players.DoNothing(GMAP)}))
+    closest = Layout(theme.BASE_HEX * theme.ZOOM_MAX).counter
+    assert closest >= theme.NAMED > Layout(theme.BASE_HEX * theme.ZOOM_MAX / theme.ZOOM_STEP).counter   # named at the closest zoom only
+    room = closest - 2 * (closest // 16) - 4                        # between the bevelled edges
+    for u in regiments()["units"]:
+        assert app.painter.font(9, True).size(theme.short(u["name"]))[0] <= room, u["name"]
+
+
+def test_each_division_of_a_side_has_a_notch_of_its_own():
+    s = Session(regiments(), GMAP, humans=["cw"], scripted={"axis": players.DoNothing(GMAP)})
+    assert s.division[311] == s.division[310] == (310, 0) and s.division[321] == (320, 1)   # by the HQs' ids, within a side
+    assert s.division[111] == (110, 0) and s.division[201] == (200, 9)
+    assert 306 not in s.division and 301 not in s.division          # a unit of no division has no notch
+    for side in ("axis", "cw"):
+        places = {s.division[u["id"]] for u in regiments()["units"] if u["side"] == side and u["id"] in s.division}
+        assert len({n for _, n in places}) == len(places) <= len(theme.DIVISION)             # no two share a colour
+
+
+def test_the_unit_taken_up_is_a_tile_in_the_panel_and_at_the_closest_zoom_its_counter_is_named():
+    pygame.init()
+    app = App(Session(regiments(), GMAP, humans=["cw"], scripted={"axis": players.DoNothing(GMAP)}))
+    s, seen = app.session, []
+    words = app.painter.text
+    app.painter.text = lambda surface, said, *a, **k: (seen.append(str(said)), words(surface, said, *a, **k))
+    app.ui.selected, app.ui.alone = 311, True                       # 4th Armoured Brigade, by itself
+    app.centre_on(tuple(s.unit(311)["hex"]))
+    app.paint(pygame.Surface(theme.WINDOW))
+    for said in ("4th Armoured Brigade", "7th Armoured Division", "166", "tanks", "8", "moves", "300", "km of fuel",
+                 "9", "morale", "excellent", "regular", "stores"):
+        assert said in seen, said
+    assert "4 Armd Bde" not in seen                                  # at the opening zoom a counter has no name
+    tips = [tip for _, tip in app.painter.tips]
+    assert "about 166 of 166 tanks (100%, 0 lost)" in tips and "Fuel for 300 km (30 hexes)" in tips
+    assert "250 tonnes of stores" in tips and "Experience: regular" in tips
+    assert "Hexes a turn across open desert in this weather. Travel by road goes farther." in tips    # what "moves" counts
+    flown = [box for box, tip in app.painter.tips if tip == "United Kingdom"]                           # its flag, top right
+    panel = layout.areas(app.size)["panel"]
+    assert len(flown) == 1 and flown[0].size == theme.FLAG and layout.HEAD_Y < flown[0].top < layout.HEAD_Y + 20
+    assert panel.right - 60 < flown[0].right < panel.right
+    del seen[:]
+    app.ui.zoom = theme.ZOOM_MAX
+    app.centre_on(tuple(s.unit(311)["hex"]))
+    app.paint(pygame.Surface(theme.WINDOW))
+    assert "4 Armd Bde" in seen and "XXX Corps" in seen             # the counters' names, cut down
+    del seen[:]
+    app.ui.selected, app.ui.zoom = 341, theme.ZOOM_START            # 5th Indian Brigade: men on foot
+    app.centre_on(tuple(s.unit(341)["hex"]))
+    app.paint(pygame.Surface(theme.WINDOW))
+    assert "men" in seen and "4" in seen and "km of fuel" not in seen           # four hexes a turn, and no fuel to show
+
+
+def test_a_short_scenario_says_each_side_its_aim_on_the_timetable_tab():           # RULES 13.1, 2.4
+    from engine import scenarios
+    pygame.init()
+    surface = pygame.Surface(theme.WINDOW)
+    for side, other, aim in (("cw", "axis", "Open the road into Tobruk"), ("axis", "cw", "Keep Tobruk shut in")):
+        app = App(Session(scenarios.load("sidi_rezegh"), GMAP, humans=[side], scripted={other: players.DoNothing(GMAP)}))
+        seen = []
+        text = app.painter.text
+        app.painter.text = lambda surface, words, *a, **k: (seen.append(words), text(surface, words, *a, **k))
+        app.click(layout.tabs(app.size)["timetable"].center)
+        app.paint(surface)
+        said = " ".join(str(words) for words in seen)
+        assert "Your aim" in seen and aim in said and "Sidi Rezegh and Belhamed" in said, side
+        assert "turn 1 of 5" in said and "Sidi Rezegh" in seen                    # its own name and length, at the head of the panel
+    app = App(Session(regiments(), GMAP, humans=["cw"], scripted={"axis": players.DoNothing(GMAP)}))
+    seen = []
+    text = app.painter.text
+    app.painter.text = lambda surface, words, *a, **k: (seen.append(words), text(surface, words, *a, **k))
+    app.click(layout.tabs(app.size)["timetable"].center)
+    app.paint(surface)
+    assert "Your aim" not in seen                                                 # Crusader gives none
+
+
+def test_a_commonwealth_unit_flies_its_own_countrys_flag():
+    from screen import draw
+    pygame.init()
+    s = Session(regiments(), GMAP)
+    name = {u["id"]: u["name"] for u in regiments()["units"]}
+    flown = {code: sorted(name[uid] for uid, c in s.flag.items() if c == code) for code in theme.FLAG_NAME}
+    assert flown["nz"] == ["2nd New Zealand Division", "4th New Zealand Brigade", "5th New Zealand Brigade",
+                           "6th New Zealand Brigade", "New Zealand Divisional Artillery", "New Zealand Divisional Cavalry"]
+    assert flown["in"] == ["11th Indian Brigade", "4th Indian Division", "4th Indian Division artillery",
+                           "5th Indian Brigade", "7th Indian Brigade"]
+    assert len(flown["sa"]) == 9 and flown["pl"] == ["Polish Carpathian Brigade"] and flown["au"] == []
+    assert {"Eighth Army", "70th Division", "14th Brigade", "4th Armoured Brigade"} <= set(flown["uk"])
+    assert "Panzer-Regiment 8" in flown["de"] and "Ariete" in flown["it"] and len(s.flag) == len(name)
+    assert theme.flag_of("cw", "Divisional Cavalry", "2nd New Zealand Division") == "nz"      # by its division, its own name silent
+    assert theme.flag_of("cw", "2/13th Australian Battalion", "70th Division") == "au"        # its own name before its division's
+    assert theme.flag_of("it", "Polish volunteers") == "it"
+    drawn = {code: pygame.image.tostring(draw.flag(code, *theme.FLAG), "RGB") for code in theme.FLAG_NAME}
+    assert len(set(drawn.values())) == len(drawn) == 8               # each has a drawing, and no two are the same
+    app = App(Session(regiments(), GMAP, humans=["cw"], scripted={"axis": players.DoNothing(GMAP)}))
+    for uid, country in ((331, "New Zealand"), (341, "India"), (321, "Union of South Africa"), (308, "Poland")):
+        app.ui.selected, app.ui.alone = uid, True
+        app.paint(pygame.Surface(theme.WINDOW))
+        assert country in [tip for _, tip in app.painter.tips], uid
+
+
+def test_the_wheel_and_the_keys_over_the_tile_go_through_the_units_in_its_hex():
+    """Over the unit taken up in the panel, the wheel, Up and Down, and anywhere Page Up and Page
+    Down, take up the next of yours in its hex: each group, then each of its units by itself.
+    The tile's own arrows do the same by a tap."""
+    pygame.init()
+    surface = pygame.Surface(theme.WINDOW)
+    app = App(Session(regiments(), GMAP, humans=["cw"], scripted={"axis": players.DoNothing(GMAP)}))
+    s, panel = app.session, layout.areas(app.size)["panel"]
+    wheel = lambda y: app.handle_one(pygame.event.Event(pygame.MOUSEWHEEL, x=0, y=y))
+    assert s.stack(311) == [(310, False), (310, True), (311, True), (312, True), (313, True), (314, True)]   # 7th Armoured Division
+    assert s.stack(350)[:3] == [(307, False), (350, False), (350, True)]         # Tobruk: the tank brigade, then 70th Division
+    app.ui.selected, app.ui.alone = 311, True
+    app.ui.mouse = (panel.centerx, layout.HEAD_Y + 60)                           # the pointer on the tile
+    wheel(-1)
+    assert (app.ui.selected, app.ui.alone) == (312, True) and app.ui.message.startswith("4 of 6 in this hex: 7th Armoured Brigade by itself")
+    wheel(1)
+    wheel(1)
+    assert (app.ui.selected, app.ui.alone) == (310, True)                        # up: the one before, and before that
+    app.key(pygame.K_UP)
+    assert (app.ui.selected, app.ui.alone) == (310, False) and app.ui.message == "1 of 6 in this hex: 7th Armoured Division."
+    app.key(pygame.K_UP)
+    assert (app.ui.selected, app.ui.alone) == (314, True)                        # and round to the last
+    app.key(pygame.K_DOWN)
+    assert (app.ui.selected, app.ui.alone) == (310, False)
+    zoom, cam = app.ui.zoom, list(app.ui.cam)
+    app.ui.mouse = layout.areas(app.size)["map"].center                          # off the tile, the wheel and the arrows are the map's
+    app.key(pygame.K_DOWN)
+    assert (app.ui.selected, app.ui.alone) == (310, False) and app.ui.cam != cam
+    app.key(pygame.K_PAGEDOWN)                                                   # Page Down goes through them wherever the pointer is
+    assert (app.ui.selected, app.ui.alone) == (310, True)
+    app.key(pygame.K_PAGEUP)
+    app.ui.selected, app.ui.alone = 313, True
+    app.paint(surface)
+    assert set(app.painter.cycle_rects) == {-1, 1}                               # which this is, with an arrow each way
+    back, before = app.painter.back_rect, app.painter.cycle_rects[-1]
+    assert before.left > back.right and before.centery == back.centery           # beside Back to group, and off the tile
+    assert before.top > layout.HEAD_Y + theme.TILE_H
+    app.click(app.painter.cycle_rects[1].center)
+    assert (app.ui.selected, app.ui.alone) == (314, True)
+    app.paint(surface)
+    app.click(app.painter.cycle_rects[-1].center)
+    assert (app.ui.selected, app.ui.alone) == (313, True)
+    app.ui.selected, app.ui.alone = 304, False                                   # 22nd Guards Brigade: alone in its hex
+    app.paint(surface)
+    assert s.stack(304) == [(304, False)] and app.painter.cycle_rects == {}
+    app.key(pygame.K_PAGEDOWN)
+    assert app.ui.selected == 304 and app.ui.message == "Nothing else of yours is in this hex."

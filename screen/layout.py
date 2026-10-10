@@ -47,7 +47,8 @@ def areas(size):
 
 BUTTON_H, GAP, EDGE = 36, 7, 16
 TABS_Y, TAB_H = 128, 26  # the panel's tabs: the unit taken up, every unit's order, and the timetable
-ORDERS_Y = 230          # where the orders begin in the panel: under the header of the unit taken up
+HEAD_Y = TABS_Y + TAB_H + 10                # the header of the unit taken up: its tile, or a group's name and units
+ORDERS_Y = HEAD_Y + T.TILE_H + 12           # where the orders begin in the panel: under that header
 
 
 def buttons(size):

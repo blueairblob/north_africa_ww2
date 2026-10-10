@@ -2,6 +2,7 @@
 
     python -m screen crusader                       two players at one screen
     python -m screen crusader --axis nothing        you are the Commonwealth
+    python -m screen sidi_rezegh --axis attack      the short scenario: five turns
     python -m screen crusader --shot frame.png      draw one frame to a file, with no window
     python -m screen crusader --log                 record what every click and key did, under logs/
     python -m screen crusader --seed 1941           the weather of an earlier game again; --seed 0 for none
@@ -43,7 +44,7 @@ def main(argv):
 
     import pygame
 
-    from engine import checker
+    from engine import checker, scenarios
     from engine.players import SCRIPTED as PLAYERS
     from engine.gamemap import GameMap
 
@@ -66,7 +67,9 @@ def main(argv):
         app.ui.message = "Loaded: " + saves.about(session.to_save()) + ".   " + app.left_words()
         print(f"Going on with {path}")
     else:
-        scenario = json.loads((DATA / "scenarios" / f"{a.scenario}.json").read_text())
+        if a.scenario not in scenarios.names():
+            sys.exit(f"no scenario {a.scenario}; there are: {', '.join(scenarios.names())}")
+        scenario = scenarios.load(a.scenario)
         wrong = checker.problems(scenario, gmap)
         if wrong:
             sys.exit("\n".join(wrong))
