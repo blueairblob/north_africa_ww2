@@ -23,11 +23,32 @@ def test_air_reconnaissance_adds_to_every_units_range():                        
     assert sorted(seen(foes + [unit(201, "cw", "foot", [70, 24])], recon=2)) == [101, 102, 103, 104]
 
 
-def test_steps_show_only_next_to_your_own_units_and_the_rest_never():            # 14.4, 14.8
+def test_strength_shows_as_a_word_next_to_your_own_units_and_never_as_steps():  # 14.4, 14.8
     e = seen([unit(101, "axis", "foot", [70, 23]), unit(102, "axis", "foot", [70, 22]),
               unit(201, "cw", "foot", [70, 24])])
-    assert e[101]["steps"] == 6 and "steps" not in e[102]
-    assert not (set(e[101]) | set(e[102])) & HIDDEN
+    assert e[101]["strength"] == "at strength" and "strength" not in e[102]
+    assert not (set(e[101]) | set(e[102])) & (HIDDEN | {"steps"})
+
+
+def test_the_word_falls_from_at_strength_to_worn_to_weak():                      # 14.4
+    words = {}
+    for steps in (6, 4, 3, 2, 1):
+        e = seen([unit(101, "axis", "foot", [70, 23], steps=steps, max=6), unit(201, "cw", "foot", [70, 24])])
+        words[steps] = e[101]["strength"]
+    assert words == {6: "at strength", 4: "at strength", 3: "worn", 2: "worn", 1: "weak"}
+
+
+def test_of_a_battle_a_side_is_told_its_own_figures_and_a_claim_of_the_enemys():  # 14.6
+    units = [unit(101, "axis", "armour", [70, 25], steps=6), unit(201, "cw", "armour", [70, 24], steps=15)]
+    sc, state = start(units)
+    state, _ = turn(sc, state, cw=[{"unit": 201, "order": "attack", "to": [70, 25]}])
+    full = next(e for e in state["log"] if e["event"] == "battle")
+    cw = next(e for e in view(state, GMAP, sc, "cw")["events"] if e["event"] == "battle")
+    axis = next(e for e in view(state, GMAP, sc, "axis")["events"] if e["event"] == "battle")
+    assert {"att", "cla", "av"} <= set(cw) and not {"def", "cld"} & set(cw)
+    assert {"def", "cld"} <= set(axis) and not {"att", "cla", "av", "backed"} & set(axis)
+    assert cw["lost"] == axis["lost"] == full["lost"]        # knocked out in the battle, before recovery
+    assert not view(state, GMAP, sc, "cw")["enemy"] or "steps" not in view(state, GMAP, sc, "cw")["enemy"][0]
 
 
 def test_a_view_shows_your_own_side_in_full_and_no_enemy_supply():               # 14.2, 14.8

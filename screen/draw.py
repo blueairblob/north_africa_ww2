@@ -1042,7 +1042,7 @@ class Painter:
         for u, own in pile:
             if not own:
                 lines.append((f"Enemy  {u['name']}: {T.TYPE_NAME[u['type']].lower()}"
-                              + (f", {T.strength(u)}" if "steps" in u else ""), False, T.INK))
+                              + (f", {u['strength']}" if "strength" in u else ""), False, T.INK))
         fort = view["forts"].get(f"{hx[0]},{hx[1]}")
         lines.append((T.TERRAIN_NAME[g.terrain[hx[1]][hx[0]]] + (f", fortified level {fort[0]}" if fort else ""), False, T.DIM))
         font = self.font(13)
@@ -1224,6 +1224,94 @@ class Painter:
             for row in wrap(self.font(12), f"{label}: {why}", w):
                 line(row.strip(), 12, T.SHORT)
 
+    def roster(self, surface, session, ui, u, group, rect):
+        """A group as its order of battle: its HQ's card across the top, with the flag, the
+        group's name and a pencil to change it, and under it a small tile for each of its units,
+        joined to the card by a line as on a chart of a formation. A click on the card or a tile
+        takes that unit up by itself (docs/COUNTERS.md)."""
+        x, y, w, h = rect
+        lead = next((m for m in group if m["type"] == "hq"), None)
+        units = [m for m in group if m is not lead]
+        nation = session.nation[u["id"]]
+        card = pygame.Rect(x, y, w, 50)
+        key = ("roster", nation, w)
+        if key not in self.faces:
+            self.faces[key] = slab(T.FACE[nation], w, card.h, 4, 10)
+        surface.blit(self.shadow(w, card.h, 4, 10), (x - 2, y - 1))
+        surface.blit(self.faces[key], card)
+        self.notch(surface, session, u["id"], x, y, w, 90, 6)
+        flies = session.flag[u["id"]]
+        if ("flag", flies) not in self.faces:
+            self.faces["flag", flies] = flag(flies, *T.FLAG)
+        spot = pygame.Rect((x + 10, y + 11), T.FLAG)
+        surface.blit(self.faces["flag", flies], spot)
+        self.tips.append((spot, T.FLAG_NAME[flies]))
+        room = w - T.FLAG[0] - 62
+        if ui.editing is not None:                                   # the name being changed: the words typed
+            box = pygame.Rect(spot.right + 8, y + 6, room + 4, 22)
+            pygame.draw.rect(surface, (255, 255, 255), box, border_radius=4)
+            pygame.draw.rect(surface, T.PATH, box, 2, border_radius=4)
+            caret = "|" if pygame.time.get_ticks() // 400 % 2 == 0 else ""
+            self.text(surface, ui.editing + caret, (box.x + 4, box.y + 2), 14, bold=True)
+        else:
+            self.fitted(surface, session.group_name(u["id"]), (spot.right + 10 + room / 2, y + 17), 16, T.MARK[nation], room, 11)
+        under = (lead["name"] + ", " if lead and lead["name"] != session.group_name(u["id"]) else "") + \
+            f"{len(group)} units: one order moves them all"
+        self.fitted(surface, under, (spot.right + 10 + room / 2, y + 36), 11, T.MARK[nation], room, 9)
+        self.pencil_rect = pygame.Rect(x + w - 30, y + 14, 22, 22)  # a pencil: its body, and its point
+        r = self.pencil_rect
+        pygame.draw.rect(surface, T.BUTTON, r, border_radius=4)
+        pygame.draw.rect(surface, T.INK, r, 1, border_radius=4)
+        pygame.draw.line(surface, T.INK, (r.x + 15, r.y + 5), (r.x + 8, r.y + 12), 4)
+        pygame.draw.polygon(surface, T.INK, [(r.x + 5, r.y + 17), (r.x + 6, r.y + 12), (r.x + 10, r.y + 16)])
+        self.tips.append((r, "Change the name. Enter keeps it; Escape leaves it."))
+        if lead:
+            self.member_rects[lead["id"]] = pygame.Rect(x, y, w - 36, card.h)
+            self.tips.append((self.member_rects[lead["id"]], f"{lead['name']}: its headquarters. Click to order it by itself."))
+        if not units:
+            return
+        cols = len(units) if len(units) <= 4 else (len(units) + 1) // 2
+        rows = (len(units) + cols - 1) // cols
+        trunk, gap, top = x + 6, 6, card.bottom + 14              # a line down the left, and one along above each row
+        tw = (w - 16 - gap * (cols - 1)) // cols
+        th = min(118, (y + h - top - 8 * (rows - 1)) // rows)
+        bottom = 0
+        for k, m in enumerate(units):
+            row, col = divmod(k, cols)
+            tx, ty = x + 16 + col * (tw + gap), top + row * (th + 8)
+            bus = ty - 6
+            pygame.draw.line(surface, T.INK, (tx + tw // 2, bus), (tx + tw // 2, ty), 2)
+            if col == 0:
+                pygame.draw.line(surface, T.INK, (trunk, bus), (x + 16 + (min(cols, len(units) - row * cols) - 1) * (tw + gap) + tw // 2, bus), 2)
+                bottom = bus
+            self.mini_tile(surface, session, m, pygame.Rect(tx, ty, tw, th))
+        pygame.draw.line(surface, T.INK, (trunk, card.bottom), (trunk, bottom), 2)
+
+    def mini_tile(self, surface, session, m, rect):
+        """One unit of a group in its order of battle: a small tile with its short name in its
+        nation's band, its picture, its strength and a mark if anything is wrong."""
+        nation, (x, y, w, h) = session.nation[m["id"]], rect
+        key = ("mini", nation, w, h)
+        if key not in self.faces:
+            self.faces[key] = slab(T.TILE, w, h, 3, 8, band=T.FACE[nation], strip=17)
+        surface.blit(self.shadow(w, h, 3, 8), (x - 2, y - 1))
+        surface.blit(self.faces[key], rect)
+        self.fitted(surface, T.short(m["name"]), (x + w / 2, y + 9), 12, T.MARK[nation], w - 8, 8)
+        words = T.strength(m).replace("about ", "")
+        pic_h = max(14, h - 17 - 20)
+        art = (min(w - 10, pic_h * 5 // 3), min(pic_h, (w - 10) * 3 // 5))
+        place = pygame.Rect(0, 0, *art)
+        place.center = (x + w // 2, y + 17 + pic_h // 2 + 1)
+        sprite = self.sprite(nation, m["type"], art)
+        if sprite:
+            surface.blit(sprite, place)
+        else:
+            picture(surface, m["type"], place.inflate(-6, -4), T.INK, T.TILE)
+        self.fitted(surface, words, (x + w / 2, y + h - 10), 12, T.strength_colour(m), w - 8, 8)
+        self.badge(surface, problem([m]), (x + w - 9, y + 26), 7)
+        self.member_rects[m["id"]] = rect
+        self.tips.append((rect, f"{m['name']}: {T.strength_tip(m)}. Click to order it by itself."))
+
     def name_line(self, surface, session, ui, u, x, y, w):
         """A group's name, with a pencil to change it; while it is being changed, the words typed."""
         self.pencil_rect = pygame.Rect(x + w - 22, y, 22, 22)
@@ -1330,24 +1418,10 @@ class Painter:
                 line("Your losses", 13, bold=True)
                 for m in lost[:8]:
                     line(f"{m['name'][:26]}: {m['fate']['cause']}, turn {m['fate']['turn']}", 12, gap=2)
-        elif u and len(group) > 1 and not ui.alone:                  # a group: its units, and what binds them
-            self.name_line(surface, session, ui, u, x, y, w)
-            y += 24
-            pygame.draw.rect(surface, T.SELECT, pygame.Rect(x - 6, y - 26, w + 12, 26 + 24), 3, border_radius=8)   # the one taken up
-            line(f"{len(group)} units in a group: one order moves them all.", 12, T.DIM, gap=10)
-            pitch = min(23, (grid["move"].y - 8 - y) // min(len(group), 9))      # its units, above the orders: closer if many
-            for m in group[:9]:
-                nation = session.nation[m["id"]]
-                row = pygame.Rect(x, y, w, pitch - 1)
-                mini = pygame.Rect(x, y + 1, 30, pitch - 4)
-                pygame.draw.rect(surface, T.FACE[nation], mini, border_radius=3)
-                picture(surface, m["type"], mini.inflate(-6, -5), T.MARK[nation], T.FACE[nation])
-                self.text(surface, m["name"][:25], (x + 38, y + (pitch - 17) // 2), 12)
-                words = T.strength(m).replace("about ", "")
-                self.text(surface, words, (x + w - self.font(12).size(words)[0], y + (pitch - 17) // 2), 12, T.strength_colour(m))
-                self.member_rects[m["id"]] = row
-                self.tips.append((row, T.strength_tip(m) + ". Click to order it by itself."))
-                y += pitch
+        elif u and len(group) > 1 and not ui.alone:                  # a group: its order of battle, and what binds them
+            area = pygame.Rect(x, y, w, min(T.TILE_H, grid["move"].y - 12 - y))
+            pygame.draw.rect(surface, T.SELECT, area.inflate(10, 10), 3, border_radius=14)          # the one taken up
+            self.roster(surface, session, ui, u, group, area)
             y = under
             low = min(group, key=lambda m: m["cohesion"])
             level, word = T.morale(low["cohesion"])
@@ -1369,7 +1443,7 @@ class Painter:
             else:
                 line("Order: Hold", 15, T.PATH, True, gap=2)
             self.cannot(session, ui, u, line, w)
-            line("Click a unit above to order it by itself.", 12, T.DIM)
+            line("Click a tile above to order that unit by itself.", 12, T.DIM)
         elif u:
             card = pygame.Rect(x, y, w, T.TILE_H)                    # its tile is its header: the orders are under it
             pygame.draw.rect(surface, T.SELECT, card.inflate(10, 10), 3, border_radius=18)                  # the one taken up

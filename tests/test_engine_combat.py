@@ -121,3 +121,50 @@ def test_rest_restores_cohesion_only_in_supply():                               
     S.unit(state, 102)["traced"] = False
     state, _ = turn(sc, state, axis=[{"unit": 101, "order": "rest"}, {"unit": 102, "order": "rest"}])
     assert [u["cohesion"] for u in state["units"]] == [70, 50]
+
+
+def battle_of(units, cw_orders, seed=0, axis_orders=()):
+    from helpers import GMAP, scenario
+    sc = scenario(units)
+    state, _ = turn(sc, S.new_game(sc, GMAP, seed), axis=list(axis_orders), cw=cw_orders)
+    return next(e for e in state["log"] if e["event"] == "battle")
+
+
+def test_a_command_hq_in_reach_that_stood_still_gives_weight_to_the_attack():    # 10.4.5
+    fight = [unit(101, "axis", "foot", [70, 25], steps=3), unit(201, "cw", "armour", [70, 24], steps=15)]
+    plain = battle_of(fight, [attack(201, [70, 25])])
+    backed = battle_of(fight + [unit(301, "cw", "hq", [72, 24], steps=1)], [attack(201, [70, 25])])
+    assert plain["backed"] is None and backed["backed"] == 301
+    assert backed["att"] * 100 // plain["att"] in (119, 120, 121)
+    moved = battle_of(fight + [unit(301, "cw", "hq", [72, 24], steps=1)],
+                      [attack(201, [70, 25]), {"unit": 301, "order": "move", "to": [72, 23]}])
+    assert moved["backed"] is None                                               # it moved this turn
+    far = battle_of(fight + [unit(301, "cw", "hq", [70, 4], steps=1)], [attack(201, [70, 25])])
+    assert far["backed"] is None                                                 # out of reach
+    led = [unit(101, "axis", "foot", [70, 25], steps=3), unit(201, "cw", "armour", [70, 24], steps=15, parent=310),
+           unit(310, "cw", "hq", [72, 24], steps=1)]
+    assert battle_of(led, [attack(201, [70, 25])])["backed"] is None            # a division's HQ is not a command HQ
+
+
+def test_luck_is_bounded_even_handed_and_bunched_round_nothing():                # 10.4.7
+    from engine.combat import LUCK_PCT, luck
+    assert all(luck(0, t, k) == 0 for t in range(1, 5) for k in range(5))       # no seed, no luck
+    draws = [luck(1941, t, k) for t in range(1, 41) for k in range(25)]
+    assert min(draws) >= -LUCK_PCT and max(draws) <= LUCK_PCT
+    assert min(draws) <= -LUCK_PCT + 2 and max(draws) >= LUCK_PCT - 2           # the ends are rare, but reached
+    up, down = sum(d > 0 for d in draws), sum(d < 0 for d in draws)
+    assert abs(up - down) < len(draws) // 10                                   # one side's luck is the other's bad luck
+    assert sum(abs(d) <= LUCK_PCT // 2 for d in draws) > 0.6 * len(draws)      # most battles go near the forces' result
+    assert draws == [luck(1941, t, k) for t in range(1, 41) for k in range(25)]  # the seed decides it: a game replays
+
+
+def test_luck_moves_the_attack_by_its_per_cent_and_nothing_else():               # 10.4.7
+    from engine import weather as W
+    from engine.combat import luck
+    fight = [unit(101, "axis", "foot", [70, 25], steps=3), unit(201, "cw", "armour", [70, 24], steps=15)]
+    plain = battle_of(fight, [attack(201, [70, 25])])
+    seeds = [s for s in range(1, 200) if W.draws(s, 1)[0] >= 10 and luck(s, 1, 0) != 0][:3]   # clear weather, some luck
+    for seed in seeds:
+        lucky = battle_of(fight, [attack(201, [70, 25])], seed=seed)
+        assert lucky["luck"] == luck(seed, 1, 0) and lucky["def"] == plain["def"]
+        assert lucky["att"] == max(1, plain["att"] * (100 + lucky["luck"]) // 100)

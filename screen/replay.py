@@ -16,7 +16,7 @@ outcome, in two beats a watcher can follow: first the beaten fall back and the d
 and the hex is seen to be empty; only then do the victors advance into it. Last, those who
 fought and stood are seen to have held.
 """
-from engine.combat import COH_MIN
+from engine.combat import COH_LOSS, COH_MIN
 from engine.movement import IMPULSES
 from engine.paths import FOOT, VEHICLE, least_path
 
@@ -46,12 +46,20 @@ def rattle_ms(damage):
     return min(RATTLE_MAX, RATTLE_MS + DAMAGE_MS * damage) if damage > 0 else 0
 
 
+def harm(battle, key):
+    """The cohesion one side of a battle lost, if the side watching was told it. It is not told
+    the enemy's (RULES 14.6), so the enemy's is shown as at even odds, twice that if it fell back."""
+    if key in battle:
+        return battle[key]
+    return COH_LOSS * (2 if key == "cld" and battle["retreated"] else 1)
+
+
 def strikes(battle, kinds):
     """A battle's strikes, in order: the attackers from each hex on the defenders, with their
     share of the cohesion the defenders lost, by their share of the attack; then the defenders'
-    reply on the attackers."""
+    reply on the attackers. The enemy's attack values are not told, so its hexes share alike."""
     attackers, defenders = battle["attackers"], battle["defenders"]
-    av = {int(i): v for i, v in battle["av"].items()}
+    av = {int(i): v for i, v in battle.get("av", {}).items()} or {a: 1 for a in attackers}
     total = sum(av.values()) or 1
     where = {int(i): tuple(h) for i, h in battle["where"].items()}
     out = []
@@ -63,11 +71,11 @@ def strikes(battle, kinds):
         share = sum(av[a] for a in by)
         chief = min(by, key=lambda a: (ARMS.index(kinds.get(a, "foot")), a))
         out.append({"by": by, "arm": kinds.get(chief, "foot"), "on": list(defenders), "reply": False,
-                    "damage": max(1, battle["cld"] * share // total) if share else 0})
+                    "damage": max(1, harm(battle, "cld") * share // total) if share else 0})
     lead = max(defenders, key=lambda i: (kinds.get(i) != "hq", -i))
-    if battle["cla"] > COH_MIN:                          # a reply at the rules' least loss says nothing: left out
+    if harm(battle, "cla") > COH_MIN:                    # a reply at the rules' least loss says nothing: left out
         out.append({"by": list(defenders), "arm": kinds.get(lead, "foot"), "on": list(attackers),
-                    "reply": True, "damage": battle["cla"]})
+                    "reply": True, "damage": harm(battle, "cla")})
     for s in out:
         s["rattle"] = rattle_ms(s["damage"])
         s["long"] = max(BEAT_MS, LEAD_MS + s["rattle"] + TAIL_MS)

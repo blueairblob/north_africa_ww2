@@ -6,6 +6,25 @@ from .gamemap import distance
 
 SPOT_RANGE = 2          # hexes at which any unit spots
 SPOT_RANGE_RECON = 4    # hexes at which a recon unit spots
+STRONG_PCT = 66         # per cent of its full steps at and above which an enemy unit is "at strength"
+WORN_PCT = 33           # ... and at and above which it is "worn"; below, "weak"
+WORDS = ("at strength", "worn", "weak")
+SECRET = {"attacker": ("def", "cld"), "defender": ("att", "cla", "av", "backed")}   # 14.6: what a side is not told of a battle
+
+
+def strength_word(u):
+    """What a side can say of an enemy unit's strength beside it: a word, never its steps (14.4)."""
+    pct = 100 * u["steps"] // u["max"]
+    return WORDS[0] if pct >= STRONG_PCT else WORDS[1] if pct >= WORN_PCT else WORDS[2]
+
+
+def told(e, side):
+    """An event as this side is told it. Of a battle, its own figures and the enemy's step
+    losses as knocked out in it, before any recovery: a claim, not a count (14.6)."""
+    if e["event"] != "battle":
+        return dict(e)
+    role = "attacker" if e["sides"][0] == side else "defender"
+    return {k: v for k, v in e.items() if k not in SECRET[role]}
 
 
 def spot_range(state, u, extra):
@@ -29,7 +48,7 @@ def view(state, gmap, scenario, side):
         if spotted(h):
             e = {k: u[k] for k in ("id", "name", "type", "hex", "xp")}
             if adjacent(h):
-                e["steps"] = u["steps"]
+                e["strength"] = strength_word(u)
             seen.append(e)
     forts = {}
     for key, (level, owner) in sorted(state["forts"].items()):               # 14.5
@@ -55,7 +74,7 @@ def view(state, gmap, scenario, side):
         "kills": {s: state["sides"][s]["kills"] for s in S.SIDES},               # the part of vp for units destroyed
         "par": scenario.get("par", 0),
         "objectives": scenario["objectives"],
-        "events": [dict(e) for e in state["log"]                             # 14.6
+        "events": [told(e, side) for e in state["log"]                       # 14.6
                    if e["side"] == side or (e["side"] == "both" and side in e["sides"])],
     }
 
@@ -66,8 +85,11 @@ def leaks(v, state):
     if "seed" in v:
         out.append("the seed the weather is drawn from")
     for e in v["enemy"]:
-        if set(e) - {"id", "name", "type", "hex", "xp", "steps"}:
+        if set(e) - {"id", "name", "type", "hex", "xp", "strength"}:
             out.append(f"enemy unit {e['id']} shows {sorted(e)}")
+    for e in v["events"]:
+        if e["event"] == "battle" and set(e) & set(SECRET["attacker" if e["sides"][0] == side else "defender"]):
+            out.append(f"the enemy's figures in the battle at {e['hex']}")
     for u in v["units"]:
         if u["side"] != side:
             out.append(f"unit {u['id']} of the other side")

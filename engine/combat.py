@@ -2,8 +2,11 @@
 from . import board as B
 from . import state as S
 from . import units as U
+from . import weather as W
 from .gamemap import distance
 from .orders import ATTACK_MIN
+from .paths import HAUL, haul_distances, step_cost
+from .supply import REACH, blocked_for
 
 # per step: attack on soft, attack on hard, defence against soft, defence against hard (10.9)
 VALUES = {"armour": (6, 6, 4, 6), "motorised": (12, 6, 18, 9), "foot": (9, 3, 18, 6),
@@ -25,6 +28,10 @@ STEP_LOSS = 10          # per cent of steps lost at even odds
 STEP_MAX = 40           # most per cent of steps lost in a battle
 RETREAT_MARGIN = 5      # how much more cohesion the defenders must lose to be driven back
 ROUT_COHESION = 20      # below this a retreating unit goes two hexes
+HQ_PCT = 20             # added to the attack when a command HQ stands behind it (10.4.5)
+LUCK_PCT = 10           # most luck can add to or take from an attack (10.4.7)
+LUCK_MULTIPLIER = 16807 # the generator luck is drawn from: weather's, with its own multiplier
+LUCK_STRIDE = 240       # rounds between one turn's luck and the next: two numbers for each of the most battles a turn can hold
 
 
 def clamp(x, lo, hi):
@@ -79,6 +86,45 @@ def efficiency(u, battle):
     return cf * XP[u["xp"]] * sf
 
 
+def command(state, gmap, ctx):
+    """For each side, the haul distances from each of its command HQs that can stand behind an
+    attack this turn: on the map, not a division's HQ, not out of stores, and not moved in this
+    turn's Movement phase. Counted against the routes as they stand when combat begins (10.4.5)."""
+    led = {u["parent"] for u in state["units"] if u["parent"]}
+    out = {}
+    for side in S.SIDES:
+        blocked = blocked_for(state, gmap, side)
+        out[side] = [(hq["id"], haul_distances(gmap, tuple(hq["hex"]), blocked, REACH)) for hq in S.on_map(state, side)
+                     if U.is_hq(hq) and hq["id"] not in led and not hq["out_of_stores"] and hq["id"] not in ctx["entered"]]
+    return out
+
+
+def backer(gmap, hqs, h):
+    """The first command HQ that has the battle hex within its reach, or None (10.4.5)."""
+    for uid, dist in hqs:
+        for _, n, hexside in gmap.around(h):
+            c = step_cost(gmap, n, h, hexside, HAUL) if n in dist else None
+            if c is not None and dist[n] + c <= REACH:
+                return uid
+    return None
+
+
+def luck(seed, turn, k):
+    """The luck of a turn's battle k (the first is 0): per cent added to the attack, or taken
+    from it, from -LUCK_PCT to LUCK_PCT, most often near 0. The sum of two numbers, so results
+    bunch round what the forces alone would give. No seed, no luck (10.4.7)."""
+    if seed == 0:
+        return 0
+    x = seed
+    for _ in range(W.WARM + LUCK_STRIDE * (turn - 1) + 2 * k + 1):
+        x = x * LUCK_MULTIPLIER % W.MODULUS
+    a = x * 100 // W.MODULUS
+    x = x * LUCK_MULTIPLIER % W.MODULUS
+    b = x * 100 // W.MODULUS
+    swing = a + b - 99
+    return (1 if swing > 0 else -1) * (abs(swing) * LUCK_PCT // 99)
+
+
 def values(state, gmap, ctx, battle):
     """The attack and defence totals of a battle (10.4)."""
     att, dfn, h = battle["attackers"], battle["defenders"], battle["hex"]
@@ -97,8 +143,9 @@ def values(state, gmap, ctx, battle):
     froms = {tuple(u["hex"]) for u in att}
     battle["from"] = sorted(froms)
     battle["stood"] = [tuple(u["hex"]) for u in att]                         # where each attacker fought from
-    battle["att"] = (total * (100 + FLANK_PCT * (len(froms) - 1))
-                     * (100 + ctx["support"][att[0]["side"]])) // 10000     # 10.4.5
+    battle["backed"] = backer(gmap, ctx["command"][att[0]["side"]], h)
+    battle["att"] = (total * (100 + FLANK_PCT * (len(froms) - 1)) * (100 + ctx["support"][att[0]["side"]])
+                     * (100 + (HQ_PCT if battle["backed"] else 0))) // 1000000  # 10.4.5
     total = 0
     for u in dfn:                                                            # 10.4.4
         _, _, d_soft, d_hard = VALUES[u["type"]]
@@ -191,10 +238,13 @@ def retreat(state, gmap, ctx, units, froms):
 def combat_phase(state, gmap, ctx):
     battles = find_battles(state, gmap, ctx)
     pay(state, battles)
-    for battle in battles:
+    ctx["command"] = command(state, gmap, ctx)
+    for k, battle in enumerate(battles):
         values(state, gmap, ctx, battle)
         battle["fought"] = battle["att"] > 0                                 # 10.4.6
+        battle["luck"] = luck(state["seed"], state["turn"], k)
         if battle["fought"]:
+            battle["att"] = max(1, battle["att"] * (100 + battle["luck"]) // 100)    # 10.4.7
             losses(battle)
 
     coh, steps = {}, {}                                                      # 10.5.4, 10.5.6
@@ -249,7 +299,7 @@ def combat_phase(state, gmap, ctx):
         if battle["fought"]:
             fought = battle["attackers"] + battle["defenders"]
             report = {"hex": list(battle["hex"]), "att": battle["att"], "def": battle["def"],
-                      "cla": battle["cla"], "cld": battle["cld"],
+                      "cla": battle["cla"], "cld": battle["cld"], "backed": battle["backed"], "luck": battle["luck"],
                       "av": {str(k): v for k, v in sorted(battle["av"].items())},
                       "where": dict({str(u["id"]): list(h) for u, h in zip(battle["attackers"], battle["stood"])},
                                     **{str(u["id"]): list(battle["hex"]) for u in battle["defenders"]}),

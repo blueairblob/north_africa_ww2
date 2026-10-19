@@ -411,6 +411,39 @@ class Session:
         return {"armour": f"about {steps * 10} tanks", "guns": f"about {steps * 12} guns",
                 "recon": f"about {steps * 15} armoured cars"}.get(u["type"], f"about {steps * 800:,} men")
 
+    def claims(self, side=None):
+        """What the side claims to have knocked out of the enemy's in all its battles of the
+        turn, in real terms, and the command HQs that stood behind its attacks. A claim is the
+        enemy's loss in a battle, before the tanks he got back (RULES 14.6): honest, and too high.
+        At most two lines. [(words, None)]"""
+        side = side or self.side
+        specs = {spec["id"]: spec for spec in self.scenario["units"]}
+        got, behind = {}, {}
+        for b in (e for e in self.views[side]["events"] if e["event"] == "battle"):
+            ours = b["sides"][0] == side
+            for uid in b["defenders"] if ours else b["attackers"]:
+                steps = b["lost"].get(str(uid), 0)
+                if steps:
+                    spec, real = specs[uid], U.real_of(specs[uid])
+                    if real:
+                        n, what = real[0] * steps // U.steps_of(spec), real[1]
+                    else:
+                        each, what = T.STRENGTH.get(spec["type"], (T.HQ_STAFF, "men"))
+                        n = each * steps
+                    what = "armoured cars" if what == "cars" else what
+                    got[what] = got.get(what, 0) + n
+            if ours and b.get("backed"):
+                behind[b["backed"]] = behind.get(b["backed"], 0) + 1
+        out = []
+        parts = [f"{n:,} {what}" for what, n in sorted(got.items(), key=lambda kv: T.CLAIMED.index(kv[0])) if n]
+        if parts:
+            listed = parts[0] if len(parts) == 1 else ", ".join(parts[:-1]) + " and " + parts[-1]
+            out.append((f"We claim about {listed} of the enemy's knocked out.", None))
+        if behind:
+            out.append((" ".join(f"{specs[uid]['name']} stood behind {'our attack' if n == 1 else f'{n} of our attacks'}."
+                                 for uid, n in sorted(behind.items())), None))
+        return out
+
     def _together(self, rows):
         """Dated events gathered so that the units of one division sharing one are one line:
         [(the rows, the name to call them by)]. A replacement is always its unit's own."""
@@ -554,7 +587,7 @@ class Session:
             else:
                 continue
             out.append((words, lead))
-        return out
+        return out + self.claims()
 
     def waiting_units(self):
         """The side's units the player has not dealt with this turn, in the order the screen steps

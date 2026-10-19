@@ -7,9 +7,9 @@ come from `DESIGN.md` and the sources in `docs/SOURCES.md`.
 
 ## 1. Determinism first
 
-- No random numbers anywhere but the weather, and none from a library even
-  there: the weather comes from a generator written out in the rules
-  (`docs/RULES.md` 21.2.2) and a seed kept in the state. The same scenario,
+- No random numbers anywhere but the weather and the luck of a battle, and
+  none from a library even there: both come from a generator written out in
+  the rules (`docs/RULES.md` 21.2.2, 10.4.7) and a seed kept in the state. The same scenario,
   seed and orders must give the same state, on any machine, every time.
 - Every choice the engine makes between equals needs a **stated order**: units
   by id, hexes by column then row, directions 0–5. "Whichever comes first in

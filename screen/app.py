@@ -357,7 +357,7 @@ class App:
             if ui.alone:
                 self.give("hold")
             else:
-                ui.message = ("Click a unit in the list on the right, then Split." if len(self.session.members(ui.selected)) > 1
+                ui.message = ("Click one of the group's tiles on the right, then Split." if len(self.session.members(ui.selected)) > 1
                               else "This unit is not in a group.")
         elif name == "recall":                            # the HQ calls its division in
             given = self.session.recall(ui.selected)

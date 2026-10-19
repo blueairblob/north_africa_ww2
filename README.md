@@ -79,8 +79,8 @@ lists the units still waiting, and a tap goes to one. After an order the next un
 any of your units takes it up, whatever is in hand and whether it has an order or not. To
 move a unit on to others of yours, press Move first, or use Join. A right click on your own units opens a menu to choose
 one, group the whole stack or split a group up, at once; a stack of units from more
-than one division is a Special Army Group, and the pencil by a group's name renames it. A division's units move and fight as one group until you split one off: click it in
-the panel's list and order it, or press Split. Join sends a unit back to its
+than one division is a Special Army Group, and the pencil by a group's name renames it. A division's units move and fight as one group until you split one off: the panel shows a group as its order of
+battle, its HQ's card above a small tile for each unit; click a tile and order it, or press Split. Join sends a unit back to its
 division, and Recall, on an HQ, calls them all in. An order with somewhere to go (Move, Attack, Travel, Join)
 stands from turn to turn until it is done, and Dig in until the defences are complete; Rest is
 for one turn, and a unit with no order holds. Every turn the screen steps through every unit
@@ -89,9 +89,12 @@ everything of yours in its hex: each group, then each of its units by itself. Pa
 wherever the pointer is, and the arrows beside "3 of 6" under the orders by a tap. Every order's button
 unpresses: pressing a unit's lit button takes its order back, and it holds unless given another. An order a unit cannot take just now is greyed, with the reason under the
 unit. A hex holds the units of two formations; a unit
-may drive through a full hex but not stop in it, and one kept out says so. Every click on the map does something or says why not. The weather is the one thing left to
-chance: some turns bring rain or a sandstorm, told as the turn opens with an outlook for
-the next that is often wrong. It shows as a wash over the map and a chip in its corner; a tap on
+may drive through a full hex but not stop in it, and one kept out says so. Every click on the map does something or says why not. Two things are left to
+chance. Each battle has its luck, up to a tenth on the attack either way and most often little; and some turns
+bring rain or a sandstorm, told as the turn opens with an outlook for
+the next that is often wrong. An attack counts for more with an army or corps HQ behind it, in reach, in supply and
+not moved this turn. Of the enemy you see no figures: a unit beside yours is at strength, worn or weak, and after a
+battle the reports give what you claim to have knocked out, which is more than he lost for good. It shows as a wash over the map and a chip in its corner; a tap on
 the chip says what it does. The screen prints the game's weather seed when it starts. The panel's Unit orders tab lists
 every unit and its order, to scroll through; a tap takes one up. Its Timetable tab lists what is called
 away, what arrives or is made good, and anything else, each kind under its own heading (Withdrawals,

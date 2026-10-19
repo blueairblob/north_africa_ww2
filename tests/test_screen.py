@@ -393,17 +393,18 @@ def scenes(play, kind):
 
 def test_strikes_are_shown_one_at_a_time_attackers_first_then_the_reply():
     from helpers import unit
-    from screen.replay import BEAT_MS, LEAD_MS
+    from screen.replay import BEAT_MS, LEAD_MS, harm
     play, s = played([unit(101, "axis", "armour", [70, 25], steps=20), unit(201, "cw", "armour", [70, 24], steps=20),
                       unit(202, "cw", "foot", [69, 24], steps=9)],
                      cw=[{"unit": 201, "order": "attack", "to": [70, 25]}, {"unit": 202, "order": "attack", "to": [70, 25]}])
-    battle = next(e for e in s.view["events"] if e["event"] == "battle")
+    battle = next(e for e in s.views["cw"]["events"] if e["event"] == "battle")
     (t1, e1, first), (t2, e2, second), (t3, e3, reply) = scenes(play, "strike")
     assert (first["by"], first["on"], first["arm"]) == ([201], [101], "armour")
     assert (second["by"], second["on"], second["arm"]) == ([202], [101], "foot")
     assert reply["by"] == [101] and reply["on"] == [201, 202] and reply["reply"]
     assert e1 <= t2 and e2 <= t3                                                # never two at once
-    assert first["damage"] + second["damage"] <= battle["cld"] and reply["damage"] == battle["cla"]
+    assert "cld" not in battle and first["damage"] + second["damage"] <= harm(battle, "cld")   # the enemy's loss is not told
+    assert reply["damage"] == battle["cla"]
     assert first["damage"] > second["damage"]                                   # the tanks did most of it
     assert all(e - t >= BEAT_MS for t, e, _ in scenes(play, "strike"))          # a steady beat
     lead = play.stage(t1 + 100)
@@ -791,7 +792,7 @@ def test_a_reply_that_did_the_least_there_is_is_not_shown():         # A
     from helpers import unit
     play, s = played([unit(101, "axis", "foot", [70, 25], steps=3), unit(201, "cw", "armour", [70, 24], steps=15)],
                      cw=[{"unit": 201, "order": "attack", "to": [70, 25]}])
-    battle = next(e for e in s.view["events"] if e["event"] == "battle")
+    battle = next(e for e in s.views["cw"]["events"] if e["event"] == "battle")
     assert battle["cla"] == COH_MIN and [x[2]["by"] for x in scenes(play, "strike")] == [[201]]
     play, s = played([unit(101, "axis", "guns", [70, 25], steps=6), unit(201, "cw", "armour", [70, 24], steps=20)],
                      cw=[{"unit": 201, "order": "attack", "to": [70, 25]}])
@@ -917,7 +918,7 @@ def test_split_takes_a_unit_out_of_its_group_and_join_puts_it_back():
     app.click(app.spot((59, 11)))
     app.paint(pygame.Surface(theme.WINDOW))
     app.click(layout.buttons(app.size)["split"].center)
-    assert "list on the right" in app.ui.message                                 # nothing chosen from the group yet
+    assert "tiles on the right" in app.ui.message                                 # nothing chosen from the group yet
     app.paint(pygame.Surface(theme.WINDOW))
     app.click(app.painter.member_rects[111].center)                              # the panzer regiment, by itself
     assert app.ui.selected == 111 and app.ui.alone
@@ -1069,7 +1070,8 @@ def test_reports_are_one_a_unit_and_only_what_matters_and_a_back_button_returns_
     assert len(set(own)) == len(own)                                  # one for each unit or group, no more
     assert not any("step" in w or "haul" in w or "arrived" in w for w in words)      # no arithmetic, no routine
     kinds = ("driven back", "heavy losses", "repulsed", "drove the enemy", "lost its supply", "out of fuel", "morale is low",
-             "under half strength", "enemy in contact", "destroyed", "surrendered", "starved", "could not go on")
+             "under half strength", "enemy in contact", "destroyed", "surrendered", "starved", "could not go on",
+             "We claim", "stood behind")
     assert all(any(k in w for k in kinds) for w in words), words
     app = App(s)
     app.play = None
@@ -1435,16 +1437,17 @@ def test_a_unit_ordered_off_that_never_left_says_so():
 
 def test_a_group_strikes_once_not_once_for_each_of_its_units():
     from helpers import unit
+    from screen.replay import harm
     units = [unit(110, "axis", "hq", [70, 24], steps=1), unit(111, "axis", "armour", [70, 24], parent=110, steps=12),
              unit(112, "axis", "motorised", [70, 24], parent=110), unit(113, "axis", "guns", [70, 24], parent=110, steps=4),
              unit(120, "axis", "foot", [69, 25]), unit(201, "cw", "foot", [70, 25], steps=9)]
     play, s = played(units, axis=[{"unit": 110, "order": "attack", "to": [70, 25]}, {"unit": 120, "order": "attack", "to": [70, 25]}],
                      side="axis")
-    battle = next(e for e in s.view["events"] if e["event"] == "battle")
+    battle = next(e for e in s.views["axis"]["events"] if e["event"] == "battle")
     strikes = [x[2] for x in scenes(play, "strike") if not x[2]["reply"]]
     assert [st["by"] for st in strikes] == [[111, 112, 113], [120]]              # the division as one, then the lone battalion
     assert strikes[0]["arm"] == "armour" and strikes[1]["arm"] == "foot"         # heard as its chief arm
-    assert strikes[0]["damage"] + strikes[1]["damage"] <= battle["cld"] and strikes[0]["damage"] > strikes[1]["damage"]
+    assert strikes[0]["damage"] + strikes[1]["damage"] <= harm(battle, "cld") and strikes[0]["damage"] > strikes[1]["damage"]
     mid = play.stage(scenes(play, "strike")[0][0] + 100)
     assert [at(mid, i)[6] for i in (111, 112, 113)] == ["firing"] * 3 and at(mid, 120)[6] is None
 
@@ -1831,3 +1834,30 @@ def test_the_wheel_and_the_keys_over_the_tile_go_through_the_units_in_its_hex():
     assert s.stack(304) == [(304, False)] and app.painter.cycle_rects == {}
     app.key(pygame.K_PAGEDOWN)
     assert app.ui.selected == 304 and app.ui.message == "Nothing else of yours is in this hex."
+
+
+def test_after_a_battle_the_side_claims_the_enemys_losses_and_names_the_hq_behind_it():
+    from helpers import unit
+    units = [unit(101, "axis", "armour", [70, 25], steps=6, tanks=60), unit(201, "cw", "armour", [70, 24], steps=15),
+             unit(301, "cw", "hq", [72, 24], steps=1, name="XXX Corps")]
+    _, s = played(units, cw=[{"unit": 201, "order": "attack", "to": [70, 25]}])
+    battle = next(e for e in s.views["cw"]["events"] if e["event"] == "battle")
+    claimed = battle["lost"]["101"] * 10
+    lines = [w for w, _ in s.claims("cw")]
+    assert lines == [f"We claim about {claimed} tanks of the enemy's knocked out.", "XXX Corps stood behind our attack."]
+    assert all("XXX Corps" not in w for w, _ in s.claims("axis"))                     # the enemy's HQ is not named to the Axis
+
+
+def test_a_group_is_shown_as_its_order_of_battle_its_hq_on_top_and_a_tile_for_each_unit():
+    pygame.init()
+    app = App(Session(regiments(), GMAP, humans=["axis"], scripted={"cw": players.DoNothing(GMAP)}))
+    app.ui.selected, app.ui.alone = 110, False
+    app.paint(pygame.Surface(theme.WINDOW))
+    rects = app.painter.member_rects
+    hq, tiles = rects[110], [rects[i] for i in (111, 112, 113, 114)]
+    assert all(hq.bottom < t.top for t in tiles)                                 # the HQ's card above its units
+    assert len({t.size for t in tiles}) == 1 and not any(a.colliderect(b) for a in tiles for b in tiles if a is not b)
+    assert all(t.bottom < layout.buttons(app.size)["move"].y for t in tiles)      # clear of the orders under it
+    assert app.painter.pencil_rect and not hq.colliderect(app.painter.pencil_rect)   # the name can still be changed
+    app.click(hq.center)
+    assert app.ui.selected == 110 and app.ui.alone                               # the HQ by itself

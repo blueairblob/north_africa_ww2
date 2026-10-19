@@ -179,10 +179,20 @@ happened in a day of desert war. Each turn (2 days):
    a turn before it falls and when it has happened.
 8. **Victory check.**
 
-There are no dice, with one exception: the weather. The result of every other
-rule is determined by the situation, so the same orders in the same weather
-always give the same outcome. (Friction comes from *simultaneous* movement and
-hidden orders, not from random numbers.)
+Two things are drawn by chance: the weather and the luck of each battle.
+The result of every other rule is determined by the situation. (Friction
+comes mostly from *simultaneous* movement and hidden orders.)
+
+**Luck in battle** (owner's decision, 19 October 2026: "every battle has an
+element of chance; sometimes your luck is your enemy's bad luck"). Each battle
+draws one number that raises or lowers the attack by up to a tenth, and what
+helps one side hurts the other. Two numbers are added to make it, so most
+battles come out near what the forces alone would give and a freak result is
+rare. Unlike the weather it is drawn after the orders, so it can undo a plan;
+it is kept small so that it seldom does. It comes from the same seed, so a
+game still replays. The figure is the owner's and is to be tuned; what the
+historical studies give is only a ceiling (`docs/RULES.md` 10.4.7,
+`docs/SOURCES.md`).
 
 **Weather** (owner's decision, October 2026) is drawn by chance, because a
 storm on a known date would be known to every player who had seen the scenario
@@ -248,9 +258,19 @@ and fortification. The rules that make it the desert war:
   multiply the defence; time spent digging in builds it up.
 - **Concentration.** Units attacking the same hex from several hexes add up; a
   flank or rear attack (the defender's retreat line threatened) is stronger.
+- **Command.** An attack counts for more when an army or corps HQ stands
+  behind it: in reach of the battle, in supply and not moved this turn. Nothing
+  is chosen; keep the HQ up and still when you attack (owner's decision, 19
+  October 2026).
 - **Outcome.** Both sides lose steps and cohesion in proportion to the
-  imbalance; the side that loses more cohesion falls back a hex (or more) or, if
-  surrounded, surrenders. The winner holds the field — and its tank recovery.
+  imbalance, give or take the battle's luck (§5); the side that loses more
+  cohesion falls back a hex (or more) or, if surrounded, surrenders. The
+  winner holds the field — and its tank recovery.
+- **What you know of the enemy.** Never his figures. A unit beside one of
+  yours is "at strength", "worn" or "weak"; after a battle you are told what
+  you claim to have knocked out, which is more than he lost for good, because
+  he got back what lay on the field he held (owner's decision, 19 October
+  2026).
 
 A preview shows the expected result before you commit (key **?** on an attack
 order).
@@ -437,7 +457,8 @@ lopsided, and situations the rules do not cover.
 
 To stay small and neat: no individual tanks or battalions on the map, no
 detailed logistics accounting (trucks are an abstraction), no naval or air units
-as counters, no weather beyond rain and sandstorm (§5), no random events but the weather,
+as counters, no weather beyond rain and sandstorm (§5), no random events but the weather
+and the luck of a battle,
 no unit editor in the game.
 
 ### 14.1 The complexity budget

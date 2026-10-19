@@ -40,6 +40,7 @@ TYPE_NAME = {"armour": "Tanks", "motorised": "Motorised infantry", "foot": "Infa
 # what a step of strength stands for (docs/RULES.md 4.2.1): so many of these
 STRENGTH = {"armour": (10, "tanks"), "motorised": (800, "men"), "foot": (800, "men"), "guns": (12, "guns"),
             "recon": (15, "armoured cars")}
+CLAIMED = ("tanks", "armoured cars", "guns", "men")                 # the order a battle's claim is told in
 MORALE = ("Very poor", "Poor", "Very low", "Low", "Fair", "Normal", "Good", "Very good", "Excellent")
 # the order bar: name, label, key shown
 BUTTONS = (("move", "Move", "M"), ("attack", "Attack", "A"), ("road_march", "Travel", "T"),

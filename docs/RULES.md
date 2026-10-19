@@ -85,7 +85,7 @@ the start belongs to turn 1.
 the rules read and change, nothing else:
 
 - the scenario id and the turn number;
-- the seed the weather is drawn from, and the weather of the turn (§21);
+- the seed the weather and the luck of battles are drawn from (21.2, 10.4.7), and the weather of the turn (§21);
 - for each unit: id, side, name, type, size, experience, steps, maximum
   steps, hex, cohesion, fuel, stores, the flags `out_of_stores`, `traced` and
   `stationary`, the unit's status (`on_map`, `not_arrived`, `withdrawn`,
@@ -976,9 +976,11 @@ where `PP` is `REST_PCT` if the unit's order is `rest`, `COLUMN_PCT` if it is
 `road_march`, otherwise 100.
 
 **10.4.5 Totals.** With `k` the number of different hexes the attackers
-attack from, and `air` the side's support percentage this turn (7.3, else 0):
+attack from, `air` the side's support percentage this turn (7.3, else 0),
+and `hq` equal to `HQ_PCT` if a command HQ stands behind the attack and
+otherwise 0:
 
-- `Att = floor(sum of av × (100 + FLANK_PCT × (k − 1)) × (100 + air) / 10000)`
+- `Att = floor(sum of av × (100 + FLANK_PCT × (k − 1)) × (100 + air) × (100 + hq) / 1000000)`
 - `Def = floor(sum of dv × (100 + ground) × (100 + air) / 10000)`, and at
   least 1,
 
@@ -986,8 +988,32 @@ where `ground` is the sum of: `ROUGH_PCT` if the battle hex is rough;
 `TOWN_PCT` if it is a town hex (3.4.1); `FORT_PCT` times the level of the
 defenders' fortification in the hex.
 
+A **command HQ** is an HQ that is no unit's parent: an army or corps HQ, not
+a division's (20.1). One **stands behind** an attack if it is of the
+attackers' side, on the map, its `out_of_stores` flag is clear, it entered no
+hex in this turn's Movement phase, and the battle hex is within `REACH` haul
+distance of it (6.6.2), counted against the hexes blocked to its side's
+supply (6.4.2) as they stand when the Combat phase begins, the battle hex
+itself excepted. If several do, the one with the lowest id is named. Only an
+attack is helped; a defence is not.
+
 **10.4.6** If `Att` is 0 the battle is not fought: no losses, no retreat. The
 stores already paid are not returned.
+
+**10.4.7 Luck.** Every battle fought has a **luck** `L`, a whole number from
+`−LUCK_PCT` to `LUCK_PCT`, and `Att` becomes `max(1, floor(Att × (100 + L) / 100))`
+before losses are worked out. What raises the attack is the defenders' bad
+luck, so one number serves both sides. With seed 0 (21.2.1) `L` is always 0.
+Otherwise it is drawn from the seed by the generator of 21.2.2 with
+`LUCK_MULTIPLIER` in place of `MULTIPLIER`: for the battle numbered `k`
+(the first of the turn is 0, in the standard order of battle hexes of
+10.6.7, counting every battle found), begin with `x` equal to the seed, make
+`WARM + LUCK_STRIDE × (turn − 1) + 2k + 1` rounds and take
+`a = floor(x × 100 / MODULUS)`, make one round more and take `b` likewise.
+With `s = a + b − 99`, `L` is `floor(|s| × LUCK_PCT / 99)`, negative if `s`
+is. Two numbers added bunch the results: a battle most often goes near what
+the forces alone would give, and the ends of the range are rare. No product
+passes 2 to the power 47.
 
 ### 10.5 Losses
 
@@ -1132,6 +1158,25 @@ roughness.
 | `STEP_MAX` | 40 | most per cent of steps lost in a battle | to be tuned |
 | `RETREAT_MARGIN` | 5 | how much more cohesion the defenders must lose than the attackers to be driven back | to be tuned |
 | `ROUT_COHESION` | 20 | below this a retreating unit goes two hexes | to be tuned |
+| `HQ_PCT` | 20 | added to the attack when a command HQ stands behind it (10.4.5) | owner's decision, 19 October 2026, that there be such a rule; the size cannot be derived from a source: to be tuned |
+| `LUCK_PCT` | 10 | most luck adds to or takes from an attack (10.4.7) | the owner's figure, 19 October 2026, given with a question mark; see below; to be tuned |
+| `LUCK_MULTIPLIER` | 16807 | the multiplier of the generator luck is drawn from | from source: the first multiplier of the Lehmer generator of Park and Miller, 1988 |
+| `LUCK_STRIDE` | 240 | rounds between one turn's luck and the next: two numbers for each battle of the most a turn can hold, one per hex of a side's units at 60 counters a side | derived |
+
+**Where luck's size comes from** (`docs/SOURCES.md`, Luck in battle). The
+owner asked that every battle have an element of chance, that the formula
+not be invented, and that the share given to luck be looked into, with 10
+per cent his own guess. What the historical studies give is a ceiling, not
+a figure. The best-known model fitted to historical battles, T. N. Dupuy's
+QJM, matched the winner in about 93 per cent of the 81 engagements it was
+built and tested on, and in a later test missed personnel casualties by up to
+40 per cent; what such a model leaves unexplained is chance and every factor
+it did not measure, together. Luck here is therefore set at the owner's 10
+per cent, on the attack, which moves the ratio of the forces by at most a
+tenth either way and seldom by more than a twentieth: enough to turn a battle
+that was nearly even, too little to turn a lopsided one. Role-playing games
+were looked at only as background: a single 20-sided die gives every result
+alike, which is the thing avoided here by adding two numbers.
 
 ---
 
@@ -1315,17 +1360,25 @@ replacements, each with its date and turn (12.8); the objectives.
 sandstorm it is `STORM_SIGHT` for every unit (21.4.2).
 
 **14.4** For a spotted enemy unit the view gives its id, name, type, hex and
-experience. If it is adjacent to a unit of the side, it also gives its steps.
-It never gives its cohesion, fuel, stores, order, size or flags.
+experience. If it is adjacent to a unit of the side, it also gives its
+**strength** as a word, from its steps against its maximum: `at strength` at
+`STRONG_PCT` per cent or more, `worn` at `WORN_PCT` per cent or more, and
+`weak` below, the per cent rounded down. It never gives its steps, cohesion,
+fuel, stores, order, size or flags.
 
 **14.5** The view gives an enemy fortification's level if its hex is within
 spotting range by 14.3.
 
 **14.6** The view gives the events of the last turn that the side took part
 in: for each battle with its units, the battle hex, both sides' units in it,
-both sides' step and cohesion losses, each attacker's attack value, where
-each unit fought, which were destroyed, who
-retreated, surrendered and advanced; the replies and events for its own
+where each unit fought, which were destroyed, who retreated, surrendered and
+advanced, the battle's luck (10.4.7), and both sides' step losses as
+knocked out in the battle (10.5.2), before any tanks are got back (11.1):
+for its own units the side knows what it got back, so for the enemy's this
+is a **claim**, honest and too high. Of the figures it gives only the
+side's own: its total (`Att` or `Def`), its cohesion loss, and, if it
+attacked, each attacker's attack value and the command HQ that stood behind
+it (10.4.5); the replies and events for its own
 units, with every hex each entered and in which impulse; what the timetable
 did to its own units (12.8); and its own hauls in the Supply phase
 just run, each with its source, HQ, tonnes, fuel burnt, haul cost and route.
@@ -1334,7 +1387,8 @@ sides, with the unit and the hex. It gives no other enemy event.
 
 **14.7** The view holds no memory of earlier turns. A player may keep its own.
 
-**14.8** Never in the view: enemy orders, enemy supply of any kind, enemy
+**14.8** Never in the view: enemy steps; the enemy's figures in a battle
+(14.6); enemy orders, enemy supply of any kind, enemy
 lift, enemy schedules, unspotted enemy units. Nor the seed, nor the weather of any turn
 after this one.
 
@@ -1342,6 +1396,8 @@ after this one.
 | --- | --- | --- | --- |
 | `SPOT_RANGE` | 2 | hexes at which any unit spots | to be tuned |
 | `SPOT_RANGE_RECON` | 4 | hexes at which a recon unit spots | to be tuned |
+| `STRONG_PCT` | 66 | per cent of its full steps at and above which an enemy unit is "at strength" | to be tuned |
+| `WORN_PCT` | 33 | per cent of its full steps at and above which it is "worn"; below, "weak" | to be tuned |
 
 ---
 
@@ -1419,8 +1475,8 @@ that subject (`docs/ENGINEERING_NOTES.md` §4).
 *This page is the whole of it. Everything else the machine does and shows.*
 
 **The turn.** A turn is two days. You give every formation one order. Both
-sides' orders then run at the same time. Nothing is left to chance but the
-weather.
+sides' orders then run at the same time. Two things are left to chance: the
+weather, and a little luck in every battle.
 
 **The six orders.**
 
@@ -1514,7 +1570,24 @@ still be changed in one place if play shows it wrong.
   who had played the scenario before, "which can never happen". It is the one
   thing in the game not settled by the orders. It is drawn from a seed, so a
   game still replays; and it is settled and told before the orders are given,
-  so that no order is undone by a draw made after it.
+  so that no order is undone by a draw made after it. Since 18.17 it is no
+  longer the only thing drawn by chance.
+- **18.15 The enemy's strength is a word, and his losses a claim** (14.4,
+  14.6). Taken by the owner on 19 October 2026. In Crusader the British
+  grossly over-estimated the German tank losses, 15th Panzer Division's
+  diary read the British as beaten on 23 November when they were not, and the side holding the field
+  got back tanks the other had counted as knocked out (`docs/SOURCES.md`,
+  The enemy's strength).
+- **18.16 A command HQ gives weight to an attack** (10.4.5), in its plain
+  form: nothing is chosen, and the HQ's reach is the supply reach already
+  drawn. Taken by the owner on 19 October 2026. The second form, a point of
+  main effort named each turn, was not taken: it adds a thing to do every
+  turn.
+- **18.17 Every battle has luck** (10.4.7). Taken by the owner on 19
+  October 2026: "every battle has an element of chance". It is drawn after
+  the orders, so unlike the weather it can undo a plan; it is bounded and
+  bunched so that it seldom does. It is drawn from the game's seed, so a game
+  still replays (I-1).
 
 ---
 
@@ -1698,9 +1771,9 @@ has left of those it began with.
 
 ## 21. Weather
 
-Weather is the one thing in the game that is drawn by chance. Everything else
-in these rules follows from the scenario and the orders, and so does the
-weather once its seed is fixed.
+Weather and the luck of a battle (10.4.7) are the two things in the game
+drawn by chance. Everything else in these rules follows from the scenario and
+the orders, and so do they once the seed is fixed.
 
 ### 21.1 What it is
 
