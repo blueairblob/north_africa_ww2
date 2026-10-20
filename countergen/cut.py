@@ -13,7 +13,8 @@ COLS = ("foot", "light", "armour", "guns", "antitank", "motorised")         # an
 NEAR, SLACK = (190, 495, 825, 1070, 1335), 45       # about where one column ends and the next begins, in sheet pixels
 SHEET = "counters_sheet_1_1.png"
 KINDS = ("foot", "armour", "guns", "motorised")     # the sheets have no armoured car and no headquarters
-SINGLE = {("de", "hq"): "WWII Desert Kübelwagen Icon.png"}    # one picture to a file, on a checkerboard painted in
+SINGLE = {("de", "hq"): "axis_hq_cars/german_hq.png",         # one picture to a file
+          ("it", "hq"): "axis_hq_cars/it_hq.png"}
 OTHER = {("de", "foot"): ("counters_sheet_1.png", "foot"),      # the one German drawn in his own cap
          ("de", "guns"): (SHEET, "antitank")}                   # the sheet's German artillery is an assault gun, not a gun on a carriage
 
@@ -74,18 +75,23 @@ def cells(name):
 
 
 def cut_out(name):
-    """A picture drawn on a pale checkerboard painted into the file, not on transparency: the
-    pale ground joined to the edges is cleared, and only the largest piece left is kept."""
+    """A picture alone in its file, trimmed to its largest piece. One on real transparency is taken
+    as it is; on a pale checkerboard painted into the file, the pale ground joined to the edges
+    is cleared first."""
     flat = pygame.image.load(os.path.join(ROOT, "art", name))
     img = pygame.Surface(flat.get_size(), pygame.SRCALPHA)
     img.blit(flat, (0, 0))
-    pale = pygame.mask.from_threshold(img, (246, 246, 246, 255), (22, 22, 22, 255))
-    ground = pygame.mask.Mask(img.get_size())
     w, h = img.get_size()
-    for corner in ((0, 0), (w - 1, 0), (0, h - 1), (w - 1, h - 1)):
-        if pale.get_at(corner) and not ground.get_at(corner):
-            ground.draw(pale.connected_component(corner), (0, 0))
-    ground.invert()
+    corners = ((0, 0), (w - 1, 0), (0, h - 1), (w - 1, h - 1))
+    if all(img.get_at(c).a == 0 for c in corners):
+        ground = pygame.mask.from_surface(img, 40)
+    else:
+        pale = pygame.mask.from_threshold(img, (246, 246, 246, 255), (22, 22, 22, 255))
+        ground = pygame.mask.Mask(img.get_size())
+        for corner in corners:
+            if pale.get_at(corner) and not ground.get_at(corner):
+                ground.draw(pale.connected_component(corner), (0, 0))
+        ground.invert()
     pic = ground.connected_component().to_surface(setsurface=img, unsetcolor=(0, 0, 0, 0))
     return pic.subsurface(pic.get_bounding_rect()).copy()
 

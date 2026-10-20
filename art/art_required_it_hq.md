@@ -2,9 +2,9 @@
 
 **Deliver:** `art/counters/artist/it_hq.png`, one picture in one file.
 
-**Status:** missing: the artist's sheets have no headquarters.
+**Status:** in use, from the owner's AI-generated picture `art/axis_hq_cars/it_hq.png` (20 October 2026), fitted to the canvas by `python -m countergen cut`. Needed only if it is to be redrawn: its pennant is a small tricolour, faint at counter size, where the brief asks for red, and which car it shows was not checked.
 
-**Priority:** 1 (1 missing from the game, 2 the wrong subject, 3 redrawn to the brief).
+**Priority:** none while the present picture serves (1 missing from the game, 2 the wrong subject, 3 redrawn to the brief).
 
 ## The subject
 
@@ -42,6 +42,7 @@ Style (this game's own pictures; the new one must sit beside them as one set):
 
 - https://raw.githubusercontent.com/blueairblob/north_africa_ww2/master/art/counters/artist/it_armour.png (the Italian tank already in the game: match its outline, finish and palette)
 - https://raw.githubusercontent.com/blueairblob/north_africa_ww2/master/art/counters/artist/it_motorised.png (the Italian lorry already in the game: the same)
+- https://raw.githubusercontent.com/blueairblob/north_africa_ww2/master/art/counters/artist/it_hq.png (what is in the game now, once committed)
 - https://raw.githubusercontent.com/blueairblob/north_africa_ww2/master/art/counters/it_hq.png (the plain picture the game draws for itself: the pose and the canvas, not the style)
 
 Shape (photographs and drawings of the real thing; for its shape and proportions only, never to trace or copy):

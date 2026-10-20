@@ -2,7 +2,7 @@
 
 **Deliver:** `art/counters/artist/de_hq.png`, one picture in one file.
 
-**Status:** in use, from the owner's AI-generated picture `art/WWII Desert Kübelwagen Icon.png`, cut from its painted checkerboard by `python -m countergen cut`. Needed only if it is to be redrawn: its finish is flatter than the artist's other pictures, and its pennant is black where the game's other headquarters fly red.
+**Status:** in use, from the owner's AI-generated picture `art/axis_hq_cars/german_hq.png` (20 October 2026), fitted to the canvas by `python -m countergen cut`. Needed only if it is to be redrawn: its finish is flatter than the artist's other pictures, and its pennant is black where the brief asks for red.
 
 **Priority:** none while the present picture serves (1 missing from the game, 2 the wrong subject, 3 redrawn to the brief).
 
