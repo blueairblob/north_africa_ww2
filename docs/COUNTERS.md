@@ -325,20 +325,16 @@ it came from a group; the owner moved it there from the tile's corner.
   there is art, the screen draws its own simple pictures (`screen/pictures.py`).
 - **Contrast comes from the counter face:** Commonwealth blue, German dark
   grey with pale marks, Italian green. These are this game's own colours.
-- A sprite file in `art/counters/<nation>_<type>.png` replaces the drawn
-  picture for that nation and arm.
+- A sprite file in `art/counters/artist/<nation>_<type>.png` replaces the
+  drawn picture (`art/counters/<nation>_<type>.png`) for that nation and arm.
+  What is still wanted is listed in `docs/BOM.md`.
 
 ## Open decisions
 
-- **Sprites or NATO symbols.** `DESIGN.md` §4.2 and §12 say NATO-style
-  symbols, generated, with no hand-drawn art needed. Sprites are more work
-  and more charm. A fallback to symbols lets both exist.
-- **Where the contrast comes from.** Either each vehicle is drawn dark enough
-  to stand out from the desert, or vehicles stay light and each sits on a
-  counter face in its nation's colour (for example khaki-brown for the
-  Commonwealth, field grey for the Germans, grey-green for the Italians). The
-  second lets one sprite style serve all three nations, and is the
-  recommendation.
+- **Sprites or NATO symbols.** Settled in practice: pictures are the
+  default and symbols the option (above), and `DESIGN.md` §12 now says so.
+- **Where the contrast comes from.** Settled: from the counter face in the
+  nation's colour (above).
 - **How specific a sprite is.** One sprite per unit type per nation (about
   eighteen), or particular vehicles for particular formations (a Matilda for
   an army tank brigade, a Crusader for an armoured brigade). The complexity

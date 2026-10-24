@@ -9,13 +9,20 @@ real tempo of a desert battle and, above all, the real supply problem.
 - **`docs/RULES.md`** — the rules specification the engine follows, numbered, with
   every constant named and its source given.
 - **`docs/COUNTERS.md`** — hex and counter sizes, and notes on counter art.
-- **`docs/SOURCES.md`** — where the map and the orders of battle come from.
+- **`docs/SOURCES.md`** — where the map, the orders of battle and every date come from.
+- **`docs/MAP.md`** — how the map is generated, and its known limitations.
 - **`docs/CLEAN_ROOM.md`** — what this project may and may not use.
+- **`PLAN.md`** — the owner's decisions by date, and the plan for later.
+- **`docs/TODO.md`** — everything known to be open.
+- **`docs/BOM.md`** — every picture, effect and sound, and what is still wanted.
+- **`docs/HANDOFF.md`** — a brief for a reviewer new to the project.
+- **`docs/ENGINEERING_NOTES.md`** — how the engine is built and tested.
 
 Status: the **map generator**, the **rules specification**, the **engine
-core** on Operation Crusader and on a short scenario cut from it, and a first
-**screen**. No computer opponent
-yet beyond scripted test players.
+core** on Operation Crusader and on a short scenario cut from it, and the
+**pygame screen**, played by two people at one screen or against a scripted
+player. No computer opponent yet beyond scripted test players, and most of the
+counter art is still to come (`docs/BOM.md`).
 
 ## The engine
 
@@ -69,7 +76,9 @@ With no order a unit holds, and Hold is the button lit; a click on the map gives
 no order until Move, Attack or March has been pressed, so a unit on its way keeps
 its route whatever is clicked. The order bar under the map has the six orders, the supply and zones
 overlays and End turn; each has a key. With the keyboard alone:
-press M, A or R, choose the hex with the arrow keys and press Enter. The mouse
+press M, A or R, choose the hex with the arrow keys and press Enter. Keys 1, 2
+and 3 give the air force's effort (support, interdict, recon) and F3 shows
+NATO-style symbols in place of pictures; neither has a button yet (`docs/TODO.md`). The mouse
 wheel zooms at the pointer, dragging moves the map, and with a unit taken up
 the map scrolls when the pointer reaches its edge. Layers, in the map's
 corner, shows supply, zones and the key. Men on foot March where vehicles
@@ -107,9 +116,11 @@ turn, with the units it hits burning and a rattle as long as the damage, then
 the outcome, where a unit that surrenders raises a white flag. F plays it faster, Right arrow goes on to the next scene, and any
 other key skips it all. A finished game shows how its result was reached. The
 map is `art/basemap.jpg`, the generated map with its relief
-(`python -m mapgen base`). The pictures on the counters are in `art/counters/`, drawn by
-`python -m countergen`; `docs/COUNTERS.md` has the hex and counter sizes and the
-notes on counter art.
+(`python -m mapgen base`). The pictures on the counters are AI-generated for this game, in
+`art/counters/artist/` (cut by `python -m countergen cut`), with the game's own
+drawn set in `art/counters/` (`python -m countergen`) for those not done yet.
+`docs/COUNTERS.md` has the hex and counter sizes and the notes on counter art;
+`docs/BOM.md` lists what is still wanted.
 
 ## The map
 
@@ -150,7 +161,7 @@ Known limitations of this first version (see `docs/MAP.md`):
 - the escarpments are checked against the elevation data, not against period
   maps, and only Sollum has named passes; elsewhere a pass is simply where a
   route climbs;
-- about 20 period sites have approximate coordinates; places and tracks have
+- 26 of the 53 places have approximate coordinates; places and tracks have
   been checked against two period maps (Gazala 1942 and Cyrenaica 1941, see
   `docs/MAP.md`), but the tracks are still joined from place to place, not traced;
 - the sand sea's edge is read off a small-scale period map; the coastal salt

@@ -1,102 +1,109 @@
-# Handoff: milestone 2, the rules specification
+# Handoff: a brief for a reviewer
 
-Paste everything below the line as the first message of a new session started
-in this folder.
-
----
-
-You're picking up an original wargame project, "Benghazi Handicap: North Africa
-1940–42", in this folder. Milestone 1 (the map) is done. Your job is milestone 2:
-write the rules specification, docs/RULES.md. Don't write engine code yet.
+Written 22 October 2026, at commit `f784f0d`, for a review of the whole
+project by someone, or something, that has not worked on it.
 
 ## What the game is
 
-A small operational wargame of the desert campaign on a hex map, for the public
-repo github.com/blueairblob/north_africa_ww2 (branch master). The owner's aim,
-in his words: the simplicity and playability of the small 8-bit desert wargames,
-at division level, plus historical supply and reinforcements. He wants the
-surface small (a few dozen counters, six orders) and the engine underneath
-"very sophisticated", with rules solid enough that two computer players can
-play each other with no screen. There is no randomness anywhere: same scenario
-and same orders must always give the same result.
+*Benghazi Handicap: North Africa 1940–42* is an original hex wargame of the
+desert campaign, at the scale of divisions and their brigades and regiments.
+The aim, in the owner's words: the simplicity and playability of the small
+8-bit desert wargames, with historical supply and reinforcements underneath.
+A turn is two days; a hex is 10 km; the map is 123 × 44 hexes, generated from
+public geographic data. One full scenario, Operation Crusader (18 November
+to 27 December 1941, 22 turns, 91 units), and one short one cut from it,
+Sidi Rezegh (five turns, one aim).
+
+It is to be a commercial product. The work now is to make the pygame version
+good to play. A web and phone version is planned for later and is not begun.
 
 ## Read first, in this order
 
-1. DESIGN.md — the design. Sections 2, 4–9, 11, 13 and 14.1 (the complexity
-   budget) matter most for the rules.
-2. docs/ENGINEERING_NOTES.md — how to build and test; section 1 (determinism,
-   stated tie-break orders) applies directly to how rules must be written.
-3. docs/MAP.md and data/map.json — what the map actually contains: six terrain
-   letters (~ sea, . desert, ^ rough, v depression, s sand sea, o oasis),
-   escarpments on hexsides with a high side, passes, routes (road, track,
-   rail), places, the frontier line. Flat-topped hexes, 10 km, 123 × 44.
-4. docs/SOURCES.md — where historical facts come from.
-5. docs/CLEAN_ROOM.md — the boundary below.
+1. `README.md`: what is built and how to run it.
+2. `DESIGN.md`: the design. Where it and the rules differ, the rules are right.
+3. `docs/RULES.md`: the rules, numbered, every constant named with its source
+   or marked "to be tuned". The engine cites these numbers.
+4. `docs/TODO.md`: everything known to be open.
+5. `docs/BOM.md`: every picture, effect and sound, and what is still wanted.
+6. `PLAN.md`: the owner's decisions by date, and the plan for later.
+7. `docs/SOURCES.md`: where every fact and date comes from, and what is unsure.
+8. `docs/CLEAN_ROOM.md`: what the project may and may not use. Read it before
+   suggesting any change.
+9. As needed: `docs/COUNTERS.md` (counters, tiles, art, flags), `docs/MAP.md`
+   (the map generator), `docs/ENGINEERING_NOTES.md` (how it is built and
+   tested).
 
-## The clean-room boundary (important)
+## The rules of the project
 
-This game must be original. The earlier contributor had studied a 1985 game's
-code in detail and therefore could not write these rules; you can, because you
-haven't. Keep it that way:
+These bind a reviewer as much as a contributor.
 
-- Do not open, list or search any folder outside this repository, or anything
-  under local/ in this folder.
-- Take rules from DESIGN.md and from history, never from another game's
-  tables, numbers or text. Where you need a figure (port capacity, fuel use,
-  movement rates), derive it from the historical sources and say which.
-- If I mention how an older game did something, treat it as background, not as
-  a value to copy.
+- **Clean room.** The game must be original. Do not open, list or search any
+  folder outside this repository, or anything under `local/`. Take rules from
+  `DESIGN.md` and from history, never from another game's tables, numbers or
+  text. Where a figure is needed, derive it from a historical source and say
+  which. A mention of how an older game did something is background, not a
+  value to copy.
+- **Dates are the backbone.** Every dated event has a real date and a named
+  source, and the unsure ones say so.
+- **Say what is uncertain.** "I'm not sure of this figure" is wanted; a
+  confident guess is not.
+- **Every action by a tap** on something visible, as well as any key.
+- **Determinism.** The same scenario, seed and orders give the same game.
+  Chance comes only from the seed, by a generator written out in the rules
+  (weather, §21; a battle's luck, 10.4.7).
+- **The repository is public.** Nothing from `local/` goes in it, nor any
+  picture or text of another game.
 
-## What docs/RULES.md must be
+## How to run it
 
-DESIGN.md section 13 defines "solid": complete, written down, closed, checked,
-replayable. Concretely:
+```
+python3 -m venv .venv && .venv/bin/pip install -r requirements.txt
+.venv/bin/python -m pytest -q                        # 301 tests, about 150 s
+.venv/bin/python -m engine crusader attack nothing   # a whole game, no screen
+.venv/bin/python -m screen sidi_rezegh --axis attack # play the short scenario
+SDL_VIDEODRIVER=dummy .venv/bin/python -m screen crusader --shot frame.png   # one frame, no window
+```
 
-- Numbered rules (e.g. 5.3.2), each one testable, so engine tests can cite them.
-- Every situation has exactly one outcome. Cover the hard cases explicitly:
-  two sides moving into the same hex, units swapping hexes, retreat with
-  nowhere to go, a supply route cut partway through a turn, stacking limits,
-  what happens when an ordered unit has no fuel, simultaneous attacks on one
-  defender, ties of every kind (broken by a stated order such as unit id, then
-  column, then row — never by chance).
-- A legal-orders section: for each of the six orders, exactly when it is
-  legal and what the engine replies when it isn't.
-- The turn sequence as phases, each saying what state it may change.
-- Supply in full: fuel and stores, ports and their capacity, the truck haul
-  and its cost with distance, HQs, dumps, what shortage does. This is the
-  heart of the game and should be the most thorough part.
-- Reinforcements and withdrawals by date.
-- Every number as a named constant with its meaning and its source, collected
-  in one table per section. Mark each as "from source" or "to be tuned".
-- A list of invariants that must hold after every turn.
-- What each side can see (fog of war), since computer players are given only
-  their side's view.
-- A one-page "what the player must learn" summary at the end, to prove the
-  complexity budget is met.
+## Where the code is
 
-Units of measure: integers throughout; state how anything rounds.
+| Folder | What | Lines |
+| --- | --- | --- |
+| `engine/` | the rules: pure Python, integers, no input or output but reading a scenario | about 2,300 |
+| `screen/` | the pygame screen; `session.py` and `replay.py` hold its behaviour and have no pygame in them | about 4,100 |
+| `mapgen/` | builds `data/map.json` and the map picture from public data | |
+| `countergen/` | draws the fallback counter pictures and cuts the artist's | |
+| `data/` | the map, the places and routes, the two scenarios | |
+| `tests/` | 19 files; each test names the rule it checks | |
 
-## Decisions that are the owner's, not yours
+## Where things stand
 
-Raise these as questions when you reach them, with your recommendation, and
-carry on with the rest meanwhile:
+Built: the map generator; the rules; the engine (movement, zones of control,
+supply by truck haul from ports and the railhead, combat with retreat and
+advance, recovery, fortification, morale, groups, reinforcement and
+withdrawal on sourced dates, weather, a battle's luck, the weight of an HQ,
+the enemy seen as an estimate, victory); the screen (orders, overlays, the
+group shown as an order of battle, reports, the Timetable, the playback with
+sound, saved games). Scripted test players only.
 
-- Whether the frontier wire is a rule or only drawn.
-- Whether oases matter for supply (water) or are just terrain.
-- How Tripoli and the Nile Delta, both off the map, feed supply onto it.
-- Stacking: one counter per hex, or more.
-- Whether the two gentle escarpments east of Sofafi stay as barriers
-  (docs/MAP.md, "Known limitations").
+Not built: the computer opponent; levels of difficulty; most of the art
+(`docs/BOM.md`). The three controls that can be reached only by a key are
+listed as fixes at the top of `docs/TODO.md`.
 
-## How to work here
+## What the review should look at
 
-- Python is in .venv; tests run with `.venv/bin/python -m pytest -q` (26 pass
-  now); the map rebuilds with `.venv/bin/python -m mapgen all`.
-- Commit only when I ask. When I do, push to origin master and end the commit
-  message with: Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
-- The repo is public: nothing from local/ goes in it.
-- I like short, plain summaries of what changed and what is still uncertain,
-  and I'd rather hear "I'm not sure of this figure" than a confident guess.
+- Whether the rules are complete and closed: every situation one outcome,
+  every tie broken by a stated order (`DESIGN.md` §13).
+- Whether the engine does what `docs/RULES.md` says, and the tests check it.
+- Whether the history is right and its sources are named; the doubtful
+  points are listed in `docs/TODO.md` §5.
+- Whether the game is easy and gratifying to play: the owner's test of
+  "good enough" (`PLAN.md`).
+- Whether anything in the repository could breach the clean room.
 
-Start by reading the five documents, then give me an outline of RULES.md
-(section headings and the open questions) before writing it in full.
+## Working with the owner
+
+- Commit only when asked. When asked, push to `origin master` and end the
+  commit message with `Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>`.
+- Short, plain summaries of what changed and what is still uncertain.
+- Pygame first. Do not start the web version, the trial page, Simple mode or
+  the living map unasked.

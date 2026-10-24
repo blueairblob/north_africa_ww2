@@ -119,8 +119,10 @@ original, reproducible and accurate:
 
 ### 4.2 What a counter shows
 
-A unit is drawn as a **NATO-style symbol** in its nation's colour, with three
-small numbers and two bars:
+A unit is drawn as a **picture of its arm** on a counter in its nation's
+colour, a NATO-style symbol being the option (§12), with
+small numbers and bars. The sketch below is the first idea; the counter as
+built is described in `docs/COUNTERS.md`:
 
 ```
  ┌───────────┐
@@ -354,13 +356,13 @@ lopsided, and situations the rules do not cover.
 
 ## 12. Presentation
 
-- One screen: the hex map (scrollable, two zoom levels), a side panel for the
+- One screen: the hex map (scrollable, zoomed smoothly), a side panel for the
   selected unit and the turn, a message line. Readable at a glance, like the
   original 8-bit screens.
 - Flat, clear hex tiles: sand, hatched rough, a bold escarpment edge with pass
   gaps, a strong road line, dashed tracks.
 - Counters show a picture of the arm (tank, lorry, soldier, gun, armoured car,
-  flag for an HQ); NATO-style symbols are an option. Commonwealth blue, German
+  a staff car with a pennant for an HQ); NATO-style symbols are an option. Commonwealth blue, German
   dark grey, Italian green. Strength is told in real terms (tanks, men), and
   cohesion as morale in nine named levels.
 - A unit of a division carries a notch in its division's colour. At the
@@ -368,12 +370,13 @@ lopsided, and situations the rules do not cover.
   hexes it can go in a turn. The unit taken up is shown in the panel as one
   large tile: its picture, with its strength, pace, morale, fuel, experience
   and stores round it, each with its word (`docs/COUNTERS.md`).
-- Overlays: **S** supply, **Z** zones of control and fog of war, **F** the front
-  line history; a Layers button in the map's corner lists them.
+- Overlays: **S** supply, **Z** zones of control and fog of war, **K** the key;
+  a Layers button in the map's corner lists them. **F**, the front line's
+  history, is not built (`docs/TODO.md`).
 - The panel puts the orders directly under the header of the unit taken up,
   and shows only those it can take, each always in its own place. With
   nothing taken up it lists the units still waiting, each a tap that takes the
-  map there. End turn is plain until every unit has its order. The Layers
+  map there. End turn is always there. The Layers
   list explains what each layer that is on is showing.
 - The unit taken up is lifted and ringed with a pulsing border. A counter
   carries a badge when its unit is in trouble: a drop for no fuel, otherwise
@@ -421,7 +424,7 @@ lopsided, and situations the rules do not cover.
 - **A game can be put down and taken up.** It is saved when the player asks,
   each time orders are handed in, and on leaving; a saved game goes on exactly
   as it would have, in the middle of a turn's orders or at its start.
-- Optional retro look: a pixel palette and font, as a theme.
+- Optional retro look: a pixel palette and font, as a theme. Not built.
 
 ## 13. Technical shape
 

@@ -604,6 +604,9 @@ Changed:
 
 ## Open, for the owner
 
+The full list of open items, with the fixes and the history still to check,
+is `docs/TODO.md`; the art still wanted is `docs/BOM.md`.
+
 - The sizes of the three new rules (luck, HQ weight, the strength words),
   after play.
 - In Simple mode, are a division's regiments hidden entirely or shown on a long

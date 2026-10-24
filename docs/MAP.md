@@ -174,7 +174,7 @@ themselves are not in this repository. Places read off them are marked
   pieces of escarpment round its edge, not as its two clean terraces.
 - **The Halfaya track** is joined from the pass to Sidi Omar by least cost, and
   the pass positions come from general references, not period survey sheets.
-- **Approximate sites.** About 15 period sites (marked `approx` in
+- **Approximate sites.** 26 of the 53 places (marked `approx` in
   `features.json`) are placed from general references, to within a hex or so.
 - **Tracks** are joined from place to place by least cost, not traced.
 - **Sofafi to Matruh.** These two escarpments are slopes, not cliffs. One
