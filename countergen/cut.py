@@ -1,6 +1,8 @@
-"""Counter pictures cut from the artist's first sheets: a stopgap until the pictures come one to a
-file (docs/COUNTERS.md). python -m countergen cut writes them to art/counters/artist, where the
-screen takes a picture before it takes the drawn one."""
+"""Legacy sheet cutter and HQ-car fitter (docs/COUNTERS.md).
+
+All twelve former sheet-cut defaults are now original files; cut only refreshes the
+two Axis HQ cars. The screen takes artist pictures before drawn fallback ones.
+"""
 import os
 
 import pygame
@@ -13,11 +15,12 @@ COLS = ("foot", "light", "armour", "guns", "antitank", "motorised")         # an
 NEAR, SLACK = (190, 495, 825, 1070, 1335), 45       # about where one column ends and the next begins, in sheet pixels
 SHEET = "counters_sheet_1_1.png"
 KINDS = ("foot", "armour", "guns", "motorised")     # the sheets have no armoured car and no headquarters
-ORIGINAL = frozenset({("cw", "armour"), ("cw", "guns")})  # do not recut the Matilda and wrong gun
+ORIGINAL = frozenset({("cw", "armour"), ("cw", "foot"), ("cw", "guns"), ("cw", "motorised"),
+                      ("de", "armour"), ("de", "foot"), ("de", "guns"), ("de", "motorised"),
+                      ("it", "armour"), ("it", "foot"), ("it", "guns"),
+                      ("it", "motorised")})  # fitted original subjects; never recut them from the sheets
 SINGLE = {("de", "hq"): "axis_hq_cars/german_hq.png",         # one picture to a file
           ("it", "hq"): "axis_hq_cars/it_hq.png"}
-OTHER = {("de", "foot"): ("counters_sheet_1.png", "foot"),      # the one German drawn in his own cap
-         ("de", "guns"): (SHEET, "antitank")}                   # the sheet's German artillery is an assault gun, not a gun on a carriage
 
 
 def spans(flags, gap):
@@ -117,8 +120,8 @@ def write():
     for nation in ROWS:
         for kind in KINDS:
             if (nation, kind) in ORIGINAL:
-                continue  # original painted Crusader and 25-pounder replace wrong-subject sheet cuts
-            name, col = OTHER.get((nation, kind), (SHEET, kind))
+                continue  # all twelve defaults are now original individual files
+            name, col = SHEET, kind
             if name not in sheets:
                 sheets[name] = cells(name)
             new = os.path.join(ARTIST, f"{nation}_{kind}.new.png")

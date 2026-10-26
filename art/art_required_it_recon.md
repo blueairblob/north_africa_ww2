@@ -2,7 +2,10 @@
 
 **Deliver:** `art/counters/artist/it_recon.png`, one picture in one file.
 
-**Status:** missing: the artist's sheets have no armoured car.
+**Status:** painted AB41 **candidate** for RECAM. The car type for its
+November 1941 mixed formation is not yet verified from the archival photo;
+this is a provisional representative, not a claim all 45 abstract cars
+were AB41s.
 
 **Priority:** 1 (1 missing from the game, 2 the wrong subject, 3 redrawn to the brief).
 

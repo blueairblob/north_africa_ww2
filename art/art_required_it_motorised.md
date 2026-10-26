@@ -2,9 +2,11 @@
 
 **Deliver:** `art/counters/artist/it_motorised.png`, one picture in one file.
 
-**Status:** redo: one picture to a file, drawn to this brief, in place of the cut from the sheet.
+**Status:** original unmarked right-facing long-bed Italian lorry now replaces
+the sheet cut with a prominent tricolour. The Lancia 3Ro is a representative
+transport type, not a documented vehicle return for all four formations.
 
-**Priority:** 3 (1 missing from the game, 2 the wrong subject, 3 redrawn to the brief).
+**Priority:** the marked sheet cut was replaced; vehicle allocations open.
 
 ## The subject
 

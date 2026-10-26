@@ -265,6 +265,103 @@ https://www.rafmuseum.org.uk/research/research-enquiries/history-of-aviation-tim
 silhouettes as visual examples. Air points still abstract several air arms and
 missions; the silhouettes do not assert that these are the only aircraft.
 
+The New Zealand official history *Divisional Cavalry* (New Zealand Electronic
+Text Collection, foreword, November–December 1941) describes its light tanks
+and Bren carriers in the Crusader period. Unit 335 therefore has an original,
+AI-generated open-topped tracked carrier illustration (`cw_carrier.png`), not
+the wheeled armoured-car default. This depicts a representative part of a
+mixed formation, not every vehicle; the `cars: 30` scenario strength has not
+been verified against a vehicle return. The generated image was resized and
+fitted using this project's `countergen.cut.fitted`; no historical image was
+copied or traced. Official history edition:
+https://www.22battalion.org.nz/publications/histories/divcav.pdf .
+
+The U.S. War Department's *Handbook on German Military Forces*, TM-E 30-451
+(15 March 1945), ch. VII, names the leFH 18 among Germany's standard
+divisional howitzers from the start of the war and describes 8.8 cm Flak
+variants on their deployed mounts:
+https://www.ibiblio.org/hyperwar/Germany/HB/HB-7.html .
+The British official history *The Mediterranean and Middle East*, vol. II,
+ch. 8, describes dug-in 88-mm guns in the Halfaya area in 1941 and German
+37- and 50-mm anti-tank guns:
+https://www.ibiblio.org/hyperwar/UN/UK/UK-Med-II/UK-Med-2-8.html .
+These support distinctive representative painted leFH 18 and 88 sprites;
+they do not establish the exact equipment mix of the four 1941 field/mixed
+artillery formations or the combined Panzerjäger battalions. The latter uses
+the existing owner-generated sheet-cut towed gun as an explicitly provisional
+silhouette; its specific model is still unverified.
+
+Reconnaissance art: the Australian War Memorial catalogue P08802.015 dates a
+German Sd.Kfz. 222 armoured-car photograph to c. 1941:
+https://www.awm.gov.au/collection/C1244584 .
+*21 Battalion* (New Zealand official history, ch. 8, 29 November 1941,
+around the Point 175/von Ravenstein episode) describes expected South African
+Marmon-Herrington cars as having high open turrets, but the actual approaching
+column was German, so this does not establish the complete equipment of
+scenario unit 305:
+https://www.22battalion.org.nz/publications/histories/21battalion.pdf .
+The Italian defence-history RECAM report above supports a mixed armoured-car
+and light-tank unit, but does not identify its cars. The painted AB41 is
+provisional until the cited Archivio Centrale photograph is checked. Three
+new recon images were generated originally for this project, fitted with
+`countergen.cut.fitted`; historical catalogue images were consulted for
+vehicle types and not traced, copied or bundled.
+
+Three previous sheet-cut subjects were checked against period/museum evidence
+before replacement. The Australian War Memorial records a Panzer III Ausf. G
+at a captured German workshop in Libya, dated c. November 1941, and more
+Panzer III wrecks photographed around Sidi Rezegh in December 1941:
+https://www.awm.gov.au/collection/C36058 and
+https://www.awm.gov.au/collection/011853 .
+This corroborates a representative Panzer III, not that both represented
+regiments consisted exclusively of one mark. The Polish Gryf military
+technology museum describes its 1940 Opel Blitz 3-ton as a 4×2 two-axle
+truck (the old sheet cut incorrectly had three axles):
+https://muzeumgryf.pl/eksponaty/opel-blitz-3t/ .
+The Australian War Memorial holds a 1939 Italian M33 helmet recovered during
+North African service and identifies its domed shell and slight front lip:
+https://www.awm.gov.au/collection/REL34875 .
+Their replacement Panzer III, Opel and Italian infantry pictures are original
+AI-generated illustrations for this project, trimmed and fitted to the
+standard transparent canvas by `countergen.cut.fitted`; none of the source
+photographs or object images was traced, copied or added to the repository.
+
+The Australian War Memorial catalogues 1941 North African M13/40 tanks,
+including a captured example photographed in February and another in
+December; black-and-white photos do not establish the old sprite's striped
+paint scheme. The replacement deliberately omits unit markings and stripes:
+https://www.awm.gov.au/collection/C29732 and
+https://www.awm.gov.au/collection/C6635 .
+The Memorial also identifies a captured Italian 75/27 modello 06 field gun
+at Tobruk on 27 August 1941:
+https://www.awm.gov.au/collection/C4691 .
+The Italian Army's history of the 21st Trieste Artillery Regiment notes both
+75/27 and 100/17 guns, so the new 75/27 illustration is explicitly
+representative rather than every Italian battery's documented calibre:
+https://www.esercito.difesa.it/en/organization/the-chief-of-general-staff-of-the-army/comfoter/southern-operational-forces-command/pinerolo-mechanized-brigade/21st-trieste-land-artillery-regiment/the-history/123920.html .
+The Royal Logistic Corps describes the Bedford OY as a 1939 British 3-ton
+truck; its allocation to the seven composite motorised formations is not
+confirmed by this source:
+https://www.royallogisticcorps.co.uk/151-regt-gears-up-for-lord-mayors-show/ .
+The Italian Army transport corps veterans' museum catalogue describes a
+1939 Lancia 3Ro heavy truck, used on several fronts, without confirming
+the precise trucks of these four scenario units:
+https://www.anai.it/wp-content/uploads/2023/08/COPERTINA-MUSEO-III-PARTE.pdf .
+The new British and Italian lorries and Italian gun/tank are originally
+generated pictures, trimmed and fitted to the same transparent canvas;
+photographs were not traced, copied or included.
+
+The replacement British/Commonwealth and German infantry were generated for
+this game using OpenAI image generation, trimmed, repeated three times, and
+fitted to the 480 × 288 transparent canvas with `countergen.cut.fitted`.
+Historical object and museum records were used to check the representative
+1941 shapes and dress, not traced or copied into the pictures: the Australian
+War Memorial records Lee–Enfield rifles used at Tobruk and a German Model 1941
+tropical field cap, while the National Army Museum describes Commonwealth
+desert uniform in its North Africa collections. These sources do not establish
+the exact uniform of each aggregated infantry unit. The legacy AI tool and
+terms for the older sheet and two Axis HQ cars remain unrecorded.
+
 ## Weather
 
 Looked up on 7 October 2026 by web search, reading summaries and encyclopaedia

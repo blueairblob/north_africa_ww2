@@ -38,22 +38,22 @@ centred, and readable at 43 × 26 pixels (the counter at the opening zoom).
 | File | Subject | Units | Shown now | Source now | Status | Priority |
 | --- | --- | --- | --- | --- | --- | --- |
 | `cw_armour` | Crusader cruiser tank | 2 cruiser brigades | painted Crusader, five road wheels | generated original | In use; late re-equipment was mixed | none |
-| `cw_foot` | three riflemen, flat-brimmed helmet | 10 | the sheet's rifleman, three in file | artist's sheet, cut | Stopgap | 3 |
+| `cw_foot` | three riflemen, Brodie helmets | 10 | painted tropical-dress rifleman, three in file | generated original | In use; representative Commonwealth dress | none |
 | `cw_guns` | 25-pounder gun-howitzer | 5 | painted shielded 25-pounder on steel disc wheels | generated original | In use; particular regimental batteries varied | none |
-| `cw_motorised` | Bedford 3-ton lorry | 7 | the sheet's lorry | artist's sheet, cut | Stopgap | 3 |
-| `cw_recon` | Marmon-Herrington armoured car | 2 | the drawn set's | drawn set | Missing | 1 |
+| `cw_motorised` | Bedford OY-pattern 3-ton lorry | 7 | unmarked right-facing two-axle painted lorry | generated original | In use; exact formation fleets unknown | none |
+| `cw_recon` | armoured car for unit 305 (Marmon-Herrington provisional) | 1 | painted boxy Marmon-Herrington candidate | generated original | In use; exact unit inventory unverified; NZ cavalry uses carrier variant | none |
 | `cw_hq` | staff car with a pennant (which car is not settled) | 9 | painted closed staff car, red pennant | generated for this game, fitted to counter canvas | In use; historical model unconfirmed | none |
-| `de_armour` | Panzer III, short 50 mm gun | 2 | the sheet's tank | artist's sheet, cut | Stopgap | 3 |
-| `de_foot` | three riflemen, flared helmet | 3 | the first sheet's soldier, in his own cap | artist's first sheet, cut | Stopgap | 3 |
-| `de_guns` | 10.5 cm leFH 18 for divisional artillery; anti-tank batteries need checked variants | 6 | an anti-tank gun for all six | artist's sheet, cut | Stopgap: wrong for divisional artillery | 2 |
-| `de_motorised` | Opel Blitz lorry | 2 | the sheet's lorry | artist's sheet, cut | Stopgap | 3 |
-| `de_recon` | SdKfz 222 armoured car | 2 | the drawn set's | drawn set | Missing | 1 |
+| `de_armour` | Panzer III, short 50 mm gun | 2 | painted six-road-wheel Panzer III, no markings | generated original | In use; two mixed regiments, exact proportions unverified | none |
+| `de_foot` | three riflemen, tropical field caps | 3 | painted rifleman, three in file | generated original | In use; representative German desert dress | none |
+| `de_guns` | 10.5 cm leFH 18 field howitzer | 4 | painted leFH 18 | generated original | In use for field/mixed groups; mixed inventories need checking | none |
+| `de_motorised` | Opel Blitz 3-ton lorry | 2 | painted two-axle truck, no insignia | generated original | In use; mixed transport pool represented by one type | none |
+| `de_recon` | Sd.Kfz. 222 armoured car | 2 | painted four-wheeled car | generated original | In use; model mix in units unverified | none |
 | `de_hq` | Kübelwagen with a pennant | 4 | Kübelwagen, black pennant | owner's AI picture, `art/axis_hq_cars/german_hq.png` | In use | none |
-| `it_armour` | M13/40 | 1 | the sheet's tank, striped camouflage | artist's sheet, cut | Stopgap | 3 |
-| `it_foot` | three riflemen, domed helmet | 12 | the sheet's rifleman, three in file | artist's sheet, cut | Stopgap | 3 |
-| `it_guns` | 75 mm field gun | 7 | the sheet's gun | artist's sheet, cut | Stopgap | 3 |
-| `it_motorised` | Lancia 3Ro lorry | 4 | the sheet's lorry | artist's sheet, cut | Stopgap | 3 |
-| `it_recon` | AB41 candidate for RECAM (mixed; original photograph not checked) | 1 | the drawn set's | drawn set | Missing | 1 |
+| `it_armour` | M13/40 | 1 | unmarked painted riveted M13/40 with paired road wheels | generated original | In use; precise mark and mix unverified | none |
+| `it_foot` | three infantrymen, short-rimmed M33 helmets | 12 | painted soldier, repeated in file | generated original | In use; kit and headgear varied among formations | none |
+| `it_guns` | 75/27 modello 06 field gun | 7 | painted shielded spoked-wheel field gun | generated original | In use; mixed-calibre regiments represented by one type | none |
+| `it_motorised` | Lancia 3Ro-pattern lorry | 4 | unmarked painted long-bed lorry | generated original | In use; exact formation fleets unknown | none |
+| `it_recon` | AB41 candidate for RECAM (mixed; original photograph not checked) | 1 | painted armoured car with side spares | generated original | In use provisionally; do not infer whole force was AB41 | none |
 | `it_hq` | Fiat staff car with a pennant | 9 | a 1930s tourer, tricolour pennant | owner's AI picture, `art/axis_hq_cars/it_hq.png` | In use | none |
 
 Armour variants for the other three brigades: `art/counters/variants/cw_stuart.png`
@@ -62,11 +62,26 @@ Brigades. These are representative silhouettes: both army-tank brigades
 also operated other types, and 22nd Armoured later included Stuarts.
 The Matilda variant retains the first sheet's unverified striped camouflage.
 Neither a one-sprite-per-brigade portrayal nor the current scenario data
-can fully identify every tank within a mixed formation.
+can fully identify every tank within a mixed formation. `cw_carrier.png` is a
+representative open-topped tracked carrier for New Zealand Divisional Cavalry
+(unit 335), distinct from the wheeled-car default for unit 305. The NZ force
+also had light tanks; its `cars: 30` scenario field remains an unverified
+rules/strength abstraction, not a count of armoured cars.
 
-Currently: 3 missing armoured cars, 1 German gun with the wrong subject,
-9 sheet-cut stopgaps, 5 painted counter subjects in use; the two armour
-variants are additional. See `docs/COUNTERS.md` for unresolved historic types.
+Two German gun variants complete the first subject correction:
+`de_flak88.png` (deployed 8.8 cm Flak, Halfaya garrison, unit 104) and
+`de_antitank.png` (the previous sheet's towed anti-tank gun, grouped
+Panzerjäger-Abteilungen 39 and 605, unit 125). Both formations contain mixed
+weapons; the latter sprite's exact Pak mark is unverified and cannot depict
+the whole combined unit. Field/mixed artillery units 106, 113, 123 and 134
+show the painted default leFH 18.
+
+Currently: all 18 nation/kind defaults have images (16 original painted
+subjects and 2 sheet-cut infantry stopgaps). Two armour, one carrier and two German
+gun variants are additional. The three new recon types are provisional
+representative pictures: exact model mixes, RECAM's photographed AB41 and
+the Halfaya/Panzerjäger gun groups remain unverified. See `docs/COUNTERS.md`
+for unresolved historic types.
 
 Open on the Axis HQ cars: their pennants are black and tricolour where the briefs
 ask for red, and which car the Italian one shows was not checked.

@@ -53,7 +53,10 @@ SAVE_FORMAT = 1         # the layout of a saved game; one of another number is n
 # Presentation only: old saved scenarios predate `counter_art`; keep their armour truthful.
 LEGACY_CRUSADER_ART = {(306, "1st Army Tank Brigade"): "matilda",
                       (307, "32nd Army Tank Brigade"): "matilda",
-                      (311, "4th Armoured Brigade"): "stuart"}
+                      (311, "4th Armoured Brigade"): "stuart",
+                      (335, "New Zealand Divisional Cavalry"): "carrier",
+                      (104, "Halfaya garrison"): "flak88",
+                      (125, "Panzerjaeger-Abteilungen 39 und 605"): "antitank"}
 BY_UNIT = ("standing", "pending", "said")              # kept by side, then by unit id: text turns the ids into words
 
 

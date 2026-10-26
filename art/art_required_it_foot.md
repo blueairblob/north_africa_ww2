@@ -2,9 +2,12 @@
 
 **Deliver:** `art/counters/artist/it_foot.png`, one picture in one file.
 
-**Status:** redo: one picture to a file, drawn to this brief, in place of the cut from the sheet.
+**Status:** painted single figure with a short-rimmed Italian M33 helmet,
+repeated three in file by the fitting pipeline; replaces the broad-brimmed
+sheet cut. The infantry represents several formations, not identical dress
+and kit across every regiment.
 
-**Priority:** 3 (1 missing from the game, 2 the wrong subject, 3 redrawn to the brief).
+**Priority:** the broad-brimmed sheet cut has been replaced.
 
 ## The subject
 

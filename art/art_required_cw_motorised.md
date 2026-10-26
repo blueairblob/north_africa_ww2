@@ -2,15 +2,22 @@
 
 **Deliver:** `art/counters/artist/cw_motorised.png`, one picture in one file.
 
-**Status:** redo: one picture to a file, drawn to this brief, in place of the cut from the sheet.
+**Status:** unmarked original right-facing British-pattern 3-ton lorry now
+replaces the left-facing sheet cut with the inappropriate RAF roundel. A
+Bedford OY is a representative subject; no fleet register for each of the
+seven motorised formations was found.
 
-**Priority:** 3 (1 missing from the game, 2 the wrong subject, 3 redrawn to the brief).
+**Priority:** the marked, incorrectly facing sheet cut was replaced;
+formation-level vehicle provenance is still open.
 
 ## The subject
 
 The standard British 3-ton lorry; it stands for the lorried infantry.
 
-*How sure:* The Bedford OY was in the desert in 1941 from general knowledge; not checked against a dated source.
+*How sure:* The Royal Logistic Corps describes the Bedford OY family as a
+1939 British 3-ton vehicle; a dated 1941 allocation for these particular
+motorised formations was not established. Do not read the illustration as a
+specific equipment return.
 
 ## The prompt
 

@@ -2,15 +2,21 @@
 
 **Deliver:** `art/counters/artist/it_guns.png`, one picture in one file.
 
-**Status:** redo: one picture to a file, drawn to this brief, in place of the cut from the sheet.
+**Status:** painted original shielded 75/27 modello 06 field gun replaces the
+sheet cut. This is representative only; Italian regiments used other calibres
+too, and individual gun allocations for all seven abstract formations are
+not established here.
 
-**Priority:** 3 (1 missing from the game, 2 the wrong subject, 3 redrawn to the brief).
+**Priority:** the sheet cut is replaced; mixed-calibre inventory still open.
 
 ## The subject
 
 An Italian field gun of the period; the spoked wheels tell it from the British and German guns at a glance.
 
-*How sure:* That this model served in Libya in 1941 is from general knowledge, not checked.
+*How sure:* The Australian War Memorial identifies a captured 75/27 modello
+06 at Tobruk on 27 August 1941 (020286). Italy's Army describes the
+21st Trieste artillery regiment as having both 75/27 and 100/17 guns;
+one counter cannot identify every weapon in a mixed regiment.
 
 ## The prompt
 

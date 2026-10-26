@@ -2,15 +2,24 @@
 
 **Deliver:** `art/counters/artist/cw_recon.png`, one picture in one file.
 
-**Status:** missing: the artist's sheets have no armoured car.
+**Status:** painted candidate Marmon-Herrington for unit 305 (wheeled
+armoured-car regiments); exact mixture of regiments and marks still requires a
+formation equipment return. Unit 335, New Zealand Divisional Cavalry, uses
+a separate painted carrier variant, not the default armoured car.
 
 **Priority:** 1 (1 missing from the game, 2 the wrong subject, 3 redrawn to the brief).
 
 ## The subject
 
-South African-built armoured cars of this kind served with British and Commonwealth reconnaissance regiments in North Africa (Wikipedia: the Mark II 'Middle East Model').
+South African-built armoured cars of this kind served with British and Commonwealth reconnaissance regiments in North Africa (Wikipedia: the Mark II 'Middle East Model'). This is a *candidate* for the composite unit 305, not an established inventory of all its regiments.
 
-*How sure:* That the Mark II served in North Africa is from Wikipedia; its use in Crusader in particular was not checked.
+*How sure:* The New Zealand official history *21 Battalion*, ch. 8 (events
+of 29 November 1941), identifies Marmon-Herrington cars as the expected South
+African recognition sign at Point 175, but the approaching cars proved to be
+German in disguise. This establishes period recognition, **not** the exact
+inventory of unit 305. The official history *Divisional Cavalry* records
+light tanks and Bren carriers during November–December 1941, not a
+Marmon-Herrington force; its carrier variant depicts only part of that group.
 
 ## The prompt
 

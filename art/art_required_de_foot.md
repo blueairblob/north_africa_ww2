@@ -2,7 +2,7 @@
 
 **Deliver:** `art/counters/artist/de_foot.png`, one picture in one file.
 
-**Status:** redo: one picture to a file, drawn to this brief, in place of the cut from the sheet.
+**Status:** in use: original painted tropical-field-cap rifleman, repeated three times and fitted to the 480 × 288 canvas. Representative of German infantry; not a unit-specific uniform claim.
 
 **Priority:** 3 (1 missing from the game, 2 the wrong subject, 3 redrawn to the brief).
 
@@ -10,7 +10,7 @@
 
 German infantry in 1941 desert dress.
 
-*How sure:* Dress from general knowledge, not checked against a dated photograph.
+*How sure:* Representative German desert dress; exact uniform of each formation not verified.
 
 ## The prompt
 

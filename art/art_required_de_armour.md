@@ -2,9 +2,13 @@
 
 **Deliver:** `art/counters/artist/de_armour.png`, one picture in one file.
 
-**Status:** redo: one picture to a file, drawn to this brief, in place of the cut from the sheet; the stopgap carries a cross and numbers.
+**Status:** painted original Panzer III image now replaces the marked sheet
+cut. Six separate lower road wheels and a short gun are visible; the two
+scenario regiments are mixed tank formations, so one silhouette represents
+only a typical type, not every tank or mark in the regiments.
 
-**Priority:** 3 (1 missing from the game, 2 the wrong subject, 3 redrawn to the brief).
+**Priority:** the wrong five-wheel/marked stopgap has been replaced. Specific
+marks and ratios within each regiment still need formation returns.
 
 ## The subject
 

@@ -2,7 +2,7 @@
 
 **Deliver:** `art/counters/artist/cw_foot.png`, one picture in one file.
 
-**Status:** redo: one picture to a file, drawn to this brief, in place of the cut from the sheet.
+**Status:** in use: original painted Brodie-helmeted tropical-dress rifleman, repeated three times and fitted to the 480 × 288 canvas. Representative of Commonwealth infantry; not a claim about each formation's uniform.
 
 **Priority:** 3 (1 missing from the game, 2 the wrong subject, 3 redrawn to the brief).
 
@@ -10,7 +10,7 @@
 
 Infantry in 1941 desert dress. Three men, not one: one figure is too small to read on a counter.
 
-*How sure:* Dress from general knowledge, not checked against a dated photograph.
+*How sure:* Representative 1941 desert dress; exact uniform of each formation not verified.
 
 ## The prompt
 

@@ -2,9 +2,15 @@
 
 **Deliver:** `art/counters/artist/de_guns.png`, one picture in one file.
 
-**Status:** redo: the stopgap is the sheet's anti-tank gun; the sheet's own German artillery is an assault gun, not a gun on a carriage.
+**Status:** painted leFH 18 is now the default for four German field/mixed
+artillery formations. The old sheet-cut towed gun is preserved only as a
+provisional anti-tank variant for combined Panzerjäger-Abteilungen 39 und 605;
+a separate deployed Flak 88 variant depicts Halfaya. Exact mixed inventories
+and the old anti-tank image's precise model remain open.
 
-**Priority:** 2 (1 missing from the game, 2 the wrong subject, 3 redrawn to the brief).
+**Priority:** the original priority-2 default-subject defect is addressed;
+historical verification of the mixed formations and the provisional anti-tank
+variant remains open.
 
 ## The subject
 
@@ -15,8 +21,17 @@ separate historically checked representative subjects. Keep rule `type=guns`
 unchanged and use `counter_art` variants after verifying the formations'
 equipment and dates in primary order-of-battle evidence.
 
-*How sure:* The broad distinction is known; exact gun allocation within the
-mixed groupings has not yet been verified.
+The US War Department's *Handbook on German Military Forces* (15 March 1945,
+ch. VII) describes the leFH 18 among the pre-war standard divisional weapons.
+The British official history *The Mediterranean and Middle East*, vol. II,
+ch. 8, describes dug-in 88-mm guns at Halfaya and both 37- and 50-mm German
+anti-tank guns. These facts justify distinct silhouettes but do **not** prove
+the exact mix for every formation on 18 November 1941. The Halfaya formation
+also included other guns, and the grouped Panzerjäger unit represents two
+battalions whose combined equipment is not resolved by this one picture.
+
+*How sure:* The broad distinction is supported by the official histories;
+exact gun allocation within the mixed groupings has not yet been verified.
 
 ## The prompt
 

@@ -49,10 +49,18 @@ The game:
 
 The art:
 
-- **[build] Finish mismatched counter art:** replace the three drawn-only
-  recon vehicles and the wrong-subject German gun sprite, distinguishing 10.5 cm field
-  howitzers from anti-tank and mixed gun groups;
-  revisit the nine sheet-cut stopgaps against primary type references.
+- **[build] Finish mismatched counter art:** verify the three new painted
+  recon types against formation inventories, especially the composite CW
+  armoured-car unit and the unverified RECAM AB41 photo; verify the new
+  infantry artwork and all representative vehicles
+  against formation equipment returns. German 10.5 cm field
+  howitzer, Halfaya 88 mm and one towed
+  anti-tank variant are now distinct, but verify the actual 1941 gun marks
+  and the mix within the Halfaya, Boettcher, Division Afrika and combined
+  39/605 formations before treating every gun depiction as definitive.
+  The painted NZ Divisional Cavalry carrier variant is representative only:
+  the official history also mentions light tanks; verify the scenario's
+  `cars: 30` strength abstraction separately (it is not 30 armoured cars).
   Counter art for mixed Matilda/Valentine and later Crusader/Stuart brigades
   still represents only a predominant/typical type; confirm equipment by
   formation and date before claiming every unit is depicted exactly.

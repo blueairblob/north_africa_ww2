@@ -2,9 +2,11 @@
 
 **Deliver:** `art/counters/artist/it_armour.png`, one picture in one file.
 
-**Status:** redo: one picture to a file, drawn to this brief, in place of the cut from the sheet; the stopgap's striped camouflage has not been checked.
+**Status:** an original unmarked, ochre M13/40 now replaces the sheet cut
+with unverified striped camouflage. The vehicle type is represented; the
+exact mark and equipment proportions of the Ariete regiment need checking.
 
-**Priority:** 3 (1 missing from the game, 2 the wrong subject, 3 redrawn to the brief).
+**Priority:** the striped sheet cut is replaced; exact unit returns remain open.
 
 ## The subject
 

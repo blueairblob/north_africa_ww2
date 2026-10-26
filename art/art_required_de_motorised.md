@@ -2,9 +2,11 @@
 
 **Deliver:** `art/counters/artist/de_motorised.png`, one picture in one file.
 
-**Status:** redo: one picture to a file, drawn to this brief, in place of the cut from the sheet; the stopgap carries a cross.
+**Status:** painted original two-axle Opel Blitz now replaces the marked
+three-axle sheet cut. Representative of transport, not a claim that every
+vehicle in both motorised infantry regiments was an Opel.
 
-**Priority:** 3 (1 missing from the game, 2 the wrong subject, 3 redrawn to the brief).
+**Priority:** the incorrect three-axle stopgap has been replaced.
 
 ## The subject
 
