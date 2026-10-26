@@ -2,6 +2,8 @@
 import math
 import time
 import traceback
+from datetime import datetime
+from pathlib import Path
 
 import pygame
 
@@ -10,7 +12,7 @@ from engine import units as U
 from . import saves
 from . import theme as T
 from .draw import UI, Painter
-from .layout import HEAD_Y, Layout, areas, buttons, game, layers, saves_list, tabs
+from .layout import HEAD_Y, Layout, air_controls, areas, buttons, details_toggle, game, layers, saves_list, tabs
 from .session import GOES
 from .sound import Sounds
 
@@ -26,6 +28,7 @@ CURSOR_EDGE = 2.5       # hexes from the edge of the view at which the map follo
 PLAY_ZOOM = 1.0         # the playback is never watched from further out than this
 EDGE_PX = 26            # with a unit taken up, the mouse this near the map's edge scrolls the map
 EDGE_SPEED = 0.9        # base-map pixels a millisecond
+SCREENSHOTS = Path(__file__).resolve().parent.parent / "screenshots"
 
 
 class App:
@@ -42,6 +45,7 @@ class App:
         self.clicked = None             # where the click being logged fell
         self.refused = None             # the engine's reply code for the last order refused, for the log
         self.saves = None               # the folder games are saved in; with none (tests) nothing is written
+        self.screenshots = SCREENSHOTS   # F12 captures, kept out of the public repository
         self.begin_orders()
         self.ui.message = self.sky_words() + "Each unit holds unless ordered: press Move or Attack, then click the hex. Space goes on to the next."
         u = session.unit(self.ui.selected)
@@ -51,7 +55,7 @@ class App:
     # ---- looking -------------------------------------------------------------------------
 
     def map_rect(self):
-        return areas(self.size)["map"]
+        return areas(self.size, self.ui.details_collapsed)["map"]
 
     def base_size(self):
         g = self.session.gmap
@@ -107,7 +111,7 @@ class App:
         ordered: (dx, dy), each -1, 0 or 1."""
         area = self.map_rect()
         x, y = self.ui.mouse
-        if self.play or self.ui.cover or self.session.unit(self.ui.selected) is None or not area.collidepoint((x, y)):
+        if self.play or self.ui.cover or self.session.unit(self.ui.selected) is None or y < T.MASTHEAD or not area.collidepoint((x, y)):
             return 0, 0
         return ((x > area.right - EDGE_PX) - (x < area.x + EDGE_PX), (y > area.bottom - EDGE_PX) - (y < area.y + EDGE_PX))
 
@@ -135,7 +139,7 @@ class App:
             self.centre_on((cols[len(cols) // 2], rows[len(rows) // 2]))
 
     def hex_under(self, pos):
-        if not self.map_rect().collidepoint(pos):
+        if pos[1] < T.MASTHEAD or not self.map_rect().collidepoint(pos):
             return None
         ui = self.ui
         h = Layout(T.BASE_HEX).hex_at(int(ui.cam[0]) + pos[0] / ui.zoom, int(ui.cam[1]) + pos[1] / ui.zoom)
@@ -209,6 +213,7 @@ class App:
         """A side starts giving orders: say what ended, take up the first unit that waits."""
         s, ui = self.session, self.ui
         ui.selected = None
+        ui.air_open = False
         self.look_at_own()
         self.step()
         self.begin_message()
@@ -234,6 +239,7 @@ class App:
         before = self.ui.zoom
         if self.ui.zoom < PLAY_ZOOM:                      # zoomed out, the counters are dots: come in to watch
             self.zoom(PLAY_ZOOM / self.ui.zoom)
+            self.ui.zoom = PLAY_ZOOM                      # avoid accumulated rounding at the playback threshold
         self.play, self.play_t, self.fast = self.session.playback(self.span()), 0.0, False
         self.zoom_back = before if self.play else None
         if not self.play and self.ui.zoom != before:
@@ -283,6 +289,28 @@ class App:
         else:
             self.look_at_own()
 
+    # ---- screenshots ---------------------------------------------------------------------
+
+    def screenshot(self):
+        """Render the current view, including panels and overlays, without changing the game."""
+        folder = Path(self.screenshots)
+        stem = f"{self.session.scenario['id']}-{datetime.now():%Y%m%d-%H%M%S-%f}"
+        path = folder / f"{stem}.png"
+        number = 2
+        while path.exists():
+            path = folder / f"{stem}-{number}.png"
+            number += 1
+        try:
+            folder.mkdir(parents=True, exist_ok=True)
+            surface = pygame.Surface(self.size)
+            self.paint(surface)
+            pygame.image.save(surface, str(path))
+        except (OSError, pygame.error) as e:
+            self.ui.message = f"Screenshot could not be saved: {e}."
+            return None
+        self.ui.message = f"Screenshot saved in screenshots/: {path.name}"
+        return path
+
     # ---- saved games ---------------------------------------------------------------------
 
     def save(self, auto=False):
@@ -323,6 +351,7 @@ class App:
         """Go on with another game: the map is looked at as before, everything else begins anew."""
         old, self.session, self.ui = self.ui, session, UI()
         self.ui.zoom, self.ui.symbols, self.ui.remind, self.ui.overlays = old.zoom, old.symbols, old.remind, old.overlays
+        self.ui.details_collapsed, self.ui.weather_visible = old.details_collapsed, old.weather_visible
         self.painter.reach_cache = self.painter.zone_cache = (None, None)
         self.play, self.target, self.last, self.zoom_back = None, None, None, None
         self.confirm = self.asked = False
@@ -357,7 +386,11 @@ class App:
             if ui.alone:
                 self.give("hold")
             else:
-                ui.message = ("Click one of the group's tiles on the right, then Split." if len(self.session.members(ui.selected)) > 1
+                if ui.details_collapsed and len(self.session.members(ui.selected)) > 1:
+                    ui.details_collapsed = False
+                    ui.tab = "unit"
+                    self.clamp()
+                ui.message = ("Click a unit in the details hierarchy, then Split." if len(self.session.members(ui.selected)) > 1
                               else "This unit is not in a group.")
         elif name == "recall":                            # the HQ calls its division in
             given = self.session.recall(ui.selected)
@@ -378,8 +411,9 @@ class App:
 
     def over_icon(self, pos):
         """Is this point on the header of the unit taken up in the panel: its tile, or its group's units?"""
-        panel = areas(self.size)["panel"]
-        return (self.ui.tab == "unit" and self.play is None and self.session.unit(self.ui.selected) is not None
+        panel = areas(self.size, self.ui.details_collapsed)["panel"]
+        return (not self.ui.details_collapsed and self.ui.tab == "unit" and self.play is None
+                and self.session.unit(self.ui.selected) is not None
                 and pygame.Rect(panel.x, HEAD_Y - 6, panel.w, T.TILE_H + 12).collidepoint(pos))
 
     def cycle(self, step):
@@ -443,7 +477,7 @@ class App:
                 ui.message = "The list is closed: nothing was chosen."
             return
         if ui.saves is not None:                          # the list of saved games: one of its rows, or away
-            rows = saves_list(self.size, len(ui.saves))
+            rows = saves_list(self.size, len(ui.saves), ui.details_collapsed)
             picked = next((k for k, r in rows.items() if isinstance(k, int) and r.collidepoint(pos)), None)
             found, ui.saves = ui.saves, None
             if picked is None:
@@ -451,26 +485,54 @@ class App:
             else:
                 self.load(found[picked][0])
             return
-        for name, r in game(self.size, ui.game_open).items():          # the Game button and its list
+        if ui.air_open and (self.play or s.state["over"]):
+            ui.air_open = False
+        if not self.play and not s.state["over"]:
+            air = air_controls(self.size, ui.air_open, ui.details_collapsed)
+            chosen = next((name for name, rect in air.items() if rect.collidepoint(pos)), None)
+            if chosen and button == 1:
+                if chosen == "air":
+                    ui.air_open = not ui.air_open
+                else:
+                    self.set_air(chosen)
+                return
+            if ui.air_open:
+                ui.air_open = False
+                return                              # dismiss without accidentally issuing a map order
+        if button == 1 and details_toggle(self.size, ui.details_collapsed).collidepoint(pos):
+            ui.details_collapsed = not ui.details_collapsed
+            ui.panel_scroll = 0
+            self.clamp()
+            ui.message = "Unit details hidden. Actions remain in the footer." if ui.details_collapsed else "Unit details shown."
+            return
+        for name, r in game(self.size, ui.game_open, ui.details_collapsed).items():
             if r.collidepoint(pos) and button == 1:
                 ui.game_open, ui.layers_open = name == "game" and not ui.game_open, False
                 if name == "save":
                     self.save()
                 elif name == "load":
                     self.open_saves()
+                elif name == "screenshot":
+                    self.screenshot()
                 return
         chip = self.painter.weather_rect                  # the weather on the map: a tap says what it does
         if chip and not self.play and chip.move(self.map_rect().topleft).collidepoint(pos):
             ui.message = s.weather_words()
             return
-        for name, r in layers(self.size, ui.layers_open).items():      # the Layers button and its list
+        for name, r in layers(self.size, ui.layers_open, ui.details_collapsed).items():
             if r.collidepoint(pos) and button == 1:
                 if name == "layers":
                     ui.layers_open, ui.game_open = not ui.layers_open, False
+                elif name == "weather":
+                    ui.weather_visible = not ui.weather_visible
+                elif name in ("pictures", "nato"):
+                    ui.symbols = name
                 else:
                     ui.overlays ^= {name}
                 return
-        if not self.play and not s.state["over"] and button == 1:      # the panel's tabs, its list's arrows, the reminder box
+        if self.map_rect().collidepoint(pos) and pos[1] < T.MASTHEAD:
+            return                                      # title band is not part of the interactive map
+        if not ui.details_collapsed and not self.play and not s.state["over"] and button == 1:
             for name, r in tabs(self.size).items():
                 if r.collidepoint(pos) and name == "remind":
                     ui.remind = not ui.remind
@@ -479,15 +541,22 @@ class App:
                     return
                 if r.collidepoint(pos):
                     ui.tab, ui.scroll = name, 0
+                    ui.panel_scroll = 0
                     ui.message = {"orders": "Every unit and its order. Tap one to take it up.",
                                   "timetable": "What arrives, is made good and is called away, on the dates it happened."}.get(name, "")
+                    return
+            for name, r in self.painter.panel_scroll_rects.items():
+                if r.collidepoint(pos):
+                    ui.panel_scroll = max(0, min(self.painter.panel_scroll_max,
+                                                 ui.panel_scroll + (-80 if name == "up" else 80)))
                     return
             for name, r in self.painter.scroll_rects.items():
                 if r.collidepoint(pos):
                     ui.scroll += -3 if name == "up" else 3
                     return
-        offered = s.offers(ui.selected, ui.alone) if ui.tab == "unit" else []
-        for name, r in buttons(self.size).items():        # an order is there to press only when it is shown
+        offered = s.offers(ui.selected, ui.alone) if ui.tab == "unit" or ui.details_collapsed else []
+        controls = buttons(self.size)
+        for name, r in controls.items():                  # only visible controls can be pressed
             if r.collidepoint(pos) and (name in ("next", "done") or name in offered):
                 return self.press_button(name) if button == 1 else None
         if self.painter.pencil_rect and self.painter.pencil_rect.collidepoint(pos) and s.unit(ui.selected):
@@ -514,7 +583,7 @@ class App:
                 return
         h = self.hex_under(pos)
         if h is None or s.state["over"]:                  # nothing to order there; say so
-            if areas(self.size)["map"].collidepoint(pos):
+            if self.map_rect().collidepoint(pos):
                 ui.message = "The game is over." if s.state["over"] else "That is off the map."
             return
         if button == 3:                                   # on your own units: what can be done with the stack
@@ -621,6 +690,19 @@ class App:
         else:
             self.begin_orders()
 
+    def set_air(self, choice):
+        """Mouse and number keys make the same choice; the engine still resolves its effects."""
+        self.session.set_air(choice)
+        self.ui.air_open = False
+        weather = self.session.weather
+        points = self.session.view["air_points"]
+        if weather in ("rain", "sandstorm"):
+            self.ui.message = f"Air force: {choice}. No aircraft fly in {weather}."
+        elif not points:
+            self.ui.message = f"Air force: {choice}. No air points this turn."
+        else:
+            self.ui.message = f"Air force: {choice} ({points} {'point' if points == 1 else 'points'} this turn)."
+
     def key(self, key):
         ui = self.ui
         self.asked, self.confirm = self.confirm, False
@@ -649,8 +731,7 @@ class App:
         elif key in (pygame.K_PAGEUP, pygame.K_PAGEDOWN) or (key in (pygame.K_UP, pygame.K_DOWN) and self.over_icon(ui.mouse)):
             self.cycle(-1 if key in (pygame.K_PAGEUP, pygame.K_UP) else 1)    # through the units in its hex
         elif key in AIR:
-            self.session.set_air(AIR[key])
-            ui.message = f"Air force: {AIR[key]}."
+            self.set_air(AIR[key])
         elif key in SCROLL:
             dx, dy = SCROLL[key]
             ui.cam = [ui.cam[0] + dx * T.BASE_HEX * 2, ui.cam[1] + dy * T.BASE_HEX * 2]
@@ -672,7 +753,9 @@ class App:
         elif key in (pygame.K_TAB, pygame.K_SPACE, pygame.K_n):
             self.next_unit()
         elif key == pygame.K_ESCAPE:
-            if ui.chooser or ui.layers_open or ui.game_open:
+            if ui.air_open:
+                ui.air_open = False
+            elif ui.chooser or ui.layers_open or ui.game_open:
                 ui.chooser, ui.layers_open, ui.game_open = None, False, False
             else:
                 ui.mode, ui.selected = (None, ui.selected) if ui.mode else (None, None)
@@ -717,9 +800,12 @@ class App:
 
     def handle_one(self, event):
         ui = self.ui
-        if event.type == pygame.QUIT:
+        if event.type in (pygame.QUIT, pygame.WINDOWCLOSE):
             self.save(auto=True)                          # left in the middle of a turn: the orders given so far are kept
             return False
+        if event.type == pygame.KEYDOWN and event.key == pygame.K_F12:
+            self.screenshot()                             # available even during playback, editing or a cover
+            return True
         if event.type == pygame.VIDEORESIZE:
             self.size = (max(900, event.w), max(560, event.h))
             self.clamp()
@@ -753,7 +839,9 @@ class App:
             self.press = None
         elif event.type == getattr(pygame, "WINDOWLEAVE", -1):
             ui.mouse = self.map_rect().center             # the mouse has left: no scrolling at the edge
-        elif event.type == pygame.MOUSEWHEEL and ui.tab != "unit" and areas(self.size)["panel"].collidepoint(pygame.mouse.get_pos()):
+        elif event.type == pygame.MOUSEWHEEL and self.painter.panel_body and self.painter.panel_body.collidepoint(ui.mouse):
+            ui.panel_scroll = max(0, min(self.painter.panel_scroll_max, ui.panel_scroll - event.y * 60))
+        elif event.type == pygame.MOUSEWHEEL and ui.tab != "unit" and areas(self.size, ui.details_collapsed)["panel"].collidepoint(pygame.mouse.get_pos()):
             ui.scroll = max(0, ui.scroll - event.y)       # over the list of orders or the timetable, the wheel scrolls it
         elif event.type == pygame.MOUSEWHEEL and self.over_icon(ui.mouse):
             self.cycle(-1 if event.y > 0 else 1)          # over the unit's tile, the wheel goes through the units in its hex
@@ -777,22 +865,26 @@ class App:
         pygame.init()
         pygame.display.set_caption("Benghazi Handicap")
         window = pygame.display.set_mode(self.size, pygame.RESIZABLE)
-        self.painter.base = self.painter.base.convert()
-        if len(self.session.humans) > 1:
-            self.ui.cover = f"{T.SIDE_NAME[self.session.side]}: your orders. Click or press Space."
-        self.sounds = Sounds()
-        clock, running = pygame.time.Clock(), True
-        while running:
-            self.paint(window)
-            pygame.display.flip()
-            if self.busy:                                 # something is moving: frames keep coming
-                events = pygame.event.get()
-                self.tick(clock.tick(60 if self.play or self.target or any(self.edge()) else 30))
-            else:                                         # otherwise sleep until something happens
-                events = [pygame.event.wait()] + pygame.event.get()
-                clock.tick()
-            for event in events:
-                running = running and self.handle(event)
-                if event.type == pygame.VIDEORESIZE:
-                    window = pygame.display.set_mode(self.size, pygame.RESIZABLE)
-        pygame.quit()
+        try:
+            self.painter.base = self.painter.base.convert()
+            if len(self.session.humans) > 1:
+                self.ui.cover = f"{T.SIDE_NAME[self.session.side]}: your orders. Click or press Space."
+            self.sounds = Sounds()
+            clock, running = pygame.time.Clock(), True
+            while running:
+                self.paint(window)
+                pygame.display.flip()
+                if self.busy:                             # something is moving: frames keep coming
+                    events = pygame.event.get()
+                    self.tick(clock.tick(60 if self.play or self.target or any(self.edge()) else 30))
+                else:                                     # otherwise sleep until something happens
+                    events = [pygame.event.wait()] + pygame.event.get()
+                    clock.tick()
+                for event in events:
+                    if not self.handle(event):
+                        running = False
+                        break                             # never recreate the window after a close event
+                    if event.type == pygame.VIDEORESIZE:
+                        window = pygame.display.set_mode(self.size, pygame.RESIZABLE)
+        finally:
+            pygame.quit()

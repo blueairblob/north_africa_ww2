@@ -212,6 +212,13 @@ game, the owner said on 19 October 2026, and under no copyright. The tool and
 its terms are not recorded. The briefs for the pictures still to come are
 `art/art_required_*.md`.
 
+The British/Commonwealth HQ staff-car sprite `art/counters/artist/cw_hq.png`
+was generated for this project with OpenAI image generation on 24 October 2026,
+using this game's British lorry and German HQ counter art as style references.
+It was fitted to the game's 480 × 288 transparent counter canvas with the
+existing `countergen.cut.fitted` routine. It depicts a generic period closed
+staff car, not an identified or historically verified make or model.
+
 ## Weather
 
 Looked up on 7 October 2026 by web search, reading summaries and encyclopaedia

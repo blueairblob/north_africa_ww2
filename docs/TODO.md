@@ -12,12 +12,8 @@ not yet confirmed in a source. **[future]** not to be started unasked.
 ## 1. Fixes
 
 The owner's rule is that every action can be reached by a tap on something
-visible (`PLAN.md`, "To keep it so"). Three cannot:
+visible (`PLAN.md`, "To keep it so"). One cannot:
 
-- **[fix] The air force's choice** (support, interdict, recon) is given only
-  by the keys 1, 2 and 3 (`screen/app.py`, `AIR`). Nothing on the screen shows
-  it or what is chosen now. Rules: `docs/RULES.md` §7.
-- **[fix] Pictures or NATO-style symbols** is switched only by F3.
 - **[fix] In the playback**, going faster (F) and on to the next scene (Right
   arrow or N) are keys only; a click skips the whole playback.
 

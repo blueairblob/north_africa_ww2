@@ -213,8 +213,8 @@ What this leaves, until the pictures come one to a file and drawn to the
 brief:
 
 - The sheets have no armoured car and no headquarters. The German and Italian
-  headquarters now come one to a file (below), so four counters, the three
-  armoured cars and the British headquarters, show the drawn pictures, in a plainer style beside the artist's.
+  headquarters now come one to a file, including the British HQ staff car, so
+  the three armoured cars still show the drawn pictures in a plainer style beside the artist's.
 - The German gun is the sheet's anti-tank gun: its German "artillery" is an
   assault gun, not a gun on a carriage. The German soldier comes from the
   first sheet, the only one that gives him his own cap.
@@ -353,7 +353,7 @@ checks before it is accepted, including its origin in writing.
 
 | Priority | Pictures |
 | --- | --- |
-| 1, missing | the three armoured cars and the British headquarters (the German and Italian ones are in use, below) |
+| 1, missing | the three armoured cars (all three HQ staff cars are now in use) |
 | 2, the wrong subject | the British tank (a Matilda, not a Crusader), the British gun (not a 25-pounder), the German gun (an anti-tank gun) |
 | 3, redrawn one to a file | the other nine, now cut from the two sheets |
 

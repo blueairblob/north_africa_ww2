@@ -41,7 +41,7 @@ centred, and readable at 43 × 26 pixels (the counter at the opening zoom).
 | `cw_guns` | 25-pounder gun-howitzer | 5 | a gun on spoked wooden wheels | artist's sheet, cut | Stopgap: wrong subject | 2 |
 | `cw_motorised` | Bedford 3-ton lorry | 7 | the sheet's lorry | artist's sheet, cut | Stopgap | 3 |
 | `cw_recon` | Marmon-Herrington armoured car | 2 | the drawn set's | drawn set | Missing | 1 |
-| `cw_hq` | staff car with a pennant (which car is not settled) | 9 | the drawn set's | drawn set | Missing | 1 |
+| `cw_hq` | staff car with a pennant (which car is not settled) | 9 | painted closed staff car, red pennant | generated for this game, fitted to counter canvas | In use; historical model unconfirmed | none |
 | `de_armour` | Panzer III, short 50 mm gun | 2 | the sheet's tank | artist's sheet, cut | Stopgap | 3 |
 | `de_foot` | three riflemen, flared helmet | 3 | the first sheet's soldier, in his own cap | artist's first sheet, cut | Stopgap | 3 |
 | `de_guns` | 88 mm Flak on its mount | 6 | an anti-tank gun | artist's sheet, cut | Stopgap: wrong subject | 2 |

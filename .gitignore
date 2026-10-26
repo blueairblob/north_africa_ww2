@@ -12,3 +12,5 @@ logs/
 docs/MARKETING.md
 # saved games (python -m screen: the Game button, and an autosave each turn)
 saves/
+# in-game F12 captures, which may include private play sessions
+screenshots/

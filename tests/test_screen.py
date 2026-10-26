@@ -28,6 +28,108 @@ def regiments():
     return json.loads((ROOT / "data" / "scenarios" / "crusader.json").read_text())
 
 
+@pytest.mark.parametrize("close_event,busy", [(pygame.WINDOWCLOSE, True), (pygame.QUIT, False)])
+def test_window_close_autosaves_exits_and_does_not_reopen_on_pending_resize(tmp_path, monkeypatch, close_event, busy):
+    pygame.init()
+    app = App(Session(regiments(), GMAP, humans=["cw"], scripted={"axis": players.DoNothing(GMAP)}))
+    app.saves = tmp_path
+    app.session.set_air("recon")                  # a choice made during the turn must survive closing
+    if not busy:
+        app.ui.selected = None                   # this uses the sleeping event.wait branch
+    monkeypatch.setattr(app, "paint", lambda surface: None)
+    close = pygame.event.Event(close_event)
+    resize = pygame.event.Event(pygame.VIDEORESIZE, w=1200, h=700)
+    monkeypatch.setattr(pygame.event, "get", lambda: [close, resize] if busy else [resize])
+    monkeypatch.setattr(pygame.event, "wait", lambda: close)
+    real_set_mode = pygame.display.set_mode
+    modes = []
+
+    def set_mode(*args, **kwargs):
+        modes.append(args[0])
+        return real_set_mode(*args, **kwargs)
+
+    monkeypatch.setattr(pygame.display, "set_mode", set_mode)
+    app.run()
+    saved = json.loads((tmp_path / "crusader-autosave.json").read_text())
+    assert saved["air"]["cw"] == "recon" and saved["auto"]
+    assert modes == [theme.WINDOW]               # no resize recreates the window after its close
+    assert not pygame.get_init()
+
+
+def test_f12_saves_the_current_rendered_view_without_changing_play(tmp_path, monkeypatch):
+    pygame.init()
+    monkeypatch.setattr(pygame.time, "get_ticks", lambda: 0)  # freeze selection pulse between renders
+    app = App(Session(regiments(), GMAP, humans=["cw"], scripted={"axis": players.DoNothing(GMAP)}), size=(900, 560))
+    app.screenshots = tmp_path / "shots"
+    expected = pygame.Surface(app.size)
+    app.paint(expected)
+    before = app.session.to_save()
+
+    assert app.handle_one(pygame.event.Event(pygame.KEYDOWN, key=pygame.K_F12))
+    paths = list(app.screenshots.glob("*.png"))
+    assert len(paths) == 1 and paths[0].name.startswith("crusader-")
+    first = paths[0]
+    shot = pygame.image.load(str(first))
+    assert shot.get_size() == app.size
+    assert pygame.image.tostring(shot, "RGB") == pygame.image.tostring(expected, "RGB")
+    assert app.session.to_save() == before
+    assert "Screenshot saved" in app.ui.message
+
+    app.ui.details_collapsed = True
+    app.ui.symbols = "nato"
+    assert app.handle_one(pygame.event.Event(pygame.KEYDOWN, key=pygame.K_F12))
+    paths = list(app.screenshots.glob("*.png"))
+    assert len(paths) == 2  # each press keeps the earlier view, even in the same second
+    second = next(path for path in paths if path != first)
+    assert pygame.image.tostring(pygame.image.load(str(second)), "RGB") != pygame.image.tostring(shot, "RGB")
+
+
+@pytest.mark.parametrize("mode", ["cover", "editing", "playback", "saves"])
+def test_f12_is_available_while_another_ui_mode_has_the_keyboard(tmp_path, monkeypatch, mode):
+    pygame.init()
+    app = App(Session(regiments(), GMAP))
+    app.screenshots = tmp_path
+    monkeypatch.setattr(app, "paint", lambda surface: surface.fill("red"))
+    if mode == "cover":
+        app.ui.cover = "Other player's turn"
+    elif mode == "editing":
+        app.ui.editing = "New name"
+    elif mode == "playback":
+        app.play = object()
+    else:
+        app.ui.saves = []
+    assert app.handle_one(pygame.event.Event(pygame.KEYDOWN, key=pygame.K_F12))
+    assert len(list(tmp_path.glob("*.png"))) == 1
+    assert (app.play is not None if mode == "playback" else getattr(app.ui, mode) is not None)
+
+
+def test_game_menu_offers_the_same_screenshot_capture(tmp_path):
+    pygame.init()
+    app = App(Session(regiments(), GMAP), size=(900, 560))
+    app.screenshots = tmp_path
+    app.click(layout.game(app.size, False)["game"].center)
+    assert app.ui.game_open
+    app.click(layout.game(app.size, True)["screenshot"].center)
+    assert not app.ui.game_open
+    assert len(list(tmp_path.glob("*.png"))) == 1
+    assert "Screenshot saved" in app.ui.message
+
+
+def test_f12_reports_capture_errors_without_interrupting_the_game(tmp_path, monkeypatch):
+    pygame.init()
+    app = App(Session(regiments(), GMAP))
+    app.screenshots = tmp_path
+    monkeypatch.setattr(app, "paint", lambda surface: None)
+
+    def fail(*args):
+        raise OSError("disk is full")
+
+    monkeypatch.setattr(pygame.image, "save", fail)
+    assert app.handle_one(pygame.event.Event(pygame.KEYDOWN, key=pygame.K_F12))
+    assert "disk is full" in app.ui.message
+    assert not list(tmp_path.glob("*.png"))
+
+
 def test_a_hex_is_as_many_pixels_across_as_asked_and_the_counter_fits_in_it():   # docs/COUNTERS.md
     lay = Layout(96)
     (x0, _), (x1, _) = lay.corners((10, 10))[0], lay.corners((10, 10))[3]
@@ -42,6 +144,136 @@ def test_the_base_map_is_the_size_the_screen_expects():
     assert render.BASE_HEX == theme.BASE_HEX
     if (ROOT / "art" / "basemap.jpg").exists():
         assert pygame.image.load(str(ROOT / "art" / "basemap.jpg")).get_size() == Layout(theme.BASE_HEX).size(GMAP.cols, GMAP.rows)
+
+
+def test_a_short_window_scrolls_the_panel_without_covering_its_controls():
+    pygame.init()
+    app = App(Session(regiments(), GMAP), size=(900, 560))
+    app.ui.selected = 110
+    surface = pygame.Surface(app.size)
+    app.paint(surface)
+    painter = app.painter
+    footer = layout.buttons(app.size)["next"]
+    assert painter.panel_body.bottom < footer.top
+    assert painter.panel_scroll_max > 0
+    assert set(painter.order_rects) == set(layout.buttons(app.size))
+    assert layout.areas(app.size)["console"].contains(painter.order_rects["split"])
+    assert painter.member_rects
+
+    app.click(painter.panel_scroll_rects["down"].center)
+    app.paint(surface)
+    assert app.ui.panel_scroll == 80
+    assert painter.order_rects["split"] == layout.buttons(app.size)["split"]
+    assert painter.order_rects["next"] == footer
+    app.click(painter.order_rects["split"].center)
+    assert "Click a unit in the details hierarchy" in app.ui.message
+
+
+def test_the_panel_scroll_resets_for_another_unit():
+    pygame.init()
+    app = App(Session(regiments(), GMAP), size=(900, 560))
+    surface = pygame.Surface(app.size)
+    app.paint(surface)
+    app.click(app.painter.panel_scroll_rects["down"].center)
+    app.paint(surface)
+    assert app.ui.panel_scroll > 0
+    app.ui.selected = 120
+    app.paint(surface)
+    assert app.ui.panel_scroll == 0
+
+
+def test_details_can_collapse_without_losing_the_map_or_command_console():
+    pygame.init()
+    app = App(Session(regiments(), GMAP))
+    app.ui.selected = 110
+    surface = pygame.Surface(app.size)
+    app.paint(surface)
+    old = app.map_rect()
+    assert app.painter.member_rects and old.w == app.size[0] - theme.PANEL
+    app.click(layout.details_toggle(app.size).center)
+    app.paint(surface)
+    assert app.ui.details_collapsed and app.map_rect().w == app.size[0]
+    assert not app.painter.member_rects
+    assert all(layout.areas(app.size)["console"].contains(rect) for rect in layout.buttons(app.size).values())
+    assert layout.layers(app.size, False, True)["layers"].right < app.map_rect().right
+    app.click(layout.buttons(app.size)["move"].center)
+    assert app.ui.mode == "move"
+    app.click(layout.details_toggle(app.size, True).center)
+    app.paint(surface)
+    assert not app.ui.details_collapsed and app.map_rect() == old and app.painter.member_rects
+    app.click(layout.details_toggle(app.size).center)
+    app.click(layout.buttons(app.size)["split"].center)
+    assert not app.ui.details_collapsed and "details hierarchy" in app.ui.message
+
+
+def test_map_layers_hold_weather_terrain_and_counter_style_preferences():
+    pygame.init()
+    app = App(Session(regiments(), GMAP))
+    surface = pygame.Surface(app.size)
+    app.paint(surface)
+    app.click(layout.layers(app.size, False)["layers"].center)
+    menu = layout.layers(app.size, True)
+    assert all(name in menu for name in ("k", "weather", "s", "z", "pictures", "nato"))
+    assert app.ui.weather_visible and app.ui.symbols == "pictures"
+    app.click(menu["k"].center)
+    app.click(menu["weather"].center)
+    app.click(menu["nato"].center)
+    app.paint(surface)
+    assert app.ui.overlays == {"k"} and not app.ui.weather_visible
+    assert app.painter.weather_rect is None and app.ui.symbols == "nato"
+    app.click(menu["pictures"].center)
+    assert app.ui.symbols == "pictures"
+
+
+def test_air_effort_is_visible_clickable_and_keeps_keyboard_parity():
+    pygame.init()
+    app = App(Session(regiments(), GMAP, humans=["cw"], scripted={"axis": players.DoNothing(GMAP)}))
+    original = app.ui.selected
+    for size, collapsed in ((theme.WINDOW, False), ((900, 560), False), (theme.WINDOW, True)):
+        app.size, app.ui.details_collapsed = size, collapsed
+        surface = pygame.Surface(size)
+        app.paint(surface)
+        closed = layout.air_controls(size, collapsed=collapsed)
+        button = closed["air"]
+        assert layout.areas(size, collapsed)["bar"].contains(button)
+        assert button.left > layout.layers(size, False, collapsed)["layers"].right
+        app.click(button.center)
+        assert app.ui.air_open and app.ui.selected == original
+        popup = layout.air_controls(size, True, collapsed)
+        assert set(popup) == {"air", "support", "interdict", "recon"}
+        assert all(row.bottom < button.top and row.left >= 0 for name, row in popup.items() if name != "air")
+        app.key(pygame.K_ESCAPE)
+        assert not app.ui.air_open and app.ui.selected == original
+        app.click(button.center)
+        app.paint(surface)
+        app.click(popup["recon"].center)
+        assert app.session.air["cw"] == "recon" and not app.ui.air_open and app.ui.selected == original
+        app.key(pygame.K_2)
+        assert app.session.air["cw"] == "interdict"
+        app.click(button.center)
+        app.click(popup["support"].center)
+        assert app.session.air["cw"] == "support"
+        app.click(button.center)
+        app.click((button.left - 4, button.centery))
+        assert not app.ui.air_open and app.session.air["cw"] == "support"  # dismissal is not an order
+
+
+def test_grounded_air_effort_explains_that_the_choice_has_no_flights():
+    from helpers import scenario, unit
+    pygame.init()
+    sc = scenario([unit(201, "cw", "armour", [70, 21]), unit(101, "axis", "foot", [70, 24])],
+                  weather=[["1941-11-18", {"rain": 100}]])
+    app = App(Session(sc, GMAP, humans=["cw"], scripted={"axis": players.DoNothing(GMAP)}, seed=5))
+    assert app.session.weather == "rain"
+    seen = []
+    text = app.painter.text
+    app.painter.text = lambda surface, words, *a, **k: (seen.append(words), text(surface, words, *a, **k))
+    button = layout.air_controls(app.size)["air"]
+    app.click(button.center)
+    app.paint(pygame.Surface(app.size))
+    assert "NO FLIGHTS · RAIN" in seen
+    app.click(layout.air_controls(app.size, True)["interdict"].center)
+    assert app.session.air["cw"] == "interdict" and "No aircraft fly in rain" in app.ui.message
 
 
 def test_the_hex_under_a_point_is_the_hex_whose_centre_it_is():
@@ -829,9 +1061,14 @@ def test_morale_is_told_in_nine_named_levels_and_strength_in_real_terms():
     assert theme.strength({"type": "foot"}) == ""                                # an enemy not seen close
 
 
-def test_the_orders_are_in_the_panel_and_travel_is_the_road_march():
+def test_the_orders_are_in_the_console_and_travel_is_the_road_march():
     area, where = layout.areas(theme.WINDOW), layout.buttons(theme.WINDOW)
-    assert len(where) == 11 and all(area["panel"].contains(r) for r in where.values())
+    for size, minimum in ((theme.WINDOW, (64, 44)), ((900, 560), (52, 38))):
+        emblem = layout.footer_flag(size)
+        assert emblem.size == minimum
+        assert layout.areas(size)["console"].contains(emblem)
+        assert emblem.right + 10 < layout.buttons(size)["move"].left - 10
+    assert len(where) == 11 and all(area["console"].contains(r) for r in where.values())
     assert not any(a.colliderect(b) for n, a in where.items() for m, b in where.items() if n < m)
     assert theme.ORDER_NAME["road_march"] == "Travel" and ("road_march", "Travel", "T") in theme.BUTTONS
     assert ("rest", "Rest", "R") in theme.BUTTONS
@@ -918,7 +1155,7 @@ def test_split_takes_a_unit_out_of_its_group_and_join_puts_it_back():
     app.click(app.spot((59, 11)))
     app.paint(pygame.Surface(theme.WINDOW))
     app.click(layout.buttons(app.size)["split"].center)
-    assert "tiles on the right" in app.ui.message                                 # nothing chosen from the group yet
+    assert "details hierarchy" in app.ui.message                                  # nothing chosen from the group yet
     app.paint(pygame.Surface(theme.WINDOW))
     app.click(app.painter.member_rects[111].center)                              # the panzer regiment, by itself
     assert app.ui.selected == 111 and app.ui.alone
@@ -1083,7 +1320,7 @@ def test_reports_are_one_a_unit_and_only_what_matters_and_a_back_button_returns_
     app.paint(pygame.Surface(theme.WINDOW))
     app.click(app.painter.member_rects[312].center)
     app.paint(pygame.Surface(theme.WINDOW))
-    assert app.ui.alone and app.painter.back_rect.y > layout.buttons(app.size)["recall"].bottom   # the way back, under the orders
+    assert app.ui.alone and app.painter.back_rect.y < layout.areas(app.size)["console"].top
     app.click(app.painter.back_rect.center)
     assert app.ui.selected == 310 and not app.ui.alone
 
@@ -1157,9 +1394,10 @@ def test_the_map_has_a_border_at_its_edge_and_a_key_among_its_layers():
     assert app.ui.cam == [-theme.MARGIN, -theme.MARGIN]              # the north-west corner, with its margin of paper
     surface = pygame.Surface(theme.WINDOW)
     app.paint(surface)
-    assert tuple(surface.get_at((6, 6)))[:3] == theme.PAPER           # paper outside the border
+    assert tuple(surface.get_at((6, 6)))[:3] == theme.COMMAND["cw"]  # field-atlas masthead
+    assert tuple(surface.get_at((6, 60)))[:3] == theme.PAPER          # paper outside the border
     line = int(theme.MARGIN - 9) + 1
-    assert tuple(surface.get_at((300, line)))[:3] == theme.INK        # the neat line
+    assert tuple(surface.get_at((line, 60)))[:3] == theme.INK         # the neat line
     assert [name for name, _, _ in theme.LAYERS] == ["s", "z", "k"] and "k" in layout.layers(app.size, True)
     before = pygame.image.tostring(surface, "RGB")
     keys(app, "k")
@@ -1376,12 +1614,13 @@ def test_the_instruction_line_follows_the_state_and_the_tooltip_keeps_quiet_on_e
 
 # ---- the four panel items ----------------------------------------------------------------
 
-def test_the_orders_sit_under_the_units_header_and_only_those_it_can_take():
+def test_the_orders_stay_in_the_console_and_only_those_it_can_take_are_actionable():
     pygame.init()
     app = App(Session(regiments(), GMAP, humans=["cw"], scripted={"axis": players.DoNothing(GMAP)}))
     s = app.session
     where = layout.buttons(app.size)
-    assert where["move"].y == layout.HEAD_Y + theme.TILE_H + 12 < 400 and where["next"].y > 700   # orders directly under the unit's tile; Next and End at the foot
+    assert all(layout.areas(app.size)["console"].contains(rect) for rect in where.values())
+    assert where["next"].y > 700
     assert s.offers(310) == ["move", "attack", "road_march", "hold", "dig_in", "rest", "join", "split"]     # no strays to recall
     assert s.offers(301) == ["move", "road_march", "hold", "rest", "join"]                    # an army HQ alone, at Fort Maddalena
     assert s.offers(None) == [] and s.offers(999) == []
@@ -1499,10 +1738,13 @@ def test_the_unit_orders_tab_lists_every_unit_and_its_order_and_a_tap_takes_one_
     app.paint(pygame.Surface(app.size))
     shown = len(app.painter.report_rects)
     assert shown < len(leads) and set(app.painter.scroll_rects) == {"up", "down"}
-    app.click(app.painter.scroll_rects["down"].center)
-    app.paint(pygame.Surface(app.size))
-    assert app.ui.scroll == min(3, len(leads) - shown)
-    assert leads[-1] in {uid for _, uid in app.painter.report_rects.values()} or app.ui.scroll == 3
+    assert not app.painter.panel_scroll_rects  # one scroll mechanism per tab
+    for _ in leads:
+        if leads[-1] in {uid for _, uid in app.painter.report_rects.values()}:
+            break
+        app.click(app.painter.scroll_rects["down"].center)
+        app.paint(pygame.Surface(app.size))
+    assert leads[-1] in {uid for _, uid in app.painter.report_rects.values()}
 
 
 def test_next_unit_is_lit_while_units_wait_end_turn_is_always_green_and_the_reminder_can_be_turned_off():
@@ -1552,7 +1794,7 @@ def test_a_move_the_stacking_limit_keeps_out_is_warned_of_and_then_reported():
     assert any("could not go on" in w and uid == 204 for w, uid in s.reports())
     app.click((300, 5000))                                           # a click nowhere changes nothing, quietly; one off the map says so
     app.ui.cam, app.ui.message = [-40, -40], ""
-    app.click((2, 2))
+    app.click((2, theme.MASTHEAD + 6))  # below the masthead: still outside the map's neat line
     assert app.ui.message == "That is off the map."
 
 
@@ -1607,6 +1849,7 @@ def test_the_weather_is_shown_and_felt_and_a_tap_says_what_it_does():           
     pale = lambda a: tuple(surface.get_at((30, 300)))[:3] if a.paint(surface) is None else None
     assert pale(storm) != pale(clear) != pale(rain)                               # the wash over the map
     chip = rain.painter.weather_rect.move(rain.map_rect().topleft)
+    assert not chip.colliderect(layout.details_toggle(rain.size))
     rain.click(chip.center)
     assert rain.ui.message.startswith("Rain: no aircraft fly") and "Outlook for the next two days" in rain.ui.message
     assert rain.ui.selected == 201                                                # the tap ordered nothing
@@ -1752,7 +1995,7 @@ def test_a_short_scenario_says_each_side_its_aim_on_the_timetable_tab():        
         app.paint(surface)
         said = " ".join(str(words) for words in seen)
         assert "Your aim" in seen and aim in said and "Sidi Rezegh and Belhamed" in said, side
-        assert "turn 1 of 5" in said and "Sidi Rezegh" in seen                    # its own name and length, at the head of the panel
+        assert "TURN 1 / 5" in said and "Sidi Rezegh" in seen                    # name in masthead, turn in details
     app = App(Session(regiments(), GMAP, humans=["cw"], scripted={"axis": players.DoNothing(GMAP)}))
     seen = []
     text = app.painter.text
@@ -1854,10 +2097,10 @@ def test_a_group_is_shown_as_its_order_of_battle_its_hq_on_top_and_a_tile_for_ea
     app.ui.selected, app.ui.alone = 110, False
     app.paint(pygame.Surface(theme.WINDOW))
     rects = app.painter.member_rects
-    hq, tiles = rects[110], [rects[i] for i in (111, 112, 113, 114)]
-    assert all(hq.bottom < t.top for t in tiles)                                 # the HQ's card above its units
-    assert len({t.size for t in tiles}) == 1 and not any(a.colliderect(b) for a in tiles for b in tiles if a is not b)
-    assert all(t.bottom < layout.buttons(app.size)["move"].y for t in tiles)      # clear of the orders under it
+    hq, rows = rects[110], [rects[i] for i in (111, 112, 113, 114)]
+    assert all(hq.bottom < row.top for row in rows)                              # the HQ's card above its units
+    assert len({row.size for row in rows}) == 1 and not any(a.colliderect(b) for a in rows for b in rows if a is not b)
+    assert all(row.bottom < layout.areas(app.size)["console"].top for row in rows)
     assert app.painter.pencil_rect and not hq.colliderect(app.painter.pencil_rect)   # the name can still be changed
     app.click(hq.center)
     assert app.ui.selected == 110 and app.ui.alone                               # the HQ by itself

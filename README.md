@@ -62,6 +62,13 @@ six orders, the supply overlay and the zones overlay.
 .venv/bin/python -m screen --load saves/FILE.json    # go on with that one
 ```
 
+Press **F12** at any point in the game (or choose **Game → Screenshot**)
+to save a PNG of the current map and GUI (including open panels) in
+`screenshots/`. Each press makes a new file; captures are excluded from Git.
+On this PC, find them in Windows Explorer at
+`D:\dev\PROJECTS\benghazi-handicap\screenshots\`. Share a capture here
+for GUI review.
+
 A game can be saved and taken up again. The Game button in the map's corner has
 Save game (F5) and Load game (F9), which lists the newest saves to tap. The game
 is also saved by itself each time orders are handed in and when the window is
@@ -74,28 +81,33 @@ scenario no longer fit is refused, not guessed at.
 Click one of your units, press Move or Attack, then click where it should go.
 With no order a unit holds, and Hold is the button lit; a click on the map gives
 no order until Move, Attack or March has been pressed, so a unit on its way keeps
-its route whatever is clicked. The order bar under the map has the six orders, the supply and zones
-overlays and End turn; each has a key. With the keyboard alone:
+its route whatever is clicked. The full-width command footer keeps the selected unit's flag and name,
+its available orders, Next unit and End turn in view even when details are hidden. Unavailable orders
+stay in their positions but are greyed out. With the keyboard alone:
 press M, A or R, choose the hex with the arrow keys and press Enter. Keys 1, 2
-and 3 give the air force's effort (support, interdict, recon) and F3 shows
-NATO-style symbols in place of pictures; neither has a button yet (`docs/TODO.md`). The mouse
+and 3 give the air force's effort (support, interdict, recon); the **Air** selector
+at the right end of the message line shows the current choice and opens a clickable
+menu explaining each choice and this turn's air points (or grounded aircraft).
+F3 switches between pictures and NATO-style counter symbols. The mouse
 wheel zooms at the pointer, dragging moves the map, and with a unit taken up
 the map scrolls when the pointer reaches its edge. Layers, in the map's
-corner, shows supply, zones and the key. Men on foot March where vehicles
-Travel: by road or track only, a little faster than across country. The panel shows, under the unit taken up, only the orders it can take;
+corner, offers a terrain key, weather chip, supply and zones overlays, and the
+Pictures/NATO preference. The chevron at the right of the map hides or restores
+the details panel, giving the map its space. Men on foot March where vehicles
+Travel: by road or track only, a little faster than across country. The footer shows the orders;
 pressing its own lit order takes it back. With nothing taken up the panel
 lists the units still waiting, and a tap goes to one. After an order the next unit waiting is taken up and brought to the middle. A click on
 any of your units takes it up, whatever is in hand and whether it has an order or not. To
 move a unit on to others of yours, press Move first, or use Join. A right click on your own units opens a menu to choose
 one, group the whole stack or split a group up, at once; a stack of units from more
 than one division is a Special Army Group, and the pencil by a group's name renames it. A division's units move and fight as one group until you split one off: the panel shows a group as its order of
-battle, its HQ's card above a small tile for each unit; click a tile and order it, or press Split. Join sends a unit back to its
+battle, its HQ's card above connected illustrated rows for its units; click a row and order it, or press Split. Join sends a unit back to its
 division, and Recall, on an HQ, calls them all in. An order with somewhere to go (Move, Attack, Travel, Join)
 stands from turn to turn until it is done, and Dig in until the defences are complete; Rest is
 for one turn, and a unit with no order holds. Every turn the screen steps through every unit
 or group: Space lets it carry on as it is, and any order changes it. With the pointer on the unit's tile in the panel, the mouse wheel or Up and Down go through
 everything of yours in its hex: each group, then each of its units by itself. Page Up and Page Down do so
-wherever the pointer is, and the arrows beside "3 of 6" under the orders by a tap. Every order's button
+wherever the pointer is, and the arrows beside "3 of 6" in the details by a tap. Every order's button
 unpresses: pressing a unit's lit button takes its order back, and it holds unless given another. An order a unit cannot take just now is greyed, with the reason under the
 unit. A hex holds the units of two formations; a unit
 may drive through a full hex but not stop in it, and one kept out says so. Every click on the map does something or says why not. Two things are left to
@@ -110,7 +122,8 @@ away, what arrives or is made good, and anything else, each kind under its own h
 Reinforcements, Other), on the day it happened in 1941 and with the reason. A red bubble on the tab counts
 the events that fall as this turn ends, to plan for now; the reports say so a turn
 before each falls due and again when it has happened (`docs/SOURCES.md` gives the source of every date). Next unit is lit while any
-unit waits, End turn is always there, and a tick box turns off the reminder of units not gone through. After End
+unit waits, End turn is always there, and a tick box turns off the reminder of units not gone through. In a short
+window, the panel scrolls with the mouse wheel or the arrows on its right edge; the command footer stays in place. After End
 turn the turn is played back: the movement, then each formation's strike in
 turn, with the units it hits burning and a rattle as long as the damage, then
 the outcome, where a unit that surrenders raises a white flag. F plays it faster, Right arrow goes on to the next scene, and any

@@ -5,8 +5,10 @@ BASE_HEX = 64                       # a hex, corner to corner, in the base map (
 ZOOM_MAX, ZOOM_START = 2.0, 1.0     # the base map is scaled by the zoom; the least zoom shows the whole map
 ZOOM_STEP = 1.2
 COUNTER = 0.74                      # a counter's side as a share of the hex: the most that keeps neighbours apart
-PANEL = 360                         # the side panel's width: everything to read and to press is in it
-BAR = 32                            # the message line under the map
+PANEL = 420                         # the Field Atlas details ledger's width
+BAR = 32                            # the message line under the map, above the command console
+CONSOLE = 100                        # persistent full-width command footer
+MASTHEAD = 54                       # map title band, over the map's top paper margin
 WINDOW = (1400, 860)
 
 TERRAIN = {"~": (184, 208, 222), ".": (236, 219, 176), "^": (212, 186, 138),
@@ -22,6 +24,7 @@ FACE = {"cw": (110, 152, 208), "de": (78, 82, 88), "it": (112, 158, 92)}
 MARK = {"cw": (24, 34, 58), "de": (238, 234, 222), "it": (26, 44, 22)}
 BOX = {"cw": (186, 208, 236), "de": (150, 154, 160), "it": (180, 208, 164)}
 SIDE = {"axis": (78, 82, 88), "cw": (70, 110, 170)}
+COMMAND = {"axis": (42, 49, 40), "cw": (40, 77, 112)}
 SIDE_NAME = {"axis": "Axis", "cw": "Commonwealth"}
 SELECT, PATH, PATH_FAR, ATTACK = (255, 226, 60), (30, 90, 200), (120, 150, 205), (200, 40, 30)
 SUPPLY, REACH, REACH_FULL, SHORT = (24, 98, 170), (70, 140, 210, 34), (70, 140, 210, 46), (210, 40, 30)
@@ -48,7 +51,8 @@ BUTTONS = (("move", "Move", "M"), ("attack", "Attack", "A"), ("road_march", "Tra
            ("join", "Join", "J"), ("split", "Split", "X"), ("recall", "Recall", "C"),
            ("next", "Next unit", "Space"), ("done", "End turn", "Enter"))
 LAYERS = (("s", "Supply", "S"), ("z", "Zones", "Z"), ("k", "Key", "K"))   # the map's layers, behind the button in its corner
-GAME = (("save", "Save game", "F5"), ("load", "Load game", "F9"))         # behind the Game button beside it
+GAME = (("save", "Save game", "F5"), ("load", "Load game", "F9"),
+        ("screenshot", "Screenshot", "F12"))  # behind the Game button beside Layers
 MARGIN = 46             # base-map pixels of paper shown beyond the map's edge, for its border
 HQ_STAFF = 300          # a headquarters' nominal strength in men, for show: it has one step in the rules
 STRONG, WORN, WEAK = (40, 90, 190), (214, 126, 24), (200, 40, 30)   # strength: under full, under 70%, under 50%

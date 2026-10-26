@@ -2,9 +2,10 @@
 
 **Deliver:** `art/counters/artist/cw_hq.png`, one picture in one file.
 
-**Status:** missing: the artist's sheets have no headquarters.
+**Status:** fulfilled with a generated painted closed staff car and red pennant on
+24 October 2026; the specific historical vehicle model remains unconfirmed.
 
-**Priority:** 1 (1 missing from the game, 2 the wrong subject, 3 redrawn to the brief).
+**Priority:** none for the playable counter; confirm the historical vehicle before claiming a model.
 
 ## The subject
 
