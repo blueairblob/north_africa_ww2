@@ -8,9 +8,15 @@
 
 ## The subject
 
-The '88' is the German gun every player knows, and it was used against tanks in the desert. German divisional artillery was mostly 10.5 cm howitzers: if a howitzer is preferred, draw a 10.5 cm leFH 18 on its wheels instead.
+A single 8.8 cm Flak cannot stand for all six German `guns` formations:
+divisional artillery regiments principally need a 10.5 cm leFH 18 field
+howitzer, while anti-tank battalions, mixed garrisons and groupings need
+separate historically checked representative subjects. Keep rule `type=guns`
+unchanged and use `counter_art` variants after verifying the formations'
+equipment and dates in primary order-of-battle evidence.
 
-*How sure:* Well known.
+*How sure:* The broad distinction is known; exact gun allocation within the
+mixed groupings has not yet been verified.
 
 ## The prompt
 
@@ -19,7 +25,7 @@ For an image generator, or as the brief for an artist.
 ```
 A single gun for a hex wargame counter, North African desert campaign, November 1941.
 
-Subject: an 8.8 cm Flak gun on its cross-shaped platform, the long barrel raised a little. Strict side profile, facing right, the whole subject in frame, standing on one level baseline.
+Subject: a 10.5 cm leFH 18 field howitzer on its shielded two-wheel carriage, barrel raised a little. Strict side profile, facing right, the whole subject in frame, standing on one level baseline.
 
 Style: match the reference pictures given with this prompt: a painted illustration with a very bold dark-brown outline of even weight, three or four tones of one colour, a little wear and dust on the surfaces, lit softly from the upper left. No photographic shading, no cast shadow, no ground, no scenery.
 

@@ -130,6 +130,20 @@ def test_f12_reports_capture_errors_without_interrupting_the_game(tmp_path, monk
     assert not list(tmp_path.glob("*.png"))
 
 
+def test_air_selector_has_distinct_1941_theatre_aircraft_silhouettes():
+    from screen.pictures import aircraft
+    for size in ((23, 21), (80, 60)):
+        silhouettes = []
+        for side in ("cw", "axis"):
+            surface = pygame.Surface(size)
+            surface.fill("white")
+            aircraft(surface, side, surface.get_rect(), (35, 25, 18), (230, 210, 160))
+            pixels = pygame.image.tostring(surface, "RGB")
+            assert pixels != b"\xff" * len(pixels)
+            silhouettes.append(pixels)
+        assert silhouettes[0] != silhouettes[1]
+
+
 def test_a_hex_is_as_many_pixels_across_as_asked_and_the_counter_fits_in_it():   # docs/COUNTERS.md
     lay = Layout(96)
     (x0, _), (x1, _) = lay.corners((10, 10))[0], lay.corners((10, 10))[3]

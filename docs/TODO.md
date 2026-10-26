@@ -49,6 +49,19 @@ The game:
 
 The art:
 
+- **[build] Finish mismatched counter art:** replace the three drawn-only
+  recon vehicles and the wrong-subject German gun sprite, distinguishing 10.5 cm field
+  howitzers from anti-tank and mixed gun groups;
+  revisit the nine sheet-cut stopgaps against primary type references.
+  Counter art for mixed Matilda/Valentine and later Crusader/Stuart brigades
+  still represents only a predominant/typical type; confirm equipment by
+  formation and date before claiming every unit is depicted exactly.
+- **[build] Air visuals:** the selector now has small representative Hurricane
+  and Ju 87 silhouettes, but abstract air points include both Commonwealth
+  and Axis aircraft beyond those examples (RAF Museum timeline, `SOURCES.md`).
+  Plan historically checked mission- and nation-specific art if aircraft
+  become depicted as counters; do not add inaccurate unit tokens prematurely.
+
 - **[owner]** The pennants on the two Axis HQ cars are black and tricolour;
   the briefs ask for red. Keep or redraw.
 - **[owner]** Which AI tool made the pictures, and its terms. Not recorded

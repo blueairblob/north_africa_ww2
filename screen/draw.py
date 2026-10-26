@@ -17,7 +17,7 @@ from engine.view import spot_range
 from . import theme as T
 from .layout import EDGE, HEAD_Y, Layout, air_controls, areas, buttons, details_toggle, footer_flag, game, layers, saves_list, tabs
 from .session import GOES, where
-from .pictures import picture
+from .pictures import aircraft, picture
 
 ROOT = os.path.dirname(os.path.dirname(__file__))
 ART = os.path.join(ROOT, "art", "counters")
@@ -801,12 +801,12 @@ class Painter:
 
     # ---- a counter -----------------------------------------------------------------------
 
-    def sprite(self, nation, kind, size):
-        """A counter picture from art/counters, if there is one: the artist's before the drawn one
-        (docs/COUNTERS.md)."""
-        key = (nation, kind, size)
+    def sprite(self, nation, kind, size, variant=None):
+        """The unit's historically chosen variant, then the kind's painted or drawn fallback."""
+        key = (nation, kind, size, variant)
         if key not in self.sprites:
-            paths = [os.path.join(ART, where, f"{nation}_{kind}.png") for where in ("artist", "")]
+            paths = ([os.path.join(ART, "variants", f"{nation}_{variant}.png")] if variant else [])
+            paths += [os.path.join(ART, where, f"{nation}_{kind}.png") for where in ("artist", "")]
             path = next((p for p in paths if os.path.exists(p)), None)
             self.sprites[key] = pygame.transform.smoothscale(pygame.image.load(path), size) if path else None
         return self.sprites[key]
@@ -873,7 +873,7 @@ class Painter:
         low = 0.1 if named else 0                                    # the picture makes room for the name
         box = pygame.Rect(x + size * 0.17, y + size * (0.22 if named else 0.1 if big else 0.2), size * 0.66,
                           size * (0.36 if named else 0.42 if big else 0.6))
-        art = ui.symbols != "nato" and self.sprite(nation, u["type"], (int(size * (0.92 - low)), int(size * (0.552 - low * 0.6))))
+        art = ui.symbols != "nato" and self.sprite(nation, u["type"], (int(size * (0.92 - low)), int(size * (0.552 - low * 0.6))), session.counter_art.get(u["id"]))
         if art:
             surface.blit(art, (x + size * (0.04 + low / 2), y + size * (0.045 + low * 1.5)))
         elif ui.symbols == "nato":
@@ -944,7 +944,7 @@ class Painter:
         under = session.title[head[0]] if head and head[0] != u["id"] else T.TYPE_NAME[u["type"]]
         self.text(surface, under, (x + w / 2, y + 35), 12, T.MARK[nation], False, True)
         area = pygame.Rect(x + w / 2 - 90, y + strip + 4, 180, 108)
-        art = self.sprite(nation, u["type"], area.size)
+        art = self.sprite(nation, u["type"], area.size, session.counter_art.get(u["id"]))
         if art:
             surface.blit(art, area)
         else:
@@ -1111,7 +1111,9 @@ class Painter:
         points = session.view["air_points"]
         pygame.draw.rect(surface, T.BUTTON_ON if ui.air_open else T.BUTTON, button, border_radius=4)
         pygame.draw.rect(surface, T.INK, button, 1, border_radius=4)
-        self.text(surface, f"AIR · {current.upper()}", (button.x + 10, button.y + 6), 13, T.INK, True)
+        aircraft(surface, session.side, pygame.Rect(button.x + 5, button.y + 5, 23, 21), T.INK, T.BUTTON_ON)
+        self.fitted(surface, f"AIR · {current.upper()}", (button.x + 88, button.y + 12), 13,
+                    T.INK, 110, 10)
         self.text(surface, "▲" if ui.air_open else "▼", (button.right - 18, button.y + 6), 12, T.INK, True)
         self.tips.append((button, "Air effort this turn: support, interdict or recon (keys 1–3)."))
         if not ui.air_open:
@@ -1130,8 +1132,9 @@ class Painter:
             row = controls[choice]
             pygame.draw.rect(surface, T.BUTTON_ON if choice == current else T.BUTTON, row, border_radius=3)
             pygame.draw.rect(surface, T.INK, row, 1, border_radius=3)
-            self.text(surface, f"{n}  {choice.title()}", (row.x + 8, row.y + 2), 13, T.INK, True)
-            self.text(surface, descriptions[choice], (row.x + 27, row.y + 18), 10, T.DIM)
+            aircraft(surface, session.side, pygame.Rect(row.x + 6, row.y + 8, 23, 21), T.INK, T.BUTTON_ON)
+            self.text(surface, f"{n}  {choice.title()}", (row.x + 36, row.y + 2), 13, T.INK, True)
+            self.text(surface, descriptions[choice], (row.x + 36, row.y + 18), 10, T.DIM)
             if choice == current:
                 self.text(surface, "✓", (row.right - 18, row.y + 9), 14, T.INK, True)
 
@@ -1458,7 +1461,7 @@ class Painter:
             pygame.draw.rect(surface, T.GRID, row, 1, border_radius=3)
             nation = session.nation[m["id"]]
             icon = pygame.Rect(row.x + 4, row.y + 4, 35, 25)
-            sprite = self.sprite(nation, m["type"], icon.size)
+            sprite = self.sprite(nation, m["type"], icon.size, session.counter_art.get(m["id"]))
             if sprite:
                 surface.blit(sprite, icon)
             else:
@@ -1486,7 +1489,7 @@ class Painter:
         art = (min(w - 10, pic_h * 5 // 3), min(pic_h, (w - 10) * 3 // 5))
         place = pygame.Rect(0, 0, *art)
         place.center = (x + w // 2, y + 17 + pic_h // 2 + 1)
-        sprite = self.sprite(nation, m["type"], art)
+        sprite = self.sprite(nation, m["type"], art, session.counter_art.get(m["id"]))
         if sprite:
             surface.blit(sprite, place)
         else:

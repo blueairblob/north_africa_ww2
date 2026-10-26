@@ -10,7 +10,12 @@
 
 The Italian armoured car best known from North Africa.
 
-*How sure:* Not sure it had reached Libya by November 1941: Wikipedia says it served in North Africa but gives no date. Confirm before drawing; an older type may be the right one for Crusader.
+*How sure:* An Italian Ministry of Defence history lists an armoured-car
+company (with L6 light tanks) within RECAM in 1941 but does not identify
+the car type. A secondary vehicle-history article attributes a November
+1941 Sidi Rezegh photograph of three AB41s and a TL37 to the Italian
+central archives. Verify the original photo/catalogue and the rest of
+RECAM before treating one AB41 as the whole mixed formation.
 
 ## The prompt
 

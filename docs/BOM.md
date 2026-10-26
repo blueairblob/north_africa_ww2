@@ -2,7 +2,7 @@
 
 Every picture, visual effect and sound the game uses or is known to need,
 where each comes from now, and what is still wanted. Checked against the
-code on 22 October 2026, at commit `f784f0d`.
+code on 26 October 2026; the art inventory remains in progress.
 
 How to read the tables:
 
@@ -25,7 +25,8 @@ How to read the tables:
 Eighteen: six kinds for each of three nations. Each has a brief with an exact
 prompt, reference images and acceptance checks: `art/art_required_<nation>_<kind>.md`.
 The screen takes `art/counters/artist/<nation>_<kind>.png` if it exists, else
-the drawn set's `art/counters/<nation>_<kind>.png`.
+the drawn set's `art/counters/<nation>_<kind>.png`. Units with an explicit
+`counter_art` choice first use `art/counters/variants/<nation>_<counter_art>.png`.
 
 Every picture must be a 480 × 288 PNG with a real alpha channel, facing right,
 its wheels, tracks or feet on the line at y = 248, within 410 × 214 and
@@ -36,15 +37,15 @@ centred, and readable at 43 × 26 pixels (the counter at the opening zoom).
 
 | File | Subject | Units | Shown now | Source now | Status | Priority |
 | --- | --- | --- | --- | --- | --- | --- |
-| `cw_armour` | Crusader cruiser tank | 5 | a Matilda, striped camouflage | artist's sheet, cut | Stopgap: wrong subject | 2 |
+| `cw_armour` | Crusader cruiser tank | 2 cruiser brigades | painted Crusader, five road wheels | generated original | In use; late re-equipment was mixed | none |
 | `cw_foot` | three riflemen, flat-brimmed helmet | 10 | the sheet's rifleman, three in file | artist's sheet, cut | Stopgap | 3 |
-| `cw_guns` | 25-pounder gun-howitzer | 5 | a gun on spoked wooden wheels | artist's sheet, cut | Stopgap: wrong subject | 2 |
+| `cw_guns` | 25-pounder gun-howitzer | 5 | painted shielded 25-pounder on steel disc wheels | generated original | In use; particular regimental batteries varied | none |
 | `cw_motorised` | Bedford 3-ton lorry | 7 | the sheet's lorry | artist's sheet, cut | Stopgap | 3 |
 | `cw_recon` | Marmon-Herrington armoured car | 2 | the drawn set's | drawn set | Missing | 1 |
 | `cw_hq` | staff car with a pennant (which car is not settled) | 9 | painted closed staff car, red pennant | generated for this game, fitted to counter canvas | In use; historical model unconfirmed | none |
 | `de_armour` | Panzer III, short 50 mm gun | 2 | the sheet's tank | artist's sheet, cut | Stopgap | 3 |
 | `de_foot` | three riflemen, flared helmet | 3 | the first sheet's soldier, in his own cap | artist's first sheet, cut | Stopgap | 3 |
-| `de_guns` | 88 mm Flak on its mount | 6 | an anti-tank gun | artist's sheet, cut | Stopgap: wrong subject | 2 |
+| `de_guns` | 10.5 cm leFH 18 for divisional artillery; anti-tank batteries need checked variants | 6 | an anti-tank gun for all six | artist's sheet, cut | Stopgap: wrong for divisional artillery | 2 |
 | `de_motorised` | Opel Blitz lorry | 2 | the sheet's lorry | artist's sheet, cut | Stopgap | 3 |
 | `de_recon` | SdKfz 222 armoured car | 2 | the drawn set's | drawn set | Missing | 1 |
 | `de_hq` | Kübelwagen with a pennant | 4 | Kübelwagen, black pennant | owner's AI picture, `art/axis_hq_cars/german_hq.png` | In use | none |
@@ -52,12 +53,22 @@ centred, and readable at 43 × 26 pixels (the counter at the opening zoom).
 | `it_foot` | three riflemen, domed helmet | 12 | the sheet's rifleman, three in file | artist's sheet, cut | Stopgap | 3 |
 | `it_guns` | 75 mm field gun | 7 | the sheet's gun | artist's sheet, cut | Stopgap | 3 |
 | `it_motorised` | Lancia 3Ro lorry | 4 | the sheet's lorry | artist's sheet, cut | Stopgap | 3 |
-| `it_recon` | AB 41 armoured car (in Libya by November 1941 is not confirmed) | 1 | the drawn set's | drawn set | Missing | 1 |
+| `it_recon` | AB41 candidate for RECAM (mixed; original photograph not checked) | 1 | the drawn set's | drawn set | Missing | 1 |
 | `it_hq` | Fiat staff car with a pennant | 9 | a 1930s tourer, tricolour pennant | owner's AI picture, `art/axis_hq_cars/it_hq.png` | In use | none |
 
-In all: 4 missing, 3 of the wrong subject, 9 stopgaps, 2 done.
+Armour variants for the other three brigades: `art/counters/variants/cw_stuart.png`
+for 4th Armoured Brigade; `cw_matilda.png` for 1st and 32nd Army Tank
+Brigades. These are representative silhouettes: both army-tank brigades
+also operated other types, and 22nd Armoured later included Stuarts.
+The Matilda variant retains the first sheet's unverified striped camouflage.
+Neither a one-sprite-per-brigade portrayal nor the current scenario data
+can fully identify every tank within a mixed formation.
 
-Open on the two done: their pennants are black and tricolour where the briefs
+Currently: 3 missing armoured cars, 1 German gun with the wrong subject,
+9 sheet-cut stopgaps, 5 painted counter subjects in use; the two armour
+variants are additional. See `docs/COUNTERS.md` for unresolved historic types.
+
+Open on the Axis HQ cars: their pennants are black and tricolour where the briefs
 ask for red, and which car the Italian one shows was not checked.
 
 The other forms of the same pictures, all in use, none needing work:
@@ -67,6 +78,7 @@ The other forms of the same pictures, all in use, none needing work:
 | The drawn set: the fallback for any picture the artist has not done | `art/counters/<nation>_<kind>.svg` and `.png`, 18 of each | drawn set |
 | NATO-style symbols, the option (F3) | none; drawn each time | drawn in code (`Painter.symbol`) |
 | Small pictures in the map's key | none; drawn each time | drawn in code (`screen/pictures.py`) |
+| Air selector silhouettes | representative Hurricane / Ju 87 outlines, not aircraft unit counters | drawn in code (`screen/pictures.aircraft`) |
 
 ## 2. Parts of a counter and a tile
 

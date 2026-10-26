@@ -53,3 +53,31 @@ def picture(surface, kind, box, ink, pale):
     else:                                               # a headquarters: a flag
         line((0.28, 0.06), (0.28, 0.98), 0.08)
         poly((0.3, 0.08), (0.86, 0.16), (0.7, 0.3), (0.86, 0.46), (0.3, 0.52))
+
+
+def aircraft(surface, side, box, ink, pale):
+    """Small top-view recognition silhouettes for the air selector, not air-unit counters.
+
+    Hurricane: straight tapered wings. Ju 87: cranked gull wings. Both are
+    representative theatre aircraft, not a claim that every air point is one.
+    """
+    def pts(points):
+        return [(round(box.x + x * box.w), round(box.y + y * box.h)) for x, y in points]
+
+    if side == "cw":
+        wing = [(0.08, 0.49), (0.36, 0.35), (0.64, 0.35), (0.92, 0.49),
+                (0.92, 0.6), (0.62, 0.51), (0.38, 0.51), (0.08, 0.6)]
+    else:
+        wing = [(0.04, 0.48), (0.26, 0.43), (0.33, 0.34), (0.67, 0.34),
+                (0.74, 0.43), (0.96, 0.48), (0.96, 0.62), (0.7, 0.56),
+                (0.62, 0.5), (0.38, 0.5), (0.3, 0.56), (0.04, 0.62)]
+    pygame.draw.polygon(surface, ink, pts(wing))
+    pygame.draw.polygon(surface, ink, pts([(0.22, 0.86), (0.44, 0.82), (0.45, 0.15),
+                                          (0.5, 0.04), (0.55, 0.15), (0.56, 0.82),
+                                          (0.78, 0.86), (0.78, 0.96), (0.22, 0.96)]))
+    pygame.draw.polygon(surface, pale, pts([(0.47, 0.43), (0.5, 0.29), (0.53, 0.43), (0.52, 0.57), (0.48, 0.57)]))
+    if side == "axis":  # the Stuka's prominent fixed undercarriage
+        for x in (0.35, 0.65):
+            pygame.draw.ellipse(surface, ink, pygame.Rect(round(box.x + (x - 0.035) * box.w),
+                                                          round(box.y + 0.56 * box.h),
+                                                          max(2, round(0.07 * box.w)), max(3, round(0.15 * box.h))))

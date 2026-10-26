@@ -2,9 +2,10 @@
 
 **Deliver:** `art/counters/artist/cw_guns.png`, one picture in one file.
 
-**Status:** redo: the stopgap is a gun with spoked wooden wheels, not a 25-pounder.
+**Status:** original painted 25-pounder with shield and steel disc wheels is in use.
+This is a representative field-gun image, not a claim about every battery.
 
-**Priority:** 2 (1 missing from the game, 2 the wrong subject, 3 redrawn to the brief).
+**Priority:** fulfilled for the representative 25-pounder subject.
 
 ## The subject
 

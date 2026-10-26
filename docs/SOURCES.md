@@ -219,6 +219,52 @@ It was fitted to the game's 480 × 288 transparent counter canvas with the
 existing `countergen.cut.fitted` routine. It depicts a generic period closed
 staff car, not an identified or historically verified make or model.
 
+## Counter and air-control visual sources (26 October 2026)
+
+The Tank Museum documents the Cruiser Mk VI Crusader and its five large road
+wheels in North Africa in 1941: https://tankmuseum.org/article/crusader-first-action/ .
+A contemporary tank return discussed in *Scientia Militaria* 49(1), 2021,
+pp. 95 ff. (using TNA WO 169/952 and WO 201/520) lists British cruisers,
+M3 Stuarts, Matildas and Valentines at the outset of Crusader:
+https://www.ajol.info/index.php/smsajms/article/download/217929/205533 .
+The existing scenario sources name 4th Armoured's Stuarts and 22nd Armoured's
+later mixed Crusaders and Stuarts. The 1st and 32nd Army Tank Brigades were
+mixed formations; the Matilda is a representative, **not** their entire kit.
+
+The new 480 × 288 Commonwealth Crusader and Stuart sprites were generated
+specifically for this project with OpenAI image generation on 26 October
+2026, using only the project's own lorry, HQ and newly generated Crusader
+art as style references. Their alpha-bounded silhouettes were fitted to the
+existing counter canvas using `countergen.cut.fitted`; no external pictures
+were traced or copied. The previous Matilda sheet cut is preserved as a
+variant (its camouflage remains unverified). The Stuart was regenerated once
+to make its four-wheel suspension and compact turret more distinct.
+The replacement 25-pounder illustration is an original generation of
+26 October 2026, matched to this game's lorry art, not copied from a photo.
+An Australian War Memorial record photographs a 25-pounder in Tobruk on
+16 October 1941 (accession 020970):
+https://www.awm.gov.au/collection/C5312 . The steel-wheeled carriage, shield
+and turntable identify the subject; this pictogram is not a scale drawing.
+
+A 1991 Italian defence-history conference report, published by Italy's
+Ministry of Defence, describes RECAM as including an armoured-car and L6
+company in the 1941 Corpo d'Armata di Manovra but gives no car model:
+https://www.difesa.it/assets/allegati/39410/02_convegno1991_italia_in_guerra_secondo_anno1941.pdf .
+A secondary AB41 account cites a November 1941 Sidi Rezegh photograph
+attributed to the Archivio Centrale dello Stato depicting several AB41s and
+an Autoblindo TL37 in RECAM. The original catalogue/photo has not been
+verified; do not infer all RECAM equipment from this report:
+https://tanks-encyclopedia.com/ww2/italy/autoblinda-ab41/ .
+
+The RAF Museum's 18 November 1941 Crusader entry lists Commonwealth
+Hurricanes, Tomahawks, Beaufighters, Blenheims, Marylands and Boston
+reconnaissance aircraft. Its timeline also lists German Ju 87 and Ju 88,
+Bf 109 and Bf 110 in the theatre:
+https://www.rafmuseum.org.uk/research/research-enquiries/history-of-aviation-timeline/british-military-aviation/1941-2/ .
+`screen/pictures.aircraft` draws original simplified Hurricane and Ju 87
+silhouettes as visual examples. Air points still abstract several air arms and
+missions; the silhouettes do not assert that these are the only aircraft.
+
 ## Weather
 
 Looked up on 7 October 2026 by web search, reading summaries and encyclopaedia

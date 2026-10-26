@@ -13,6 +13,7 @@ COLS = ("foot", "light", "armour", "guns", "antitank", "motorised")         # an
 NEAR, SLACK = (190, 495, 825, 1070, 1335), 45       # about where one column ends and the next begins, in sheet pixels
 SHEET = "counters_sheet_1_1.png"
 KINDS = ("foot", "armour", "guns", "motorised")     # the sheets have no armoured car and no headquarters
+ORIGINAL = frozenset({("cw", "armour"), ("cw", "guns")})  # do not recut the Matilda and wrong gun
 SINGLE = {("de", "hq"): "axis_hq_cars/german_hq.png",         # one picture to a file
           ("it", "hq"): "axis_hq_cars/it_hq.png"}
 OTHER = {("de", "foot"): ("counters_sheet_1.png", "foot"),      # the one German drawn in his own cap
@@ -115,6 +116,8 @@ def write():
     sheets = {}
     for nation in ROWS:
         for kind in KINDS:
+            if (nation, kind) in ORIGINAL:
+                continue  # original painted Crusader and 25-pounder replace wrong-subject sheet cuts
             name, col = OTHER.get((nation, kind), (SHEET, kind))
             if name not in sheets:
                 sheets[name] = cells(name)

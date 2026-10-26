@@ -50,6 +50,10 @@ WEATHER = {"clear": "Clear.",                           # what the weather does,
 ROMAN = ("I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X")
 HEAVY_PCT = 25          # a unit that lost this share of its strength in a turn "took heavy losses"
 SAVE_FORMAT = 1         # the layout of a saved game; one of another number is not read
+# Presentation only: old saved scenarios predate `counter_art`; keep their armour truthful.
+LEGACY_CRUSADER_ART = {(306, "1st Army Tank Brigade"): "matilda",
+                      (307, "32nd Army Tank Brigade"): "matilda",
+                      (311, "4th Armoured Brigade"): "stuart"}
 BY_UNIT = ("standing", "pending", "said")              # kept by side, then by unit id: text turns the ids into words
 
 
@@ -59,6 +63,12 @@ class Session:
         self.humans = [s for s in S.SIDES if s in humans]
         self.scripted = scripted or {}
         self.nation = {u["id"]: u.get("nation", "cw" if u["side"] == "cw" else "de") for u in scenario["units"]}
+        self.counter_art = {u["id"]: u["counter_art"] for u in scenario["units"] if "counter_art" in u}
+        if scenario["id"] in ("crusader", "sidi_rezegh"):
+            for u in scenario["units"]:
+                variant = LEGACY_CRUSADER_ART.get((u["id"], u["name"]))
+                if variant:
+                    self.counter_art.setdefault(u["id"], variant)
         heads = {side: sorted({u["parent"] for u in scenario["units"] if u.get("parent") and u["side"] == side}) for side in S.SIDES}
         self.title = {u["id"]: u["name"] for u in scenario["units"]}
         # a unit -> (its division's HQ, the division's place among its side's by HQ id); a unit of no division is not in it
