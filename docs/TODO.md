@@ -62,15 +62,25 @@ The art:
   The painted NZ Divisional Cavalry carrier variant is representative only:
   the official history also mentions light tanks; verify the scenario's
   `cars: 30` strength abstraction separately (it is not 30 armoured cars).
+  Mixed-equipment picture hover notes now identify 8 RTR Valentines in 1st
+  Army Tank Brigade, 1 RTR cruisers in 32nd and other Tobruk artillery types;
+  the 5 November 1941 fortress artillery return cannot establish unit 354's
+  scenario count of 72 guns or its exact command boundaries. Verify those
+  against original war diaries.
+  A dated German tank return analysed in *Scientia Militaria* supports the
+  Panzer III as a majority picture for Panzerregiment 5, but its 120 tanks
+  differ from the scenario's remembered 116; resolve counting basis before
+  changing gameplay. Marmon-Herrington Mk III cars are documented in KDG
+  squadrons, not proven for all of composite unit 305 or the painted model.
   Counter art for mixed Matilda/Valentine and later Crusader/Stuart brigades
   still represents only a predominant/typical type; 7th Armoured Brigade now
   shows an A13 rather than a generic Crusader, but also included A10s and
   Crusaders. Confirm equipment by formation and date before claiming every
   unit is depicted exactly.
-  The 7th Bersaglieri now has its own feathered-helmet infantry variant;
-  8th and 9th Bersaglieri are still shown as generic motorised lorries,
-  without the distinctive troops. Verify their 1941 transport mix and
-  devise readable unit-specific art without pretending all men rode motorcycles.
+  The 7th Bersaglieri has its own feathered-helmet infantry variant;
+  8th and 9th now have an open-lorry variant with feathered riders. The
+  vehicle is illustrative. Verify each regiment's dated lorry/motorcycle
+  mix: a single counter cannot claim all its troops rode either type.
 - **[build] Air visuals:** the selector illustrates RAF and Axis fighter,
   bomber and reconnaissance choices using representative silhouettes, but
   its air points pool multiple aircraft, national air arms and missions.
@@ -122,9 +132,10 @@ Publishing:
   is a candidate; its dates are from memory.
 - **[build]** Recording golden games, then freezing the Python engine as the
   reference (`PLAN.md`, "Order of work", steps 3 and 4). Not begun.
-- **[build]** The art in `docs/BOM.md`: four counter pictures missing (the
-  three armoured cars and the British HQ), three of the wrong subject (the
-  British tank and gun, the German gun), nine stopgaps cut from the sheets.
+- **[build]** Finish the historically checked counter subjects in
+  `docs/COUNTER_AUDIT.md`: all 18 nation/kind defaults now have picture files
+  and additional formation variants, but several pictured models, mixed-unit
+  fleets and old sheet-cut stopgaps still need dated evidence or replacement.
   A window icon and a title screen do not exist.
 
 ## 4. Numbers to tune

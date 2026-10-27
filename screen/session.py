@@ -58,7 +58,9 @@ LEGACY_CRUSADER_ART = {(306, "1st Army Tank Brigade"): "matilda",
                       (335, "New Zealand Divisional Cavalry"): "carrier",
                       (104, "Halfaya garrison"): "flak88",
                       (125, "Panzerjaeger-Abteilungen 39 und 605"): "antitank",
-                      (183, "7 Reggimento bersaglieri"): "bersaglieri"}
+                      (183, "7 Reggimento bersaglieri"): "bersaglieri",
+                      (152, "8 Reggimento bersaglieri"): "bersaglieri_motorised",
+                      (163, "9 Reggimento bersaglieri"): "bersaglieri_motorised"}
 BY_UNIT = ("standing", "pending", "said")              # kept by side, then by unit id: text turns the ids into words
 
 
@@ -69,6 +71,7 @@ class Session:
         self.scripted = scripted or {}
         self.nation = {u["id"]: u.get("nation", "cw" if u["side"] == "cw" else "de") for u in scenario["units"]}
         self.counter_art = {u["id"]: u["counter_art"] for u in scenario["units"] if "counter_art" in u}
+        self.art_note = {u["id"]: u["art_note"] for u in scenario["units"] if "art_note" in u}
         if scenario["id"] in ("crusader", "sidi_rezegh"):
             for u in scenario["units"]:
                 variant = LEGACY_CRUSADER_ART.get((u["id"], u["name"]))

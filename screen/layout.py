@@ -141,7 +141,7 @@ def layers(size, opened, collapsed=False):
 def air_controls(size, opened=False, collapsed=False):
     """Persistent air-effort selector in the message strip; choices rise over the map."""
     area = areas(size, collapsed)["bar"]
-    button = pygame.Rect(area.right - 186, area.y + 2, 174, area.h - 4)
+    button = pygame.Rect(area.right - 206, area.y + 2, 194, area.h - 4)
     out = {"air": button}
     if opened:
         for n, choice in enumerate(("support", "interdict", "recon")):

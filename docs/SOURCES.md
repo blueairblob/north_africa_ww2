@@ -75,7 +75,8 @@ Not sourced: the men and guns of every unit are worked out from its
 establishment (about 800 men to a battalion), not taken from a strength
 return; the split of the German tanks between the two panzer regiments,
 Ariete's share of the Italian tanks and 32nd Army Tank Brigade's strength are
-from memory. All are marked in the scenario file.
+from memory. All are marked in the scenario file, except for the separately cited Panzerregiment 5
+research lead below; its scenario figure is not yet updated.
 
 ## The enemy's strength, and the weight of an HQ (RULES 14.4, 14.6, 10.4.5)
 
@@ -230,6 +231,41 @@ https://www.ajol.info/index.php/smsajms/article/download/217929/205533 .
 The existing scenario sources name 4th Armoured's Stuarts and 22nd Armoured's
 later mixed Crusaders and Stuarts. The 1st and 32nd Army Tank Brigades were
 mixed formations; the Matilda is a representative, **not** their entire kit.
+Bryan Perrett, *British Tanks in N. Africa 1940–42*, "The Tank Brigades",
+identifies 8 RTR (1st Army Tank Brigade) with Valentines, 42 and 44 RTR
+with Matildas; in 32nd Army Tank Brigade at Tobruk, 1 RTR had cruiser tanks
+while 4 RTR and a squadron of 7 RTR had infantry tanks:
+https://cartalana.com/026-04.php . A separate historical equipment
+reconstruction, "Matilda Operation Crusader 1941", estimates 68 Matildas
+and 28 cruisers plus light tanks within the Tobruk garrison brigade, but
+these are *not* a verified brigade return and must not replace scenario
+strengths: https://mikesresearch.com/2018/10/28/matilda-operation-crusader-1941/ .
+The in-game picture hover notes for 306 and 307 describe composition, not
+precise shares.
+
+An online transcription of the Commander Royal Artillery Tobruk Fortress
+war diary's **5 November 1941** order of battle records 64 25-pounders
+out of 104 field and medium guns, plus 18-pounders, 4.5-inch howitzers and
+guns, 60-pounders, and captured Italian 75/100/149 mm guns:
+https://rommelsriposte.com/2014/05/08/ . The transcription explicitly
+places some of those guns with the Polish brigade and Fortress command, so
+it cannot establish 70th Division artillery unit 354's *own* 72-gun count.
+The 25-pounder remains a representative icon; verify boundaries and dated
+strengths against original war diaries before modifying the scenario.
+
+A 2021 *Scientia Militaria* analysis by Andreas Biermann, drawing on German
+formation and tank returns for **17–19 November 1941**, lists Panzerregiment
+5 as 35 Panzer II, 68 Panzer III and 17 Panzer IV. Panzer III is therefore
+a majority **representative**, not the whole regiment. Its 120 total
+differs from scenario unit 121's unverified `tanks: 116`; do not change
+strength or balance until the return's operational/allocated basis and
+scenario interpretation have been reconciled. The same study identifies
+A/B squadrons of the King's Dragoon Guards with South African-built
+Marmon-Herrington Mk III armoured cars. This establishes a component of
+composite unit 305, not its entire fleet or that the painted generic car
+matches the exact Mk III chassis; its picture remains a candidate:
+https://rommelsriposte.com/wp-content/uploads/2021/06/1319-article-text-3524-1-10-20210603.pdf .
+
 
 The new 480 × 288 Commonwealth Crusader and Stuart sprites were generated
 specifically for this project with OpenAI image generation on 26 October
@@ -278,11 +314,39 @@ Hurricanes, Tomahawks, Beaufighters, Blenheims, Marylands and Boston
 reconnaissance aircraft. Its timeline also lists German Ju 87 and Ju 88,
 Bf 109 and Bf 110 in the theatre:
 https://www.rafmuseum.org.uk/research/research-enquiries/history-of-aviation-timeline/british-military-aviation/1941-2/ .
-`screen/pictures.aircraft` draws original simplified Hurricane, Blenheim and
-Boston examples for Commonwealth air effort and Ju 87 and Ju 88 examples for
-Axis effort. AWM's transcription of its Australian military aircraft chart
+`screen/pictures.aircraft` draws original simplified Commonwealth Hurricane,
+Tomahawk, Blenheim and Boston examples, and Axis Ju 87, Ju 88, Macchi C.200
+and Bf 109 examples. AWM's transcription of its Australian military aircraft chart
 documents Italian Macchi C.200 fighters and Ju 87 dive bombers in the region:
 https://transcribe.awm.gov.au/transcription/item/awm20241164-2 .
+For the **motorised Bersaglieri counter**, the Italian Army's Ariete history
+lists 8th Bersaglieri in Ariete from 1938. Historical orders of battle for
+**1 November 1941**, compiled from the Italian *Seconda Offensiva Britannica
+in Africa Settentrionale*, list its V and XII motorised battalions and the
+9th Bersaglieri in Trieste with motorised battalions and a motorcycle
+battalion (the document also lists further/support companies and shortages):
+https://www.esercito.difesa.it/en/organization/operational-land-forces-command/multinational-division-south-mnd-s/132nd-ariete-armoured-brigade/the-history/123632.html ;
+https://www.generalstaff.org/NAF/Pt_I_1941-1942/941ikaa.pdf ;
+https://www.generalstaff.org/NAF/Pt_I_1941-1942/941ikab.pdf . These
+compiled inventories are not the original dated regimental vehicle returns.
+The open-lorry `it_bersaglieri_motorised.png` is illustrative transport plus
+Bersaglieri plumes, **not** an identification of either regiment's lorry
+make, count, or claim that its motorcycle troops rode lorries. OpenAI image
+generation, 27 October 2026, used only this project's own Italian lorry and
+7th Bersaglieri sprites as reference; the generated alpha image was
+trimmed, fitted with `countergen.cut.fitted` and added as an original asset.
+
+The RAF Museum also lists Curtiss Tomahawks among Crusader fighters. The
+German Federal Archives' Tessin unit-history volume records JG 27 in the
+North African theatre in 1941 and Me 109 'trop' equipment for the formation:
+https://www.bundesarchiv.de/assets/bundesarchiv/de/Downloads/Tessin/Bd_14_ocr.pdf .
+Original simplified Tomahawk and Bf 109 shapes now appear as *secondary*
+fighter examples alongside the Hurricane and Macchi on the air button. The
+second silhouette is not a second air point or proof of a particular sortie.
+At the small in-game size, the two fighter silhouettes cannot reliably be
+identified by outline alone, so each has a named hover target; the air
+choice remains shared across both icons.
+
 The Italian Macchi is shown on the Axis menu button to avoid implying that
 Axis air meant only the Luftwaffe. No exact Axis reconnaissance type has
 been verified for Operation Crusader, so its icon is deliberately anonymous.

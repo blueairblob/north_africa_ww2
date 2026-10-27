@@ -72,13 +72,24 @@ def test_crusader_formations_choose_distinct_representative_armour_art():
     assert {uid: s.counter_art.get(uid) for uid in (306, 307, 311, 312, 313)} == {
         306: "matilda", 307: "matilda", 311: "stuart", 312: "a13", 313: None}
     assert Session.from_save(s.to_save(), GMAP).counter_art == s.counter_art
+    assert {uid: s.art_note[uid] for uid in (305, 306, 307, 312, 354, 163, 121)} == {
+        305: "Car shown; KDG used Marmon-Herrington Mk III.",
+        121: "Panzer III shown; 5th also fielded II and IV.",
+        306: "Matilda shown; 8 RTR also had Valentines.",
+        307: "Matilda shown; 1 RTR had cruiser tanks.",
+        312: "A13 shown; verify the other cruiser types.",
+        354: "25-pounder shown; Tobruk used mixed guns.",
+        163: "Open lorry shown; 9th also had motorcycles.",
+    }
+    assert Session.from_save(s.to_save(), GMAP).art_note == s.art_note
     legacy = s.to_save()
     for spec in legacy["scenario"]["units"]:
         spec.pop("counter_art", None)
     assert Session.from_save(legacy, GMAP).counter_art == s.counter_art
     assert s.counter_art[335] == "carrier"
     assert s.counter_art[183] == "bersaglieri"
-    assert all(s.counter_art.get(uid) is None for uid in (141, 142, 152, 163, 171, 172))
+    assert {uid: s.counter_art[uid] for uid in (152, 163)} == {152: "bersaglieri_motorised", 163: "bersaglieri_motorised"}
+    assert all(s.counter_art.get(uid) is None for uid in (141, 142, 161, 162, 171, 172))
     assert s.counter_art.get(305) is None  # wheeled British armoured cars are not carriers
     assert {uid: s.counter_art.get(uid) for uid in (104, 106, 113, 123, 125, 134)} == {
         104: "flak88", 106: None, 113: None, 123: None, 125: "antitank", 134: None}
@@ -99,6 +110,10 @@ def test_crusader_formations_choose_distinct_representative_armour_art():
     regular = painter.sprite("it", "foot", (100, 60))
     assert bersaglieri is not None and regular is not None
     assert pygame.image.tostring(bersaglieri, "RGBA") != pygame.image.tostring(regular, "RGBA")
+    mounted = painter.sprite("it", "motorised", (100, 60), "bersaglieri_motorised")
+    truck = painter.sprite("it", "motorised", (100, 60))
+    assert mounted is not None and truck is not None
+    assert pygame.image.tostring(mounted, "RGBA") != pygame.image.tostring(truck, "RGBA")
 
     app = App(s, size=(900, 560))
     selected = []
@@ -109,6 +124,16 @@ def test_crusader_formations_choose_distinct_representative_armour_art():
         return original(nation, kind, size, variant)
 
     app.painter.sprite = record
+    app.ui.selected = 307
+    app.ui.alone = True
+    app.paint(pygame.Surface(app.size))
+    assert any(tip == s.art_note[307] for _, tip in app.painter.tips)
+    app.ui.alone = False
+    app.ui.selected = 305
+    app.ui.alone = True
+    app.paint(pygame.Surface(app.size))
+    assert any(tip == s.art_note[305] for _, tip in app.painter.tips)
+    app.ui.alone = False
     for uid, variant in ((306, "matilda"), (311, "stuart"), (312, "a13"), (313, None)):
         selected.clear()
         app.ui.selected = uid
@@ -120,6 +145,11 @@ def test_crusader_formations_choose_distinct_representative_armour_art():
     assert ("cw", "recon", "carrier") in selected
     axis_app = App(Session(scenarios.load("crusader"), GMAP, humans=["axis"]), size=(900, 560))
     axis_app.painter.sprite = record
+    axis_app.ui.selected = 121
+    axis_app.ui.alone = True
+    axis_app.paint(pygame.Surface(axis_app.size))
+    assert any(tip == axis_app.session.art_note[121] for _, tip in axis_app.painter.tips)
+    axis_app.ui.alone = False
     for uid, variant in ((104, "flak88"), (113, None), (125, "antitank")):
         selected.clear()
         axis_app.ui.selected = uid
@@ -129,6 +159,11 @@ def test_crusader_formations_choose_distinct_representative_armour_art():
     axis_app.ui.selected = 183
     axis_app.paint(pygame.Surface(axis_app.size))
     assert ("it", "foot", "bersaglieri") in selected
+    for uid in (152, 163):
+        selected.clear()
+        axis_app.ui.selected = uid
+        axis_app.paint(pygame.Surface(axis_app.size))
+        assert ("it", "motorised", "bersaglieri_motorised") in selected
 
 
 def test_every_painted_variant_has_a_transparent_fitted_canvas():
@@ -137,6 +172,7 @@ def test_every_painted_variant_has_a_transparent_fitted_canvas():
                  "art/counters/variants/cw_matilda.png",
                  "art/counters/variants/cw_stuart.png", "art/counters/variants/cw_a13.png",
                  "art/counters/variants/cw_carrier.png", "art/counters/variants/it_bersaglieri.png",
+                 "art/counters/variants/it_bersaglieri_motorised.png",
                  "art/counters/artist/de_guns.png", "art/counters/variants/de_flak88.png",
                  "art/counters/variants/de_antitank.png"):
         im = pygame.image.load(str(Path(__file__).parent.parent / name))
@@ -196,5 +232,5 @@ def test_counter_audit_accounts_for_each_crusader_unit_and_art_selector():
         key = nation, kind, variant
         assert key not in actual, key
         actual[key] = ids
-    assert len(actual) == 25
+    assert len(actual) == 26
     assert actual == dict(expected)

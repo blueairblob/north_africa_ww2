@@ -133,13 +133,15 @@ def test_f12_reports_capture_errors_without_interrupting_the_game(tmp_path, monk
 def test_air_selector_has_distinct_1941_theatre_aircraft_silhouettes():
     from screen.pictures import AIR_EXAMPLES, aircraft
     assert AIR_EXAMPLES == {
-        "cw": {"button": "hurricane", "support": "hurricane", "interdict": "blenheim", "recon": "boston"},
-        "axis": {"button": "macchi", "support": "stuka", "interdict": "ju88", "recon": "observer"},
+        "cw": {"button": "hurricane", "fighter_alt": "tomahawk", "support": "hurricane",
+               "interdict": "blenheim", "recon": "boston"},
+        "axis": {"button": "macchi", "fighter_alt": "bf109", "support": "stuka",
+                 "interdict": "ju88", "recon": "observer"},
     }
     for size in ((23, 21), (80, 60)):
         silhouettes = {}
         for side in ("cw", "axis"):
-            for choice in ("button", "support", "interdict", "recon"):
+            for choice in ("button", "fighter_alt", "support", "interdict", "recon"):
                 surface = pygame.Surface(size)
                 surface.fill("white")
                 aircraft(surface, side, surface.get_rect(), (35, 25, 18), (230, 210, 160), choice)
@@ -147,7 +149,13 @@ def test_air_selector_has_distinct_1941_theatre_aircraft_silhouettes():
                 assert pixels != b"\xff" * len(pixels)
                 silhouettes[side, choice] = pixels
         assert silhouettes["cw", "button"] != silhouettes["axis", "button"]
+        # Unidentified Axis reconnaissance must not show twin engine nacelles.
+        blank = pygame.Surface(size)
+        blank.fill("white")
+        aircraft(blank, "axis", blank.get_rect(), (35, 25, 18), (230, 210, 160), "recon")
+        assert blank.get_at((round(size[0] * 0.29), round(size[1] * 0.24)))[:3] == (255, 255, 255)
         for side in ("cw", "axis"):
+            assert silhouettes[side, "button"] != silhouettes[side, "fighter_alt"]
             assert len({silhouettes[side, choice] for choice in ("support", "interdict", "recon")}) == 3
 
 
@@ -159,6 +167,16 @@ def test_air_menu_identifies_examples_without_assigning_a_type_to_air_points():
         app.ui.air_open = True
         app.paint(pygame.Surface(app.size))
         controls = layout.air_controls(app.size, True)
+        assert controls["air"].w == 194  # two fighter examples and a legible order label
+        from screen.pictures import AIR_EXAMPLES, AIR_LABELS
+        fighters = [AIR_LABELS[AIR_EXAMPLES[side][choice]] for choice in ("button", "fighter_alt")]
+        assert any(rect == controls["air"] and all(model in words for model in fighters)
+                   for rect, words in app.painter.tips)
+        for offset, model in zip((4, 32), fighters):
+            icon = pygame.Rect(controls["air"].x + offset, controls["air"].y + 3, 27, 24)
+            assert any(rect == icon and words.startswith(model + ": fighter example")
+                       for rect, words in app.painter.tips)
+            assert next(words for rect, words in app.painter.tips if rect.collidepoint(icon.center)).startswith(model)
         for choice, model in zip(("support", "interdict", "recon"), examples):
             assert any(rect == controls[choice] and model in words and "pool multiple types" in words
                        for rect, words in app.painter.tips)

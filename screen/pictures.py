@@ -56,11 +56,13 @@ def picture(surface, kind, box, ink, pale):
 
 
 AIR_EXAMPLES = {
-    "cw": {"button": "hurricane", "support": "hurricane", "interdict": "blenheim", "recon": "boston"},
-    "axis": {"button": "macchi", "support": "stuka", "interdict": "ju88", "recon": "observer"},
+    "cw": {"button": "hurricane", "fighter_alt": "tomahawk", "support": "hurricane",
+           "interdict": "blenheim", "recon": "boston"},
+    "axis": {"button": "macchi", "fighter_alt": "bf109", "support": "stuka",
+             "interdict": "ju88", "recon": "observer"},
 }
-AIR_LABELS = {"hurricane": "Hurricane", "blenheim": "Blenheim", "boston": "Boston",
-              "macchi": "Macchi C.200", "stuka": "Ju 87", "ju88": "Ju 88",
+AIR_LABELS = {"hurricane": "Hurricane", "tomahawk": "Tomahawk", "blenheim": "Blenheim", "boston": "Boston",
+              "macchi": "Macchi C.200", "bf109": "Bf 109", "stuka": "Ju 87", "ju88": "Ju 88",
               "observer": "unspecified reconnaissance aircraft"}
 
 
@@ -68,7 +70,8 @@ def aircraft(surface, side, box, ink, pale, choice="button"):
     """Original top-view examples for pooled air effort, *not* one type per sortie.
 
     RAF Museum's 18 November 1941 Crusader entry documents the Allied models;
-    AWM's contemporary recognition material documents the theatre's Axis types.
+    AWM's contemporary recognition material documents the theatre's Axis types,
+    and Bundesarchiv places Bf 109-equipped JG 27 in the North African campaign.
     'observer' is deliberately anonymous: no Axis reconnaissance type or unit
     has been verified for the scenario. No historical illustration is copied.
     """
@@ -79,8 +82,12 @@ def aircraft(surface, side, box, ink, pale, choice="button"):
     wings = {
         "hurricane": [(0.06, 0.49), (0.37, 0.35), (0.63, 0.35), (0.94, 0.49),
                       (0.94, 0.59), (0.62, 0.51), (0.38, 0.51), (0.06, 0.59)],
+        "tomahawk": [(0.06, 0.47), (0.39, 0.36), (0.61, 0.36), (0.94, 0.47),
+                      (0.91, 0.58), (0.62, 0.54), (0.38, 0.54), (0.09, 0.58)],
         "macchi": [(0.05, 0.43), (0.36, 0.37), (0.64, 0.37), (0.95, 0.43),
                    (0.93, 0.55), (0.62, 0.53), (0.38, 0.53), (0.07, 0.55)],
+        "bf109": [(0.09, 0.40), (0.39, 0.36), (0.61, 0.36), (0.91, 0.40),
+                  (0.93, 0.54), (0.63, 0.53), (0.37, 0.53), (0.07, 0.54)],
         "stuka": [(0.04, 0.48), (0.26, 0.43), (0.33, 0.34), (0.67, 0.34),
                   (0.74, 0.43), (0.96, 0.48), (0.96, 0.62), (0.7, 0.56),
                   (0.62, 0.5), (0.38, 0.5), (0.3, 0.56), (0.04, 0.62)],
@@ -95,8 +102,9 @@ def aircraft(surface, side, box, ink, pale, choice="button"):
     }
     wing = wings[model]
     pygame.draw.polygon(surface, ink, pts(wing))
-    twins = model in ("blenheim", "boston", "ju88", "observer")
-    tail = (0.16, 0.84) if twins else (0.22, 0.86)
+    twins = model in ("blenheim", "boston", "ju88")
+    # Unidentified reconnaissance must not assert two engines by drawing nacelles.
+    tail = (0.16, 0.84) if twins or model == "observer" else (0.22, 0.86)
     pygame.draw.polygon(surface, ink, pts([(tail[0], tail[1]), (0.44, 0.82),
                                           (0.44, 0.19 if twins else 0.15), (0.5, 0.04),
                                           (0.56, 0.19 if twins else 0.15), (0.56, 0.82),

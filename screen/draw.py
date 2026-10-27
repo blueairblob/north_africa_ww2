@@ -949,6 +949,9 @@ class Painter:
             surface.blit(art, area)
         else:
             picture(surface, u["type"], area.inflate(-30, -24), T.INK, T.TILE)
+        if note := session.art_note.get(u["id"]):
+            # Keep the hover target off the strength and movement facts beside the picture.
+            self.tips.append((pygame.Rect(x + w // 2 - 48, y + strip + 4, 96, 108), note))
         now, level = T.strength_now(u), T.morale(u["cohesion"])
         hexes = u["fuel"] // U.step_fuel(u) if U.is_vehicle(u) else None
         pace = session.allowance([u]) // paths.OPEN_COST
@@ -1111,11 +1114,19 @@ class Painter:
         points = session.view["air_points"]
         pygame.draw.rect(surface, T.BUTTON_ON if ui.air_open else T.BUTTON, button, border_radius=4)
         pygame.draw.rect(surface, T.INK, button, 1, border_radius=4)
-        aircraft(surface, session.side, pygame.Rect(button.x + 4, button.y + 3, 27, 24), T.INK, T.BUTTON_ON)
-        self.fitted(surface, f"AIR · {current.upper()}", (button.x + 88, button.y + 12), 13,
-                    T.INK, 110, 10)
+        primary_icon = pygame.Rect(button.x + 4, button.y + 3, 27, 24)
+        alternate_icon = pygame.Rect(button.x + 32, button.y + 3, 27, 24)
+        aircraft(surface, session.side, primary_icon, T.INK, T.BUTTON_ON)
+        aircraft(surface, session.side, alternate_icon, T.INK, T.BUTTON_ON, "fighter_alt")
+        self.fitted(surface, f"AIR · {current.upper()}", (button.x + 118, button.y + 12), 13,
+                    T.INK, 106, 10)
         self.text(surface, "▲" if ui.air_open else "▼", (button.right - 18, button.y + 6), 12, T.INK, True)
-        self.tips.append((button, "Pooled air effort (1–3); " + AIR_LABELS[AIR_EXAMPLES[session.side]["button"]] + " is an example."))
+        primary, alternate = (AIR_LABELS[AIR_EXAMPLES[session.side][choice]]
+                              for choice in ("button", "fighter_alt"))
+        # The named targets precede the parent button: Painter.tip shows the first match.
+        for icon, model in ((primary_icon, primary), (alternate_icon, alternate)):
+            self.tips.append((icon, f"{model}: fighter example; air points pool types."))
+        self.tips.append((button, f"Pooled air effort (1–3); {primary} and {alternate} are examples."))
         if not ui.air_open:
             return
         box = pygame.Rect(controls["support"].x - 4, controls["support"].y - 44, 222,

@@ -54,7 +54,7 @@ separates type-level evidence from unit-inventory checks still required.
 | `it_armour` | M13/40 | 1 | unmarked painted riveted M13/40 with paired road wheels | generated original | In use; precise mark and mix unverified | none |
 | `it_foot` | three infantrymen, short-rimmed M33 helmets | 11 | painted soldier, repeated in file | generated original | In use; kit and headgear varied among formations | none |
 | `it_guns` | 75/27 modello 06 field gun | 7 | painted shielded spoked-wheel field gun | generated original | In use; mixed-calibre regiments represented by one type | none |
-| `it_motorised` | Lancia 3Ro-pattern lorry | 4 | unmarked painted long-bed lorry | generated original | In use; exact formation fleets unknown | none |
+| `it_motorised` | Lancia 3Ro-pattern lorry | 2 | unmarked painted long-bed lorry | generated original | In use for 65th/66th; exact fleets unknown | none |
 | `it_recon` | AB41 candidate for RECAM (mixed; original photograph not checked) | 1 | painted armoured car with side spares | generated original | In use provisionally; do not infer whole force was AB41 | none |
 | `it_hq` | Fiat staff car with a pennant | 9 | a 1930s tourer, tricolour pennant | owner's AI picture, `art/axis_hq_cars/it_hq.png` | In use | none |
 
@@ -71,11 +71,17 @@ representative open-topped tracked carrier for New Zealand Divisional Cavalry
 also had light tanks; its `cars: 30` scenario field remains an unverified
 rules/strength abstraction, not a count of armoured cars.
 
+The 8th and 9th Bersaglieri (units 152 and 163) use an original
+`it_bersaglieri_motorised.png` variant: an open, unmarked lorry with
+feathered troops, instead of the covered lorry used by the 65th and 66th.
+The precise vehicle allocation and motorcycle component remain unknown;
+the riders identify the troops, not an exact regiment equipment return.
+
 Italian 7th Bersaglieri (unit 183) uses an original infantry variant
 `art/counters/variants/it_bersaglieri.png` with dark feathered M33 helmets,
 not the eleven other foot units' plain-helmeted `it_foot.png`. The 8th and
-9th Bersaglieri are motorised scenario units; their current lorry picture
-still does not distinguish Bersaglieri from other motorised infantry.
+9th Bersaglieri are motorised scenario units; their separate open-lorry
+variant now distinguishes their troops from ordinary motorised infantry.
 
 Two German gun variants complete the first subject correction:
 `de_flak88.png` (deployed 8.8 cm Flak, Halfaya garrison, unit 104) and
@@ -86,8 +92,8 @@ the whole combined unit. Field/mixed artillery units 106, 113, 123 and 134
 show the painted default leFH 18.
 
 Currently: all 18 nation/kind defaults have images (16 original painted
-subjects and 2 sheet-cut infantry stopgaps). Two armour, one carrier and two German
-gun variants are additional. The three new recon types are provisional
+subjects and 2 sheet-cut infantry stopgaps). Additional armour, carrier, Bersaglieri and German gun variants
+supply formation-specific representative subjects. The three new recon types are provisional
 representative pictures: exact model mixes, RECAM's photographed AB41 and
 the Halfaya/Panzerjäger gun groups remain unverified. See `docs/COUNTERS.md`
 for unresolved historic types.
@@ -102,7 +108,7 @@ The other forms of the same pictures, all in use, none needing work:
 | The drawn set: the fallback for any picture the artist has not done | `art/counters/<nation>_<kind>.svg` and `.png`, 18 of each | drawn set |
 | NATO-style symbols, the option (F3) | none; drawn each time | drawn in code (`Painter.symbol`) |
 | Small pictures in the map's key | none; drawn each time | drawn in code (`screen/pictures.py`) |
-| Air selector silhouettes | illustrative Hurricane, Blenheim, Boston; Macchi C.200, Ju 87, Ju 88, and anonymous Axis reconnaissance; pooled air points, not aircraft unit counters | drawn in code (`screen/pictures.aircraft`) |
+| Air selector silhouettes | illustrative Hurricane, Tomahawk, Blenheim, Boston; Macchi C.200, Bf 109, Ju 87, Ju 88, and unidentified Axis reconnaissance; pooled air points, not aircraft unit counters | drawn in code (`screen/pictures.aircraft`) |
 
 ## 2. Parts of a counter and a tile
 

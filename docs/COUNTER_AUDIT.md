@@ -2,7 +2,7 @@
 
 The scenario has **91 ground units** and no aircraft units. A unit's side,
 `nation`, `type` and optional `counter_art` selector determine its picture
-(`screen/session.py`, `screen/draw.py`). The 25 rows below are **all** current
+(`screen/session.py`, `screen/draw.py`). The 26 rows below are **all** current
 combinations; `tests/test_counters.py` checks that their IDs and selectors
 match the scenario and that their assets exist. This is coverage of the
 **depiction**, not proof that each unit's equipment is historically verified.
@@ -21,15 +21,15 @@ change the historical mixture without changing the sprite.
 | --- | --- | --- | --- | --- | --- |
 | cw | armour | a13 | 312 | A13 cruiser; Queen's Royal Hussars Museum says it made up roughly half of 7th Armoured Brigade | A10 and Crusader proportions and changes by date |
 | cw | armour | default | 313 | Crusader cruiser; representative for 22nd Armoured Brigade | later Crusader/Stuart re-equipment by date |
-| cw | armour | matilda | 306, 307 | Matilda II; mixed army-tank brigades | Valentine share in 1st, Tobruk garrison/32nd returns; old sprite's striped camouflage |
+| cw | armour | matilda | 306, 307 | Matilda II representative; 1st also had 8 RTR Valentines; Tobruk 32nd included 1 RTR cruiser tanks (unit-specific art hover notes) | Dated strength by regiment; old sprite's striped camouflage |
 | cw | armour | stuart | 311 | M3 Stuart; 4th Armoured Brigade | losses and replenishment by type and date |
 | cw | foot | default | 308, 341, 342, 343, 351, 352, 353, 361, 362, 363 | Brodie-helmeted tropical riflemen | Polish, Indian, South African and Tobruk kit/uniform by brigade |
-| cw | guns | default | 323, 334, 344, 354, 364 | 25-pounder field gun; photographed at Tobruk in 1941 | batteries by division; mixed/captured Tobruk guns, especially 354 |
+| cw | guns | default | 323, 334, 344, 354, 364 | 25-pounder field gun; 5 November 1941 Tobruk artillery return lists 64 25-pounders out of 104 field/medium guns, with other types (354 has art hover note) | batteries by division; 354 aggregates mixed Tobruk artillery but its scenario `guns: 72` is not this return |
 | cw | hq | default | 301, 302, 303, 310, 320, 330, 340, 350, 360 | generic closed staff car | period make and national HQ fleets, not shown as established type |
 | cw | motorised | default | 304, 314, 321, 322, 331, 332, 333 | Bedford OY-pattern lorry | unit-specific transport, including mixed support group 314 |
 | cw | recon | carrier | 335 | open-topped carrier for NZ Divisional Cavalry | light-tank share and `cars: 30` abstraction |
-| cw | recon | default | 305 | provisional Marmon-Herrington-pattern car | composite armoured-car regiments and exact fleet |
-| de | armour | default | 111, 121 | six-wheel Panzer III, not an exclusive type | mixed Panzer II/III/IV and mark proportions by regiment |
+| cw | recon | default | 305 | Marmon-Herrington-pattern car; a 1941 study identifies Mk III cars in KDG A/B squadrons (art hover note) | Other regiments within composite unit, precise mix and sprite Mk III silhouette |
+| de | armour | default | 111, 121 | six-wheel Panzer III, not an exclusive type; a dated return cited for Regiment 5 (121) lists 35 Panzer II, 68 III, 17 IV (art hover note) | Regiment 8 (111) mixture and dated marks; 5th scenario `tanks: 116` differs from study’s 120, not changed in art pass |
 | de | foot | default | 131, 132, 133 | tropical-field-cap riflemen | dated dress of regular and composite Afrika regiments |
 | de | guns | antitank | 125 | towed anti-tank gun, not an assault gun | calibres and combined 39/605 inventory |
 | de | guns | default | 106, 113, 123, 134 | 10.5 cm leFH 18 field howitzer | Boettcher, 33, 155 and Division Afrika mixed batteries |
@@ -42,7 +42,8 @@ change the historical mixture without changing the sprite.
 | it | foot | default | 105, 141, 142, 171, 172, 181, 182, 191, 192, 201, 202 | M33-helmeted riflemen | Bardia garrison and ten line regiments' exact kit |
 | it | guns | default | 143, 153, 164, 173, 184, 193, 203 | 75/27 field gun, not every battery's calibre | divisional mixtures, particularly Ariete, Trieste and mobile 173 |
 | it | hq | default | 102, 103, 140, 150, 160, 170, 180, 190, 200 | generic tourer with Italian pennant | exact staff cars and pennant colour |
-| it | motorised | default | 152, 161, 162, 163 | Lancia 3Ro-pattern lorry | 8th and 9th Bersaglieri identity/transport; 65th/66th fleet |
+| it | motorised | bersaglieri_motorised | 152, 163 | Open unmarked lorry with feathered Bersaglieri riders; representative motor transport only | 9th included a motorcycle battalion; lorry and motorcycle proportions by regiment and date |
+| it | motorised | default | 161, 162 | Lancia 3Ro-pattern lorry | 65th/66th fleet |
 | it | recon | default | 107 | provisional AB41 candidate for mixed RECAM | archived photograph and AB41/L6/other-vehicle proportions |
 
 ## Aircraft are pooled, not counter units
@@ -50,8 +51,10 @@ change the historical mixture without changing the sprite.
 The scenario stores each side's air **points**, not plane counts or named air
 squadrons. The menu shows *examples* chosen from the RAF Museum's 18 November
 1941 Crusader entry and documented Axis theatre types (`docs/SOURCES.md`):
-Commonwealth Hurricane, Blenheim, Boston; Axis Macchi C.200, Ju 87, Ju 88.
-An **anonymous** Axis reconnaissance icon avoids an unsupported precise type.
+Commonwealth Hurricane and Tomahawk fighters, Blenheim and Boston examples;
+Axis Macchi C.200 and Bf 109 fighters, Ju 87 and Ju 88 examples.
+An **anonymous** Axis reconnaissance icon has no engine nacelles; it avoids
+asserting a specific two-engine type without evidence.
 The compiled 18 November Axis order of battle lists `2(H)/14` as a
 reconnaissance Staffel, and a 2021 historical study describes its
 reconnaissance on 19 November. An Hs 126 is an army-cooperation candidate,

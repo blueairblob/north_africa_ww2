@@ -8,6 +8,15 @@ transport type, not a documented vehicle return for all four formations.
 
 **Priority:** the marked sheet cut was replaced; vehicle allocations open.
 
+**Bersaglieri variant (27 October 2026):** `art/counters/variants/it_bersaglieri_motorised.png`
+distinguishes the 8th and 9th regiments from the ordinary 65th and 66th:
+a separate original painted open-bed lorry with three feathered riders, not a
+specific asserted truck model or an all-motorcycle regiment. The variant was
+made by OpenAI image generation from only this project's own lorry and 7th
+Bersaglieri counter as references; it was cropped by alpha and fitted to the
+original 480 × 288 transparent canvas. Its original asset is usable by this
+commercial game. Exact period transport mix remains to be documented.
+
 ## The subject
 
 The heavy Italian lorry of the war.
