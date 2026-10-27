@@ -77,16 +77,16 @@ One per unit type per nation, so that a set stays consistent.
 | Unit type | Commonwealth | German | Italian |
 | --- | --- | --- | --- |
 | Armour | Crusader (22nd Armoured); A13 Cruiser (7th Armoured, mixed); Matilda II (army tank brigades, mixed); M3 Stuart (4th Armoured) | Panzer III | M13/40 |
-| Guns | 25-pounder | 10.5 cm leFH 18 default; 8.8 cm Flak at Halfaya and towed anti-tank gun for 39/605 | 75/27 field gun representative |
+| Guns | 25-pounder | 10.5 cm leFH 18 default; 8.8 cm Flak at Halfaya and Panzerjäger I for the combined 39/605 | 75/27 field gun representative |
 | Motorised infantry | Bedford or CMP 15-cwt truck | Opel Blitz lorry | covered Lancia-pattern lorry for line infantry; open lorry with feathered riders for 8th/9th Bersaglieri (vehicle type illustrative) |
 | Foot infantry | Brodie-helmeted riflemen | tropical-field-cap riflemen | M33-helmeted riflemen; dark-plumed Bersaglieri variant for 7th Regiment |
-| Reconnaissance | Marmon-Herrington or Humber armoured car | SdKfz 222 | AB 41 |
+| Reconnaissance | Marmon-Herrington Mk III-pattern car for KDG, other cars unverified | SdKfz 222 | AB 41 |
 | HQ | a command truck, or a jeep (jeeps reached the desert only in 1942) | Kübelwagen with an aerial | a staff car |
 
 Markers, not counters: a supply lorry; a goods locomotive with one wagon for
 the railhead. The air menu now uses small example silhouettes, never unit
 counters: Commonwealth Hurricane and Tomahawk fighter examples, Blenheim
-and Boston; Axis Italian Macchi C.200 and German Bf 109 fighter examples,
+and Boston; Axis Italian Macchi C.200 (C.202 from the 26 November turn) and German Bf 109 fighter examples,
 plus Ju 87, Ju 88 and a Bf 110 reconnaissance example documented on
 23 November 1941 (`docs/SOURCES.md`). The exact 2.(H)/14 inventory and
 opening-day flights have not been established. Pooled air points cannot be
@@ -189,7 +189,7 @@ from any other game's art.
 | `foot` | three riflemen, flat-brimmed helmet, shorts | three riflemen, flared helmet | three riflemen, domed helmet |
 | `guns` | 25-pounder | 88 mm Flak on its mount | 75 mm field gun, spoked wheel |
 | `motorised` | Bedford 3-ton lorry | Opel Blitz | Lancia 3Ro |
-| `recon` | provisional Marmon-Herrington for armoured-car units; painted carrier variant for NZ cavalry | SdKfz 222 | AB 41 |
+| `recon` | painted Marmon-Herrington Mk III-pattern for KDG portion of mixed unit 305; painted Mark VI light-tank variant for NZ cavalry | SdKfz 222 | AB 41 |
 | `hq` | staff car with a pennant | Kübelwagen with a pennant | Fiat staff car with a pennant |
 
 - Plain colours, no camouflage and no markings. The nation is told by the
@@ -201,7 +201,7 @@ from any other game's art.
 - These are likenesses at 36 px, not scale drawings. Which vehicle stands for
   which arm is a choice: German divisional artillery was mostly 105 mm
   howitzers. The Commonwealth now uses explicit representative armour variants
-  for Stuart and Matilda brigades, plus a carrier for NZ Divisional Cavalry;
+  for Stuart and Matilda brigades, plus a Mark VI for NZ Divisional Cavalry;
   mixed brigades and recon groups remain approximations.
 - A picture from an artist goes in `art/counters/artist/` under the same
   name, `<nation>_<kind>.png`, on the same 480 × 288 canvas. The screen takes
@@ -224,7 +224,8 @@ brief:
 
 - The sheets have no armoured car and no headquarters. All three armoured-car
   defaults and all three HQs now have individual painted files. NZ Divisional
-  Cavalry is instead a separately painted open-topped tracked carrier variant.
+  Cavalry instead uses a separately painted Mark VI light-tank variant; the
+  original carrier painting remains an unused alternate subject.
   The car makes for aggregated recon units are representative and their full
   inventories remain to be verified.
 - The original German "artillery" sheet cell is an assault gun, not a gun on
@@ -361,7 +362,7 @@ it came from a group; the owner moved it there from the tile's corner.
   nation's colour (above).
 - **How specific a sprite is.** Usually one per nation and unit type, with
   explicit variants for Commonwealth tank brigades (Crusader, Stuart, Matilda),
-  NZ cavalry's carrier and German gun groups. The complexity
+  NZ cavalry's Mark VI and German gun groups. The complexity
   budget (`DESIGN.md` §14.1) allows a counter a symbol, a name and at most
   three numbers; the picture is the symbol, so either fits.
 
@@ -377,7 +378,7 @@ checks before it is accepted, including its origin in writing.
 
 | Priority | Pictures |
 | --- | --- |
-| 1, missing | none; the three default armoured-car subjects now have painted candidates, while NZ Divisional Cavalry separately uses a carrier variant |
+| 1, missing | none; the three default armoured-car subjects now have painted candidates, while NZ Divisional Cavalry separately uses a Mark VI variant |
 | 2, the wrong subject | none outstanding at the default German gun level; exact Halfaya, Panzerjäger and mixed artillery gun inventories still need verifying |
 | 3, redrawn one to a file | none of the twelve default subjects remains a sheet cut; unit-specific equipment and uniforms still need checking |
 

@@ -43,7 +43,7 @@ TYPE_NAME = {"armour": "Tanks", "motorised": "Motorised infantry", "foot": "Infa
 # what a step of strength stands for (docs/RULES.md 4.2.1): so many of these
 STRENGTH = {"armour": (10, "tanks"), "motorised": (800, "men"), "foot": (800, "men"), "guns": (12, "guns"),
             "recon": (15, "armoured cars")}
-CLAIMED = ("tanks", "armoured cars", "guns", "men")                 # the order a battle's claim is told in
+CLAIMED = ("tanks", "armoured cars", "scout vehicles", "guns", "men")                 # the order a battle's claim is told in
 MORALE = ("Very poor", "Poor", "Very low", "Low", "Fair", "Normal", "Good", "Very good", "Excellent")
 # the order bar: name, label, key shown
 BUTTONS = (("move", "Move", "M"), ("attack", "Attack", "A"), ("road_march", "Travel", "T"),
@@ -124,6 +124,19 @@ def morale(cohesion):
     return level, MORALE[level - 1]
 
 
+def real_noun(u, what):
+    """Wording only: NZ Div Cav mixed Mark VI tanks and Bren carriers.
+
+    Its scenario `cars` quantity is a rules abstraction, not 30 armoured cars.
+    Restrict the exception by both ID and name to avoid renaming other games'
+    units with the same ID (docs/SOURCES.md).
+    """
+    if (what in ("cars", "armoured cars") and u.get("id") == 335 and
+            u.get("name") == "New Zealand Divisional Cavalry" and u.get("type") == "recon"):
+        return "scout vehicles"
+    return "armoured cars" if what == "cars" else what
+
+
 def strength_now(u):
     """(now, at full, what) in real terms, or None for a unit whose strength is not known."""
     if "steps" not in u:
@@ -132,7 +145,7 @@ def strength_now(u):
         return HQ_STAFF, HQ_STAFF, "men"
     if u.get("real"):
         n, what, began = u["real"]
-        return n * u["steps"] // began, n, "armoured cars" if what == "cars" else what
+        return n * u["steps"] // began, n, real_noun(u, what)
     each, what = STRENGTH[u["type"]]
     return u["steps"] * each, u.get("max", u["steps"]) * each, what
 
@@ -149,7 +162,8 @@ def strength_tip(u):
     now, full, what = strength_now(u)
     if u["type"] == "hq":
         return f"a headquarters: about {now} men, a nominal figure"
-    return f"about {now:,} of {full:,} {what} ({now * 100 // max(1, full)}%, {full - now:,} lost)"
+    qualifier = "; scenario count is abstract, not a vehicle inventory" if what == "scout vehicles" else ""
+    return f"about {now:,} of {full:,} {what} ({now * 100 // max(1, full)}%, {full - now:,} lost){qualifier}"
 
 
 def strength(u):
@@ -160,7 +174,7 @@ def strength(u):
         return f"about {HQ_STAFF} men"
     if u.get("real"):                                    # the scenario's own figure, scaled by what is left (RULES 20.4.2)
         n, what, began = u["real"]
-        what = "armoured cars" if what == "cars" else what
+        what = real_noun(u, what)
         return f"about {n * u['steps'] // began:,} {what}"
     each, what = STRENGTH[u["type"]]
     return f"about {u['steps'] * each:,} {what}"

@@ -55,7 +55,7 @@ LEGACY_CRUSADER_ART = {(306, "1st Army Tank Brigade"): "matilda",
                       (307, "32nd Army Tank Brigade"): "matilda",
                       (311, "4th Armoured Brigade"): "stuart",
                       (312, "7th Armoured Brigade"): "a13",
-                      (335, "New Zealand Divisional Cavalry"): "carrier",
+                      (335, "New Zealand Divisional Cavalry"): "mkvi_light",
                       (104, "Halfaya garrison"): "flak88",
                       (125, "Panzerjaeger-Abteilungen 39 und 605"): "antitank",
                       (183, "7 Reggimento bersaglieri"): "bersaglieri",
@@ -425,9 +425,9 @@ class Session:
         """Steps lost, in real terms: "about 20 tanks"."""
         if u.get("real"):
             n, what, began = u["real"]
-            return f"about {n * steps // began:,} {'armoured cars' if what == 'cars' else what}"
+            return f"about {n * steps // began:,} {T.real_noun(u, what)}"
         return {"armour": f"about {steps * 10} tanks", "guns": f"about {steps * 12} guns",
-                "recon": f"about {steps * 15} armoured cars"}.get(u["type"], f"about {steps * 800:,} men")
+                "recon": f"about {steps * 15} {T.real_noun(u, 'cars')}"}.get(u["type"], f"about {steps * 800:,} men")
 
     def claims(self, side=None):
         """What the side claims to have knocked out of the enemy's in all its battles of the
@@ -448,7 +448,7 @@ class Session:
                     else:
                         each, what = T.STRENGTH.get(spec["type"], (T.HQ_STAFF, "men"))
                         n = each * steps
-                    what = "armoured cars" if what == "cars" else what
+                    what = T.real_noun(spec, what)
                     got[what] = got.get(what, 0) + n
             if ours and b.get("backed"):
                 behind[b["backed"]] = behind.get(b["backed"], 0) + 1

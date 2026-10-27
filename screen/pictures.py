@@ -1,6 +1,8 @@
 """Pictures for the counters, drawn here from a few shapes: a tank, a lorry, a soldier, a gun,
 an armoured car, a flag. They are the default; NATO-style symbols are the option (F3).
 A picture file in art/counters takes the place of either (docs/COUNTERS.md)."""
+from datetime import date
+
 import pygame
 
 
@@ -63,23 +65,38 @@ AIR_EXAMPLES = {
 }
 AIR_LABELS = {"hurricane": "Hurricane", "tomahawk": "Tomahawk", "blenheim": "Blenheim", "boston": "Boston",
               "macchi": "Macchi C.200", "bf109": "Bf 109", "stuka": "Ju 87", "ju88": "Ju 88",
-              "bf110": "Bf 110"}
+              "bf110": "Bf 110", "macchi202": "Macchi C.202"}
 
 
-def aircraft(surface, side, box, ink, pale, choice="button"):
+# IX Gruppo, 4° Stormo reached Martuba with C.202s on 25 November 1941.
+# The two-day scenario's next represented date is 26 November. The change
+# selects an illustration, not a squadron or a count, and does not mean the
+# earlier C.200 type was withdrawn (docs/SOURCES.md).
+C202_EXAMPLE_FROM = date(1941, 11, 26)
+
+
+def air_example(side, choice, day):
+    """A dated *example* for the pooled air-effort UI, never a unit inventory."""
+    if side == "axis" and choice == "button" and day >= C202_EXAMPLE_FROM:
+        return "macchi202"
+    return AIR_EXAMPLES[side][choice]
+
+
+def aircraft(surface, side, box, ink, pale, choice="button", *, model=None):
     """Original top-view examples for pooled air effort, *not* one type per sortie.
 
     RAF Museum's 18 November 1941 Crusader entry documents the Allied models;
     AWM's contemporary recognition material documents the theatre's Axis types,
     and Bundesarchiv places Bf 109-equipped JG 27 in the North African campaign.
     A transcribed 23 November 1941 Fliegerfuehrer Afrika report records Bf 110
-    reconnaissance sorties. Icons illustrate types, not squadron allocations.
+    reconnaissance sorties. The C.202 reaches the theatre later in November.
+    Icons illustrate types, not squadron allocations.
     No historical illustration is copied.
     """
     def pts(points):
         return [(round(box.x + x * box.w), round(box.y + y * box.h)) for x, y in points]
 
-    model = AIR_EXAMPLES[side][choice]
+    model = model or AIR_EXAMPLES[side][choice]
     wings = {
         "hurricane": [(0.06, 0.49), (0.37, 0.35), (0.63, 0.35), (0.94, 0.49),
                       (0.94, 0.59), (0.62, 0.51), (0.38, 0.51), (0.06, 0.59)],
@@ -87,6 +104,11 @@ def aircraft(surface, side, box, ink, pale, choice="button"):
                       (0.91, 0.58), (0.62, 0.54), (0.38, 0.54), (0.09, 0.58)],
         "macchi": [(0.05, 0.43), (0.36, 0.37), (0.64, 0.37), (0.95, 0.43),
                    (0.93, 0.55), (0.62, 0.53), (0.38, 0.53), (0.07, 0.55)],
+        # C.202: tapered/rounded wing and pointed inline nose, unlike the
+        # earlier radial-engined C.200's broad blunt tips and round cowl.
+        "macchi202": [(0.11, 0.43), (0.39, 0.35), (0.61, 0.35), (0.89, 0.43),
+                      (0.94, 0.48), (0.92, 0.53), (0.61, 0.51), (0.39, 0.51),
+                      (0.08, 0.53), (0.06, 0.48)],
         "bf109": [(0.09, 0.40), (0.39, 0.36), (0.61, 0.36), (0.91, 0.40),
                   (0.93, 0.54), (0.63, 0.53), (0.37, 0.53), (0.07, 0.54)],
         "stuka": [(0.04, 0.48), (0.26, 0.43), (0.33, 0.34), (0.67, 0.34),

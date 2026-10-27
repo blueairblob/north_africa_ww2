@@ -27,9 +27,9 @@ change the historical mixture without changing the sprite.
 | cw | guns | default | 323, 334, 344, 354, 364 | 25-pounder field gun; 5 November 1941 Tobruk artillery return lists 64 25-pounders out of 104 field/medium guns, with other types (354 has art hover note) | batteries by division; 354 aggregates mixed Tobruk artillery but its scenario `guns: 72` is not this return |
 | cw | hq | default | 301, 302, 303, 310, 320, 330, 340, 350, 360 | generic closed staff car | period make and national HQ fleets, not shown as established type |
 | cw | motorised | default | 304, 314, 321, 322, 331, 332, 333 | Bedford OY-pattern lorry | unit-specific transport, including mixed support group 314 |
-| cw | recon | carrier | 335 | open-topped carrier for NZ Divisional Cavalry | light-tank share and `cars: 30` abstraction |
-| cw | recon | default | 305 | Marmon-Herrington-pattern car; a 1941 study identifies Mk III cars in KDG A/B squadrons (art hover note) | Other regiments within composite unit, precise mix and sprite Mk III silhouette |
-| de | armour | default | 111, 121 | six-wheel Panzer III, not an exclusive type; a dated return cited for Regiment 5 (121) lists 35 Panzer II, 68 III, 17 IV (art hover note) | Regiment 8 (111) mixture and dated marks; 5th scenario `tanks: 116` differs from study’s 120, not changed in art pass |
+| cw | recon | mkvi_light | 335 | Mark VI light tank for NZ Divisional Cavalry; official history records 26 received by end-Oct, plus carriers (art hover note) | opening-day serviceability, later mix and `cars: 30` abstraction |
+| cw | recon | default | 305 | open-turret Marmon-Herrington Mk III-pattern car; 1941 study identifies Mk III in KDG A/B squadrons (art hover note) | Other regiments within composite unit, precise mix and variant configuration |
+| de | armour | default | 111, 121 | six-wheel Panzer III, not an exclusive type; dated divisional returns also show II and IV with both 15th/21st (art hover notes) | Regiment 8 (111) company inventory and dated marks; 5th scenario `tanks: 116` differs from study’s 120, not changed in art pass |
 | de | foot | default | 131, 132, 133 | tropical-field-cap riflemen | dated dress of regular and composite Afrika regiments |
 | de | guns | antitank | 125 | Panzerjäger I, tracked 4.7 cm gun representative of 605 (art hover note) | 39 also had towed Pak; verify combined strength, losses and command assignment |
 | de | guns | default | 106, 113, 123, 134 | 10.5 cm leFH 18 field howitzer | Boettcher, 33, 155 and Division Afrika mixed batteries |
@@ -52,9 +52,9 @@ The scenario stores each side's air **points**, not plane counts or named air
 squadrons. The menu shows *examples* chosen from the RAF Museum's 18 November
 1941 Crusader entry and documented Axis theatre types (`docs/SOURCES.md`):
 Commonwealth Hurricane and Tomahawk fighters, Blenheim and Boston examples;
-Axis Macchi C.200 and Bf 109 fighters, Ju 87 and Ju 88 examples, and a
-Bf 110 reconnaissance example. A transcribed 23 November 1941 operations
-report records Bf 110 reconnaissance sorties in the Crusader theatre
+Axis Macchi C.200 (C.202 from the 26 November turn) and Bf 109 fighters,
+Ju 87 and Ju 88 examples, and a Bf 110 reconnaissance example. A
+transcribed 23 November 1941 operations report records Bf 110 reconnaissance sorties in the Crusader theatre
 (`docs/SOURCES.md`); it does **not** identify the aircraft flown on
 18 November or establish the exact fleet of the `2(H)/14` reconnaissance
 Staffel listed in the compiled opening-day order of battle. Actual air-unit

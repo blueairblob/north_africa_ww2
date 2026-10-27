@@ -7,8 +7,10 @@ cut. Six separate lower road wheels and a short gun are visible; the two
 scenario regiments are mixed tank formations, so one silhouette represents
 only a typical type, not every tank or mark in the regiments.
 
-**Priority:** the wrong five-wheel/marked stopgap has been replaced. Specific
-marks and ratios within each regiment still need formation returns.
+**Priority:** the wrong five-wheel/marked stopgap has been replaced. Both
+regiments now have mixed-equipment hover notes: a 15th Panzer Division return lists II, III and IV for 11 and 21 November, while a separate
+17–19 November study lists the same three types for 21st Panzer Division.
+Specific regiment company marks and ratios still need original returns.
 
 ## The subject
 

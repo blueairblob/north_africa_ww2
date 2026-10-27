@@ -43,7 +43,7 @@ separates type-level evidence from unit-inventory checks still required.
 | `cw_foot` | three riflemen, Brodie helmets | 10 | painted tropical-dress rifleman, three in file | generated original | In use; representative Commonwealth dress | none |
 | `cw_guns` | 25-pounder gun-howitzer | 5 | painted shielded 25-pounder on steel disc wheels | generated original | In use; particular regimental batteries varied | none |
 | `cw_motorised` | Bedford OY-pattern 3-ton lorry | 7 | unmarked right-facing two-axle painted lorry | generated original | In use; exact formation fleets unknown | none |
-| `cw_recon` | armoured car for unit 305 (Marmon-Herrington provisional) | 1 | painted boxy Marmon-Herrington candidate | generated original | In use; exact unit inventory unverified; NZ cavalry uses carrier variant | none |
+| `cw_recon` | armoured car for unit 305 (Marmon-Herrington Mk III, KDG component) | 1 | original open-turret Mk III-pattern car | generated original from project art references | In use; other components and exact Mk III subvariant unverified; NZ cavalry uses Mark VI variant | none |
 | `cw_hq` | staff car with a pennant (which car is not settled) | 9 | painted closed staff car, red pennant | generated for this game, fitted to counter canvas | In use; historical model unconfirmed | none |
 | `de_armour` | Panzer III, short 50 mm gun | 2 | painted six-road-wheel Panzer III, no markings | generated original | In use; two mixed regiments, exact proportions unverified | none |
 | `de_foot` | three riflemen, tropical field caps | 3 | painted rifleman, three in file | generated original | In use; representative German desert dress | none |
@@ -67,11 +67,13 @@ The Matilda variant is a new original Matilda II painting, replacing the
 first sheet cut. Its muted three-tone Caunter-inspired paint is illustrative,
 not an identification of either brigade's specific vehicles or scheme.
 Neither a one-sprite-per-brigade portrayal nor the current scenario data
-can fully identify every tank within a mixed formation. `cw_carrier.png` is a
-representative open-topped tracked carrier for New Zealand Divisional Cavalry
+can fully identify every tank within a mixed formation. `cw_mkvi_light.png`
+shows a representative Mark VI light tank of New Zealand Divisional Cavalry
 (unit 335), distinct from the wheeled-car default for unit 305. The NZ force
-also had light tanks; its `cars: 30` scenario field remains an unverified
-rules/strength abstraction, not a count of armoured cars.
+also had Bren carriers, represented by the original but now unassigned
+`cw_carrier.png`. Unit 335's `cars: 30` scenario field remains an unverified
+rules/strength abstraction, labelled scout vehicles in the screen, not a
+literal count of either light tanks or armoured cars.
 
 The 8th and 9th Bersaglieri (units 152 and 163) use an original
 `it_bersaglieri_motorised.png` variant: an open, unmarked lorry with
@@ -95,7 +97,7 @@ show the painted default leFH 18.
 
 Currently: all 18 nation/kind defaults have individual painted images,
 including the Commonwealth and German infantry that replaced sheet cuts.
-Additional armour, carrier, Bersaglieri and German gun variants supply
+Additional armour, NZ Mark VI, Bersaglieri and German gun variants supply
 formation-specific representative subjects. The three recon types are
 representative pictures: exact model mixes, RECAM's reported photograph
 and full vehicle mix, and the Halfaya/Panzerjäger gun groups remain
@@ -112,7 +114,7 @@ The other forms of the same pictures, all in use, none needing work:
 | The drawn set: the fallback for any picture the artist has not done | `art/counters/<nation>_<kind>.svg` and `.png`, 18 of each | drawn set |
 | NATO-style symbols, the option (F3) | none; drawn each time | drawn in code (`Painter.symbol`) |
 | Small pictures in the map's key | none; drawn each time | drawn in code (`screen/pictures.py`) |
-| Air selector silhouettes | illustrative Hurricane, Tomahawk, Blenheim, Boston; Macchi C.200, Bf 109, Ju 87, Ju 88 and Bf 110 reconnaissance; pooled air points, not aircraft unit counters | drawn in code (`screen/pictures.aircraft`); named examples shown on each air-choice row |
+| Air selector silhouettes | illustrative Hurricane, Tomahawk, Blenheim, Boston; Macchi C.200 (C.202 from 26 November), Bf 109, Ju 87, Ju 88 and Bf 110 reconnaissance; pooled air points, not aircraft unit counters | drawn in code (`screen/pictures.aircraft`); named examples shown on each air-choice row |
 
 ## 2. Parts of a counter and a tile
 

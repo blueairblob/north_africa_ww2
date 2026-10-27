@@ -262,9 +262,39 @@ strength or balance until the return's operational/allocated basis and
 scenario interpretation have been reconciled. The same study identifies
 A/B squadrons of the King's Dragoon Guards with South African-built
 Marmon-Herrington Mk III armoured cars. This establishes a component of
-composite unit 305, not its entire fleet or that the painted generic car
-matches the exact Mk III chassis; its picture remains a candidate:
+composite unit 305, not its entire fleet or that the newly painted Mk III-pattern car
+matches the exact KDG subvariant; its picture is representative:
 https://rommelsriposte.com/wp-content/uploads/2021/06/1319-article-text-3524-1-10-20210603.pdf .
+The South African Aviation Foundation Museum confirms Mk II/III were 4×4
+reconnaissance cars in North Africa, usually carrying a Boys anti-tank rifle
+and Bren armament; the Australian War Memorial catalogue identifies two
+captured Mk III cars in a much later Java photograph, so neither establishes
+KDG's exact November 1941 turret variant:
+https://saafmuseum.org.za/reconnaissance-car-marmon-herrington/ ;
+https://www.awm.gov.au/collection/C1282931 .
+On 27 October 2026 the existing generic closed-looking `cw_recon.png` was
+replaced with original generated Mk III-pattern art, using only this game's
+old painted car and lorry as image style/composition references. The
+transparent result was trimmed and fitted with `countergen.cut.fitted` to
+480 × 288. Its open octagonal turret is visible in the detail panel; the
+original KDG vehicle photograph and exact unit component configuration
+remain unverified. No historical photo or other game's artwork was traced
+or included.
+
+
+A separate Nafziger *Weekly Overall Strengths of 15th Panzer Division*
+compilation lists **38 Panzer II, 77 Panzer III and 19 Panzer IV on 11 November
+1941**, and **38 II, 76 III and 21 IV on 21 November**. These are *division*
+returns, not a verified 18 November Panzer-Regiment 8 company inventory:
+https://www.generalstaff.org/NAF/Pt_I_1941-1942/941gkmg.pdf .
+They support the Panzer III as a majority **representative** picture for
+unit 111 alongside II and IV, not an exclusive model. The 11 November
+II/III/IV subtotal (134) differs from the scenario's unverified regiment
+`tanks: 133`; that is not grounds to alter game balance because the dates,
+scope, serviceability and inclusion of command/captured tanks have not been
+reconciled. The compilation has odd duplicated date headings later on;
+verify it against the original divisional returns before adopting exact
+counts or specific tank marks.
 
 
 The new 480 × 288 Commonwealth Crusader and Stuart sprites were generated
@@ -371,7 +401,30 @@ identified by outline alone, so each has a named hover target; the air
 choice remains shared across both icons.
 
 The Italian Macchi is shown on the Axis menu button to avoid implying that
-Axis air meant only the Luftwaffe. An original **23 November 1941**
+Axis air meant only the Luftwaffe. The 4° Stormo association's unit history
+records 18 Macchi C.202s of IX Gruppo arriving at Martuba on **25 November
+1941**; the Aeronautica Militare's C.202 profile describes its liquid-cooled,
+inline DB 601 engine and longer pointed nose, contrasting with the C.200's
+radial-engine silhouette:
+https://www.asso4stormo.it/arc_03/04Stormo/Gorizia/Personale/AttivitaBellica.htm ;
+https://www.aeronautica.difesa.it/en/2023/05/26/mc-202/ .
+From the game's next two-day turn (**26 November**) the Italian fighter
+*example* changes from C.200 to C.202. This is a representative theatre
+illustration, **not** evidence of a particular sortie, every Italian squadron's
+equipment, or the C.200's withdrawal. The earlier C.200 and later C.202
+silhouettes are original code-drawn shapes, not traced historical art.
+A separate Nafziger **17 November 1941** aircraft compilation lists
+multiple Italian formations as already having C.202s, including 9° Gruppo;
+this conflicts with the 4° Stormo history above, which says IX Gruppo's
+C.202s left Sicily on 23 November and reached Martuba on 25 November:
+https://www.generalstaff.org/NAF/Pt_I_1941-1942/941gkmb.pdf .
+That aircraft table also prints the nonsensical designation `MC2092` and
+does not cite an original Italian unit return. Do **not** treat its squadron
+assignments, quantities, or implied first-arrival date as verified. The
+26 November icon is tied only to the dated IX Gruppo account; no exclusive
+equipment history is implied.
+
+An original **23 November 1941**
 Fliegerfuehrer Afrika operations report, transcribed and annotated by the
 Crusader Project (its archival scan has not been independently inspected),
 records Bf 110 and Ju 88 reconnaissance sorties over the Crusader theatre:
@@ -403,16 +456,35 @@ https://www.awm.gov.au/collection/F05045 .
 The link between this named formation and an Hs 126 in this scenario still
 requires a dated operational or strength return before being drawn as fact.
 
-The New Zealand official history *Divisional Cavalry* (New Zealand Electronic
-Text Collection, foreword, November–December 1941) describes its light tanks
-and Bren carriers in the Crusader period. Unit 335 therefore has an original,
-AI-generated open-topped tracked carrier illustration (`cw_carrier.png`), not
-the wheeled armoured-car default. This depicts a representative part of a
-mixed formation, not every vehicle; the `cars: 30` scenario strength has not
-been verified against a vehicle return. The generated image was resized and
-fitted using this project's `countergen.cut.fitted`; no historical image was
-copied or traced. Official history edition:
+The New Zealand official history *Divisional Cavalry* (NZETC edition,
+chs. 7–8) states that **14 new Bren carriers** brought that part of the
+establishment to full strength on **22 August 1941** (not that only 14
+carriers were on hand), and **26 Mark VI light tanks** had arrived by the
+end of October (two below the tank establishment). It describes tanks and carriers preparing to move
+on **6 November** and the regiment crossing on **18 November**. These are
+near-opening formation facts, not a verified 18 November serviceable return
+or proof that light tanks outnumbered carriers or that every vehicle had
+the pictured submark and paint scheme:
 https://www.22battalion.org.nz/publications/histories/divcav.pdf .
+Unit 335 therefore shows an originally painted Mark VI-pattern tracked
+light tank (`cw_mkvi_light.png`) as an opening-day *representative*;
+`cw_carrier.png` remains a separate original painted example of its open
+Bren carriers and is not currently assigned to a scenario counter. The
+National Army Museum identifies the Vickers Mark VI as a reconnaissance
+light tank and the Australian War Memorial catalogues a Mark VI B in North
+Africa in c. September 1941. These are type/shape references, **not** a
+photograph of this regiment or an exact submark identification:
+https://collection.nam.ac.uk/detail.php?acc=1975-03-63-1-324 ;
+https://www.awm.gov.au/collection/C30659 .
+The new image was generated with OpenAI image generation on 27 October 2026
+using only this game's own carrier and Stuart artwork as style references;
+the transparent subject was trimmed and fitted with `countergen.cut.fitted`
+to a 480 × 288 canvas. No historical photograph or other game's art was
+copied or traced. Unit 335's `cars: 30` is an **unverified rules-strength
+abstraction**, not 30 armoured cars or 30 Mark VI tanks; the player-facing
+strength label now says *scout vehicles*. Combat calculations and saved
+strength are unchanged. The November–December split and subsequent losses
+still need dated returns before changing this illustration on later turns.
 
 The U.S. War Department's *Handbook on German Military Forces*, TM-E 30-451
 (15 March 1945), ch. VII, names the leFH 18 among Germany's standard

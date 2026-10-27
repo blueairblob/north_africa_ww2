@@ -165,6 +165,36 @@ def test_air_selector_has_distinct_1941_theatre_aircraft_silhouettes():
             assert len({silhouettes[side, choice] for choice in ("support", "interdict", "recon")}) == 3
 
 
+def test_axis_italian_fighter_example_changes_only_after_the_documented_arrival():
+    from datetime import date
+    from screen.pictures import AIR_EXAMPLES, AIR_LABELS, air_example, aircraft
+
+    assert air_example("axis", "button", date(1941, 11, 24)) == "macchi"
+    assert air_example("axis", "button", date(1941, 11, 25)) == "macchi"
+    assert air_example("axis", "button", date(1941, 11, 26)) == "macchi202"
+    assert air_example("axis", "fighter_alt", date(1941, 11, 26)) == "bf109"
+    assert all(air_example("cw", choice, date(1941, 12, 25)) == model
+               for choice, model in AIR_EXAMPLES["cw"].items())
+    for size in ((27, 24), (80, 60)):
+        radial, inline = pygame.Surface(size), pygame.Surface(size)
+        for canvas, model in ((radial, "macchi"), (inline, "macchi202")):
+            canvas.fill("white")
+            aircraft(canvas, "axis", canvas.get_rect(), (35, 25, 18), (230, 210, 160), model=model)
+        assert pygame.image.tostring(radial, "RGB") != pygame.image.tostring(inline, "RGB")
+
+    app = App(Session(regiments(), GMAP, humans=["axis"]))
+    app.paint(pygame.Surface(app.size))
+    controls = layout.air_controls(app.size, False)
+    button_tip = lambda: next(words for rect, words in app.painter.tips if rect == controls["air"])
+    assert AIR_LABELS["macchi"] in button_tip()
+    app.session.state["turn"] = 5  # 26 November: first two-day turn after the arrival.
+    app.paint(pygame.Surface(app.size))
+    assert app.session.day == date(1941, 11, 26)
+    assert AIR_LABELS["macchi202"] in button_tip()
+    assert "not a confirmed withdrawal" in button_tip()
+    assert any(words.startswith("Macchi C.202: fighter example") for _, words in app.painter.tips)
+
+
 def test_air_menu_identifies_examples_without_assigning_a_type_to_air_points():
     pygame.init()
     for side, examples in (("cw", ("Hurricane", "Blenheim", "Boston")),
@@ -1349,6 +1379,23 @@ def test_the_map_scrolls_when_the_mouse_is_at_its_edge_while_a_unit_is_taken_up(
     assert app.edge() == (0, 0)
     app.ui.selected, app.ui.mouse = None, (area.right - 5, area.centery)
     assert app.edge() == (0, 0)                                      # nothing taken up: the map stays
+
+
+def test_nz_divisional_cavalry_strength_is_not_presented_as_only_armoured_cars():
+    s = Session(regiments(), GMAP, humans=["cw"])
+    nz, cars = s.unit(335), s.unit(305)
+    assert theme.strength_now(nz) == (30, 30, "scout vehicles")
+    assert theme.strength(nz) == "about 30 scout vehicles"
+    assert theme.strength(s.unit(305)) == "about 60 armoured cars"
+    assert "not a vehicle inventory" in theme.strength_tip(nz)
+    assert s.lost_words(nz, 1).endswith("scout vehicles")
+    assert s.lost_words(cars, 1).endswith("armoured cars")
+    assert Session.from_save(s.to_save(), GMAP).counter_art[335] == "mkvi_light"
+    assert "scout vehicles" in theme.CLAIMED
+    s.views["axis"]["events"] = [{"event": "battle", "sides": ["axis", "cw"],
+                                  "attackers": [111], "defenders": [335],
+                                  "lost": {"335": 1}, "backed": None}]
+    assert "15 scout vehicles" in s.claims("axis")[0][0]
 
 
 def test_strength_is_coloured_by_how_much_is_left_and_the_tooltip_gives_the_figures():    # 3e, 1b

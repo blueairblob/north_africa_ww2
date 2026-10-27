@@ -17,7 +17,7 @@ from engine.view import spot_range
 from . import theme as T
 from .layout import EDGE, HEAD_Y, Layout, air_controls, areas, buttons, details_toggle, footer_flag, game, layers, saves_list, tabs
 from .session import GOES, where
-from .pictures import AIR_EXAMPLES, AIR_LABELS, aircraft, picture
+from .pictures import AIR_LABELS, air_example, aircraft, picture
 
 ROOT = os.path.dirname(os.path.dirname(__file__))
 ART = os.path.join(ROOT, "art", "counters")
@@ -341,7 +341,7 @@ class Painter:
                 ("lane", "Sea lane"), ("fort", "Fortified hex"), ("port", "Port"), ("town", "Town"), ("site", "Other place"),
                 ("battle", "Where a battle was fought last turn"),
                 ("armour", "Tanks"), ("motorised", "Motorised infantry"), ("foot", "Infantry on foot"), ("guns", "Guns"),
-                ("recon", "Armoured cars"), ("hq", "Headquarters"), ("fuel", "Out of fuel"), ("trouble", "In trouble: supply or morale"))
+                ("recon", "Reconnaissance vehicles"), ("hq", "Headquarters"), ("fuel", "Out of fuel"), ("trouble", "In trouble: supply or morale"))
         w, h = surface.get_size()
         box = pygame.Rect(w - 300, h - len(rows) * 21 - 44, 288, len(rows) * 21 + 34)
         pygame.draw.rect(surface, T.PAPER, box, border_radius=6)
@@ -1116,17 +1116,20 @@ class Painter:
         pygame.draw.rect(surface, T.INK, button, 1, border_radius=4)
         primary_icon = pygame.Rect(button.x + 4, button.y + 3, 27, 24)
         alternate_icon = pygame.Rect(button.x + 32, button.y + 3, 27, 24)
-        aircraft(surface, session.side, primary_icon, T.INK, T.BUTTON_ON)
+        primary_model = air_example(session.side, "button", session.day)
+        aircraft(surface, session.side, primary_icon, T.INK, T.BUTTON_ON, model=primary_model)
         aircraft(surface, session.side, alternate_icon, T.INK, T.BUTTON_ON, "fighter_alt")
         self.fitted(surface, f"AIR · {current.upper()}", (button.x + 118, button.y + 12), 13,
                     T.INK, 106, 10)
         self.text(surface, "▲" if ui.air_open else "▼", (button.right - 18, button.y + 6), 12, T.INK, True)
-        primary, alternate = (AIR_LABELS[AIR_EXAMPLES[session.side][choice]]
+        primary, alternate = (AIR_LABELS[air_example(session.side, choice, session.day)]
                               for choice in ("button", "fighter_alt"))
         # The named targets precede the parent button: Painter.tip shows the first match.
         for icon, model in ((primary_icon, primary), (alternate_icon, alternate)):
             self.tips.append((icon, f"{model}: fighter example; air points pool types."))
-        self.tips.append((button, f"Pooled air effort (1–3); {primary} and {alternate} are examples."))
+        early = (" The C.200 remains an earlier example, not a confirmed withdrawal."
+                 if primary_model == "macchi202" else "")
+        self.tips.append((button, f"Pooled air effort (1–3); {primary} and {alternate} are examples.{early}"))
         if not ui.air_open:
             return
         box = pygame.Rect(controls["support"].x - 4, controls["support"].y - 44, 222,
@@ -1147,7 +1150,7 @@ class Painter:
             pygame.draw.rect(surface, T.INK, row, 1, border_radius=3)
             aircraft(surface, session.side, pygame.Rect(row.x + 4, row.y + 4, 32, 29),
                      T.INK, T.BUTTON_ON, choice)
-            example = AIR_LABELS[AIR_EXAMPLES[session.side][choice]]
+            example = AIR_LABELS[air_example(session.side, choice, session.day)]
             # Name the type visibly: at 32 px a Blenheim and a Boston cannot
             # reliably be distinguished by silhouette alone.
             self.fitted(surface, f"{n} {choice.title()} · {example}",
@@ -1155,7 +1158,7 @@ class Painter:
             self.text(surface, descriptions[choice], (row.x + 43, row.y + 18), 10, T.DIM)
             if choice == current:
                 self.text(surface, "✓", (row.right - 18, row.y + 9), 14, T.INK, True)
-            self.tips.append((row, "Example: " + AIR_LABELS[AIR_EXAMPLES[session.side][choice]]
+            self.tips.append((row, "Example: " + AIR_LABELS[air_example(session.side, choice, session.day)]
                               + "; air points pool multiple types."))
 
     def masthead(self, surface, session, ui, map_area):

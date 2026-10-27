@@ -57,13 +57,16 @@ The art:
   units); verify the new
   infantry artwork and all representative vehicles
   against formation equipment returns. German 10.5 cm field
-  howitzer, Halfaya 88 mm and one towed
+  howitzer, Halfaya 88 mm and one tracked
   Panzerjäger I variant are now distinct. Verify the gun marks, losses,
   command attachment and mixture in the Halfaya, Boettcher, Division Afrika
   and combined 39/605 formations before treating each picture as definitive.
-  The painted NZ Divisional Cavalry carrier variant is representative only:
-  the official history also mentions light tanks; verify the scenario's
-  `cars: 30` strength abstraction separately (it is not 30 armoured cars).
+  NZ Divisional Cavalry now shows a painted Mark VI light tank for the
+  opening-day group: the official history records 26 by end-October, alongside
+  Bren carriers. Verify serviceability, losses and subsequent replacement
+  mix before deciding when/if to change the sprite later. The `cars: 30`
+  rules strength remains unverified and is labelled *scout vehicles*, not 30
+  literal armoured cars or tanks.
   Mixed-equipment picture hover notes now identify 8 RTR Valentines in 1st
   Army Tank Brigade, 1 RTR cruisers in 32nd and other Tobruk artillery types;
   the 5 November 1941 fortress artillery return cannot establish unit 354's
@@ -72,8 +75,14 @@ The art:
   A dated German tank return analysed in *Scientia Militaria* supports the
   Panzer III as a majority picture for Panzerregiment 5, but its 120 tanks
   differ from the scenario's remembered 116; resolve counting basis before
-  changing gameplay. Marmon-Herrington Mk III cars are documented in KDG
-  squadrons, not proven for all of composite unit 305 or the painted model.
+  changing gameplay. A separate compilation puts Panzer II/III/IV in
+  15th Panzer Division on 11 and 21 November; unit 111 now calls its Panzer
+  III art representative, but reconcile its 133 tanks against the dated
+  divisional subtotals and verify the regiment's companies and tank marks.
+  Marmon-Herrington Mk III cars are documented in KDG
+  squadrons; the rebuilt open-turret Mk III-pattern sprite is representative
+  but the other components of composite unit 305 and its exact car mark are
+  not yet verified.
   German reconnaissance battalions 3 and 33 are listed with both Sd.Kfz. 222
   and heavier cars by 30 December 1941, but that later table has an
   inconsistent vehicle count; inspect the archived return and 18 November
@@ -90,8 +99,12 @@ The art:
   vehicle is illustrative. Verify each regiment's dated lorry/motorcycle
   mix: a single counter cannot claim all its troops rode either type.
 - **[build] Air visuals:** the selector illustrates RAF and Axis fighter,
-  bomber and reconnaissance choices using representative silhouettes, but
-  its air points pool multiple aircraft, national air arms and missions.
+  bomber and reconnaissance choices using representative silhouettes, with a
+  dated Macchi C.202 illustration from 26 November; C.200 is shown earlier,
+  without implying its withdrawal. A compiled 17 November aircraft list
+  conflicts with the 4° Stormo account for IX Gruppo; verify the underlying
+  Italian squadron returns before assigning date-specific fleets. The air
+  points still pool multiple aircraft, national air arms and missions.
   The Axis recon icon now illustrates a Bf 110 from a 23 November 1941
   operations report; it is not a unit assignment or an 18 November sortie.
   A compiled 18 November order of battle names `2(H)/14`, and a study
