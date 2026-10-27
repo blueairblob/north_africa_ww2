@@ -2,19 +2,24 @@
 
 **Deliver:** `art/counters/artist/de_recon.png`, one picture in one file.
 
-**Status:** painted Sd.Kfz. 222 candidate for both German reconnaissance
-formations. A photograph dated c. 1941 in the Australian War Memorial
-(P08802.015) confirms the vehicle's period appearance, not the precise
-equipment of Abteilungen 3 and 33. Check each unit's records before treating
-the representative car as its exclusive vehicle.
+**Status:** painted Sd.Kfz. 222 representative for both German reconnaissance
+formations. A c. 1941 Australian War Memorial photo (P08802.015) confirms
+the vehicle's period appearance. An archival-derived 30 December 1941 table lists 222s and 231/232
+armoured cars in **both** Abteilungen 3 and 33; this does **not** establish
+their 18 November mix or validate the scenario's 30-car counts. The table
+has internal numerical errors; see `docs/SOURCES.md`. Both units have
+dated picture hover notes.
 
-**Priority:** 1 (1 missing from the game, 2 the wrong subject, 3 redrawn to the brief).
+**Priority:** painted subject in use; verify the 18 November unit returns.
 
 ## The subject
 
 The light armoured car of the German reconnaissance battalions.
 
-*How sure:* Its use in North Africa in 1941 is from general knowledge, not checked against a dated source.
+*How sure:* Period Sd.Kfz. 222 use is photographed; both battalions are
+listed with 222 and heavier cars on 30 December, not 18 November. The
+original German return and opening-day model mix remain unresolved
+(`docs/SOURCES.md`).
 
 ## The prompt
 

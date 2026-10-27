@@ -52,13 +52,15 @@ The art:
 - **[build] Finish mismatched counter art:** verify the three new painted
   recon types against formation inventories (`docs/COUNTER_AUDIT.md` lists
   all 91 scenario units by sprite), especially the composite CW
-  armoured-car unit and the unverified RECAM AB41 photo; verify the new
+  armoured-car unit and the unverified original RECAM AB41 photo (a 2018
+  military-history article does independently identify AB41s in component
+  units); verify the new
   infantry artwork and all representative vehicles
   against formation equipment returns. German 10.5 cm field
   howitzer, Halfaya 88 mm and one towed
-  anti-tank variant are now distinct, but verify the actual 1941 gun marks
-  and the mix within the Halfaya, Boettcher, Division Afrika and combined
-  39/605 formations before treating every gun depiction as definitive.
+  Panzerjäger I variant are now distinct. Verify the gun marks, losses,
+  command attachment and mixture in the Halfaya, Boettcher, Division Afrika
+  and combined 39/605 formations before treating each picture as definitive.
   The painted NZ Divisional Cavalry carrier variant is representative only:
   the official history also mentions light tanks; verify the scenario's
   `cars: 30` strength abstraction separately (it is not 30 armoured cars).
@@ -72,6 +74,12 @@ The art:
   differ from the scenario's remembered 116; resolve counting basis before
   changing gameplay. Marmon-Herrington Mk III cars are documented in KDG
   squadrons, not proven for all of composite unit 305 or the painted model.
+  German reconnaissance battalions 3 and 33 are listed with both Sd.Kfz. 222
+  and heavier cars by 30 December 1941, but that later table has an
+  inconsistent vehicle count; inspect the archived return and 18 November
+  strengths before assigning exact car proportions.
+  The original painted Matilda replaces the old sheet cut, but its
+  Caunter-inspired paint has not been confirmed for either brigade.
   Counter art for mixed Matilda/Valentine and later Crusader/Stuart brigades
   still represents only a predominant/typical type; 7th Armoured Brigade now
   shows an A13 rather than a generic Crusader, but also included A10s and
@@ -84,9 +92,10 @@ The art:
 - **[build] Air visuals:** the selector illustrates RAF and Axis fighter,
   bomber and reconnaissance choices using representative silhouettes, but
   its air points pool multiple aircraft, national air arms and missions.
-  The Axis recon icon deliberately remains anonymous until aircraft and
-  unit assignments can be verified. A compiled 18 November order of battle
-  names `2(H)/14`, and a study describes its 19 November reconnaissance.
+  The Axis recon icon now illustrates a Bf 110 from a 23 November 1941
+  operations report; it is not a unit assignment or an 18 November sortie.
+  A compiled 18 November order of battle names `2(H)/14`, and a study
+  describes its 19 November reconnaissance without verifying aircraft type.
   The Hs 126 is a plausible army-cooperation candidate, but these sources
   do not establish that Staffel's dated aircraft inventory
   (`docs/SOURCES.md`, Art). Research dated unit allocations before
@@ -135,7 +144,8 @@ Publishing:
 - **[build]** Finish the historically checked counter subjects in
   `docs/COUNTER_AUDIT.md`: all 18 nation/kind defaults now have picture files
   and additional formation variants, but several pictured models, mixed-unit
-  fleets and old sheet-cut stopgaps still need dated evidence or replacement.
+  fleets and mixed-group guns still need dated evidence and additional
+  representative subjects where warranted.
   A window icon and a title screen do not exist.
 
 ## 4. Numbers to tune

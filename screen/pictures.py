@@ -59,11 +59,11 @@ AIR_EXAMPLES = {
     "cw": {"button": "hurricane", "fighter_alt": "tomahawk", "support": "hurricane",
            "interdict": "blenheim", "recon": "boston"},
     "axis": {"button": "macchi", "fighter_alt": "bf109", "support": "stuka",
-             "interdict": "ju88", "recon": "observer"},
+             "interdict": "ju88", "recon": "bf110"},
 }
 AIR_LABELS = {"hurricane": "Hurricane", "tomahawk": "Tomahawk", "blenheim": "Blenheim", "boston": "Boston",
               "macchi": "Macchi C.200", "bf109": "Bf 109", "stuka": "Ju 87", "ju88": "Ju 88",
-              "observer": "unspecified reconnaissance aircraft"}
+              "bf110": "Bf 110"}
 
 
 def aircraft(surface, side, box, ink, pale, choice="button"):
@@ -72,8 +72,9 @@ def aircraft(surface, side, box, ink, pale, choice="button"):
     RAF Museum's 18 November 1941 Crusader entry documents the Allied models;
     AWM's contemporary recognition material documents the theatre's Axis types,
     and Bundesarchiv places Bf 109-equipped JG 27 in the North African campaign.
-    'observer' is deliberately anonymous: no Axis reconnaissance type or unit
-    has been verified for the scenario. No historical illustration is copied.
+    A transcribed 23 November 1941 Fliegerfuehrer Afrika report records Bf 110
+    reconnaissance sorties. Icons illustrate types, not squadron allocations.
+    No historical illustration is copied.
     """
     def pts(points):
         return [(round(box.x + x * box.w), round(box.y + y * box.h)) for x, y in points]
@@ -97,25 +98,27 @@ def aircraft(surface, side, box, ink, pale, choice="button"):
                    (0.96, 0.57), (0.63, 0.53), (0.37, 0.53), (0.04, 0.57)],
         "ju88": [(0.03, 0.52), (0.37, 0.33), (0.63, 0.33), (0.97, 0.52),
                  (0.97, 0.61), (0.64, 0.51), (0.36, 0.51), (0.03, 0.61)],
-        "observer": [(0.09, 0.44), (0.37, 0.38), (0.63, 0.38), (0.91, 0.44),
-                     (0.91, 0.56), (0.63, 0.54), (0.37, 0.54), (0.09, 0.56)],
+        "bf110": [(0.07, 0.44), (0.38, 0.37), (0.62, 0.37), (0.93, 0.44),
+                  (0.91, 0.53), (0.61, 0.54), (0.39, 0.54), (0.09, 0.53)],
     }
     wing = wings[model]
     pygame.draw.polygon(surface, ink, pts(wing))
-    twins = model in ("blenheim", "boston", "ju88")
-    # Unidentified reconnaissance must not assert two engines by drawing nacelles.
-    tail = (0.16, 0.84) if twins or model == "observer" else (0.22, 0.86)
+    twins = model in ("blenheim", "boston", "ju88", "bf110")
+    tail = (0.23, 0.84) if model == "bf110" else (0.16, 0.84) if twins else (0.22, 0.86)
     pygame.draw.polygon(surface, ink, pts([(tail[0], tail[1]), (0.44, 0.82),
                                           (0.44, 0.19 if twins else 0.15), (0.5, 0.04),
                                           (0.56, 0.19 if twins else 0.15), (0.56, 0.82),
                                           (1 - tail[0], tail[1]), (1 - tail[0], 0.95),
                                           (tail[0], 0.95)]))
     if twins:
-        for x in (0.29, 0.71):
-            pygame.draw.ellipse(surface, ink, pygame.Rect(round(box.x + (x - 0.065) * box.w),
-                                                          round(box.y + 0.17 * box.h),
-                                                          max(3, round(0.13 * box.w)),
-                                                          max(5, round(0.53 * box.h))))
+        # The Bf 110's closer, slimmer nacelles distinguish it from the Ju 88.
+        for x in ((0.34, 0.66) if model == "bf110" else (0.29, 0.71)):
+            width, top, height = ((0.10, 0.23, 0.41) if model == "bf110" else
+                                  (0.13, 0.17, 0.53))
+            pygame.draw.ellipse(surface, ink, pygame.Rect(round(box.x + (x - width / 2) * box.w),
+                                                          round(box.y + top * box.h),
+                                                          max(3, round(width * box.w)),
+                                                          max(5, round(height * box.h))))
     else:
         pygame.draw.polygon(surface, pale, pts([(0.47, 0.43), (0.5, 0.29),
                                                (0.53, 0.43), (0.52, 0.57), (0.48, 0.57)]))
@@ -127,5 +130,7 @@ def aircraft(surface, side, box, ink, pale, choice="button"):
     if model == "macchi":  # radial-engined fighter's round nose, unlike the pointed Hurricane
         pygame.draw.circle(surface, ink, pts([(0.5, 0.16)])[0], max(2, round(box.w * 0.085)))
         pygame.draw.circle(surface, pale, pts([(0.5, 0.16)])[0], max(1, round(box.w * 0.027)))
-    if model == "observer":  # anonymous reconnaissance, not a named aircraft
-        pygame.draw.circle(surface, pale, pts([(0.5, 0.65)])[0], max(2, round(box.w * 0.095)), 1)
+    if model == "bf110":  # two upright fins project forward from its horizontal tail
+        for x in (0.25, 0.75):
+            pygame.draw.line(surface, ink, pts([(x, 0.73)])[0], pts([(x, 0.96)])[0],
+                             max(1, round(box.w * 0.055)))

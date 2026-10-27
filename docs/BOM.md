@@ -49,13 +49,13 @@ separates type-level evidence from unit-inventory checks still required.
 | `de_foot` | three riflemen, tropical field caps | 3 | painted rifleman, three in file | generated original | In use; representative German desert dress | none |
 | `de_guns` | 10.5 cm leFH 18 field howitzer | 4 | painted leFH 18 | generated original | In use for field/mixed groups; mixed inventories need checking | none |
 | `de_motorised` | Opel Blitz 3-ton lorry | 2 | painted two-axle truck, no insignia | generated original | In use; mixed transport pool represented by one type | none |
-| `de_recon` | Sd.Kfz. 222 armoured car | 2 | painted four-wheeled car | generated original | In use; model mix in units unverified | none |
+| `de_recon` | Sd.Kfz. 222 armoured car | 2 | painted four-wheeled car | generated original | In use; both had 222/231/232 in a later 30 Dec return, opening-day mix unverified | none |
 | `de_hq` | Kübelwagen with a pennant | 4 | Kübelwagen, black pennant | owner's AI picture, `art/axis_hq_cars/german_hq.png` | In use | none |
 | `it_armour` | M13/40 | 1 | unmarked painted riveted M13/40 with paired road wheels | generated original | In use; precise mark and mix unverified | none |
 | `it_foot` | three infantrymen, short-rimmed M33 helmets | 11 | painted soldier, repeated in file | generated original | In use; kit and headgear varied among formations | none |
 | `it_guns` | 75/27 modello 06 field gun | 7 | painted shielded spoked-wheel field gun | generated original | In use; mixed-calibre regiments represented by one type | none |
 | `it_motorised` | Lancia 3Ro-pattern lorry | 2 | unmarked painted long-bed lorry | generated original | In use for 65th/66th; exact fleets unknown | none |
-| `it_recon` | AB41 candidate for RECAM (mixed; original photograph not checked) | 1 | painted armoured car with side spares | generated original | In use provisionally; do not infer whole force was AB41 | none |
+| `it_recon` | AB41 documented for RECAM components (mixed; original photograph not checked) | 1 | painted armoured car with side spares | generated original | Representative only; full 18 Nov fleet and number unverified | none |
 | `it_hq` | Fiat staff car with a pennant | 9 | a 1930s tourer, tricolour pennant | owner's AI picture, `art/axis_hq_cars/it_hq.png` | In use | none |
 
 Armour variants for the other four brigades: `art/counters/variants/cw_stuart.png`
@@ -63,7 +63,9 @@ for 4th Armoured Brigade; original `cw_a13.png` for 7th Armoured Brigade;
 `cw_matilda.png` for 1st and 32nd Army Tank Brigades. These are representative
 silhouettes: 7th Armoured also had Crusaders and A10s, both army-tank brigades
 also operated other types, and 22nd Armoured later included Stuarts.
-The Matilda variant retains the first sheet's unverified striped camouflage.
+The Matilda variant is a new original Matilda II painting, replacing the
+first sheet cut. Its muted three-tone Caunter-inspired paint is illustrative,
+not an identification of either brigade's specific vehicles or scheme.
 Neither a one-sprite-per-brigade portrayal nor the current scenario data
 can fully identify every tank within a mixed formation. `cw_carrier.png` is a
 representative open-topped tracked carrier for New Zealand Divisional Cavalry
@@ -85,17 +87,19 @@ variant now distinguishes their troops from ordinary motorised infantry.
 
 Two German gun variants complete the first subject correction:
 `de_flak88.png` (deployed 8.8 cm Flak, Halfaya garrison, unit 104) and
-`de_antitank.png` (the previous sheet's towed anti-tank gun, grouped
-Panzerjäger-Abteilungen 39 and 605, unit 125). Both formations contain mixed
-weapons; the latter sprite's exact Pak mark is unverified and cannot depict
-the whole combined unit. Field/mixed artillery units 106, 113, 123 and 134
+`de_antitank.png` (new original Panzerjäger I on a Panzer I chassis,
+representing the self-propelled 605 element of grouped battalions 39/605,
+unit 125). The picture does not depict Battalion 39's towed guns or
+prove the group's exact number and command assignment. Field/mixed artillery units 106, 113, 123 and 134
 show the painted default leFH 18.
 
-Currently: all 18 nation/kind defaults have images (16 original painted
-subjects and 2 sheet-cut infantry stopgaps). Additional armour, carrier, Bersaglieri and German gun variants
-supply formation-specific representative subjects. The three new recon types are provisional
-representative pictures: exact model mixes, RECAM's photographed AB41 and
-the Halfaya/Panzerjäger gun groups remain unverified. See `docs/COUNTERS.md`
+Currently: all 18 nation/kind defaults have individual painted images,
+including the Commonwealth and German infantry that replaced sheet cuts.
+Additional armour, carrier, Bersaglieri and German gun variants supply
+formation-specific representative subjects. The three recon types are
+representative pictures: exact model mixes, RECAM's reported photograph
+and full vehicle mix, and the Halfaya/Panzerjäger gun groups remain
+unverified. See `docs/COUNTERS.md`
 for unresolved historic types.
 
 Open on the Axis HQ cars: their pennants are black and tricolour where the briefs
@@ -108,7 +112,7 @@ The other forms of the same pictures, all in use, none needing work:
 | The drawn set: the fallback for any picture the artist has not done | `art/counters/<nation>_<kind>.svg` and `.png`, 18 of each | drawn set |
 | NATO-style symbols, the option (F3) | none; drawn each time | drawn in code (`Painter.symbol`) |
 | Small pictures in the map's key | none; drawn each time | drawn in code (`screen/pictures.py`) |
-| Air selector silhouettes | illustrative Hurricane, Tomahawk, Blenheim, Boston; Macchi C.200, Bf 109, Ju 87, Ju 88, and unidentified Axis reconnaissance; pooled air points, not aircraft unit counters | drawn in code (`screen/pictures.aircraft`) |
+| Air selector silhouettes | illustrative Hurricane, Tomahawk, Blenheim, Boston; Macchi C.200, Bf 109, Ju 87, Ju 88 and Bf 110 reconnaissance; pooled air points, not aircraft unit counters | drawn in code (`screen/pictures.aircraft`); named examples shown on each air-choice row |
 
 ## 2. Parts of a counter and a tile
 
@@ -193,7 +197,7 @@ the rattle meter shows the same thing.
 | Fonts | pygame's default font | In use; no font chosen or licensed |
 | Window icon | — | Not built: pygame's default is shown |
 | Title or start screen | — | Not built: the game opens on the map |
-| A picture for the air force's choice (support, interdict, recon) | drawn in code (`screen/pictures.aircraft`) | In use; examples vary by mission; menu explicitly says they are examples |
+| A picture for the air force's choice (support, interdict, recon) | drawn in code (`screen/pictures.aircraft`); named examples shown on each air-choice row | In use; examples vary by mission; menu explicitly says they are examples |
 | Markers named in `docs/COUNTERS.md` (Subjects): a supply lorry and a locomotive for the railhead | — | Not built; aircraft are now examples in the air selector instead of map markers |
 | Optional retro look: a pixel palette and font | — | Not built (`DESIGN.md` §12) |
 

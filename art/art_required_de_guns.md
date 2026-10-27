@@ -3,14 +3,14 @@
 **Deliver:** `art/counters/artist/de_guns.png`, one picture in one file.
 
 **Status:** painted leFH 18 is now the default for four German field/mixed
-artillery formations. The old sheet-cut towed gun is preserved only as a
-provisional anti-tank variant for combined Panzerjäger-Abteilungen 39 und 605;
-a separate deployed Flak 88 variant depicts Halfaya. Exact mixed inventories
-and the old anti-tank image's precise model remain open.
+artillery formations. An original Panzerjäger I self-propelled gun depicts
+Battalion 605 within combined Panzerjäger-Abteilungen 39 und 605, replacing
+the sheet-cut towed anti-tank variant; a deployed Flak 88 depicts Halfaya.
+Battalion 39 also had towed anti-tank weapons, so the single counter is
+explicitly representative rather than its complete inventory.
 
 **Priority:** the original priority-2 default-subject defect is addressed;
-historical verification of the mixed formations and the provisional anti-tank
-variant remains open.
+historical verification of the mixed formations remains open.
 
 ## The subject
 
@@ -28,7 +28,12 @@ ch. 8, describes dug-in 88-mm guns at Halfaya and both 37- and 50-mm German
 anti-tank guns. These facts justify distinct silhouettes but do **not** prove
 the exact mix for every formation on 18 November 1941. The Halfaya formation
 also included other guns, and the grouped Panzerjäger unit represents two
-battalions whose combined equipment is not resolved by this one picture.
+battalions whose combined equipment is not resolved by this one picture. Battistelli
+identifies Battalion 39's towed 5 cm Pak 38s by September 1941; see
+`docs/SOURCES.md`. Bundesarchiv Tessin vol. 11 identifies Battalion 605 as a 4.7 cm self-propelled
+Panzerjäger unit converted in October 1940 and posted to Africa by February
+1941; an intercepted 21 November 1941 report also names losses of its
+self-propelled anti-tank guns (`docs/SOURCES.md`).
 
 *How sure:* The broad distinction is supported by the official histories;
 exact gun allocation within the mixed groupings has not yet been verified.

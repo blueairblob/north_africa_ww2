@@ -4,8 +4,9 @@
 
 **Status:** original painted Crusader in use for 22nd Armoured; a Stuart variant
 serves 4th Armoured, an original four-road-wheel A13 variant serves 7th
-Armoured, and the Matilda sheet cut is retained for mixed army-tank brigades.
-Exact mixed equipment and the Matilda camouflage remain open.
+Armoured. The old sheet-cut Matilda has been replaced with a new original
+Matilda II for the two mixed army-tank brigades. Its Caunter-inspired
+three-tone pattern is illustrative; exact brigade paintwork remains open.
 
 **Priority:** fulfilled for the Crusader subject; mixed brigades need further historical checks.
 

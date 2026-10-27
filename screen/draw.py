@@ -1147,7 +1147,11 @@ class Painter:
             pygame.draw.rect(surface, T.INK, row, 1, border_radius=3)
             aircraft(surface, session.side, pygame.Rect(row.x + 4, row.y + 4, 32, 29),
                      T.INK, T.BUTTON_ON, choice)
-            self.text(surface, f"{n}  {choice.title()}", (row.x + 43, row.y + 2), 13, T.INK, True)
+            example = AIR_LABELS[AIR_EXAMPLES[session.side][choice]]
+            # Name the type visibly: at 32 px a Blenheim and a Boston cannot
+            # reliably be distinguished by silhouette alone.
+            self.fitted(surface, f"{n} {choice.title()} · {example}",
+                        (row.x + 118, row.y + 9), 12, T.INK, row.w - 64, 10)
             self.text(surface, descriptions[choice], (row.x + 43, row.y + 18), 10, T.DIM)
             if choice == current:
                 self.text(surface, "✓", (row.right - 18, row.y + 9), 14, T.INK, True)

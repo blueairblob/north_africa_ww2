@@ -136,7 +136,7 @@ def test_air_selector_has_distinct_1941_theatre_aircraft_silhouettes():
         "cw": {"button": "hurricane", "fighter_alt": "tomahawk", "support": "hurricane",
                "interdict": "blenheim", "recon": "boston"},
         "axis": {"button": "macchi", "fighter_alt": "bf109", "support": "stuka",
-                 "interdict": "ju88", "recon": "observer"},
+                 "interdict": "ju88", "recon": "bf110"},
     }
     for size in ((23, 21), (80, 60)):
         silhouettes = {}
@@ -149,11 +149,17 @@ def test_air_selector_has_distinct_1941_theatre_aircraft_silhouettes():
                 assert pixels != b"\xff" * len(pixels)
                 silhouettes[side, choice] = pixels
         assert silhouettes["cw", "button"] != silhouettes["axis", "button"]
-        # Unidentified Axis reconnaissance must not show twin engine nacelles.
+        # Bf 110 reconnaissance must show two engines, not the old anonymous single.
         blank = pygame.Surface(size)
         blank.fill("white")
         aircraft(blank, "axis", blank.get_rect(), (35, 25, 18), (230, 210, 160), "recon")
-        assert blank.get_at((round(size[0] * 0.29), round(size[1] * 0.24)))[:3] == (255, 255, 255)
+        assert blank.get_at((round(size[0] * 0.34), round(size[1] * 0.26)))[:3] != (255, 255, 255)
+        # The Bf 110's paired tail fins also project beyond the Ju 88 tail.
+        ju88 = pygame.Surface(size)
+        ju88.fill("white")
+        aircraft(ju88, "axis", ju88.get_rect(), (35, 25, 18), (230, 210, 160), "interdict")
+        at_fin = (round(size[0] * 0.25), round(size[1] * 0.75))
+        assert blank.get_at(at_fin)[:3] != ju88.get_at(at_fin)[:3]
         for side in ("cw", "axis"):
             assert silhouettes[side, "button"] != silhouettes[side, "fighter_alt"]
             assert len({silhouettes[side, choice] for choice in ("support", "interdict", "recon")}) == 3
@@ -162,9 +168,17 @@ def test_air_selector_has_distinct_1941_theatre_aircraft_silhouettes():
 def test_air_menu_identifies_examples_without_assigning_a_type_to_air_points():
     pygame.init()
     for side, examples in (("cw", ("Hurricane", "Blenheim", "Boston")),
-                           ("axis", ("Ju 87", "Ju 88", "unspecified reconnaissance aircraft"))):
+                           ("axis", ("Ju 87", "Ju 88", "Bf 110"))):
         app = App(Session(regiments(), GMAP, humans=[side]))
         app.ui.air_open = True
+        labels = []
+        original_fitted = app.painter.fitted
+
+        def record_label(surface, words, centre, px, colour, room, least=9):
+            labels.append(words)
+            return original_fitted(surface, words, centre, px, colour, room, least)
+
+        app.painter.fitted = record_label
         app.paint(pygame.Surface(app.size))
         controls = layout.air_controls(app.size, True)
         assert controls["air"].w == 194  # two fighter examples and a legible order label
@@ -177,9 +191,12 @@ def test_air_menu_identifies_examples_without_assigning_a_type_to_air_points():
             assert any(rect == icon and words.startswith(model + ": fighter example")
                        for rect, words in app.painter.tips)
             assert next(words for rect, words in app.painter.tips if rect.collidepoint(icon.center)).startswith(model)
-        for choice, model in zip(("support", "interdict", "recon"), examples):
+        for n, (choice, model) in enumerate(zip(("support", "interdict", "recon"), examples), 1):
             assert any(rect == controls[choice] and model in words and "pool multiple types" in words
                        for rect, words in app.painter.tips)
+            title = f"{n} {choice.title()} · {model}"
+            assert title in labels
+            assert app.painter.font(12, True).size(title)[0] <= controls[choice].w - 64
 
 
 def test_a_hex_is_as_many_pixels_across_as_asked_and_the_counter_fits_in_it():   # docs/COUNTERS.md

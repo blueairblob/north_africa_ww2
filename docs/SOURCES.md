@@ -272,9 +272,22 @@ specifically for this project with OpenAI image generation on 26 October
 2026, using only the project's own lorry, HQ and newly generated Crusader
 art as style references. Their alpha-bounded silhouettes were fitted to the
 existing counter canvas using `countergen.cut.fitted`; no external pictures
-were traced or copied. The previous Matilda sheet cut is preserved as a
-variant (its camouflage remains unverified). The Stuart was regenerated once
-to make its four-wheel suspension and compact turret more distinct.
+were traced or copied. The old Matilda sheet cut was later replaced with an original painted
+variant (27 October 2026; see next paragraph). The Stuart was regenerated
+once to make its four-wheel suspension and compact turret more distinct.
+The Matilda II variant used for 1st and 32nd Army Tank Brigades was generated
+with OpenAI image generation on **27 October 2026**, using only this game's
+previous Matilda counter as a shape reference and its original Crusader
+painting as a style reference. The selected new alpha image was trimmed and
+fitted with `countergen.cut.fitted`, with no photograph traced or bundled.
+The Tank Museum displays a restored Matilda II painted in a Caunter scheme;
+this establishes the scheme as plausible Matilda *type-level* inspiration,
+not the exact 18 November 1941 colours, stripe geometry or paintwork of
+8/42/44 RTR or Tobruk's 1/4/7 RTR:
+https://tankmuseum.org/tank-nuts/tank-collection/matilda-ii .
+The three-tone pattern in `cw_matilda.png` is deliberately illustrative.
+It must not be read as a documentary reconstruction of either brigade.
+
 The Queen's Royal Hussars Museum's armoured-vehicle history reports that
 A13 cruisers counted for roughly half of the 7th Armoured Brigade in
 Operation Crusader, so the 7th now has a separate representative A13 sprite
@@ -303,6 +316,16 @@ A 1991 Italian defence-history conference report, published by Italy's
 Ministry of Defence, describes RECAM as including an armoured-car and L6
 company in the 1941 Corpo d'Armata di Manovra but gives no car model:
 https://www.difesa.it/assets/allegati/39410/02_convegno1991_italia_in_guerra_secondo_anno1941.pdf .
+Fabio Fabbricatore, "Trasporti in divisa", *Rivista Italiana di Sanita
+Militare* 75 (July-September 2018), p. 23 (PDF p. 24), identifies the
+"Romolo Gessi" PAI battalion and an experimental "Nizza" cavalry platoon
+as AB41-equipped contributors to RECAM from September 1941:
+https://www.ansmi-presidenzanazionale.it/wp-content/uploads/2021/01/RISM-n.-75.pdf .
+This is a published retrospective account, **not** an original dated
+vehicle return. It supports the pictured AB41 as a documented example,
+not all vehicles or the scenario's abstract `cars: 45`; the full mix and
+strength on 18 November remain unresolved. The Ministry history also
+mentions L6 light tanks but does not establish their arrival by 18 November.
 A secondary AB41 account cites a November 1941 Sidi Rezegh photograph
 attributed to the Archivio Centrale dello Stato depicting several AB41s and
 an Autoblindo TL37 in RECAM. The original catalogue/photo has not been
@@ -348,8 +371,16 @@ identified by outline alone, so each has a named hover target; the air
 choice remains shared across both icons.
 
 The Italian Macchi is shown on the Axis menu button to avoid implying that
-Axis air meant only the Luftwaffe. No exact Axis reconnaissance type has
-been verified for Operation Crusader, so its icon is deliberately anonymous.
+Axis air meant only the Luftwaffe. An original **23 November 1941**
+Fliegerfuehrer Afrika operations report, transcribed and annotated by the
+Crusader Project (its archival scan has not been independently inspected),
+records Bf 110 and Ju 88 reconnaissance sorties over the Crusader theatre:
+https://rommelsriposte.com/2011/03/20/a-day-in-the-life-of-the-luftwaffe-operations-report-by-fliegerfuehrer-afrika-23-nov-41/ .
+The Bf 110 now illustrates Axis reconnaissance; this does **not** identify
+the aircraft flown on 18 November, the exact 2.(H)/14 squadron fleet, or a
+specific sortie purchased by air points. The RAF Museum documents the type
+as twin-engined:
+https://www.rafmuseum.org.uk/research/collections/messerschmitt-bf-110g-2/ .
 The Ju 88 is an illustrative theatre type, not evidence of a particular
 interdiction sortie. Air points still abstract several air arms and missions;
 the silhouettes do not assert that these were the only aircraft, nor that
@@ -395,12 +426,58 @@ https://www.ibiblio.org/hyperwar/UN/UK/UK-Med-II/UK-Med-2-8.html .
 These support distinctive representative painted leFH 18 and 88 sprites;
 they do not establish the exact equipment mix of the four 1941 field/mixed
 artillery formations or the combined Panzerjäger battalions. The latter uses
-the existing owner-generated sheet-cut towed gun as an explicitly provisional
-silhouette; its specific model is still unverified.
+a newly illustrated Panzerjäger I for Battalion 605, not a claim that
+Battalion 39 carried the same gun. The Bundesarchiv-hosted *Tessin*, vol. 11,
+entry for Panzerjäger-Abteilung 605, records its October 1940 conversion
+to 4.7 cm self-propelled anti-tank guns and deployment to Africa in February
+1941 (the OCR prints "Flak (Sfl.)"; check the scanned page before relying on
+that specific calibre spelling):
+https://www.bundesarchiv.de/assets/bundesarchiv/de/Downloads/Tessin/Bd_11_ocr.pdf .
+A transcribed intercepted 21 November 1941 German report names 13
+self-propelled anti-tank guns lost from 605 during Operation Crusader,
+corroborating its equipment but not its strength on 18 November or its
+exact command attachment:
+https://rommelsriposte.com/2009/08/15/the-tobruk-breakout-from-the-other-side-of-the-hill/ .
+Pier Paolo Battistelli, *Rommel's Afrika Korps: Tobruk to El Alamein*
+(Osprey, 2006; 2013 e-book, "Weapons and equipment"), reconstructs Battalion 39's re-equipment with towed 5 cm Pak 38 guns, listing twelve by
+20 September 1941, and separately describes 605's 4.7 cm Pak(t) on
+Panzer I Ausf. B chassis. This is original historical research, **not** an
+original 18 November war-diary return:
+https://www.ospreypublishing.com/us/rommels-afrika-korps-9781472800411/ .
+The in-game counter combines **two battalions**: neither the Panzerjäger I
+image nor the scenario's `guns: 36` establishes the actual November mix
+or strength. The new no-markings sprite was generated with OpenAI image
+generation on 27 October 2026 using only this game's original German field
+gun painting as a palette/style reference; the rejected first candidate
+wrongly resembled a six-wheel Panzer III. The chosen five-road-wheel
+Panzer-I-chassis candidate was alpha-trimmed and fitted with
+`countergen.cut.fitted`. No historical photograph or other game art was
+copied or traced; this replaces the former sheet-cut towed variant.
 
 Reconnaissance art: the Australian War Memorial catalogue P08802.015 dates a
 German Sd.Kfz. 222 armoured-car photograph to c. 1941:
 https://www.awm.gov.au/collection/C1244584 .
+For German reconnaissance battalions 3 (21st Panzer) and 33 (15th
+Panzer), a compiled **30 December 1941** vehicle-availability table (citing
+German Archives T314/16) explicitly lists Sd.Kfz. 222 alongside heavier
+Sd.Kfz. 231 and 232 vehicles for **both** formations:
+https://www.generalstaff.org/NAF/Pt_I_1941-1942/941glma.pdf .
+This is a transcribed table, not an inspected archival return, and it is
+six weeks **after** the scenario starts. The table contains apparent errors
+(e.g. its 33rd Battalion Sd.Kfz. 222 row has `4` full strength but `7`
+present); neither its row counts nor its December mix can be assigned to
+18 November without checking the original T314/16 return. An independent
+March 1941 reconstruction also describes a light/heavy mix for the 3rd:
+https://www.historyofwar.org/articles/weapons_sd_kfz_222.html .
+The Bundesarchiv-hosted *Tessin*, vol. 5, p. 27, confirms that the 33rd was
+motorised and with 15th Panzer Division in Africa from May 1941, but does
+not list its November car types:
+https://www.bundesarchiv.de/assets/bundesarchiv/de/Downloads/Tessin/Bd_5_ocr.pdf .
+The Sd.Kfz. 222 remains a **representative** sprite for both battalions;
+it does not imply that every car in either counter was a 222 or that the
+scenario's `cars: 30` for each is a documented inventory. Both units' hover
+notes disclose the other car examples and their later date.
+
 *21 Battalion* (New Zealand official history, ch. 8, 29 November 1941,
 around the Point 175/von Ravenstein episode) describes expected South African
 Marmon-Herrington cars as having high open turrets, but the actual approaching
@@ -408,8 +485,9 @@ column was German, so this does not establish the complete equipment of
 scenario unit 305:
 https://www.22battalion.org.nz/publications/histories/21battalion.pdf .
 The Italian defence-history RECAM report above supports a mixed armoured-car
-and light-tank unit, but does not identify its cars. The painted AB41 is
-provisional until the cited Archivio Centrale photograph is checked. Three
+and light-tank unit, but does not identify its cars. The painted AB41 is a documented RECAM component example (2018
+retrospective account above), but its full 18 November vehicle mix and the
+original Archivio Centrale photograph remain unverified. Three
 new recon images were generated originally for this project, fitted with
 `countergen.cut.fitted`; historical catalogue images were consulted for
 vehicle types and not traced, copied or bundled.

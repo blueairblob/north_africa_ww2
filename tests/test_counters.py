@@ -72,7 +72,7 @@ def test_crusader_formations_choose_distinct_representative_armour_art():
     assert {uid: s.counter_art.get(uid) for uid in (306, 307, 311, 312, 313)} == {
         306: "matilda", 307: "matilda", 311: "stuart", 312: "a13", 313: None}
     assert Session.from_save(s.to_save(), GMAP).counter_art == s.counter_art
-    assert {uid: s.art_note[uid] for uid in (305, 306, 307, 312, 354, 163, 121)} == {
+    assert {uid: s.art_note[uid] for uid in (305, 306, 307, 312, 354, 163, 121, 107, 125, 114, 124)} == {
         305: "Car shown; KDG used Marmon-Herrington Mk III.",
         121: "Panzer III shown; 5th also fielded II and IV.",
         306: "Matilda shown; 8 RTR also had Valentines.",
@@ -80,6 +80,10 @@ def test_crusader_formations_choose_distinct_representative_armour_art():
         312: "A13 shown; verify the other cruiser types.",
         354: "25-pounder shown; Tobruk used mixed guns.",
         163: "Open lorry shown; 9th also had motorcycles.",
+        107: "AB41 shown; RECAM vehicle mix and count unverified.",
+        125: "Panzerjäger I shown for 605; 39 also had towed guns.",
+        114: "222 shown; 33rd also had 231/232 by Dec 1941.",
+        124: "222 shown; 3rd also had 231/232 by Dec 1941.",
     }
     assert Session.from_save(s.to_save(), GMAP).art_note == s.art_note
     legacy = s.to_save()
@@ -145,10 +149,19 @@ def test_crusader_formations_choose_distinct_representative_armour_art():
     assert ("cw", "recon", "carrier") in selected
     axis_app = App(Session(scenarios.load("crusader"), GMAP, humans=["axis"]), size=(900, 560))
     axis_app.painter.sprite = record
+    for uid in (107, 114, 124):
+        axis_app.ui.selected = uid
+        axis_app.ui.alone = True
+        axis_app.paint(pygame.Surface(axis_app.size))
+        assert any(tip == axis_app.session.art_note[uid] for _, tip in axis_app.painter.tips)
     axis_app.ui.selected = 121
     axis_app.ui.alone = True
     axis_app.paint(pygame.Surface(axis_app.size))
     assert any(tip == axis_app.session.art_note[121] for _, tip in axis_app.painter.tips)
+    axis_app.ui.selected = 125
+    axis_app.ui.alone = True
+    axis_app.paint(pygame.Surface(axis_app.size))
+    assert any(tip == axis_app.session.art_note[125] for _, tip in axis_app.painter.tips)
     axis_app.ui.alone = False
     for uid, variant in ((104, "flak88"), (113, None), (125, "antitank")):
         selected.clear()
@@ -181,6 +194,13 @@ def test_every_painted_variant_has_a_transparent_fitted_canvas():
         assert box.w <= C.WIDE and box.h <= C.HIGH and abs(box.centerx - C.W / 2) <= 2
         assert box.bottom == C.GROUND
         assert im.get_at((0, 0)).a == 0
+
+
+def test_panzerjaeger_variant_has_a_tracked_hull_not_a_single_towed_wheel():
+    """A broad continuous low silhouette guards the corrected 605 subject."""
+    path = Path(__file__).resolve().parent.parent / "art" / "counters" / "variants" / "de_antitank.png"
+    sprite = pygame.image.load(str(path))
+    assert sum(sprite.get_at((x, 235)).a > 128 for x in range(sprite.get_width())) > 240
 
 
 def test_sheet_cutter_protects_the_original_replacement_subjects():

@@ -2,23 +2,26 @@
 
 **Deliver:** `art/counters/artist/it_recon.png`, one picture in one file.
 
-**Status:** painted AB41 **candidate** for RECAM. The car type for its
-November 1941 mixed formation is not yet verified from the archival photo;
-this is a provisional representative, not a claim all 45 abstract cars
-were AB41s.
+**Status:** painted AB41 representative for RECAM, now corroborated by a
+published 2018 military-history account of AB41-equipped component units.
+The original archival photo and a dated full vehicle return remain unverified;
+this is not a claim all 45 abstract cars were AB41s.
 
 **Priority:** 1 (1 missing from the game, 2 the wrong subject, 3 redrawn to the brief).
 
 ## The subject
 
-The Italian armoured car best known from North Africa.
+A four-wheeled AB41 armoured car, documented for two RECAM component units.
 
 *How sure:* An Italian Ministry of Defence history lists an armoured-car
 company (with L6 light tanks) within RECAM in 1941 but does not identify
-the car type. A secondary vehicle-history article attributes a November
-1941 Sidi Rezegh photograph of three AB41s and a TL37 to the Italian
-central archives. Verify the original photo/catalogue and the rest of
-RECAM before treating one AB41 as the whole mixed formation.
+the car type. Fabio Fabbricatore, *Rivista Italiana di Sanita Militare* 75 (2018), p. 23,
+names the AB41-equipped "Romolo Gessi" and "Nizza" elements; see
+`docs/SOURCES.md`. This retrospective account is not a dated inventory. A
+secondary vehicle-history article attributes a November 1941 Sidi Rezegh
+photograph of three AB41s and a TL37 to the Italian central archives.
+Verify the original photo/catalogue and the rest of RECAM before treating
+one AB41 as the whole mixed formation.
 
 ## The prompt
 
