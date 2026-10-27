@@ -1,6 +1,8 @@
 """The counter pictures (art/counters): the saved files are what countergen draws, and every unit has one."""
 import glob
 import os
+from collections import defaultdict
+from pathlib import Path
 
 import pygame
 
@@ -68,20 +70,23 @@ def test_crusader_formations_choose_distinct_representative_armour_art():
 
     s = Session(scenarios.load("crusader"), GMAP, humans=["cw"])
     assert {uid: s.counter_art.get(uid) for uid in (306, 307, 311, 312, 313)} == {
-        306: "matilda", 307: "matilda", 311: "stuart", 312: None, 313: None}
+        306: "matilda", 307: "matilda", 311: "stuart", 312: "a13", 313: None}
     assert Session.from_save(s.to_save(), GMAP).counter_art == s.counter_art
     legacy = s.to_save()
     for spec in legacy["scenario"]["units"]:
         spec.pop("counter_art", None)
     assert Session.from_save(legacy, GMAP).counter_art == s.counter_art
     assert s.counter_art[335] == "carrier"
+    assert s.counter_art[183] == "bersaglieri"
+    assert all(s.counter_art.get(uid) is None for uid in (141, 142, 152, 163, 171, 172))
     assert s.counter_art.get(305) is None  # wheeled British armoured cars are not carriers
     assert {uid: s.counter_art.get(uid) for uid in (104, 106, 113, 123, 125, 134)} == {
         104: "flak88", 106: None, 113: None, 123: None, 125: "antitank", 134: None}
     painter = Painter(GMAP)
-    sprites = {kind: painter.sprite("cw", "armour", (100, 60), kind) for kind in (None, "matilda", "stuart")}
+    sprites = {kind: painter.sprite("cw", "armour", (100, 60), kind)
+               for kind in (None, "matilda", "stuart", "a13")}
     assert all(sprites.values())
-    assert len({pygame.image.tostring(image, "RGBA") for image in sprites.values()}) == 3
+    assert len({pygame.image.tostring(image, "RGBA") for image in sprites.values()}) == 4
     carrier = painter.sprite("cw", "recon", (100, 60), "carrier")
     cars = painter.sprite("cw", "recon", (100, 60))
     assert carrier is not None and cars is not None
@@ -90,6 +95,10 @@ def test_crusader_formations_choose_distinct_representative_armour_art():
                  for variant in (None, "flak88", "antitank")}
     assert all(axis_guns.values())
     assert len({pygame.image.tostring(image, "RGBA") for image in axis_guns.values()}) == 3
+    bersaglieri = painter.sprite("it", "foot", (100, 60), "bersaglieri")
+    regular = painter.sprite("it", "foot", (100, 60))
+    assert bersaglieri is not None and regular is not None
+    assert pygame.image.tostring(bersaglieri, "RGBA") != pygame.image.tostring(regular, "RGBA")
 
     app = App(s, size=(900, 560))
     selected = []
@@ -100,7 +109,7 @@ def test_crusader_formations_choose_distinct_representative_armour_art():
         return original(nation, kind, size, variant)
 
     app.painter.sprite = record
-    for uid, variant in ((306, "matilda"), (311, "stuart"), (312, None)):
+    for uid, variant in ((306, "matilda"), (311, "stuart"), (312, "a13"), (313, None)):
         selected.clear()
         app.ui.selected = uid
         app.paint(pygame.Surface(app.size))
@@ -116,13 +125,18 @@ def test_crusader_formations_choose_distinct_representative_armour_art():
         axis_app.ui.selected = uid
         axis_app.paint(pygame.Surface(axis_app.size))
         assert ("de", "guns", variant) in selected
+    selected.clear()
+    axis_app.ui.selected = 183
+    axis_app.paint(pygame.Surface(axis_app.size))
+    assert ("it", "foot", "bersaglieri") in selected
 
 
 def test_every_painted_variant_has_a_transparent_fitted_canvas():
     from pathlib import Path
     for name in ("art/counters/artist/cw_armour.png", "art/counters/artist/cw_guns.png",
                  "art/counters/variants/cw_matilda.png",
-                 "art/counters/variants/cw_stuart.png", "art/counters/variants/cw_carrier.png",
+                 "art/counters/variants/cw_stuart.png", "art/counters/variants/cw_a13.png",
+                 "art/counters/variants/cw_carrier.png", "art/counters/variants/it_bersaglieri.png",
                  "art/counters/artist/de_guns.png", "art/counters/variants/de_flak88.png",
                  "art/counters/variants/de_antitank.png"):
         im = pygame.image.load(str(Path(__file__).parent.parent / name))
@@ -159,3 +173,28 @@ def test_every_explicit_scenario_art_variant_has_an_asset():
                     if (u["id"], u["name"]) == (uid, unit_name))
         nation = unit.get("nation", "cw" if unit["side"] == "cw" else "de")
         assert (variants / f"{nation}_{variant}.png").exists(), (uid, variant)
+
+
+def test_counter_audit_accounts_for_each_crusader_unit_and_art_selector():
+    """Audit coverage is checked; historical accuracy still needs dated sources."""
+    from engine import scenarios
+
+    expected = defaultdict(list)
+    for u in scenarios.load("crusader")["units"]:
+        nation = u.get("nation", "cw" if u["side"] == "cw" else "de")
+        expected[nation, u["type"], u.get("counter_art", "default")].append(u["id"])
+
+    audit = Path(__file__).resolve().parent.parent / "docs" / "COUNTER_AUDIT.md"
+    actual = {}
+    for line in audit.read_text().splitlines():
+        cells = [cell.strip() for cell in line.split("|")]
+        if len(cells) != 8 or cells[1] not in C.NATIONS:
+            continue
+        nation, kind, variant = cells[1:4]
+        assert kind in C.KINDS
+        ids = [int(uid.strip()) for uid in cells[4].split(",")]
+        key = nation, kind, variant
+        assert key not in actual, key
+        actual[key] = ids
+    assert len(actual) == 25
+    assert actual == dict(expected)

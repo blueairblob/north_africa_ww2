@@ -2,15 +2,16 @@
 
 **Deliver:** `art/counters/artist/cw_armour.png`, one picture in one file.
 
-**Status:** original painted Crusader in use; a Stuart variant serves 4th Armoured
-Brigade, and the Matilda sheet cut is retained for mixed army-tank brigades.
+**Status:** original painted Crusader in use for 22nd Armoured; a Stuart variant
+serves 4th Armoured, an original four-road-wheel A13 variant serves 7th
+Armoured, and the Matilda sheet cut is retained for mixed army-tank brigades.
 Exact mixed equipment and the Matilda camouflage remain open.
 
 **Priority:** fulfilled for the Crusader subject; mixed brigades need further historical checks.
 
 ## The subject
 
-The British armoured brigades of 7th Armoured Division fought Crusader (November 1941) largely in Crusaders; the army tank brigades had Matildas and Valentines, 4th Armoured Brigade American Stuarts. A single picture cannot accurately stand for all British armour;
+The British armoured brigades of 7th Armoured Division fought Crusader (November 1941) with mixed equipment: the Queen's Royal Hussars Museum estimates A13 cruisers formed roughly half of 7th Armoured Brigade; 22nd Armoured used Crusaders; the army tank brigades had Matildas and Valentines, and 4th Armoured Brigade American Stuarts. A single picture cannot accurately stand for all British armour;
 `counter_art` chooses a representative type per formation.
 
 *How sure:* The type and the operation are well known; which mark is shown does not matter at counter size.

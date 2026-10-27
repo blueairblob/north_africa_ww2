@@ -76,15 +76,20 @@ One per unit type per nation, so that a set stays consistent.
 
 | Unit type | Commonwealth | German | Italian |
 | --- | --- | --- | --- |
-| Armour | Crusader; Matilda II (army tank brigades); M3 Stuart | Panzer III | M13/40 |
+| Armour | Crusader (22nd Armoured); A13 Cruiser (7th Armoured, mixed); Matilda II (army tank brigades, mixed); M3 Stuart (4th Armoured) | Panzer III | M13/40 |
 | Guns | 25-pounder | 88 mm Flak on its carriage | a field gun |
 | Motorised infantry | Bedford or CMP 15-cwt truck | Opel Blitz lorry | Lancia lorry |
-| Foot infantry | a marching rifleman, in the same flat style — the one sprite that is not a vehicle | | |
+| Foot infantry | Brodie-helmeted riflemen | tropical-field-cap riflemen | M33-helmeted riflemen; dark-plumed Bersaglieri variant for 7th Regiment |
 | Reconnaissance | Marmon-Herrington or Humber armoured car | SdKfz 222 | AB 41 |
 | HQ | a command truck, or a jeep (jeeps reached the desert only in 1942) | Kübelwagen with an aerial | a staff car |
 
 Markers, not counters: a supply lorry; a goods locomotive with one wagon for
-the railhead; a Hurricane, a Bf 109 and a Stuka for the air mission.
+the railhead. The air menu now uses small example silhouettes, never unit
+counters: Commonwealth Hurricane, Blenheim and Boston; Axis Italian Macchi
+C.200 and German Ju 87 and Ju 88. Axis reconnaissance uses an anonymous
+observer silhouette because an exact 1941 reconnaissance aircraft assignment
+has not been established (`docs/SOURCES.md`). Pooled air points cannot be
+interpreted as an aircraft order of battle.
 
 ## Three things to hold to
 

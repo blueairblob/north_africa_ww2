@@ -17,7 +17,7 @@ from engine.view import spot_range
 from . import theme as T
 from .layout import EDGE, HEAD_Y, Layout, air_controls, areas, buttons, details_toggle, footer_flag, game, layers, saves_list, tabs
 from .session import GOES, where
-from .pictures import aircraft, picture
+from .pictures import AIR_EXAMPLES, AIR_LABELS, aircraft, picture
 
 ROOT = os.path.dirname(os.path.dirname(__file__))
 ART = os.path.join(ROOT, "art", "counters")
@@ -1111,32 +1111,37 @@ class Painter:
         points = session.view["air_points"]
         pygame.draw.rect(surface, T.BUTTON_ON if ui.air_open else T.BUTTON, button, border_radius=4)
         pygame.draw.rect(surface, T.INK, button, 1, border_radius=4)
-        aircraft(surface, session.side, pygame.Rect(button.x + 5, button.y + 5, 23, 21), T.INK, T.BUTTON_ON)
+        aircraft(surface, session.side, pygame.Rect(button.x + 4, button.y + 3, 27, 24), T.INK, T.BUTTON_ON)
         self.fitted(surface, f"AIR · {current.upper()}", (button.x + 88, button.y + 12), 13,
                     T.INK, 110, 10)
         self.text(surface, "▲" if ui.air_open else "▼", (button.right - 18, button.y + 6), 12, T.INK, True)
-        self.tips.append((button, "Air effort this turn: support, interdict or recon (keys 1–3)."))
+        self.tips.append((button, "Pooled air effort (1–3); " + AIR_LABELS[AIR_EXAMPLES[session.side]["button"]] + " is an example."))
         if not ui.air_open:
             return
-        box = pygame.Rect(controls["support"].x - 4, controls["support"].y - 31, 222,
-                          button.top - controls["support"].y + 27)
+        box = pygame.Rect(controls["support"].x - 4, controls["support"].y - 44, 222,
+                          button.top - controls["support"].y + 40)
         pygame.draw.rect(surface, T.PAPER, box, border_radius=5)
         pygame.draw.rect(surface, T.INK, box, 2, border_radius=5)
         status = ("NO FLIGHTS · " + session.weather.upper() if grounded else
                   f"{points} AIR {'POINT' if points == 1 else 'POINTS'} THIS TURN")
-        self.fitted(surface, status, (box.centerx, box.y + 15), 12,
+        self.fitted(surface, status, (box.centerx, box.y + 12), 12,
                     T.SHORT if grounded else T.DIM, box.w - 12, 10)
+        self.fitted(surface, "AIRCRAFT SHOWN ARE EXAMPLES", (box.centerx, box.y + 28), 10,
+                    T.DIM, box.w - 12, 8)
         descriptions = {"support": "+5% in battle / point", "interdict": "−5% enemy lift / point",
                         "recon": "+1 spotting hex / point"}
         for n, choice in enumerate(("support", "interdict", "recon"), 1):
             row = controls[choice]
             pygame.draw.rect(surface, T.BUTTON_ON if choice == current else T.BUTTON, row, border_radius=3)
             pygame.draw.rect(surface, T.INK, row, 1, border_radius=3)
-            aircraft(surface, session.side, pygame.Rect(row.x + 6, row.y + 8, 23, 21), T.INK, T.BUTTON_ON)
-            self.text(surface, f"{n}  {choice.title()}", (row.x + 36, row.y + 2), 13, T.INK, True)
-            self.text(surface, descriptions[choice], (row.x + 36, row.y + 18), 10, T.DIM)
+            aircraft(surface, session.side, pygame.Rect(row.x + 4, row.y + 4, 32, 29),
+                     T.INK, T.BUTTON_ON, choice)
+            self.text(surface, f"{n}  {choice.title()}", (row.x + 43, row.y + 2), 13, T.INK, True)
+            self.text(surface, descriptions[choice], (row.x + 43, row.y + 18), 10, T.DIM)
             if choice == current:
                 self.text(surface, "✓", (row.right - 18, row.y + 9), 14, T.INK, True)
+            self.tips.append((row, "Example: " + AIR_LABELS[AIR_EXAMPLES[session.side][choice]]
+                              + "; air points pool multiple types."))
 
     def masthead(self, surface, session, ui, map_area):
         """Field Atlas title band: map context stays visible even with details closed."""

@@ -5,7 +5,9 @@
 **Status:** painted single figure with a short-rimmed Italian M33 helmet,
 repeated three in file by the fitting pipeline; replaces the broad-brimmed
 sheet cut. The infantry represents several formations, not identical dress
-and kit across every regiment.
+and kit across every regiment. A separate `it_bersaglieri.png` variant shows
+dark plumes on M33 helmets for the 7th Bersaglieri (unit 183, Trento); the
+default remains unplumed for other foot formations.
 
 **Priority:** the broad-brimmed sheet cut has been replaced.
 

@@ -239,6 +239,23 @@ existing counter canvas using `countergen.cut.fitted`; no external pictures
 were traced or copied. The previous Matilda sheet cut is preserved as a
 variant (its camouflage remains unverified). The Stuart was regenerated once
 to make its four-wheel suspension and compact turret more distinct.
+The Queen's Royal Hussars Museum's armoured-vehicle history reports that
+A13 cruisers counted for roughly half of the 7th Armoured Brigade in
+Operation Crusader, so the 7th now has a separate representative A13 sprite
+instead of inheriting the Crusader of 22nd Armoured:
+https://www.qrhmuseum.com/research/armoured-fighting-vehicles .
+The National Army Museum describes the A13 Mark II/Cruiser Mk IV's extra
+angled turret armour, and The Tank Museum identifies its distinctive large
+Christie-suspension wheels:
+https://collection.nam.ac.uk/detail.php?acc=1975-03-63-1-314 and
+https://tankmuseum.org/tank-nuts/tank-collection/tank-cruiser-mark-iii-a13 .
+The `cw_a13.png` variant was generated for this game with OpenAI image
+generation on 26 October 2026. An initial candidate had an unusable vignette;
+the selected second candidate has real transparency and was alpha-trimmed
+and fitted using `countergen.cut.fitted`. The museum texts were used for the
+vehicle's type and silhouette only: no photograph was traced, copied or
+bundled. This remains one representative for a mixed brigade, not a claim
+that every vehicle was an A13.
 The replacement 25-pounder illustration is an original generation of
 26 October 2026, matched to this game's lorry art, not copied from a photo.
 An Australian War Memorial record photographs a 25-pounder in Tobruk on
@@ -261,9 +278,35 @@ Hurricanes, Tomahawks, Beaufighters, Blenheims, Marylands and Boston
 reconnaissance aircraft. Its timeline also lists German Ju 87 and Ju 88,
 Bf 109 and Bf 110 in the theatre:
 https://www.rafmuseum.org.uk/research/research-enquiries/history-of-aviation-timeline/british-military-aviation/1941-2/ .
-`screen/pictures.aircraft` draws original simplified Hurricane and Ju 87
-silhouettes as visual examples. Air points still abstract several air arms and
-missions; the silhouettes do not assert that these are the only aircraft.
+`screen/pictures.aircraft` draws original simplified Hurricane, Blenheim and
+Boston examples for Commonwealth air effort and Ju 87 and Ju 88 examples for
+Axis effort. AWM's transcription of its Australian military aircraft chart
+documents Italian Macchi C.200 fighters and Ju 87 dive bombers in the region:
+https://transcribe.awm.gov.au/transcription/item/awm20241164-2 .
+The Italian Macchi is shown on the Axis menu button to avoid implying that
+Axis air meant only the Luftwaffe. No exact Axis reconnaissance type has
+been verified for Operation Crusader, so its icon is deliberately anonymous.
+The Ju 88 is an illustrative theatre type, not evidence of a particular
+interdiction sortie. Air points still abstract several air arms and missions;
+the silhouettes do not assert that these were the only aircraft, nor that
+each example flew the mission pictured on a particular turn.
+
+**Axis reconnaissance research lead, not a unit assignment:** a compiled
+18 November 1941 Axis order of battle lists an Afrika Korps reconnaissance
+Staffel as `2(H)/14`, without an aircraft inventory:
+https://www.generalstaff.org/NAF/Pt_I_1941-1942/941gkmj.pdf .
+A 2021 *Scientia Militaria* study describes this unit's morning
+reconnaissance mission on **19 November 1941**, reporting sightings of
+Commonwealth vehicles. This supports its active reconnaissance role during
+Crusader, **not** a particular aircraft type or a claim that it flew on the
+storm-hit opening day:
+https://www.ajol.info/index.php/smsajms/article/download/217929/205533 .
+The Australian War Memorial's catalogue of a wartime British recognition
+film identifies the Henschel Hs 126 as an army-cooperation aircraft, not
+specifically as this Staffel's aircraft on the Crusader opening date:
+https://www.awm.gov.au/collection/F05045 .
+The link between this named formation and an Hs 126 in this scenario still
+requires a dated operational or strength return before being drawn as fact.
 
 The New Zealand official history *Divisional Cavalry* (New Zealand Electronic
 Text Collection, foreword, November–December 1941) describes its light tanks
@@ -350,6 +393,22 @@ https://www.anai.it/wp-content/uploads/2023/08/COPERTINA-MUSEO-III-PARTE.pdf .
 The new British and Italian lorries and Italian gun/tank are originally
 generated pictures, trimmed and fitted to the same transparent canvas;
 photographs were not traced, copied or included.
+
+The Italian Army's history of the 7th Bersaglieri Regiment confirms its
+attachment to Trento from 22 January 1939 and its African service from
+1941 through 1943:
+https://www.esercito.difesa.it/en/organization/the-chief-of-general-staff-of-the-army/comfoter/southern-operational-forces-command/pinerolo-mechanized-brigade/7th-bersaglieri-regiment/the-history/123924.html .
+The Army identifies the Bersaglieri's distinctive plumed headgear and its
+official *Rivista Militare* depicts a desert-dressed Ariete Bersagliere with
+dark feathers on his helmet (later 1942 context, **not** an individual
+1941 Trento portrait):
+https://www.esercito.difesa.it/en/equipment/militaria/decorations/infantry-and-specialties---bersaglieri/76680.html and
+https://www.esercito.difesa.it/comunicazione/editoria/Rivista-Militare/archivio/Documents/2002/Rivista%20Militare%202002%20-%20Numero%206.pdf .
+The three-soldier `it_bersaglieri.png` variant was generated for this project
+with OpenAI image generation, using only this game's `it_foot.png` as an
+editing reference, then fitted to the transparent counter canvas. No external
+illustration was copied or bundled. The 8th and 9th motorised Bersaglieri
+still need their vehicle mix checked before altering their lorry art.
 
 The replacement British/Commonwealth and German infantry were generated for
 this game using OpenAI image generation, trimmed, repeated three times, and

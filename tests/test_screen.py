@@ -131,17 +131,37 @@ def test_f12_reports_capture_errors_without_interrupting_the_game(tmp_path, monk
 
 
 def test_air_selector_has_distinct_1941_theatre_aircraft_silhouettes():
-    from screen.pictures import aircraft
+    from screen.pictures import AIR_EXAMPLES, aircraft
+    assert AIR_EXAMPLES == {
+        "cw": {"button": "hurricane", "support": "hurricane", "interdict": "blenheim", "recon": "boston"},
+        "axis": {"button": "macchi", "support": "stuka", "interdict": "ju88", "recon": "observer"},
+    }
     for size in ((23, 21), (80, 60)):
-        silhouettes = []
+        silhouettes = {}
         for side in ("cw", "axis"):
-            surface = pygame.Surface(size)
-            surface.fill("white")
-            aircraft(surface, side, surface.get_rect(), (35, 25, 18), (230, 210, 160))
-            pixels = pygame.image.tostring(surface, "RGB")
-            assert pixels != b"\xff" * len(pixels)
-            silhouettes.append(pixels)
-        assert silhouettes[0] != silhouettes[1]
+            for choice in ("button", "support", "interdict", "recon"):
+                surface = pygame.Surface(size)
+                surface.fill("white")
+                aircraft(surface, side, surface.get_rect(), (35, 25, 18), (230, 210, 160), choice)
+                pixels = pygame.image.tostring(surface, "RGB")
+                assert pixels != b"\xff" * len(pixels)
+                silhouettes[side, choice] = pixels
+        assert silhouettes["cw", "button"] != silhouettes["axis", "button"]
+        for side in ("cw", "axis"):
+            assert len({silhouettes[side, choice] for choice in ("support", "interdict", "recon")}) == 3
+
+
+def test_air_menu_identifies_examples_without_assigning_a_type_to_air_points():
+    pygame.init()
+    for side, examples in (("cw", ("Hurricane", "Blenheim", "Boston")),
+                           ("axis", ("Ju 87", "Ju 88", "unspecified reconnaissance aircraft"))):
+        app = App(Session(regiments(), GMAP, humans=[side]))
+        app.ui.air_open = True
+        app.paint(pygame.Surface(app.size))
+        controls = layout.air_controls(app.size, True)
+        for choice, model in zip(("support", "interdict", "recon"), examples):
+            assert any(rect == controls[choice] and model in words and "pool multiple types" in words
+                       for rect, words in app.painter.tips)
 
 
 def test_a_hex_is_as_many_pixels_across_as_asked_and_the_counter_fits_in_it():   # docs/COUNTERS.md

@@ -50,13 +50,15 @@ WEATHER = {"clear": "Clear.",                           # what the weather does,
 ROMAN = ("I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X")
 HEAVY_PCT = 25          # a unit that lost this share of its strength in a turn "took heavy losses"
 SAVE_FORMAT = 1         # the layout of a saved game; one of another number is not read
-# Presentation only: old saved scenarios predate `counter_art`; keep their armour truthful.
+# Presentation only: old saved scenarios predate `counter_art`; retain distinctive subjects.
 LEGACY_CRUSADER_ART = {(306, "1st Army Tank Brigade"): "matilda",
                       (307, "32nd Army Tank Brigade"): "matilda",
                       (311, "4th Armoured Brigade"): "stuart",
+                      (312, "7th Armoured Brigade"): "a13",
                       (335, "New Zealand Divisional Cavalry"): "carrier",
                       (104, "Halfaya garrison"): "flak88",
-                      (125, "Panzerjaeger-Abteilungen 39 und 605"): "antitank"}
+                      (125, "Panzerjaeger-Abteilungen 39 und 605"): "antitank",
+                      (183, "7 Reggimento bersaglieri"): "bersaglieri"}
 BY_UNIT = ("standing", "pending", "said")              # kept by side, then by unit id: text turns the ids into words
 
 

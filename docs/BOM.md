@@ -34,10 +34,12 @@ centred, and readable at 43 × 26 pixels (the counter at the opening zoom).
 `tests/test_counters.py` checks the size and placement.
 
 "Units" is how many of Crusader's 91 units show the picture.
+`docs/COUNTER_AUDIT.md` enumerates all 91 by their selected sprite and
+separates type-level evidence from unit-inventory checks still required.
 
 | File | Subject | Units | Shown now | Source now | Status | Priority |
 | --- | --- | --- | --- | --- | --- | --- |
-| `cw_armour` | Crusader cruiser tank | 2 cruiser brigades | painted Crusader, five road wheels | generated original | In use; late re-equipment was mixed | none |
+| `cw_armour` | Crusader cruiser tank | 1 cruiser brigade (22nd) | painted Crusader, five road wheels | generated original | In use; later re-equipment was mixed | none |
 | `cw_foot` | three riflemen, Brodie helmets | 10 | painted tropical-dress rifleman, three in file | generated original | In use; representative Commonwealth dress | none |
 | `cw_guns` | 25-pounder gun-howitzer | 5 | painted shielded 25-pounder on steel disc wheels | generated original | In use; particular regimental batteries varied | none |
 | `cw_motorised` | Bedford OY-pattern 3-ton lorry | 7 | unmarked right-facing two-axle painted lorry | generated original | In use; exact formation fleets unknown | none |
@@ -50,15 +52,16 @@ centred, and readable at 43 × 26 pixels (the counter at the opening zoom).
 | `de_recon` | Sd.Kfz. 222 armoured car | 2 | painted four-wheeled car | generated original | In use; model mix in units unverified | none |
 | `de_hq` | Kübelwagen with a pennant | 4 | Kübelwagen, black pennant | owner's AI picture, `art/axis_hq_cars/german_hq.png` | In use | none |
 | `it_armour` | M13/40 | 1 | unmarked painted riveted M13/40 with paired road wheels | generated original | In use; precise mark and mix unverified | none |
-| `it_foot` | three infantrymen, short-rimmed M33 helmets | 12 | painted soldier, repeated in file | generated original | In use; kit and headgear varied among formations | none |
+| `it_foot` | three infantrymen, short-rimmed M33 helmets | 11 | painted soldier, repeated in file | generated original | In use; kit and headgear varied among formations | none |
 | `it_guns` | 75/27 modello 06 field gun | 7 | painted shielded spoked-wheel field gun | generated original | In use; mixed-calibre regiments represented by one type | none |
 | `it_motorised` | Lancia 3Ro-pattern lorry | 4 | unmarked painted long-bed lorry | generated original | In use; exact formation fleets unknown | none |
 | `it_recon` | AB41 candidate for RECAM (mixed; original photograph not checked) | 1 | painted armoured car with side spares | generated original | In use provisionally; do not infer whole force was AB41 | none |
 | `it_hq` | Fiat staff car with a pennant | 9 | a 1930s tourer, tricolour pennant | owner's AI picture, `art/axis_hq_cars/it_hq.png` | In use | none |
 
-Armour variants for the other three brigades: `art/counters/variants/cw_stuart.png`
-for 4th Armoured Brigade; `cw_matilda.png` for 1st and 32nd Army Tank
-Brigades. These are representative silhouettes: both army-tank brigades
+Armour variants for the other four brigades: `art/counters/variants/cw_stuart.png`
+for 4th Armoured Brigade; original `cw_a13.png` for 7th Armoured Brigade;
+`cw_matilda.png` for 1st and 32nd Army Tank Brigades. These are representative
+silhouettes: 7th Armoured also had Crusaders and A10s, both army-tank brigades
 also operated other types, and 22nd Armoured later included Stuarts.
 The Matilda variant retains the first sheet's unverified striped camouflage.
 Neither a one-sprite-per-brigade portrayal nor the current scenario data
@@ -67,6 +70,12 @@ representative open-topped tracked carrier for New Zealand Divisional Cavalry
 (unit 335), distinct from the wheeled-car default for unit 305. The NZ force
 also had light tanks; its `cars: 30` scenario field remains an unverified
 rules/strength abstraction, not a count of armoured cars.
+
+Italian 7th Bersaglieri (unit 183) uses an original infantry variant
+`art/counters/variants/it_bersaglieri.png` with dark feathered M33 helmets,
+not the eleven other foot units' plain-helmeted `it_foot.png`. The 8th and
+9th Bersaglieri are motorised scenario units; their current lorry picture
+still does not distinguish Bersaglieri from other motorised infantry.
 
 Two German gun variants complete the first subject correction:
 `de_flak88.png` (deployed 8.8 cm Flak, Halfaya garrison, unit 104) and
@@ -93,7 +102,7 @@ The other forms of the same pictures, all in use, none needing work:
 | The drawn set: the fallback for any picture the artist has not done | `art/counters/<nation>_<kind>.svg` and `.png`, 18 of each | drawn set |
 | NATO-style symbols, the option (F3) | none; drawn each time | drawn in code (`Painter.symbol`) |
 | Small pictures in the map's key | none; drawn each time | drawn in code (`screen/pictures.py`) |
-| Air selector silhouettes | representative Hurricane / Ju 87 outlines, not aircraft unit counters | drawn in code (`screen/pictures.aircraft`) |
+| Air selector silhouettes | illustrative Hurricane, Blenheim, Boston; Macchi C.200, Ju 87, Ju 88, and anonymous Axis reconnaissance; pooled air points, not aircraft unit counters | drawn in code (`screen/pictures.aircraft`) |
 
 ## 2. Parts of a counter and a tile
 
@@ -178,8 +187,8 @@ the rattle meter shows the same thing.
 | Fonts | pygame's default font | In use; no font chosen or licensed |
 | Window icon | — | Not built: pygame's default is shown |
 | Title or start screen | — | Not built: the game opens on the map |
-| A picture for the air force's choice (support, interdict, recon) | — | Not built: the choice has no control on the screen (`docs/TODO.md`) |
-| Markers named in `docs/COUNTERS.md` (Subjects): a supply lorry, a locomotive for the railhead, a Hurricane, a Bf 109 and a Stuka | — | Not built; none is used by the screen |
+| A picture for the air force's choice (support, interdict, recon) | drawn in code (`screen/pictures.aircraft`) | In use; examples vary by mission; menu explicitly says they are examples |
+| Markers named in `docs/COUNTERS.md` (Subjects): a supply lorry and a locomotive for the railhead | — | Not built; aircraft are now examples in the air selector instead of map markers |
 | Optional retro look: a pixel palette and font | — | Not built (`DESIGN.md` §12) |
 
 ## 8. For the web version later

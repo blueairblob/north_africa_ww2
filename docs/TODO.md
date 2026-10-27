@@ -50,7 +50,8 @@ The game:
 The art:
 
 - **[build] Finish mismatched counter art:** verify the three new painted
-  recon types against formation inventories, especially the composite CW
+  recon types against formation inventories (`docs/COUNTER_AUDIT.md` lists
+  all 91 scenario units by sprite), especially the composite CW
   armoured-car unit and the unverified RECAM AB41 photo; verify the new
   infantry artwork and all representative vehicles
   against formation equipment returns. German 10.5 cm field
@@ -62,13 +63,24 @@ The art:
   the official history also mentions light tanks; verify the scenario's
   `cars: 30` strength abstraction separately (it is not 30 armoured cars).
   Counter art for mixed Matilda/Valentine and later Crusader/Stuart brigades
-  still represents only a predominant/typical type; confirm equipment by
-  formation and date before claiming every unit is depicted exactly.
-- **[build] Air visuals:** the selector now has small representative Hurricane
-  and Ju 87 silhouettes, but abstract air points include both Commonwealth
-  and Axis aircraft beyond those examples (RAF Museum timeline, `SOURCES.md`).
-  Plan historically checked mission- and nation-specific art if aircraft
-  become depicted as counters; do not add inaccurate unit tokens prematurely.
+  still represents only a predominant/typical type; 7th Armoured Brigade now
+  shows an A13 rather than a generic Crusader, but also included A10s and
+  Crusaders. Confirm equipment by formation and date before claiming every
+  unit is depicted exactly.
+  The 7th Bersaglieri now has its own feathered-helmet infantry variant;
+  8th and 9th Bersaglieri are still shown as generic motorised lorries,
+  without the distinctive troops. Verify their 1941 transport mix and
+  devise readable unit-specific art without pretending all men rode motorcycles.
+- **[build] Air visuals:** the selector illustrates RAF and Axis fighter,
+  bomber and reconnaissance choices using representative silhouettes, but
+  its air points pool multiple aircraft, national air arms and missions.
+  The Axis recon icon deliberately remains anonymous until aircraft and
+  unit assignments can be verified. A compiled 18 November order of battle
+  names `2(H)/14`, and a study describes its 19 November reconnaissance.
+  The Hs 126 is a plausible army-cooperation candidate, but these sources
+  do not establish that Staffel's dated aircraft inventory
+  (`docs/SOURCES.md`, Art). Research dated unit allocations before
+  adding any aircraft counters; do not mistake examples for sortie records.
 
 - **[owner]** The pennants on the two Axis HQ cars are black and tricolour;
   the briefs ask for red. Keep or redraw.
