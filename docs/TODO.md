@@ -47,72 +47,15 @@ The game:
   as `PLAN.md` ("DESIGN.md: what would change") proposes. Until then
   `DESIGN.md` describes the pygame game.
 
-The art:
+The art (historical verification deferred by the owner on 28 October 2026):
 
-- **[build] Finish mismatched counter art:** verify the three new painted
-  recon types against formation inventories (`docs/COUNTER_AUDIT.md` lists
-  all 91 scenario units by sprite), especially the composite CW
-  armoured-car unit and the unverified original RECAM AB41 photo (a 2018
-  military-history article does independently identify AB41s in component
-  units); verify the new
-  infantry artwork and all representative vehicles
-  against formation equipment returns. German 10.5 cm field
-  howitzer, Halfaya 88 mm and one tracked
-  Panzerjäger I variant are now distinct. Verify the gun marks, losses,
-  command attachment and mixture in the Halfaya, Boettcher, Division Afrika
-  and combined 39/605 formations before treating each picture as definitive.
-  NZ Divisional Cavalry now shows a painted Mark VI light tank for the
-  opening-day group: the official history records 26 by end-October, alongside
-  Bren carriers. Verify serviceability, losses and subsequent replacement
-  mix before deciding when/if to change the sprite later. The `cars: 30`
-  rules strength remains unverified and is labelled *scout vehicles*, not 30
-  literal armoured cars or tanks.
-  Mixed-equipment picture hover notes now identify 8 RTR Valentines in 1st
-  Army Tank Brigade, 1 RTR cruisers in 32nd and other Tobruk artillery types;
-  the 5 November 1941 fortress artillery return cannot establish unit 354's
-  scenario count of 72 guns or its exact command boundaries. Verify those
-  against original war diaries.
-  A dated German tank return analysed in *Scientia Militaria* supports the
-  Panzer III as a majority picture for Panzerregiment 5, but its 120 tanks
-  differ from the scenario's remembered 116; resolve counting basis before
-  changing gameplay. A separate compilation puts Panzer II/III/IV in
-  15th Panzer Division on 11 and 21 November; unit 111 now calls its Panzer
-  III art representative, but reconcile its 133 tanks against the dated
-  divisional subtotals and verify the regiment's companies and tank marks.
-  Marmon-Herrington Mk III cars are documented in KDG
-  squadrons; the rebuilt open-turret Mk III-pattern sprite is representative
-  but the other components of composite unit 305 and its exact car mark are
-  not yet verified.
-  German reconnaissance battalions 3 and 33 are listed with both Sd.Kfz. 222
-  and heavier cars by 30 December 1941, but that later table has an
-  inconsistent vehicle count; inspect the archived return and 18 November
-  strengths before assigning exact car proportions.
-  The original painted Matilda replaces the old sheet cut, but its
-  Caunter-inspired paint has not been confirmed for either brigade.
-  Counter art for mixed Matilda/Valentine and later Crusader/Stuart brigades
-  still represents only a predominant/typical type; 7th Armoured Brigade now
-  shows an A13 rather than a generic Crusader, but also included A10s and
-  Crusaders. Confirm equipment by formation and date before claiming every
-  unit is depicted exactly.
-  The 7th Bersaglieri has its own feathered-helmet infantry variant;
-  8th and 9th now have an open-lorry variant with feathered riders. The
-  vehicle is illustrative. Verify each regiment's dated lorry/motorcycle
-  mix: a single counter cannot claim all its troops rode either type.
-- **[build] Air visuals:** the selector illustrates RAF and Axis fighter,
-  bomber and reconnaissance choices using representative silhouettes, with a
-  dated Macchi C.202 illustration from 26 November; C.200 is shown earlier,
-  without implying its withdrawal. A compiled 17 November aircraft list
-  conflicts with the 4° Stormo account for IX Gruppo; verify the underlying
-  Italian squadron returns before assigning date-specific fleets. The air
-  points still pool multiple aircraft, national air arms and missions.
-  The Axis recon icon now illustrates a Bf 110 from a 23 November 1941
-  operations report; it is not a unit assignment or an 18 November sortie.
-  A compiled 18 November order of battle names `2(H)/14`, and a study
-  describes its 19 November reconnaissance without verifying aircraft type.
-  The Hs 126 is a plausible army-cooperation candidate, but these sources
-  do not establish that Staffel's dated aircraft inventory
-  (`docs/SOURCES.md`, Art). Research dated unit allocations before
-  adding any aircraft counters; do not mistake examples for sortie records.
+- **[check, deferred] Counter and aircraft historical verification:** all 91
+  ground units have representative art, but the 27 depiction groups still
+  have unit-level questions. Air points use labelled aircraft examples, not
+  squadron counters. Resume from `docs/COUNTER_AUDIT.md` (*Resume plan* and
+  unit-ID table), with source details in `docs/SOURCES.md`. Check dated
+  inventories and visual accuracy before calling the set historically
+  complete; keep uncertain equipment and counts labelled as such.
 
 - **[owner]** The pennants on the two Axis HQ cars are black and tricolour;
   the briefs ask for red. Keep or redraw.

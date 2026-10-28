@@ -1127,7 +1127,7 @@ class Painter:
         # The named targets precede the parent button: Painter.tip shows the first match.
         for icon, model in ((primary_icon, primary), (alternate_icon, alternate)):
             self.tips.append((icon, f"{model}: fighter example; air points pool types."))
-        early = (" The C.200 remains an earlier example, not a confirmed withdrawal."
+        early = (" C.200s also served during this period; the icon shows one type."
                  if primary_model == "macchi202" else "")
         self.tips.append((button, f"Pooled air effort (1–3); {primary} and {alternate} are examples.{early}"))
         if not ui.air_open:

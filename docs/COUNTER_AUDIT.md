@@ -2,7 +2,7 @@
 
 The scenario has **91 ground units** and no aircraft units. A unit's side,
 `nation`, `type` and optional `counter_art` selector determine its picture
-(`screen/session.py`, `screen/draw.py`). The 26 rows below are **all** current
+(`screen/session.py`, `screen/draw.py`). The 27 rows below are **all** current
 combinations; `tests/test_counters.py` checks that their IDs and selectors
 match the scenario and that their assets exist. This is coverage of the
 **depiction**, not proof that each unit's equipment is historically verified.
@@ -40,7 +40,8 @@ change the historical mixture without changing the sprite.
 | it | armour | default | 151 | unmarked M13/40-type tank | 132nd tank regiment marks and fleet proportions |
 | it | foot | bersaglieri | 183 | feathered-helmet infantry; Italian Army records 7th Bersaglieri with Trento | November uniform/transport of its battalions |
 | it | foot | default | 105, 141, 142, 171, 172, 181, 182, 191, 192, 201, 202 | M33-helmeted riflemen | Bardia garrison and ten line regiments' exact kit |
-| it | guns | default | 143, 153, 164, 173, 184, 193, 203 | 75/27 field gun, not every battery's calibre | divisional mixtures, particularly Ariete, Trieste and mobile 173 |
+| it | guns | default | 153, 164, 184, 193, 203 | 75/27 modello 06 field gun; dated or organizational evidence supports a 75/27 in each except Trieste's exact 1941 mix (see sources) | 18 Nov batteries, model subvariants and Trieste's precise mix |
+| it | guns | obice10017 | 143, 173 | 100/17 field howitzer for Savona's 12th and Brescia's 1st Celere; 1941/1 Nov returns list other calibres (art hover notes) | Exact Nov 18 serviceable pieces; scenario `guns: 24` in both is abstract |
 | it | hq | default | 102, 103, 140, 150, 160, 170, 180, 190, 200 | generic tourer with Italian pennant | exact staff cars and pennant colour |
 | it | motorised | bersaglieri_motorised | 152, 163 | Open unmarked lorry with feathered Bersaglieri riders; representative motor transport only | 9th included a motorcycle battalion; lorry and motorcycle proportions by regiment and date |
 | it | motorised | default | 161, 162 | Lancia 3Ro-pattern lorry | 65th/66th fleet |
@@ -54,6 +55,8 @@ squadrons. The menu shows *examples* chosen from the RAF Museum's 18 November
 Commonwealth Hurricane and Tomahawk fighters, Blenheim and Boston examples;
 Axis Macchi C.200 (C.202 from the 26 November turn) and Bf 109 fighters,
 Ju 87 and Ju 88 examples, and a Bf 110 reconnaissance example. A
+1966 aircraft profile records 153° Gruppo C.200 service across July–December
+1941, so the dated C.202 icon does not imply C.200 withdrawal. A
 transcribed 23 November 1941 operations report records Bf 110 reconnaissance sorties in the Crusader theatre
 (`docs/SOURCES.md`); it does **not** identify the aircraft flown on
 18 November or establish the exact fleet of the `2(H)/14` reconnaissance
@@ -73,3 +76,53 @@ counters would require an aircraft order of battle, not merely a new image.
    at the opening zoom.
 4. Resolve the historical and commercial provenance gaps in `docs/TODO.md`
    before declaring the set complete.
+
+## Resume plan: historical verification deferred 28 October 2026
+
+The owner deferred the deeper historical verification to the to-do list.
+The game has a complete *representative* picture set, not a verified
+vehicle-and-uniform inventory for every unit. The table above is the unit-ID
+ledger: **91 ground units, 27 depiction groups, and an outstanding check in
+every group**. No aircraft unit counters exist; the air menu illustrates pooled
+air points. The dated C.200/C.202 switch is an example, not a change to a
+documented squadron roster. `docs/SOURCES.md` records the named sources and
+disagreements; `docs/BOM.md` and `art/art_required_*.md` record art and origin.
+
+When work resumes, use this order:
+
+1. **Air units and dates:** find original RAF, Luftwaffe and Regia Aeronautica
+   unit returns or operation records for the 18 November opening and later
+   turns. Resolve the contradictory compiled 17 November C.202 listing against
+   the 4° Stormo account. Establish the aircraft used by `2(H)/14` before
+   naming its reconnaissance icon as that Staffel. Keep air points separate
+   from aircraft counts; add actual aircraft counters only if the scenario
+   gains sourced, named air units.
+2. **Commonwealth ground units:** establish dated tank mixes for the 1st and
+   32nd Army Tank Brigades and the 4th, 7th and 22nd Armoured Brigades;
+   complete the composite armoured-car unit 305 and NZ Divisional Cavalry 335
+   inventories; check each artillery formation and the Tobruk 354 command
+   boundary. Check Polish, Indian, South African and Tobruk infantry dress,
+   Bedford-pattern transport, and the makes of the HQ vehicles.
+3. **German and Italian ground units:** reconcile the two panzer regiments'
+   types and counts; find 18 November returns for reconnaissance battalions
+   3 and 33, Halfaya, Boettcher, Division Afrika and the combined 39/605
+   anti-tank unit. Check RECAM's original photograph and vehicle mix.
+   Confirm Italian infantry and Bersaglieri kit and the motorised regiments'
+   lorry/motorcycle shares. The seven Italian artillery selectors now show
+   100/17 for Savona/Brescia and 75/27 for the other five; verify gun marks,
+   batteries and serviceability against original dated returns, especially
+   Trieste's unresolved November mix.
+4. **Art and provenance:** create variants only when sourced differences will
+   remain useful at counter size (43 × 26 px) or in the details panel. Keep
+   mixed-unit hover notes candid. Confirm the older AI artwork's tool and
+   commercial-use terms, and resolve the Axis pennant and staff-car questions
+   listed in `docs/TODO.md` before claiming a final commercial set.
+
+For each unit, record the source **and its date**, the equipment or dress it
+actually supports, what remains uncertain, the chosen picture and its origin.
+Do not infer 18 November serviceability from a later return or change scenario
+strengths just to match art. Reconcile any strength change with the rules and
+historical sources separately. Update the table, scenario selector/hover note,
+`docs/SOURCES.md` and `docs/BOM.md` together. Check rendered art at both map
+and details sizes, saved-game fallback selectors, `tests/test_counters.py`,
+`tests/test_screen.py` and the full test suite before calling a batch done.

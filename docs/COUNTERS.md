@@ -77,7 +77,7 @@ One per unit type per nation, so that a set stays consistent.
 | Unit type | Commonwealth | German | Italian |
 | --- | --- | --- | --- |
 | Armour | Crusader (22nd Armoured); A13 Cruiser (7th Armoured, mixed); Matilda II (army tank brigades, mixed); M3 Stuart (4th Armoured) | Panzer III | M13/40 |
-| Guns | 25-pounder | 10.5 cm leFH 18 default; 8.8 cm Flak at Halfaya and Panzerjäger I for the combined 39/605 | 75/27 field gun representative |
+| Guns | 25-pounder | 10.5 cm leFH 18 default; 8.8 cm Flak at Halfaya and Panzerjäger I for the combined 39/605 | 75/27 field gun default; 100/17 howitzer for Savona's 12th and Brescia's 1st Celere |
 | Motorised infantry | Bedford or CMP 15-cwt truck | Opel Blitz lorry | covered Lancia-pattern lorry for line infantry; open lorry with feathered riders for 8th/9th Bersaglieri (vehicle type illustrative) |
 | Foot infantry | Brodie-helmeted riflemen | tropical-field-cap riflemen | M33-helmeted riflemen; dark-plumed Bersaglieri variant for 7th Regiment |
 | Reconnaissance | Marmon-Herrington Mk III-pattern car for KDG, other cars unverified | SdKfz 222 | AB 41 |

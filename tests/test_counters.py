@@ -77,7 +77,7 @@ def test_crusader_formations_choose_distinct_representative_armour_art():
     assert {uid: s.counter_art.get(uid) for uid in (306, 307, 311, 312, 313)} == {
         306: "matilda", 307: "matilda", 311: "stuart", 312: "a13", 313: None}
     assert Session.from_save(s.to_save(), GMAP).counter_art == s.counter_art
-    assert {uid: s.art_note[uid] for uid in (305, 306, 307, 312, 354, 163, 111, 121, 107, 125, 114, 124)} == {
+    assert {uid: s.art_note[uid] for uid in (305, 306, 307, 312, 354, 163, 143, 173, 111, 121, 107, 125, 114, 124)} == {
         305: "Mk III shown for KDG; other cars unverified.",
         111: "Panzer III shown; 15th also had II and IV in November.",
         121: "Panzer III shown; 5th also fielded II and IV.",
@@ -86,6 +86,8 @@ def test_crusader_formations_choose_distinct_representative_armour_art():
         312: "A13 shown; verify the other cruiser types.",
         354: "25-pounder shown; Tobruk used mixed guns.",
         163: "Open lorry shown; 9th also had motorcycles.",
+        143: "100/17 shown; 1941 return also lists 105/28, 75/27 and 65/17. 24 is abstract.",
+        173: "100/17 shown; 1 Nov return also lists 75/27-11 groups. 24 is abstract.",
         107: "AB41 shown; RECAM vehicle mix and count unverified.",
         125: "Panzerjäger I shown for 605; 39 also had towed guns.",
         114: "222 shown; 33rd also had 231/232 by Dec 1941.",
@@ -105,6 +107,7 @@ def test_crusader_formations_choose_distinct_representative_armour_art():
     assert {uid: s.counter_art[uid] for uid in (152, 163)} == {152: "bersaglieri_motorised", 163: "bersaglieri_motorised"}
     assert all(s.counter_art.get(uid) is None for uid in (141, 142, 161, 162, 171, 172))
     assert s.counter_art.get(305) is None  # wheeled British armoured cars are not carriers
+    assert {s.counter_art[uid] for uid in (143, 173)} == {"obice10017"}
     assert {uid: s.counter_art.get(uid) for uid in (104, 106, 113, 123, 125, 134)} == {
         104: "flak88", 106: None, 113: None, 123: None, 125: "antitank", 134: None}
     painter = Painter(GMAP)
@@ -122,6 +125,11 @@ def test_crusader_formations_choose_distinct_representative_armour_art():
                  for variant in (None, "flak88", "antitank")}
     assert all(axis_guns.values())
     assert len({pygame.image.tostring(image, "RGBA") for image in axis_guns.values()}) == 3
+    italian_guns = {variant: painter.sprite("it", "guns", (43, 26), variant)
+                    for variant in (None, "obice10017")}
+    assert all(italian_guns.values())
+    assert pygame.image.tostring(italian_guns[None], "RGBA") != pygame.image.tostring(
+        italian_guns["obice10017"], "RGBA")
     bersaglieri = painter.sprite("it", "foot", (100, 60), "bersaglieri")
     regular = painter.sprite("it", "foot", (100, 60))
     assert bersaglieri is not None and regular is not None
@@ -268,5 +276,5 @@ def test_counter_audit_accounts_for_each_crusader_unit_and_art_selector():
         key = nation, kind, variant
         assert key not in actual, key
         actual[key] = ids
-    assert len(actual) == 26
+    assert len(actual) == 27
     assert actual == dict(expected)

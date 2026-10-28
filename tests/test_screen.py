@@ -191,7 +191,7 @@ def test_axis_italian_fighter_example_changes_only_after_the_documented_arrival(
     app.paint(pygame.Surface(app.size))
     assert app.session.day == date(1941, 11, 26)
     assert AIR_LABELS["macchi202"] in button_tip()
-    assert "not a confirmed withdrawal" in button_tip()
+    assert "C.200s also served during this period" in button_tip()
     assert any(words.startswith("Macchi C.202: fighter example") for _, words in app.painter.tips)
 
 

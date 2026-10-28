@@ -413,6 +413,13 @@ From the game's next two-day turn (**26 November**) the Italian fighter
 illustration, **not** evidence of a particular sortie, every Italian squadron's
 equipment, or the C.200's withdrawal. The earlier C.200 and later C.202
 silhouettes are original code-drawn shapes, not traced historical art.
+Gianni Cattaneo's contemporary-research aircraft profile, *The Macchi
+MC.200* (Profile Publications no. 64, 1966), records the 153° Gruppo's
+C.200 operations in North Africa from July through December 1941. This
+supports the opening-turn example and continued C.200 use after the C.202
+example appears; it does not give a verified 18 November sortie or establish
+the exact fleet on that day:
+https://www.scribd.com/document/495102935/Profile-Publications-Aircraft-Profile-064-Macchi-Mc-200 .
 A separate Nafziger **17 November 1941** aircraft compilation lists
 multiple Italian formations as already having C.202s, including 9° Gruppo;
 this conflicts with the 4° Stormo history above, which says IX Gruppo's
@@ -596,6 +603,44 @@ The Italian Army's history of the 21st Trieste Artillery Regiment notes both
 75/27 and 100/17 guns, so the new 75/27 illustration is explicitly
 representative rather than every Italian battery's documented calibre:
 https://www.esercito.difesa.it/en/organization/the-chief-of-general-staff-of-the-army/comfoter/southern-operational-forces-command/pinerolo-mechanized-brigade/21st-trieste-land-artillery-regiment/the-history/123920.html .
+For Brescia's **1st Celere Artillery Regiment (unit 173)**, a compiled
+**1 November 1941** divisional return lists two 100/17 groups and two
+75/27-11 groups, with some batteries absent or possessing only personnel:
+https://www.regioesercito.it/pages/rediv27.html . This dated breakdown
+supports showing a 100/17 howitzer rather than the shared 75/27 modello 06;
+it does **not** prove an exact 18 November serviceable-gun count or whether
+the 100/17 was the most numerous type that day. The model-14 howitzer's
+field carriage, large wheels and 100 mm, 17-calibre barrel are described in
+the period Italian technical manual *Cenni descrittivi del pezzo da 100/17
+mod. 914* (1926): https://djvu.online/file/PhDiaTgQdDeYT . The new original
+`it_obice10017.png` is a 100/17-pattern illustration, not a claim that a
+specific gun's subvariant, camouflage or modifications are verified. It was
+generated with OpenAI image generation on 27 October 2026 using only this
+project's painted Italian gun for style, then fitted to the transparent
+counter canvas with `countergen.cut.fitted`. No historical image was copied.
+For Savona's **12th Artillery Regiment (unit 143)**, the regimental history
+lists its 1941 organization as one 100/17 group, one 105/28 group, a 75/27
+battery and two 65/17 batteries. The shared 75/27 modello 06 picture had
+overemphasized a single battery; the 100/17 variant now shows one of the
+documented groups. This yearly summary does not prove the exact 18 November
+serviceable mix or the scenario's `guns: 24`:
+https://www.regioesercito.it/pages/rgtart12.html .
+The other five Italian artillery selectors were cross-checked against
+regimental or divisional histories, without treating a yearly organization
+as an 18 November serviceability return:
+
+| Unit | What the source supports | Art implication |
+| --- | --- | --- |
+| 153, Ariete 132nd | 75/27 groups in the regiment's early organization; additional calibres documented later | Shared 75/27 remains a representative type: https://www.regioesercito.it/pages/rgtartariete.html |
+| 164, Trieste 21st | Italian Army history identifies both 75/27 and 100/17, but the precise November 1941 mix is unresolved | Shared 75/27 remains provisional: https://www.esercito.difesa.it/en/organization/the-chief-of-general-staff-of-the-army/comfoter/southern-operational-forces-command/pinerolo-mechanized-brigade/21st-trieste-land-artillery-regiment/the-history/123920.html |
+| 184, Trento 46th | 1940 organization lists two 75/27 groups and one 100/17; reorganization followed in 1942 | Shared 75/27 is a plausible representative, not every gun: https://www.regioesercito.it/pages/rgtart46.html |
+| 193, Pavia 26th | 1941 listing explicitly includes two 75/27-06 groups plus 100/17-14 and 75/13 groups | Shared modello 06 is a documented type: https://www.regioesercito.it/pages/rgtart26.html |
+| 203, Bologna 205th | 1941 divisional organization lists two 75/27 groups and one 100/17 group | Shared 75/27 is a plausible representative: https://www.regioesercito.it/pages/rediv25.html |
+
+These secondary compilations establish type examples, not exact gun counts,
+serviceability, or the paint and shield details on 18 November. The variant
+split corrects the strongest identified mismatches; the full regimental
+inventories and unit-specific markings remain open.
 The Royal Logistic Corps describes the Bedford OY as a 1939 British 3-ton
 truck; its allocation to the seven composite motorised formations is not
 confirmed by this source:

@@ -58,6 +58,8 @@ LEGACY_CRUSADER_ART = {(306, "1st Army Tank Brigade"): "matilda",
                       (335, "New Zealand Divisional Cavalry"): "mkvi_light",
                       (104, "Halfaya garrison"): "flak88",
                       (125, "Panzerjaeger-Abteilungen 39 und 605"): "antitank",
+                      (143, "12 Reggimento artiglieria"): "obice10017",
+                      (173, "1 Reggimento artiglieria celere"): "obice10017",
                       (183, "7 Reggimento bersaglieri"): "bersaglieri",
                       (152, "8 Reggimento bersaglieri"): "bersaglieri_motorised",
                       (163, "9 Reggimento bersaglieri"): "bersaglieri_motorised"}

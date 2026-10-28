@@ -3,11 +3,12 @@
 **Deliver:** `art/counters/artist/it_guns.png`, one picture in one file.
 
 **Status:** painted original shielded 75/27 modello 06 field gun replaces the
-sheet cut. This is representative only; Italian regiments used other calibres
-too, and individual gun allocations for all seven abstract formations are
-not established here.
+sheet cut for five formations. Savona's 12th Artillery (unit 143) and
+Brescia's 1st Celere (unit 173) now use an original `it_obice10017.png`
+variant based on their mixed-calibre returns. Exact 18 November gun
+allocations for all seven remain unverified.
 
-**Priority:** the sheet cut is replaced; mixed-calibre inventory still open.
+**Priority:** mixed-calibre inventories and 18 November serviceability still open.
 
 ## The subject
 

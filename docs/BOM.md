@@ -53,7 +53,7 @@ separates type-level evidence from unit-inventory checks still required.
 | `de_hq` | Kübelwagen with a pennant | 4 | Kübelwagen, black pennant | owner's AI picture, `art/axis_hq_cars/german_hq.png` | In use | none |
 | `it_armour` | M13/40 | 1 | unmarked painted riveted M13/40 with paired road wheels | generated original | In use; precise mark and mix unverified | none |
 | `it_foot` | three infantrymen, short-rimmed M33 helmets | 11 | painted soldier, repeated in file | generated original | In use; kit and headgear varied among formations | none |
-| `it_guns` | 75/27 modello 06 field gun | 7 | painted shielded spoked-wheel field gun | generated original | In use; mixed-calibre regiments represented by one type | none |
+| `it_guns` | 75/27 modello 06 field gun | 5 | painted shielded spoked-wheel field gun | generated original | In use; mixed-calibre regiments represented by one type | none |
 | `it_motorised` | Lancia 3Ro-pattern lorry | 2 | unmarked painted long-bed lorry | generated original | In use for 65th/66th; exact fleets unknown | none |
 | `it_recon` | AB41 documented for RECAM components (mixed; original photograph not checked) | 1 | painted armoured car with side spares | generated original | Representative only; full 18 Nov fleet and number unverified | none |
 | `it_hq` | Fiat staff car with a pennant | 9 | a 1930s tourer, tricolour pennant | owner's AI picture, `art/axis_hq_cars/it_hq.png` | In use | none |
@@ -80,6 +80,13 @@ The 8th and 9th Bersaglieri (units 152 and 163) use an original
 feathered troops, instead of the covered lorry used by the 65th and 66th.
 The precise vehicle allocation and motorcycle component remain unknown;
 the riders identify the troops, not an exact regiment equipment return.
+
+Italian artillery units 143 and 173 use an original `it_obice10017.png`
+howitzer variant in place of the shared 75/27 modello 06 image. Savona's
+1941 regimental history lists a 100/17 group along with 105/28, 75/27 and
+65/17 guns; Brescia's dated 1 November return lists both 100/17 and
+75/27-11 groups. The art shows one documented type in each mixed unit,
+while each scenario's 24 guns remain an abstract strength.
 
 Italian 7th Bersaglieri (unit 183) uses an original infantry variant
 `art/counters/variants/it_bersaglieri.png` with dark feathered M33 helmets,
