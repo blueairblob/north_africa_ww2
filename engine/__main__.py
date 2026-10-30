@@ -2,7 +2,8 @@
 
     python -m engine crusader attack nothing
     python -m engine crusader attack nothing --seed 1941     with the weather drawn from this seed
-    python -m engine sidi_rezegh attack attack               the short scenario: five turns
+    python -m engine sidi_rezegh computer computer           two computer opponents, five turns
+    python -m engine sidi_rezegh computer-easy computer-hard --seed 1941
 
 The only input and output of the engine package is here and in scenarios.py, which reads the files.
 """

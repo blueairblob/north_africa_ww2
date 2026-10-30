@@ -204,8 +204,8 @@ the rattle meter shows the same thing.
 | --- | --- | --- |
 | Buttons, tabs, the red bubble on the Timetable tab, the stack menu, the tick box, the Game menu, the cover between two players | drawn in code | In use |
 | Fonts | pygame's default font | In use; no font chosen or licensed |
-| Window icon | — | Not built: pygame's default is shown |
-| Title or start screen | — | Not built: the game opens on the map |
+| Window icon | original code-drawn hex emblem (`screen/branding.py`) | In use via pygame's window icon; a packaged executable icon is a later packaging task |
+| Title or start screen | original code-drawn card over the game's own map (`screen/draw.py`) | In use on interactive launch; Continue to map and Enter/Space start play |
 | A picture for the air force's choice (support, interdict, recon) | drawn in code (`screen/pictures.aircraft`); named examples shown on each air-choice row | In use; examples vary by mission; menu explicitly says they are examples |
 | Markers named in `docs/COUNTERS.md` (Subjects): a supply lorry and a locomotive for the railhead | — | Not built; aircraft are now examples in the air selector instead of map markers |
 | Optional retro look: a pixel palette and font | — | Not built (`DESIGN.md` §12) |

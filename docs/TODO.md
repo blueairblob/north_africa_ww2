@@ -1,7 +1,7 @@
 # To do
 
-Everything known to be open, on 22 October 2026, at commit `f784f0d`. Each
-item says where the detail is. The pictures, effects and sounds still wanted
+Everything known to be open on 28 October 2026. The original list was compiled
+at commit `f784f0d`. Each item says where the detail is. The pictures, effects and sounds still wanted
 are listed in full in `docs/BOM.md`; only the headline is here.
 
 Marks: **[fix]** breaks a rule the project has set itself. **[owner]** a
@@ -11,11 +11,9 @@ not yet confirmed in a source. **[future]** not to be started unasked.
 
 ## 1. Fixes
 
-The owner's rule is that every action can be reached by a tap on something
-visible (`PLAN.md`, "To keep it so"). One cannot:
-
-- **[fix] In the playback**, going faster (F) and on to the next scene (Right
-  arrow or N) are keys only; a click skips the whole playback.
+No known open fixes in this section. Playback now has small Back, Next,
+Speed and Done controls in the footer, satisfying the owner's tap rule
+(`PLAN.md`, "To keep it so").
 
 ## 2. Decisions for the owner
 
@@ -41,8 +39,6 @@ The game:
   Dated events).
 - **[owner]** Whether the two gentle escarpments east of Sofafi stay as
   barriers (`docs/MAP.md`, Known limitations).
-- **[owner]** Where the computer opponent goes in the order of work
-  (`PLAN.md`, "Open, for the owner").
 - **[owner]** Whether `DESIGN.md` §12 to §15 are rewritten for the web plan,
   as `PLAN.md` ("DESIGN.md: what would change") proposes. Until then
   `DESIGN.md` describes the pygame game.
@@ -82,11 +78,16 @@ Publishing:
 
 ## 3. Work planned, not done
 
-- **[build]** The computer opponent (`DESIGN.md` §11, milestone 5). There are
-  only scripted test players (`engine/players.py`). Not to be started until
-  the owner says where it goes.
-- **[build]** Levels of difficulty. None exist; luck applies to every game
-  alike.
+- **[build]** Directed air missions: command heading and distance, recon flight
+  corridor and visible interdiction target. The current global air-point effects
+  remain in place while the rules are designed. See `docs/AIR_REVIEW.md` for
+  the playtest diagnosis, proposed first slice and decisions needed.
+- **[build]** Improve the first playable computer opponent (`engine/computer.py`):
+  playtest both sides in Sidi Rezegh and Crusader, assess sector choices,
+  supply recovery and scenario balance, then tune its decisions. The owner
+  placed this work next on 28 October 2026. Easy, Standard and Hard now use
+  the same side view as a human; the first five-seed comparison is in
+  `docs/COMPUTER_LEVELS.md`. Larger trials and scenario balance remain open.
 - **[build]** The front-line history overlay (F), in `DESIGN.md` §12. Not
   built.
 - **[build]** The optional retro look, in `DESIGN.md` §12. Not built.
@@ -97,12 +98,6 @@ Publishing:
   is a candidate; its dates are from memory.
 - **[build]** Recording golden games, then freezing the Python engine as the
   reference (`PLAN.md`, "Order of work", steps 3 and 4). Not begun.
-- **[build]** Finish the historically checked counter subjects in
-  `docs/COUNTER_AUDIT.md`: all 18 nation/kind defaults now have picture files
-  and additional formation variants, but several pictured models, mixed-unit
-  fleets and mixed-group guns still need dated evidence and additional
-  representative subjects where warranted.
-  A window icon and a title screen do not exist.
 
 ## 4. Numbers to tune
 

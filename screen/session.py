@@ -153,6 +153,7 @@ class Session:
         kinds = {made: kind for kind, made in SCRIPTED.items()}
         return {"format": SAVE_FORMAT, "scenario": self.scenario, "humans": list(self.humans),
                 "scripted": {s: kinds[type(p)] for s, p in self.scripted.items()},
+                "scripted_state": {s: p.to_save() for s, p in self.scripted.items() if hasattr(p, "to_save")},
                 "state": self.state, "record": self.record, "replies": self.replies, "before": self.before,
                 "watched": sorted(self.watched), "waiting": list(self.waiting), "air": self.air,
                 "names": self.names, "standing": self.standing, "pending": self.pending, "said": self.said,
@@ -179,6 +180,9 @@ class Session:
         if self.state["scenario"] != self.scenario["id"] or invariants.check(self.state, self.gmap):
             raise KeyError("state")                     # not a state these rules could have reached
         self.record, self.replies, self.before = data["record"], data["replies"], data["before"]
+        for side, player in self.scripted.items():
+            if hasattr(player, "restore"):
+                player.restore(data.get("scripted_state", {}).get(side, {}))
         self.watched, self.waiting, self.air = set(data["watched"]), list(data["waiting"]), dict(data["air"])
         self.names = {int(uid): name for uid, name in data["names"].items()}
         self.standing, self.pending, self.said = (ids(data[key]) for key in BY_UNIT)
@@ -395,6 +399,8 @@ class Session:
             return False, "There is no other unit of yours to join."
         if name == "split" and len(self.members(uid)) < 2:
             return False, "It is not in a group."
+        if name == "split" and not alone:
+            return False, "Click a unit in the details hierarchy, then Split to leave it here."
         if name == "recall" and not self.strays(uid):
             return False, "Only a division's HQ with units away from it can recall."
         return True, ""
@@ -413,7 +419,7 @@ class Session:
         """[(order, why)] for the orders shown that the unit cannot take just now."""
         has = None if alone else self.pending[self.side].get(self.leader(uid), {}).get("order")
         return [(name, BRIEF.get(self.can(uid, name, alone)[1], self.can(uid, name, alone)[1])) for name in self.offers(uid, alone)
-                if name != has and not self.can(uid, name, alone)[0]]
+                if name not in (has, "split") and not self.can(uid, name, alone)[0]]
 
     def order_at(self, h):
         """The unit whose ordered way passes through this hex, if any: to find it by its line."""
@@ -678,9 +684,12 @@ class Session:
     def done(self):
         """This side has given its orders. Returns "pass" if another player is still to give
         orders, "turn" if the turn was played, "over" if the game has ended."""
-        self.waiting.pop(0)
+        if self.state["over"]:
+            return "over"
         if self.waiting:
-            return "pass"
+            self.waiting.pop(0)
+            if self.waiting:
+                return "pass"
         submissions = {s: {"orders": list(self.pending[s].values()), "air": self.air[s]} for s in self.humans}
         for s, player in self.scripted.items():
             submissions[s] = player.orders(self.views[s])

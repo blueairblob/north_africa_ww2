@@ -20,9 +20,9 @@ real tempo of a desert battle and, above all, the real supply problem.
 
 Status: the **map generator**, the **rules specification**, the **engine
 core** on Operation Crusader and on a short scenario cut from it, and the
-**pygame screen**, played by two people at one screen or against a scripted
-player. No computer opponent yet beyond scripted test players, and most of the
-counter art is still to come (`docs/BOM.md`).
+**pygame screen**, played by two people at one screen or against a deterministic
+computer opponent. The opponent is a first playable version; its decisions and
+the scenario balance still need playtesting.
 
 ## The engine
 
@@ -38,7 +38,7 @@ rule it checks.
 
 plays Operation Crusader (`data/scenarios/crusader.json`: 91 units, each
 division shown as its regiments and brigades under its HQ) between two scripted
-players (`nothing`, `attack`, `retreat`, `explore`) and asserts the rules'
+players (`nothing`, `attack`, `retreat`, `explore`, or `computer`) and asserts the rules'
 invariants after every turn.
 
 `sidi_rezegh` in place of `crusader` plays the short scenario: Crusader's first
@@ -53,14 +53,42 @@ six orders, the supply overlay and the zones overlay.
 
 ```
 .venv/bin/python -m screen crusader                  # two players at one screen
-.venv/bin/python -m screen crusader --axis nothing   # you are the Commonwealth
-.venv/bin/python -m screen sidi_rezegh --axis attack # the short scenario: five turns, one aim
+.venv/bin/python -m screen sidi_rezegh --axis computer # you command Commonwealth, computer commands Axis
+.venv/bin/python -m screen sidi_rezegh --cw computer   # you command Axis, computer commands Commonwealth
+.venv/bin/python -m screen crusader --axis computer    # full scenario against the computer
+.venv/bin/python -m screen sidi_rezegh --axis computer --cw computer # watch both computer commanders
+.venv/bin/python -m screen sidi_rezegh --axis computer-easy --cw computer-hard --seed 1941 # compare levels
 .venv/bin/python -m screen crusader --shot frame.png # one frame to a file, no window
 .venv/bin/python -m screen crusader --log            # record every click and key, in logs/ (not published)
 .venv/bin/python -m screen crusader --seed 1941      # the same weather as an earlier game; --seed 0 for none
 .venv/bin/python -m screen --load                    # go on with the game saved last
 .venv/bin/python -m screen --load saves/FILE.json    # go on with that one
 ```
+
+An interactive launch opens on a title card over the map. Click **Continue
+to map** or press Enter/Space to begin; the window's X closes the game.
+The same hex emblem appears on the title and in the window icon.
+In computer versus computer mode, turns run automatically and each turn's
+replay is shown from the Axis view. Space or the footer button pauses or
+resumes a replay; F changes its speed, and the scene arrows step backward
+or forward. The final result stays on screen. For a match without a window,
+run `.venv/bin/python -m engine sidi_rezegh computer computer --seed 1941`.
+
+Each side can independently use `computer-easy`, `computer` (standard), or
+`computer-hard`. Easy plans around nearby ground and builds only basic
+fieldworks; standard weighs the objective values; hard gives the Sidi Rezegh
+corridor more weight, concentrates formations on key ground, protects held
+objectives when threatened, digs deeper, and can send a mobile formation with
+a command HQ on a desert raid in the longer campaign.
+All three use the same limited view and the same combat and luck rules.
+The selected levels appear on the opening card and persist in saved games.
+To compare them without a window, run
+`.venv/bin/python -m engine sidi_rezegh computer-easy computer-hard --seed 1941`.
+For all nine level pairings on the same weather seeds, run
+`.venv/bin/python scripts/compare_computers.py --seeds 0 1 65 1941 2026`.
+For paired comparisons of a proposed Hard policy against the current one,
+use `scripts/benchmark_ai.py`; its metrics and early findings are in
+[docs/COMPUTER_BENCHMARK.md](docs/COMPUTER_BENCHMARK.md).
 
 Press **F12** at any point in the game (or choose **Game → Screenshot**)
 to save a PNG of the current map and GUI (including open panels) in
@@ -126,8 +154,10 @@ unit waits, End turn is always there, and a tick box turns off the reminder of u
 window, the panel scrolls with the mouse wheel or the arrows on its right edge; the command footer stays in place. After End
 turn the turn is played back: the movement, then each formation's strike in
 turn, with the units it hits burning and a rattle as long as the damage, then
-the outcome, where a unit that surrenders raises a white flag. F plays it faster, Right arrow goes on to the next scene, and any
-other key skips it all. A finished game shows how its result was reached. The
+the outcome, where a unit that surrenders raises a white flag. The map shows
+small **Back**, **Next**, **Speed** and **Done** controls in the footer throughout playback; F
+toggles speed, Left arrow or B rewinds, Right arrow or N advances one scene, and any other key skips
+the rest. Clicking elsewhere leaves the playback running. A finished game shows how its result was reached. The
 map is `art/basemap.jpg`, the generated map with its relief
 (`python -m mapgen base`). The pictures on the counters are AI-generated for this game, in
 `art/counters/artist/` (cut by `python -m countergen cut`), with the game's own

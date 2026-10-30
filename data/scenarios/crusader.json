@@ -1,6 +1,10 @@
 {
   "id": "crusader",
   "name": "Operation Crusader",
+  "aim": {
+    "cw": "Relieve Tobruk, break the siege, and push Axis forces back across Cyrenaica.",
+    "axis": "Keep Tobruk encircled and hold the approaches against the Eighth Army."
+  },
   "about": "The relief of Tobruk, 18 November to 30 December 1941. Each division is shown as the units that fought within it, under its HQ; units of one division that start in one hex start as a group. Formations from the published orders of battle (docs/SOURCES.md). Each unit's strength is its figure on the first day with a source letter (see sources). Positions are approximate, to a hex or two. Lift, air points, sea_pct and the opening stocks are first guesses, to be tuned. Arrivals, withdrawals and replacements fall on their historical dates, each with a source letter; where a date or a number is worked out and not stated by the source, its basis says so. Left out: Oasis Force at Jarabub.",
   "sources": {
     "W": "Wikipedia, Operation Crusader: 7th Armoured Brigade, 129 tanks",
@@ -122,7 +126,7 @@
     {"id": 332, "side": "cw", "name": "5th New Zealand Brigade", "type": "motorised", "size": 1, "parent": 330, "xp": "veteran", "men": 2400, "src": "E", "hex": [68, 19]},
     {"id": 333, "side": "cw", "name": "6th New Zealand Brigade", "type": "motorised", "size": 1, "parent": 330, "xp": "veteran", "men": 2400, "src": "E", "hex": [68, 19]},
     {"id": 334, "side": "cw", "name": "New Zealand Divisional Artillery", "type": "guns", "size": 1, "parent": 330, "xp": "veteran", "guns": 72, "src": "E", "hex": [68, 19]},
-    {"id": 335, "side": "cw", "name": "New Zealand Divisional Cavalry", "type": "recon", "counter_art": "mkvi_light", "art_note": "Mark VI shown; also used Bren carriers. 30 is abstract.", "size": 1, "parent": 330, "xp": "veteran", "cars": 30, "src": "E", "hex": [68, 19]},
+    {"id": 335, "side": "cw", "name": "New Zealand Divisional Cavalry", "type": "recon", "counter_art": "mkvi_light", "art_note": "Mk VI light tank shown as an example. The unit also used Bren carriers; 30 scout vehicles is an abstract strength estimate, not 30 tanks.", "size": 1, "parent": 330, "xp": "veteran", "cars": 30, "src": "E", "hex": [68, 19]},
     {"id": 340, "side": "cw", "name": "4th Indian Division", "type": "hq", "size": 1, "steps": 1, "hex": [69, 18]},
     {"id": 341, "side": "cw", "name": "5th Indian Brigade", "type": "foot", "size": 1, "parent": 340, "xp": "veteran", "men": 2400, "src": "E", "hex": [69, 18]},
     {"id": 342, "side": "cw", "name": "7th Indian Brigade", "type": "foot", "size": 1, "parent": 340, "xp": "veteran", "men": 2400, "src": "E", "hex": [69, 18]},

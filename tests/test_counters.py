@@ -99,7 +99,8 @@ def test_crusader_formations_choose_distinct_representative_armour_art():
         spec.pop("counter_art", None)
     assert Session.from_save(legacy, GMAP).counter_art == s.counter_art
     assert s.counter_art[335] == "mkvi_light"
-    assert s.art_note[335] == "Mark VI shown; also used Bren carriers. 30 is abstract."
+    assert s.art_note[335] == ("Mk VI light tank shown as an example. The unit also used Bren carriers; "
+                               "30 scout vehicles is an abstract strength estimate, not 30 tanks.")
     old_save = s.to_save()
     next(u for u in old_save["scenario"]["units"] if u["id"] == 335)["counter_art"] = "carrier"
     assert Session.from_save(old_save, GMAP).counter_art[335] == "carrier"  # keep the old save's art

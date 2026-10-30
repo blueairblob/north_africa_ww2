@@ -7,6 +7,7 @@ import pygame
 from engine import orders as O
 from engine import paths
 from engine import units as U
+from engine.computer import ComputerOpponent
 from mapgen import geo
 from mapgen import hexgrid as H
 from engine.gamemap import distance
@@ -15,7 +16,8 @@ from engine.supply import REACH, REACH_FULL
 from engine.view import spot_range
 
 from . import theme as T
-from .layout import EDGE, HEAD_Y, Layout, air_controls, areas, buttons, details_toggle, footer_flag, game, layers, saves_list, tabs
+from .branding import icon as brand_icon
+from .layout import EDGE, HEAD_Y, Layout, air_controls, areas, buttons, details_toggle, footer_flag, game, layers, playback_controls, saves_list, tabs, title_button
 from .session import GOES, where
 from .pictures import AIR_LABELS, air_example, aircraft, picture
 
@@ -53,6 +55,8 @@ class UI:
         self.scroll = 0                 # how far down the list of orders is scrolled, in rows
         self.panel_scroll = 0           # the side panel's position in a short window
         self.remind = True              # End turn asks once more when units with no order were not gone through
+        self.end_confirmation = False   # the footer names the second End turn press when one is required
+        self.playback_paused = False
         self.preview = ""               # what a click here would do, while a unit is taken up and a hex pointed at
 
     @property
@@ -675,6 +679,77 @@ class Painter:
                 colour = (FLAME["fire0"][:3] if k % 2 == 0 else FLAME["fire1"][:3]) if k < lit_n else (70, 62, 50)
                 pygame.draw.rect(surface, colour, (x0 + k * bw, 50, bw - 3, 12 if k < lit_n and live else 8))
 
+    def replay_actions(self, surface, ui, fast, spectator=False):
+        """Quiet transport controls in the footer while a scene is playing."""
+        controls = playback_controls(surface.get_size(), ui.details_collapsed, spectator)
+        rail = next(iter(controls.values())).unionall(list(controls.values())).inflate(8, 8)
+        shade = pygame.Surface(rail.size, pygame.SRCALPHA)
+        shade.fill((27, 36, 35, 204))
+        surface.blit(shade, rail.topleft)
+        for name, rect in controls.items():
+            active = name == "speed" and fast
+            hovered = rect.collidepoint(ui.mouse)
+            if active or hovered:
+                pygame.draw.rect(surface, (76, 88, 79), rect, border_radius=3)
+            label = {"pause": "▶" if ui.playback_paused else "Ⅱ", "back": "‹‹", "next": "››",
+                     "speed": "3×" if fast else "1×", "skip": "Done"}[name]
+            self.text(surface, label, rect.center, 14, T.PAPER if active or hovered else (208, 207, 190), True, True)
+            if name != "skip":
+                pygame.draw.line(surface, (101, 112, 102), (rect.right + 1, rect.y + 8),
+                                 (rect.right + 1, rect.bottom - 8))
+
+    def title_screen(self, surface, session, ui):
+        """Opening card over the game's own map, without revealing units or orders."""
+        w, h = surface.get_size()
+        surface.blit(self.background((w, h), ui), (0, 0))
+        shade = pygame.Surface((w, h), pygame.SRCALPHA)
+        shade.fill((25, 32, 31, 190))
+        surface.blit(shade, (0, 0))
+        card = pygame.Rect(0, 0, min(740, w - 48), min(500, h - 36))
+        card.center = (w // 2, h // 2)
+        pygame.draw.rect(surface, T.PAPER, card, border_radius=8)
+        pygame.draw.rect(surface, T.INK, card, 3, border_radius=8)
+        pygame.draw.rect(surface, T.COMMAND["cw"], (card.x + 3, card.y + 3, card.w - 6, 10))
+        pygame.draw.rect(surface, T.COMMAND["axis"], (card.x + 3, card.bottom - 13, card.w - 6, 10))
+        surface.blit(brand_icon(76), (card.centerx - 38, card.y + 31))
+        for country, x in (("uk", card.x + 46), ("de", card.right - 146), ("it", card.right - 86)):
+            surface.blit(flag(country, 46, 30), (x, card.y + 49))
+        self.text(surface, "BENGHAZI", (card.centerx, card.y + 155), 48, T.INK, True, True, serif=True)
+        self.text(surface, "HANDICAP", (card.centerx, card.y + 203), 42, T.INK, True, True, serif=True)
+        pygame.draw.line(surface, T.GRID, (card.x + 80, card.y + 237), (card.right - 80, card.y + 237), 2)
+        self.text(surface, "NORTH AFRICA 1940–42", (card.centerx, card.y + 257), 17, T.DIM, True, True)
+        scenario = session.scenario
+        start = scenario["start"]
+        caption = f"{scenario['name'].upper()}  ·  {start[8:10]} {('JAN FEB MAR APR MAY JUN JUL AUG SEP OCT NOV DEC'.split())[int(start[5:7]) - 1]} {start[:4]}"
+        self.text(surface, caption, (card.centerx, card.y + 298), 16, T.INK, True, True)
+        computer_side = next((side for side, player in session.scripted.items()
+                              if isinstance(player, ComputerOpponent)), None)
+        bots = {side: player for side, player in session.scripted.items() if isinstance(player, ComputerOpponent)}
+        levels = {side: player.level for side, player in bots.items()}
+        subtitle = (f"Axis {levels['axis'].title()} · Commonwealth {levels['cw'].title()} · Watch Axis view"
+                    if not session.humans and len(bots) == 2 and set(levels.values()) != {"standard"} else
+                    "Computer vs computer · Watch the Axis view" if not session.humans else
+                    f"You command {T.SIDE_NAME[session.humans[0]]} · "
+                    f"{levels[computer_side].title() + ' computer' if levels[computer_side] != 'standard' else 'Computer'} "
+                    f"commands {T.SIDE_NAME[computer_side]}"
+                    if computer_side and len(session.humans) == 1 else
+                    "Two days per turn  ·  Choose orders, then watch the battle")
+        self.text(surface, subtitle, (card.centerx, card.y + 320), 13, T.DIM, centre=True)
+        if scenario.get("aim"):
+            self.text(surface, "ORDERS FROM HIGH COMMAND", (card.centerx, card.y + 345), 11, T.DIM, True, True)
+            y = card.y + 363
+            for side in ("cw", "axis"):
+                words = f"{T.SIDE_NAME[side]}: {scenario['aim'][side]}"
+                for row in wrap(self.font(11), words, card.w - 90):
+                    self.text(surface, row, (card.x + 45, y), 11, T.INK)
+                    y += 14
+                y += 2
+        button = title_button((w, h))
+        pygame.draw.rect(surface, T.BUTTON_ON if button.collidepoint(ui.mouse) else T.BUTTON, button, border_radius=5)
+        pygame.draw.rect(surface, T.INK, button, 2, border_radius=5)
+        self.text(surface, "Watch game" if not session.humans else "Continue to map", button.center, 17, T.INK, True, True)
+        self.text(surface, "Enter or Space", (card.centerx, card.bottom - 21), 11, T.DIM, centre=True)
+
     def zones(self, veil, session, mine, shown, poly):
         """Z: what your units see, your zone of control and the enemy's as you know it."""
         g, extra = session.gmap, session.state["sides"][session.side]["recon"]
@@ -952,6 +1027,9 @@ class Painter:
         if note := session.art_note.get(u["id"]):
             # Keep the hover target off the strength and movement facts beside the picture.
             self.tips.append((pygame.Rect(x + w // 2 - 48, y + strip + 4, 96, 108), note))
+            if u["id"] == 335 and u["name"] == "New Zealand Divisional Cavalry":
+                self.text(surface, "Mk VI light tank (example)", (x + w / 2, y + 152),
+                          10, T.DIM, False, True)
         now, level = T.strength_now(u), T.morale(u["cohesion"])
         hexes = u["fuel"] // U.step_fuel(u) if U.is_vehicle(u) else None
         pace = session.allowance([u]) // paths.OPEN_COST
@@ -964,7 +1042,8 @@ class Painter:
             slots.append((w - 44, 146, f"{hexes * 10:,}", "km of fuel", "", T.FUEL if hexes else T.SHORT, "Fuel for " + T.fuel_words(hexes)))
         for cx, cy, figure, word, more, colour, tip in slots:
             self.fitted(surface, figure, (x + cx, y + cy), 30, colour, 80, 14)
-            self.text(surface, word, (x + cx, y + cy + 22), 12, T.DIM, False, True)
+            self.text(surface, "open hexes" if word in ("move", "moves") else word,
+                      (x + cx, y + cy + 22), 12, T.DIM, False, True)
             if more:
                 self.text(surface, more, (x + cx, y + cy + 36), 11, T.DIM, False, True)
             self.tips.append((pygame.Rect(x + cx - 42, y + cy - 20, 84, 64), tip))
@@ -1129,10 +1208,13 @@ class Painter:
             self.tips.append((icon, f"{model}: fighter example; air points pool types."))
         early = (" C.200s also served during this period; the icon shows one type."
                  if primary_model == "macchi202" else "")
-        self.tips.append((button, f"Pooled air effort (1–3); {primary} and {alternate} are examples.{early}"))
+        effects = {"support": "raises attack and defence this turn",
+                   "interdict": "reduces enemy truck lift next turn",
+                   "recon": "extends spotting around your units next turn"}
+        self.tips.append((button, f"Air order: {current}; {effects[current]}. {primary} and {alternate} are examples.{early}"))
         if not ui.air_open:
             return
-        box = pygame.Rect(controls["support"].x - 4, controls["support"].y - 44, 222,
+        box = pygame.Rect(controls["support"].x - 4, controls["support"].y - 44, 258,
                           button.top - controls["support"].y + 40)
         pygame.draw.rect(surface, T.PAPER, box, border_radius=5)
         pygame.draw.rect(surface, T.INK, box, 2, border_radius=5)
@@ -1142,8 +1224,8 @@ class Painter:
                     T.SHORT if grounded else T.DIM, box.w - 12, 10)
         self.fitted(surface, "AIRCRAFT SHOWN ARE EXAMPLES", (box.centerx, box.y + 28), 10,
                     T.DIM, box.w - 12, 8)
-        descriptions = {"support": "+5% in battle / point", "interdict": "−5% enemy lift / point",
-                        "recon": "+1 spotting hex / point"}
+        descriptions = {"support": "+5% combat this turn / point", "interdict": "−5% truck lift next turn / point",
+                        "recon": "+1 sight hex next turn / point"}
         for n, choice in enumerate(("support", "interdict", "recon"), 1):
             row = controls[choice]
             pygame.draw.rect(surface, T.BUTTON_ON if choice == current else T.BUTTON, row, border_radius=3)
@@ -1169,9 +1251,19 @@ class Painter:
         compact = band.w < 760
         self.text(surface, session.scenario["name"], (band.x + 22, band.y + (12 if compact else 7)),
                   22 if compact else 27, T.PAPER, True, serif=True)
-        if band.w >= 1080:
-            self.text(surface, f"N O R T H   A F R I C A   ·   {session.day:%d %B %Y}".upper(),
-                      (band.x + 360, band.y + 19), 12, T.PAPER, serif=True)
+        turn = min(session.view["turn"], session.scenario["turns"])
+        if compact:
+            right = band.right - 14
+            date_line = f"{session.day:%d %b %Y}".upper()
+            turn_line = f"TURN {turn} / {session.scenario['turns']}"
+            self.text(surface, date_line, (right - self.font(10, True).size(date_line)[0], band.y + 8),
+                      10, T.PAPER, True)
+            self.text(surface, turn_line, (right - self.font(10, True).size(turn_line)[0], band.y + 27),
+                      10, T.PAPER, True)
+        else:
+            date_x = band.x + 22 + self.font(27, True, serif=True).size(session.scenario["name"])[0] + 28
+            self.text(surface, f"{session.day:%d %B %Y}  ·  TURN {turn} / {session.scenario['turns']}",
+                      (date_x, band.y + 19), 12, T.PAPER, True, serif=True)
         badge_x = band.right
         if ui.details_collapsed and band.w >= 760:
             label = T.SIDE_NAME[session.side].upper() + " · ORDERS"
@@ -1184,7 +1276,7 @@ class Painter:
             self.text(surface, label, (badge_x + 48, band.y + 19), 13, T.PAPER, True, serif=True)
         scale_x = min(band.right - 145, badge_x - 145)
         scale_y = band.y + 37
-        if scale_x > band.x + (315 if compact else 735):
+        if not compact and scale_x > band.x + 315:
             km = 5 if 10 * ui.layout.scale > 55 else 20 if 10 * ui.layout.scale < 30 else 10
             step = round(km * ui.layout.scale)
             pygame.draw.line(surface, T.PAPER, (scale_x, scale_y), (scale_x + 2 * step, scale_y), 1)
@@ -1240,7 +1332,7 @@ class Painter:
         """The persistent command console. The unit's own order is lit, and a
         click on it takes the order back; with none, Hold is lit, which is what it will do. A
         button that cannot be used is greyed, and says why when pointed at."""
-        u = None if self.playing or ui.cover else session.unit(ui.selected)
+        u = None if self.playing or ui.cover or session.state["over"] or not session.humans else session.unit(ui.selected)
         console = areas(surface.get_size())["console"]
         pygame.draw.rect(surface, T.COMMAND[session.side], console)
         pygame.draw.line(surface, T.GRID, console.topleft, console.topright, 2)
@@ -1270,9 +1362,11 @@ class Painter:
             if key not in self.faces:
                 self.faces[key] = flag(flies, *emblem.size)
             surface.blit(self.faces[key], emblem.topleft)
-            self.fitted(surface, T.SIDE_NAME[session.side], (emblem.right + 10 +
+            self.fitted(surface, "Axis view" if not session.humans else T.SIDE_NAME[session.side], (emblem.right + 10 +
                         (buttons(surface.get_size())["move"].x - emblem.right - 26) / 2, console.centery),
                         16, T.PAPER, buttons(surface.get_size())["move"].x - emblem.right - 26, 10)
+        if self.playing or not session.humans:
+            return
         has = session.pending[session.side].get(session.leader(u["id"]), {}).get("order") if u and not ui.alone else None
         would = ui.mode or has or "hold"                             # with no order a unit holds (RULES 8.1.3)
         offered = session.offers(ui.selected, ui.alone) if u else []
@@ -1286,20 +1380,26 @@ class Painter:
             self.text(surface, "Remind me of units not gone through", (box.x + 26, box.y + 3), 12)
         for name, r in buttons(surface.get_size()).items():
             label, key = next((b[1], b[2]) for b in T.BUTTONS if b[0] == name)
+            if name == "done":
+                label = "Game over" if session.state["over"] else "Confirm turn" if ui.end_confirmation else label
             if name == "next" and u and has and session.leader(u["id"]) in session.waiting_units():
                 label = "Keep order"                                 # its order stands from before: one tap lets it
             if name == "road_march" and u:
                 label = T.order_name(name, [u] if ui.alone else session.members(u["id"]))
-            usable, why = ((True, "") if name == "done" else session.can(ui.selected, name, ui.alone) if u and name != "next"
+            usable, why = ((not session.state["over"], "The game has ended.") if name == "done" else session.can(ui.selected, name, ui.alone) if u and name != "next"
                            else (False, "Choose one of your units first."))
             if name == "next":                                       # nobody left to order: nothing to go on to
                 usable, why = (True, "") if session.waiting_units() and not self.playing else (False, "Every unit has been gone through.")
+            if name == "split" and ui.details_collapsed and u and not ui.alone and len(session.members(u["id"])) > 1:
+                usable, why = True, ""
             if name not in ("next", "done") and (name not in offered or (ui.tab != "unit" and not ui.details_collapsed)):
                 usable, why = False, "Choose a unit on the Unit tab to give this order."
             if name == has and u and not ui.mode and (ui.tab == "unit" or ui.details_collapsed):
                 usable = True
+            if session.state["over"]:
+                usable, why = False, "The battle has ended."
             lit = u is not None and usable and name == would
-            colour = (T.BUTTON_GO if name == "done"                 # End turn is always there to press
+            colour = (T.BUTTON_ON if name == "done" and ui.end_confirmation else T.BUTTON_GO if name == "done"
                       else T.BUTTON_ON if lit or name == "next" else T.BUTTON)      # Next unit is lit while any unit waits
             pygame.draw.rect(surface, colour if usable else (206, 198, 178), r, border_radius=6)
             pygame.draw.rect(surface, T.INK if usable else (150, 140, 120), r, 1, border_radius=6)
@@ -1314,6 +1414,11 @@ class Painter:
                 self.tips.append((r, "With no other order it holds."))
             elif not usable:
                 self.tips.append((r, why))
+            elif name == "split":
+                self.tips.append((r, "Open details to choose a group member to split." if ui.details_collapsed and not ui.alone
+                                  else "Split this selected unit from its group and leave it here on Hold."))
+            elif name == "join":
+                self.tips.append((r, "Choose another friendly unit to join; it moves there and forms a group."))
 
     def orders_list(self, surface, session, ui, x, y, w, foot):
         """The Unit orders tab: every unit or group of the side and what it is to do this turn,
@@ -1560,25 +1665,30 @@ class Painter:
         formation = [m for m in members if m["type"] != "hq"] or members
         steps = sum(m["steps"] for m in formation)
         maximum = sum(m.get("max", m["steps"]) for m in formation)
-        supplied = all(m["traced"] and not m["out_of_stores"] for m in members)
+        pct = steps * 100 // max(1, maximum)
+        mp = session.allowance(members)
         hx, hy = members[0]["hex"]
         terrain = T.TERRAIN_NAME[session.gmap.terrain[hy][hx]].title()
         weather = session.weather.title() if session.weather else "—"
-        facts = (("STRENGTH", f"{steps} / {maximum} steps"),
-                 ("SUPPLY", "In supply" if supplied else "Short of supply"),
-                 ("MOVEMENT", f"{session.allowance(members)} MP this turn"),
-                 ("TERRAIN / WEATHER", f"{terrain} · {weather}"))
+        strength = "Full strength" if pct == 100 else f"{pct}% of full strength"
+        strength_ink = T.GOOD if pct == 100 else T.STRONG if pct >= 70 else T.WORN if pct >= 50 else T.WEAK
+        facts = (("STRENGTH", strength, strength_ink,
+                  f"{steps} of {maximum} combat steps. A step is a rules measure; the vehicle or men count is on the unit card."),
+                 ("MOVEMENT", f"{mp} MP = {mp // paths.OPEN_COST} open hexes", T.INK,
+                  f"This turn has {mp} movement points. Open desert costs {paths.OPEN_COST} per hex; roads and other ground differ."),
+                 ("TERRAIN", terrain, T.INK, "The ground under this unit."),
+                 ("WEATHER", weather, T.INK, "The current turn's weather."))
         pygame.draw.line(surface, T.GRID, (x, y), (x + w, y), 2)
         self.text(surface, "FIELD INTELLIGENCE", (x, y + 8), 12, T.DIM, True, serif=True)
         top = y + 30
-        for n, (title, value) in enumerate(facts):
+        for n, (title, value, colour, tip) in enumerate(facts):
             col, row = n % 2, n // 2
             box = pygame.Rect(x + col * (w // 2), top + row * 44, w // 2 - 5, 42)
             pygame.draw.rect(surface, (247, 239, 220), box, border_radius=3)
             pygame.draw.rect(surface, T.GRID, box, 1, border_radius=3)
             self.text(surface, title, (box.x + 9, box.y + 5), 10, T.DIM, True)
-            self.fitted(surface, value, (box.centerx, box.y + 28), 13,
-                        T.SHORT if title == "SUPPLY" and not supplied else T.INK, box.w - 15, 10)
+            self.fitted(surface, value, (box.centerx, box.y + 28), 13, colour, box.w - 15, 10)
+            self.tips.append((box, tip))
         return top + 88
 
     def panel(self, surface, session, ui, rect):
@@ -1614,26 +1724,36 @@ class Painter:
             y += 14
 
         band = pygame.Rect(rect.x, rect.y, rect.w, T.MASTHEAD)
-        pygame.draw.rect(surface, T.COMMAND[session.side], band)
-        flies = "uk" if session.side == "cw" else "de"
+        banner_side = session.state["result"]["winner"] if over and not self.playing and session.state["result"]["winner"] else session.side
+        pygame.draw.rect(surface, T.COMMAND[banner_side], band)
+        flies = "uk" if banner_side == "cw" else "de"
         badge = ("side_badge", flies)
         if badge not in self.faces:
             self.faces[badge] = flag(flies, 38, 28)
         surface.blit(self.faces[badge], (x, band.y + 12))
-        side_line = ("LAST TURN · WATCH" if self.playing else "BATTLE CONCLUDED" if over
+        levels = {side: player.level for side, player in session.scripted.items()
+                  if isinstance(player, ComputerOpponent)}
+        spectator_label = (f"AXIS {levels['axis'].upper()} · COMMONWEALTH {levels['cw'].upper()}"
+                           if len(levels) == 2 and set(levels.values()) != {"standard"} else "COMPUTER VS COMPUTER")
+        side_line = ("LAST TURN · WATCH" if self.playing else
+                     f"{T.SIDE_NAME[banner_side].upper()} VICTORY" if over and session.state["result"]["winner"] else
+                     "BATTLE CONCLUDED" if over
+                     else spectator_label if not session.humans
                      else f"{T.SIDE_NAME[session.side].upper()}  ·  GIVE ORDERS")
         self.text(surface, side_line, (x + 50, band.y + 16), 15, T.PAPER, True, serif=True)
         pygame.draw.line(surface, T.GRID, band.bottomleft, band.bottomright, 2)
-        self.text(surface, "Unit Details", (x, 65), 24, T.INK, True, serif=True)
-        self.text(surface, f"{session.day:%d %B %Y}  ·  TURN {min(view['turn'], session.scenario['turns'])} / {session.scenario['turns']}",
-                  (x, 103), 12, T.DIM, True)
-        self.text(surface, f"AXIS {view['vp']['axis']}    COMMONWEALTH {view['vp']['cw']}", (x, 124), 11, T.DIM)
-        pygame.draw.line(surface, T.GRID, (x, 143), (x + w, 143), 1)
+        self.text(surface, "Turn Replay" if self.playing else "Battle Result" if over else
+                  "Turn Watch" if not session.humans else "Unit Details",
+                  (x, 65), 24, T.INK, True, serif=True)
+        self.text(surface, f"AXIS {view['vp']['axis']}    COMMONWEALTH {view['vp']['cw']}", (x, 108), 11, T.DIM)
+        pygame.draw.line(surface, T.GRID, (x, 130), (x + w, 130), 1)
 
-        u = None if self.playing or ui.cover else session.unit(ui.selected)
+        u = None if self.playing or ui.cover or not session.humans else session.unit(ui.selected)
         group = session.members(u["id"]) if u else []
         self.member_rects, self.report_rects, self.back_rect, self.tips = {}, {}, None, []
         self.pencil_rect, self.scroll_rects, self.cycle_rects = None, {}, {}
+        if self.playing or over or not session.humans:
+            y = tabs(surface.get_size())["unit"].bottom + 10
         if not over and not self.playing:                            # the tabs: this unit, or every unit's order
             for name, words in (("unit", "Unit"), ("orders", "Unit orders"), ("timetable", "Timetable")):
                 r = tabs(surface.get_size())[name]
@@ -1655,13 +1775,46 @@ class Painter:
                 return
         if over and not self.playing:                                # the result, and how it was reached
             r = session.state["result"]
-            line("A draw" if r["winner"] is None else f"{T.SIDE_NAME[r['winner']]}: {r['grade']} victory", 18, T.SHORT, True)
+            if r["winner"] is not None:
+                nations = []
+                for unit in session.scenario["units"]:
+                    if unit["side"] == r["winner"]:
+                        nation = session.flag[unit["id"]]
+                        if nation not in nations:
+                            nations.append(nation)
+                for n, nation in enumerate(nations):
+                    key = ("result_flag", nation)
+                    if key not in self.faces:
+                        self.faces[key] = flag(nation, 42, 28)
+                    spot = pygame.Rect(x + n * 48, y, 42, 28)
+                    surface.blit(self.faces[key], spot)
+                    self.tips.append((spot, T.FLAG_NAME[nation]))
+                y += 36
+            line("A draw" if r["winner"] is None else f"{T.SIDE_NAME[r['winner']]}: {r['grade']} victory",
+                 18, T.DIM if r["winner"] is None else T.COMMAND[r["winner"]], True)
+            y += 6
+            if session.scenario.get("aim"):
+                line("ORDERS FROM HIGH COMMAND", 11, T.DIM, True, gap=5)
+                for side in ("cw", "axis"):
+                    words = f"{T.SIDE_NAME[side]}: {session.scenario['aim'][side]}"
+                    for row in wrap(self.font(12), words, w):
+                        line(row, 12, gap=2)
+                    y += 4
+                y += 4
+            line("FIELD ASSESSMENT", 11, T.DIM, True, gap=5)
+            for paragraph in result_assessment(view, session.scenario):
+                for row in wrap(self.font(13), paragraph, w):
+                    line(row, 13, gap=2)
+                y += 5
+            y += 3
+            line("HOW THE RESULT WAS SCORED", 11, T.DIM, True, gap=5)
             for row in score_lines(view):
-                line(row, 12, gap=2)
+                for wrapped in wrap(self.font(12), row, w):
+                    line(wrapped, 12, gap=2)
             lost = [m for m in view["units"] if m["fate"]]
             if lost:
                 y += 4
-                line("Your losses", 13, bold=True)
+                line("Known losses on this side", 13, bold=True)
                 for m in lost[:8]:
                     line(f"{m['name'][:26]}: {m['fate']['cause']}, turn {m['fate']['turn']}", 12, gap=2)
         elif u and len(group) > 1 and not ui.alone:                  # a group: its order of battle, and what binds them
@@ -1732,13 +1885,13 @@ class Painter:
                 line("From an earlier turn. Space keeps it." if u["id"] in session.waiting_units()
                      else T.ORDER_HELP[order["order"]], 12, T.DIM)
             elif ui.alone:
-                line("An order now splits it off. Split leaves it here.", 12, T.DIM)
+                line("Selected alone. Split leaves this unit here on Hold.", 12, T.DIM)
             else:
                 line("Order: Hold", 15, T.PATH, True, gap=2)
                 line("With no other order it holds. Space goes on.", 12, T.DIM)
             self.cannot(session, ui, u, line, w)
             y = self.intelligence(surface, session, [u], x, y + 8, w, foot)
-        elif not over and not self.playing:                          # nothing taken up: who still waits, each a tap away
+        elif not over and not self.playing and session.humans:       # nothing taken up: who still waits, each a tap away
             waiting = session.waiting_units()
             line(f"{T.count(len(waiting), 'unit')} still to go through" if waiting
                  else "Every unit gone through. Press End turn.", 15, T.PATH, True, gap=8)
@@ -1768,7 +1921,16 @@ class Painter:
         rule()
         font = self.font(12)
         room = (foot - y) // 21 - 1
-        if self.playing:                                             # nothing is given away before it is seen
+        if not session.humans and not self.playing and not over:
+            if session.scenario.get("aim"):
+                line("ORDERS FROM HIGH COMMAND", 11, T.DIM, True, gap=6)
+                for side in ("cw", "axis"):
+                    words = f"{T.SIDE_NAME[side]}: {session.scenario['aim'][side]}"
+                    for row in wrap(font, words, w):
+                        line(row, 12, gap=2)
+                    y += 5
+            line("Space pauses the replay; F changes speed.", 12, T.DIM, gap=2)
+        elif self.playing:                                           # nothing is given away before it is seen
             for row in ("Each formation strikes in turn.", "The units it hits burn.",
                         "The longer the rattle, the harder the blow.", "Then see who falls back and who holds.")[:max(0, room)]:
                 line(row, 12, T.DIM, gap=2)
@@ -1797,7 +1959,7 @@ class Painter:
                 y += len(lines) * 16 + 7
         self.panel_content_bottom = max(y + 8, under + 8)
 
-    def frame(self, surface, session, ui, stage=None):
+    def frame(self, surface, session, ui, stage=None, fast=False):
         a = areas(surface.get_size(), ui.details_collapsed)
         self.playing = stage is not None
         ui.preview = ""
@@ -1812,7 +1974,7 @@ class Painter:
             self.panel_scroll_max, self.panel_body, self.panel_scroll_rects = 0, None, {}
             self.member_rects, self.report_rects, self.back_rect, self.pencil_rect = {}, {}, None, None
             self.cycle_rects, self.scroll_rects, self.tips = {}, {}, []
-        elif a["panel"].h < 780 and ui.tab == "unit":
+        elif not stage and a["panel"].h < 780 and ui.tab == "unit":
             self.compact_panel(surface, session, ui, a["panel"])
         else:
             self.panel_scroll_max, self.panel_body, self.panel_scroll_rects = 0, None, {}
@@ -1822,6 +1984,8 @@ class Painter:
         self.bar(surface, session, ui, a["bar"])
         self.buttons(surface, session, ui)
         self.air_orders(surface, session, ui)
+        if stage:
+            self.replay_actions(surface, ui, fast, not session.humans)
         if not stage:
             toggle = details_toggle(surface.get_size(), ui.details_collapsed)
             pygame.draw.rect(surface, T.PAPER, toggle, border_radius=4)
@@ -1926,18 +2090,38 @@ def broken(surface, colour, pts, width, dash, gap):
                 left = dash if on else gap
 
 
+def result_assessment(view, scenario):
+    """Describe the ground actually held, without claiming battles or tactics the log cannot prove."""
+    places = view["places"]
+    if scenario["id"] == "sidi_rezegh":
+        sidi, belhamed = places["Sidi Rezegh"], places["Belhamed"]
+        if sidi == belhamed == "cw":
+            route = "Commonwealth forces hold Sidi Rezegh and Belhamed, securing a link toward Tobruk."
+        elif sidi == belhamed == "axis":
+            route = "Axis forces hold Sidi Rezegh and Belhamed, denying a link toward Tobruk."
+        else:
+            route = ("Commonwealth forces seized " + ("Sidi Rezegh" if sidi == "cw" else "Belhamed")
+                     + ", denying Axis control of both approaches. Axis forces held "
+                     + ("Belhamed" if sidi == "cw" else "Sidi Rezegh")
+                     + ". Neither side fully met its corridor objective.")
+        tobruk = ("Tobruk remains in Commonwealth hands." if places["Tobruk"] == "cw"
+                  else "Tobruk is in Axis hands.")
+        return [route, tobruk]
+    important = sorted(scenario["objectives"], key=lambda item: (-item.get("end", 0), -item.get("turn", 0)))[:3]
+    return ["At the end, " + "; ".join(f"{name} holds {obj['place']}"
+                                    for obj in important for name in [T.SIDE_NAME[places[obj["place"]]]]) + "."]
+
+
 def score_lines(view):
-    """How the result was reached: each side's points for places and for units destroyed, what
-    standing still would have given, and so the margin (RULES 13.6)."""
+    """Explain objective points, losses and the change from the scenario's starting baseline."""
     out = []
     for side in ("axis", "cw"):
         kills, total = view["kills"][side], view["vp"][side]
-        out.append(f"{T.SIDE_NAME[side]}: {total - kills} for places + {kills} for units = {total}")
+        out.append(f"{T.SIDE_NAME[side]}: {total} points ({total - kills} for ground held; {kills} for enemy losses).")
     par, lead = view["par"], view["vp"]["axis"] - view["vp"]["cw"]
-    out.append(f"Standing still, the Axis leads by {par}." if par >= 0 else f"Standing still, the Commonwealth leads by {-par}.")
     margin = lead - par
-    out.append("Against that: level." if margin == 0
-               else f"Against that: {T.SIDE_NAME['axis' if margin > 0 else 'cw']} by {abs(margin)}.")
+    out.append("Against the starting position: no change." if margin == 0 else
+               f"Against the starting position: {T.SIDE_NAME['axis' if margin > 0 else 'cw']} gained {abs(margin)} points.")
     return out
 
 

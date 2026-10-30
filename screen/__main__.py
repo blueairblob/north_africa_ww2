@@ -2,7 +2,10 @@
 
     python -m screen crusader                       two players at one screen
     python -m screen crusader --axis nothing        you are the Commonwealth
-    python -m screen sidi_rezegh --axis attack      the short scenario: five turns
+    python -m screen sidi_rezegh --axis computer    command the Commonwealth against the computer
+    python -m screen sidi_rezegh --cw computer      command the Axis against the computer
+    python -m screen sidi_rezegh --axis computer --cw computer   watch both computers play
+    python -m screen sidi_rezegh --axis computer-easy --cw computer-hard   compare difficulty levels
     python -m screen crusader --shot frame.png      draw one frame to a file, with no window
     python -m screen crusader --log                 record what every click and key did, under logs/
     python -m screen crusader --seed 1941           the weather of an earlier game again; --seed 0 for none
@@ -17,7 +20,7 @@ import time
 from pathlib import Path
 
 DATA = Path(__file__).parent.parent / "data"
-KINDS = ("human", "nothing", "attack", "retreat", "explore")
+KINDS = ("human", "computer-easy", "computer", "computer-hard", "nothing", "attack", "retreat", "explore")
 
 
 def main(argv):
@@ -75,9 +78,6 @@ def main(argv):
             sys.exit("\n".join(wrong))
         kinds = {"axis": a.axis, "cw": a.cw}
         humans = [s for s in kinds if kinds[s] == "human"]
-        if not humans:
-            sys.exit("At least one side must be human. To watch two scripted players with no screen:\n"
-                     f"    python -m engine {a.scenario} {a.axis} {a.cw}")
         seed = a.seed if a.seed is not None else 0 if a.shot else int(time.time() * 1000) % 2147483646 + 1
         session = Session(scenario, gmap, humans, {s: PLAYERS[k](gmap) for s, k in kinds.items() if k != "human"}, seed)
         app = App(session)
@@ -93,6 +93,7 @@ def main(argv):
                       + (f" | loaded from {path}" if a.load is not None else "") + "\n")
         print(f"Recording this sitting in {path}")
     if not a.shot:
+        app.title = True
         return app.run()
     pygame.init()
     app.ui.zoom = a.zoom

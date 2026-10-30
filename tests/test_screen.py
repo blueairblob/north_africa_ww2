@@ -357,6 +357,21 @@ def test_air_effort_is_visible_clickable_and_keeps_keyboard_parity():
         assert not app.ui.air_open and app.session.air["cw"] == "support"  # dismissal is not an order
 
 
+def test_interdict_selector_says_what_changes_and_when():
+    pygame.init()
+    app = App(Session(regiments(), GMAP, humans=["cw"], scripted={"axis": players.DoNothing(GMAP)}))
+    app.key(pygame.K_2)
+    assert app.session.air["cw"] == "interdict"
+    assert "enemy truck lift" in app.ui.message and "next turn's supply phase" in app.ui.message
+    assert f"−{5 * app.session.view['air_points']}%" in app.ui.message
+    app.ui.air_open = True
+    seen = []
+    original = app.painter.text
+    app.painter.text = lambda surface, words, *a, **k: (seen.append(str(words)), original(surface, words, *a, **k))
+    app.paint(pygame.Surface(app.size))
+    assert any("truck lift" in words and "next turn" in words for words in seen)
+
+
 def test_grounded_air_effort_explains_that_the_choice_has_no_flights():
     from helpers import scenario, unit
     pygame.init()
@@ -822,6 +837,74 @@ def test_the_window_plays_the_turn_back_goes_faster_with_f_and_any_other_key_end
     assert app.session.state["turn"] == 3
 
 
+def test_playback_actions_are_clickable_without_accidentally_skipping_the_turn():
+    pygame.init()
+    app = App(Session(crusader(), GMAP, humans=["cw"], scripted={"axis": players.AlwaysAttack(GMAP)}))
+    app.done()
+    assert app.play is not None
+    controls = layout.playback_controls(app.size)
+    assert all(layout.areas(app.size)["console"].contains(rect) for rect in controls.values())
+    surface = pygame.Surface(app.size)
+    app.paint(surface)
+
+    app.handle_one(pygame.event.Event(pygame.MOUSEBUTTONDOWN, button=1, pos=(10, 100)))
+    assert app.play is not None and not app.fast
+    app.handle_one(pygame.event.Event(pygame.MOUSEBUTTONDOWN, button=1, pos=controls["speed"].center))
+    assert app.fast and app.play is not None
+    app.handle_one(pygame.event.Event(pygame.MOUSEBUTTONDOWN, button=1, pos=controls["next"].center))
+    assert app.play is not None and app.play_t > 0
+    app.advance(40)
+    app.handle_one(pygame.event.Event(pygame.MOUSEBUTTONDOWN, button=1, pos=controls["back"].center))
+    assert app.play_t == app.play.timeline[1][0]
+    app.handle_one(pygame.event.Event(pygame.MOUSEBUTTONDOWN, button=1, pos=controls["back"].center))
+    assert app.play_t == 0
+    app.handle_one(pygame.event.Event(pygame.MOUSEBUTTONDOWN, button=1, pos=controls["skip"].center))
+    assert app.play is None and not app.fast and "hold unless ordered" in app.ui.message
+
+
+@pytest.mark.parametrize("size", [(900, 560), (1400, 860)])
+def test_title_screen_has_a_clickable_start_and_preserves_the_game(size):
+    pygame.init()
+    app = App(Session(regiments(), GMAP), size=size)
+    before = app.session.to_save()
+    app.title = True
+    surface = pygame.Surface(size)
+    app.paint(surface)
+    title = pygame.image.tostring(surface, "RGB")
+    assert surface.get_at((size[0] // 2, size[1] // 2))[:3] != (0, 0, 0)
+    assert surface.get_rect().contains(layout.title_button(size))
+    app.handle_one(pygame.event.Event(pygame.MOUSEBUTTONDOWN, button=1, pos=(10, 10)))
+    assert app.title
+    app.handle_one(pygame.event.Event(pygame.MOUSEBUTTONDOWN, button=1,
+                                      pos=layout.title_button(size).center))
+    assert not app.title and app.session.to_save() == before
+    app.paint(surface)
+    assert pygame.image.tostring(surface, "RGB") != title
+    app.title = True
+    app.handle_one(pygame.event.Event(pygame.KEYDOWN, key=pygame.K_RETURN))
+    assert not app.title
+
+
+def test_title_screen_names_the_computer_opponent_and_human_side():
+    pygame.init()
+    app = App(Session(regiments(), GMAP, humans=["cw"], scripted={"axis": players.ComputerOpponent(GMAP)}))
+    app.title = True
+    seen = []
+    original = app.painter.text
+    app.painter.text = lambda surface, words, *a, **k: (seen.append(str(words)), original(surface, words, *a, **k))
+    app.paint(pygame.Surface(app.size))
+    assert "You command Commonwealth · Computer commands Axis" in seen
+
+
+def test_window_icon_is_a_transparent_hex_with_visible_center():
+    from screen.branding import icon
+
+    mark = icon(64)
+    assert mark.get_size() == (64, 64)
+    assert mark.get_at((0, 0)).a == 0
+    assert mark.get_at((32, 32)).a == 255
+
+
 # ---- found by playtest -------------------------------------------------------------------
 
 def test_when_the_playback_runs_out_the_message_goes_back_to_the_orders():
@@ -855,15 +938,15 @@ def test_a_battle_is_named_by_the_nearest_place_not_by_hex_numbers():
     assert not any(ch.isdigit() for t in told for ch in t.split(":")[0])
 
 
-def test_with_no_human_the_screen_gives_the_engine_command_that_works():
+def test_with_no_human_the_screen_can_render_a_spectator_view(tmp_path):
     import subprocess
     import sys
-    run = subprocess.run([sys.executable, "-m", "screen", "crusader", "--axis", "nothing", "--cw", "nothing"],
+    shot = tmp_path / "spectator.png"
+    run = subprocess.run([sys.executable, "-m", "screen", "sidi_rezegh", "--axis", "computer",
+                          "--cw", "computer", "--seed", "1941", "--shot", str(shot)],
                          cwd=ROOT, capture_output=True, text=True)
-    hint = run.stderr.strip().splitlines()[-1].split()
-    assert run.returncode != 0 and hint == ["python", "-m", "engine", "crusader", "nothing", "nothing"]
-    again = subprocess.run([sys.executable] + hint[1:], cwd=ROOT, capture_output=True, text=True)
-    assert again.returncode == 0 and "invariants held" in again.stdout           # the command it gives works
+    assert run.returncode == 0, run.stderr
+    assert shot.exists() and shot.stat().st_size > 0
 
 
 def test_a_burning_counter_still_shows_its_symbol():
@@ -1095,10 +1178,13 @@ def watching():
 def test_a_key_skips_one_scene_and_leaves_the_rest_playing():       # A
     app = watching()
     starts = [start for start, _, _ in app.play.timeline]
-    assert "Right arrow: next" in app.ui.message
+    assert "Left/Right" in app.ui.message and "Done skips" in app.ui.message
     app.advance(40)
     keys(app, "RIGHT")
     assert app.play is not None and app.play_t == starts[1] and ("stop", 0) in app.sounds.played
+    keys(app, "LEFT")
+    assert app.play_t == starts[0]
+    keys(app, "RIGHT")
     keys(app, "n")
     assert app.play_t == starts[2]
     for _ in starts[2:]:
@@ -1131,21 +1217,50 @@ def test_a_reply_that_did_the_least_there_is_is_not_shown():         # A
 
 
 def test_the_end_of_a_game_says_how_the_result_was_reached():        # C, E
-    from screen.draw import score_lines
+    from screen.draw import result_assessment, score_lines
     view = {"vp": {"axis": 252, "cw": 112}, "kills": {"axis": 90, "cw": 20}, "par": 106}
-    assert score_lines(view) == ["Axis: 162 for places + 90 for units = 252",
-                                 "Commonwealth: 92 for places + 20 for units = 112",
-                                 "Standing still, the Axis leads by 106.", "Against that: Axis by 34."]
+    assert score_lines(view) == ["Axis: 252 points (162 for ground held; 90 for enemy losses).",
+                                 "Commonwealth: 112 points (92 for ground held; 20 for enemy losses).",
+                                 "Against the starting position: Axis gained 34 points."]
+    report_view = {"places": {"Sidi Rezegh": "axis", "Belhamed": "axis", "Tobruk": "cw"}}
+    assert "denying a link" in result_assessment(report_view, {"id": "sidi_rezegh"})[0]
+    report_view["places"]["Sidi Rezegh"] = report_view["places"]["Belhamed"] = "cw"
+    assert "securing a link" in result_assessment(report_view, {"id": "sidi_rezegh"})[0]
+    report_view["places"]["Belhamed"] = "axis"
+    assert "Neither side fully met" in result_assessment(report_view, {"id": "sidi_rezegh"})[0]
     pygame.init()
     s = Session(small(), GMAP, humans=["cw"], scripted={"axis": players.AlwaysAttack(GMAP)})
     while not s.state["over"]:
         s.done()
     app = App(s)
     app.play = None
-    surface = pygame.Surface(theme.WINDOW)
-    app.paint(surface)                                               # the panel draws the breakdown and the losses
+    assert app.ui.message.startswith("Game over:")
+    drawn = []
+    original = app.painter.text
+    app.painter.text = lambda surface, words, pos, *a, **k: (drawn.append((str(words), pos)),
+                                                              original(surface, words, pos, *a, **k))
+    labels = []
+    fitted = app.painter.fitted
+    app.painter.fitted = lambda surface, words, *a, **k: (labels.append(str(words)),
+                                                         fitted(surface, words, *a, **k))
+    for size in (theme.WINDOW, (900, 560)):
+        app.size = size
+        app.paint(pygame.Surface(size))                               # the result must clear the header at both sizes
+        heading = next(pos for words, pos in drawn if words == "Battle Result")
+        verdict = "A draw" if s.state["result"]["winner"] is None else \
+                  f"{theme.SIDE_NAME[s.state['result']['winner']]}: {s.state['result']['grade']} victory"
+        result = next(pos for words, pos in drawn if words == verdict)
+        assessment = next(pos for words, pos in drawn if words == "FIELD ASSESSMENT")
+        assert heading[1] == 65 and result[1] >= layout.HEAD_Y and assessment[1] > result[1]
+        assert "Game over" in labels
+        assert any(rect == layout.buttons(size)["done"] and "battle has ended" in tip
+                   for rect, tip in app.painter.tips)
+        drawn.clear()
+        labels.clear()
     assert s.view["par"] == small()["par"] and set(s.view["kills"]) == {"axis", "cw"}
     assert all(u["fate"] for u in s.view["units"] if u["status"] in ("destroyed", "withdrawn"))
+    app.click(layout.buttons(app.size)["done"].center)
+    assert "no next turn" in app.ui.message
 
 
 # ---- the owner's notes on the screen -----------------------------------------------------
@@ -1310,7 +1425,8 @@ def test_a_button_that_cannot_be_used_says_why():                    # 3a, 3c
     assert s.can(200, "attack") == (True, "")                                                      # Bologna, facing Tobruk
     assert s.can(101, "attack")[1] == "A headquarters does not attack." and s.can(101, "dig_in")[0] is False
     assert s.can(107, "join") == (True, "")                                                        # any unit of yours may be joined
-    assert s.can(107, "split")[1] == "It is not in a group." and s.can(110, "split")[0]
+    assert s.can(107, "split")[1] == "It is not in a group."
+    assert not s.can(110, "split")[0] and s.can(next(m["id"] for m in s.members(110) if m["id"] != 110), "split", True)[0]
     assert s.can(110, "recall")[0] is False and s.can(140, "recall") == (True, "")                  # Savona has a regiment away
     assert s.can(142, "join") == (True, "")
     app = App(s)
@@ -1863,7 +1979,7 @@ def test_the_unit_orders_tab_lists_every_unit_and_its_order_and_a_tap_takes_one_
     assert leads[-1] in {uid for _, uid in app.painter.report_rects.values()}
 
 
-def test_next_unit_is_lit_while_units_wait_end_turn_is_always_green_and_the_reminder_can_be_turned_off():
+def test_next_unit_is_lit_and_end_turn_names_its_confirmation_when_reminders_are_on():
     pygame.init()
     surface = pygame.Surface(theme.WINDOW)
     app = App(Session(regiments(), GMAP, humans=["cw"], scripted={"axis": players.DoNothing(GMAP)}))
@@ -1883,8 +1999,13 @@ def test_next_unit_is_lit_while_units_wait_end_turn_is_always_green_and_the_remi
     assert s.state["turn"] == 2                                      # ended at once, with a unit unordered
     app.stop_watching()
     app.click(layout.tabs(app.size)["remind"].center)                # and on again
-    app.key(pygame.K_RETURN)
+    app.click(grid["done"].center)
     assert s.state["turn"] == 2 and "not been gone through" in app.ui.message
+    assert "Click Confirm turn" in app.ui.message and app.ui.end_confirmation
+    app.paint(surface)
+    assert inside("done") == theme.BUTTON_ON
+    app.click(grid["done"].center)
+    assert s.state["turn"] == 3 and not app.ui.end_confirmation
 
 
 def test_a_move_the_stacking_limit_keeps_out_is_warned_of_and_then_reported():
@@ -1991,13 +2112,19 @@ def test_the_timetable_tab_lists_what_history_sends_and_takes_and_a_tap_goes_to_
         ("22 Dec", "in 17 turns", "22nd Armoured Brigade receives 60 tanks.")]     # its own side's, and nothing of the enemy's
     for words in ("27 November", "in 4 turns", "7th Armoured Brigade is withdrawn.", "Tanks from the reserve and the workshops."):
         assert words in seen, words
-    heads = [seen.index(w) for w in ("Withdrawals", "7th Armoured Brigade is withdrawn.", "4 units of 2nd New Zealand Division are withdrawn.",
-                                     "Reinforcements", "4th Armoured Brigade receives 33 tanks.", "22nd Armoured Brigade receives 60 tanks.",
-                                     "Other", "none")]
-    assert heads == sorted(heads)                                    # each kind under its heading, soonest first; nothing else is due
+    heads = [seen.index(w) for w in ("Withdrawals", "7th Armoured Brigade is withdrawn.",
+                                     "4 units of 2nd New Zealand Division are withdrawn.", "Reinforcements",
+                                     "4th Armoured Brigade receives 33 tanks.")]
+    assert heads == sorted(heads)                                    # each kind under its heading, soonest first
+    seen.clear()
+    app.ui.scroll = 6                                                  # the High Command aim takes room; later events scroll
+    app.paint(surface)
+    assert "22nd Armoured Brigade receives 60 tanks." in seen and "Other" in seen and "none" in seen
     assert [r["kind"] for r in s.timetable()] == ["withdrawal", "replacement", "withdrawal", "arrival", "replacement", "replacement"]
     assert s.due_now() == 0 and not [tip for _, tip in app.painter.tips if "at the end of this turn" in tip]   # no bubble on the tab yet
     assert not [b for b in ("move", "attack", "hold") if b in seen]  # no order buttons on this tab
+    app.ui.scroll = 0
+    app.paint(surface)
     box = next(row for key, (row, uid) in app.painter.report_rects.items() if key[0] == "due" and uid == 312)
     app.click(box.center)                                            # a tap on an event goes to its unit
     assert app.ui.tab == "unit" and app.ui.selected == s.leader(312)
@@ -2074,14 +2201,14 @@ def test_the_unit_taken_up_is_a_tile_in_the_panel_and_at_the_closest_zoom_its_co
     app.ui.selected, app.ui.alone = 311, True                       # 4th Armoured Brigade, by itself
     app.centre_on(tuple(s.unit(311)["hex"]))
     app.paint(pygame.Surface(theme.WINDOW))
-    for said in ("4th Armoured Brigade", "7th Armoured Division", "166", "tanks", "8", "moves", "300", "km of fuel",
+    for said in ("4th Armoured Brigade", "7th Armoured Division", "166", "tanks", "8", "open hexes", "300", "km of fuel",
                  "9", "morale", "excellent", "regular", "stores"):
         assert said in seen, said
     assert "4 Armd Bde" not in seen                                  # at the opening zoom a counter has no name
     tips = [tip for _, tip in app.painter.tips]
     assert "about 166 of 166 tanks (100%, 0 lost)" in tips and "Fuel for 300 km (30 hexes)" in tips
     assert "250 tonnes of stores" in tips and "Experience: regular" in tips
-    assert "Hexes a turn across open desert in this weather. Travel by road goes farther." in tips    # what "moves" counts
+    assert "Hexes a turn across open desert in this weather. Travel by road goes farther." in tips
     flown = [box for box, tip in app.painter.tips if tip == "United Kingdom"]                           # its flag, top right
     panel = layout.areas(app.size)["panel"]
     assert len(flown) == 1 and flown[0].size == theme.FLAG and layout.HEAD_Y < flown[0].top < layout.HEAD_Y + 20
@@ -2098,7 +2225,30 @@ def test_the_unit_taken_up_is_a_tile_in_the_panel_and_at_the_closest_zoom_its_co
     assert "men" in seen and "4" in seen and "km of fuel" not in seen           # four hexes a turn, and no fuel to show
 
 
-def test_a_short_scenario_says_each_side_its_aim_on_the_timetable_tab():           # RULES 13.1, 2.4
+def test_recon_details_use_plain_strength_one_supply_line_and_a_clear_split_action():
+    pygame.init()
+    app = App(Session(regiments(), GMAP, humans=["cw"], scripted={"axis": players.DoNothing(GMAP)}))
+    app.ui.selected, app.ui.alone = 335, True
+    drawn = []
+    original = app.painter.text
+    app.painter.text = lambda surface, words, pos, *a, **k: (drawn.append((str(words), pos)), original(surface, words, pos, *a, **k))
+    app.paint(pygame.Surface(app.size))
+    words = [value for value, _ in drawn]
+    assert "Full strength" in words and "2 / 2 steps" not in words
+    assert words.count("In supply") == 1
+    assert "Mk VI light tank (example)" in words and "open hexes" in words
+    assert "48 MP = 12 open hexes" in words
+    assert any(value.startswith("18 November 1941") and pos[0] < layout.areas(app.size)["panel"].x
+               for value, pos in drawn)
+    assert app.session.can(335, "split", True)[0]
+    app.ui.selected, app.ui.alone = 330, False
+    app.paint(pygame.Surface(app.size))
+    assert not app.session.can(330, "split", False)[0]
+    assert any(rect == layout.buttons(app.size)["split"] and "Click a unit" in tip
+               for rect, tip in app.painter.tips)
+
+
+def test_scenarios_say_each_side_its_aim_on_the_timetable_tab():           # RULES 13.1, 2.4
     from engine import scenarios
     pygame.init()
     surface = pygame.Surface(theme.WINDOW)
@@ -2118,7 +2268,8 @@ def test_a_short_scenario_says_each_side_its_aim_on_the_timetable_tab():        
     app.painter.text = lambda surface, words, *a, **k: (seen.append(words), text(surface, words, *a, **k))
     app.click(layout.tabs(app.size)["timetable"].center)
     app.paint(surface)
-    assert "Your aim" not in seen                                                 # Crusader gives none
+    said = " ".join(str(words) for words in seen)
+    assert "Your aim" in seen and "Relieve Tobruk" in said
 
 
 def test_a_commonwealth_unit_flies_its_own_countrys_flag():

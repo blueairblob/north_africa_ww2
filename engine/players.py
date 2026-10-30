@@ -97,4 +97,7 @@ class Recorded:
         return self.submissions[view["turn"] - 1]
 
 
-SCRIPTED = {"nothing": DoNothing, "attack": AlwaysAttack, "retreat": AlwaysRetreat, "explore": Explore}
+from .computer import ComputerEasy, ComputerHard, ComputerOpponent
+
+SCRIPTED = {"nothing": DoNothing, "attack": AlwaysAttack, "retreat": AlwaysRetreat, "explore": Explore,
+            "computer-easy": ComputerEasy, "computer": ComputerOpponent, "computer-hard": ComputerHard}

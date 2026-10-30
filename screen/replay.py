@@ -19,6 +19,7 @@ fought and stood are seen to have held.
 from engine.combat import COH_LOSS, COH_MIN
 from engine.movement import IMPULSES
 from engine.paths import FOOT, VEHICLE, least_path
+from mapgen import hexgrid as H
 
 IMPULSE_MS = 110        # one impulse of movement
 MOVE_LEAD_MS = 500      # the map goes to a group of movers before they set off
@@ -113,6 +114,16 @@ def seen_way(gmap, kind, a, b):
     if not way:
         return [(0, a), (IMPULSES, b)]
     return [(0, a)] + [((n + 1) * IMPULSES // len(way), h) for n, h in enumerate(way)]
+
+
+def displayed_hex(where):
+    """The hex containing a counter's centre, including while it is between hex centres."""
+    if len(where) == 2:
+        return tuple(where)
+    a, b, fraction = where
+    ax, ay = H.centre(*a)
+    bx, by = H.centre(*b)
+    return H.hex_at(ax + (bx - ax) * fraction, ay + (by - ay) * fraction)
 
 
 def script(before, after, span=None, gmap=None):
@@ -222,6 +233,11 @@ class Playback:
         """The time the scene after the one playing at t begins; the end, if it is the last."""
         return next((start for start, _, _ in self.timeline if start > t), self.length)
 
+    def previous_scene(self, t):
+        """Return to this scene's opening, or the previous opening when already there."""
+        starts = [start for start, _, _ in self.timeline if start < t - 1]
+        return starts[-1] if starts else 0
+
     def cues(self, t0, t1):
         """The sounds that begin in [t0, t1): (name, amount). A strike's sound is named for
         the arm striking, and its amount is how many milliseconds it rattles."""
@@ -315,5 +331,10 @@ class Playback:
                         bursts.append((place[i], part, "flag" if i in scene["flags"] else "burst"))
         units = [(i, u, own, place[i], scale.get(i, 1.0), fade.get(i, 1.0), lit.get(i), i in shake)
                  for i, (u, own) in sorted(self.script["cast"].items()) if place.get(i) and fade.get(i, 1.0) > 0.02]
+        # Enemy routes between sightings are estimates; movement groups and battle outcomes are
+        # shown one after another although the engine resolves them together. Keep the certain
+        # friendly position when those staging choices would put both sides in one drawn hex.
+        held = {displayed_hex(where) for _, _, own, where, *_ in units if own}
+        units = [entry for entry in units if entry[2] or displayed_hex(entry[3]) not in held]
         return {"units": units, "title": title, "focus": focus, "ring": ring, "line": line, "meter": meter,
                 "bursts": bursts}

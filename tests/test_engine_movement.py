@@ -1,5 +1,7 @@
 """docs/RULES.md §9: simultaneous movement in impulses."""
-from engine import invariants
+import pytest
+
+from engine import board, invariants
 from engine import state as S
 from helpers import GMAP, by_id, start, turn, unit
 
@@ -67,6 +69,17 @@ def test_two_enemies_changing_places_both_stop():                               
     state, _ = turn(sc, state, axis=[move(101, [70, 25])], cw=[move(201, [70, 24])])
     u = by_id(state)
     assert u[101]["hex"] == [70, 24] and u[201]["hex"] == [70, 25]
+
+
+def test_stacking_room_never_allows_opposing_sides_even_when_there_is_space():
+    axis = unit(101, "axis", "foot", [70, 24])
+    cw = unit(201, "cw", "foot", [70, 23])
+    assert board.room([axis], [cw]) is False
+    assert board.room([cw], [axis]) is False
+    _, state = start([axis, cw])
+    with pytest.raises(ValueError, match="opposing units cannot share hex"):
+        board.enter(state, S.unit(state, 201), (70, 24), set())
+    assert S.unit(state, 201)["hex"] == [70, 23]
 
 
 def test_a_full_hex_refuses_the_highest_id():                                    # 9.5.4, 20.1.4

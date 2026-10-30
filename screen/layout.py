@@ -47,7 +47,24 @@ def areas(size, collapsed=False):
             "console": pygame.Rect(0, h - T.CONSOLE, w, T.CONSOLE)}
 
 
-BUTTON_H, GAP, EDGE = 36, 7, 16
+def playback_controls(size, collapsed=False, spectator=False):
+    """Small replay actions in the command footer, clear of the battlefield."""
+    area = areas(size, collapsed)["console"]
+    names = ("pause", "back", "next", "speed", "skip") if spectator else ("back", "next", "speed", "skip")
+    widths, gap = tuple(48 if name != "skip" else 55 for name in names), 2
+    x = area.right - sum(widths) - gap * (len(names) - 1) - 20
+    y = area.centery - 16
+    return {name: pygame.Rect(x + sum(widths[:n]) + gap * n, y, widths[n], 32)
+            for n, name in enumerate(names)}
+
+
+def title_button(size):
+    """The single start action on the opening card; window X remains the exit."""
+    w, h = size
+    return pygame.Rect(w // 2 - 122, h // 2 + 170, 244, 48)
+
+
+BUTTON_H, GAP, EDGE = 36, 7, 22
 TABS_Y, TAB_H = 148, 30  # below the command-side header, date and score
 HEAD_Y = TABS_Y + TAB_H + 10                # the header of the unit taken up: its tile, or a group's name and units
 ORDERS_Y = HEAD_Y + T.TILE_H + 12           # legacy unit-header baseline for details text
@@ -145,5 +162,5 @@ def air_controls(size, opened=False, collapsed=False):
     out = {"air": button}
     if opened:
         for n, choice in enumerate(("support", "interdict", "recon")):
-            out[choice] = pygame.Rect(button.right - 214, button.top - 8 - (3 - n) * 39, 214, 37)
+            out[choice] = pygame.Rect(button.right - 250, button.top - 8 - (3 - n) * 39, 250, 37)
     return out

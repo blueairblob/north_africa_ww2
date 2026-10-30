@@ -8,11 +8,13 @@ from pathlib import Path
 import pygame
 
 from engine import units as U
+from engine.air import AIR_INTERDICT_PCT, AIR_SUPPORT_PCT
 
 from . import saves
 from . import theme as T
+from .branding import icon as brand_icon
 from .draw import UI, Painter
-from .layout import HEAD_Y, Layout, air_controls, areas, buttons, details_toggle, game, layers, saves_list, tabs
+from .layout import HEAD_Y, Layout, air_controls, areas, buttons, details_toggle, game, layers, playback_controls, saves_list, tabs, title_button
 from .session import GOES
 from .sound import Sounds
 
@@ -36,7 +38,10 @@ class App:
         self.session, self.ui, self.size = session, UI(), size
         self.painter = Painter(session.gmap)
         self.press = None               # where the left button went down, and whether it has dragged
+        self.title = False              # enabled for an interactive launch, not an offscreen game frame
         self.play, self.play_t, self.sounds, self.fast = None, 0.0, None, False   # last turn being played back
+        self.spectator_fast = not session.humans
+        self.auto_delay = 0.0
         self.target = None              # where the map is gliding to
         self.last = None                # the unit last taken up by Next, so Next goes on from it
         self.zoom_back = None           # the zoom to return to when the playback ends
@@ -47,7 +52,8 @@ class App:
         self.saves = None               # the folder games are saved in; with none (tests) nothing is written
         self.screenshots = SCREENSHOTS   # F12 captures, kept out of the public repository
         self.begin_orders()
-        self.ui.message = self.sky_words() + "Each unit holds unless ordered: press Move or Attack, then click the hex. Space goes on to the next."
+        if session.humans and not session.state["over"]:
+            self.ui.message = self.sky_words() + "Each unit holds unless ordered: press Move or Attack, then click the hex. Space goes on to the next."
         u = session.unit(self.ui.selected)
         if u:
             self.centre_on(tuple(u["hex"]))               # the first unit to order starts in the middle
@@ -90,6 +96,11 @@ class App:
     def tick(self, ms):
         """Time passes: the playback moves on, and the map glides towards where it is going."""
         self.advance(ms)
+        if not self.title and not self.session.humans and not self.play and not self.session.state["over"]:
+            self.auto_delay += min(ms, 50)
+            if self.auto_delay >= 700:
+                self.auto_delay = 0.0
+                self.done()
         dx, dy = self.edge()
         if dx or dy:                                      # planning a move past the edge of the view
             before = list(self.ui.cam)
@@ -119,7 +130,9 @@ class App:
     def busy(self):
         """Something is moving on the screen, so frames must keep coming: the playback, the map
         gliding or scrolling at its edge, or the pulse round the unit taken up."""
-        return bool(self.play or self.target or self.session.unit(self.ui.selected))
+        auto = not self.session.humans and not self.session.state["over"] and not self.play
+        return not self.title and bool((self.play and not self.ui.playback_paused) or auto or self.target
+                                       or self.session.unit(self.ui.selected))
 
     def span(self):
         """The columns and rows of hexes that fit in the map area, with a margin."""
@@ -189,6 +202,10 @@ class App:
     def left_words(self):
         """How many units the player has still to go through this turn, in words."""
         s = self.session
+        if s.state["over"]:
+            return "The battle has ended."
+        if not s.humans:
+            return "The computer match resumes automatically."
         left, idle = len(s.waiting_units()), len(s.idle_units())
         if not left:
             return "Every unit has been gone through: press End turn."
@@ -215,7 +232,8 @@ class App:
         ui.selected = None
         ui.air_open = False
         self.look_at_own()
-        self.step()
+        if s.humans and not s.state["over"]:
+            self.step()
         self.begin_message()
         self.watch()
 
@@ -225,6 +243,14 @@ class App:
 
     def begin_message(self):
         s = self.session
+        if s.state["over"]:
+            result = s.state["result"]
+            self.ui.message = ("Game over: a draw." if result["winner"] is None else
+                               f"Game over: {T.SIDE_NAME[result['winner']]} {result['grade']} victory.")
+            return
+        if not s.humans:
+            self.ui.message = "Computer vs computer · Watching the Axis view. The next turn starts automatically."
+            return
         names = {u["id"]: u["name"] for u in s.view["units"]}
         ended = [f"{names[uid]} {why}." for uid, why in s.ended[s.side] if uid in names]
         left, idle = len(s.waiting_units()), len(s.idle_units())
@@ -240,16 +266,20 @@ class App:
         if self.ui.zoom < PLAY_ZOOM:                      # zoomed out, the counters are dots: come in to watch
             self.zoom(PLAY_ZOOM / self.ui.zoom)
             self.ui.zoom = PLAY_ZOOM                      # avoid accumulated rounding at the playback threshold
-        self.play, self.play_t, self.fast = self.session.playback(self.span()), 0.0, False
+        self.play, self.play_t = self.session.playback(self.span()), 0.0
+        self.fast = self.spectator_fast if self.play else False
+        self.ui.playback_paused = False
         self.zoom_back = before if self.play else None
         if not self.play and self.ui.zoom != before:
             self.zoom(before / self.ui.zoom)
         if self.play:
-            self.ui.message = "Last turn.   F: faster   Right arrow: next   any other key or a click: skip it all"
+            self.ui.message = ("Watching computers: Space pauses · Left/Right scenes · F speed."
+                               if not self.session.humans else
+                               "Replay: Left/Right scenes · F speed · Done skips.")
 
     def advance(self, ms):
         """Move the playback on by so many milliseconds: sounds, and the map following the battles."""
-        if not self.play:
+        if not self.play or self.ui.playback_paused:
             return
         ms = min(ms, 50) * (FAST if self.fast else 1)     # a long frame never skips a scene
         cues = self.play.cues(self.play_t, self.play_t + ms)
@@ -276,8 +306,19 @@ class App:
             self.stop_watching()
             self.begin_message()
 
+    def rewind_scene(self):
+        """Return to the beginning of this scene, then to earlier scenes."""
+        if self.sounds:
+            self.sounds.stop()
+        self.play_t = self.play.previous_scene(self.play_t)
+        focus = self.play.stage(self.play_t)["focus"]
+        if focus:
+            self.glide_to(focus)
+
     def stop_watching(self):
         self.play, self.fast = None, False
+        self.ui.playback_paused = False
+        self.auto_delay = 0.0
         if self.sounds:
             self.sounds.stop()
         if self.zoom_back and self.zoom_back != self.ui.zoom:      # back to the zoom the player had
@@ -354,6 +395,7 @@ class App:
         self.ui.details_collapsed, self.ui.weather_visible = old.details_collapsed, old.weather_visible
         self.painter.reach_cache = self.painter.zone_cache = (None, None)
         self.play, self.target, self.last, self.zoom_back = None, None, None, None
+        self.spectator_fast, self.auto_delay = not session.humans, 0.0
         self.confirm = self.asked = False
         if len(session.humans) > 1 and not session.state["over"]:    # two at one screen: covered until the right one sits down
             self.ui.cover = f"{T.SIDE_NAME[session.side]}: your orders. Click or press Space."
@@ -366,12 +408,20 @@ class App:
     def press_button(self, name):
         ui = self.ui
         s = self.session
+        if not s.humans:
+            ui.message = "The computers are giving orders; watch the replay or use its controls."
+            return
         if name == "done":
             return self.end_turn()
         if name == "next":
             return self.next_unit()
         if s.unit(ui.selected) is None:
             ui.message = "Click one of your units first."
+            return
+        if name == "split" and not ui.alone and ui.details_collapsed and len(s.members(ui.selected)) > 1:
+            ui.details_collapsed, ui.tab = False, "unit"
+            self.clamp()
+            ui.message = "Click a unit in the details hierarchy, then Split to leave it here."
             return
         has = None if ui.alone else s.pending[s.side].get(s.leader(ui.selected), {}).get("order")
         ok, why = s.can(ui.selected, name, ui.alone)
@@ -400,7 +450,7 @@ class App:
         elif name == "join":
             ui.mode = None if ui.mode == name else name
             ui.hover = tuple(self.session.unit(ui.selected)["hex"]) if ui.mode else ui.hover
-            ui.message = "Join: click a unit of the same division, or choose it with the arrow keys and press Enter." if ui.mode else ""
+            ui.message = "Join: click another friendly unit, or choose it with the arrow keys and press Enter." if ui.mode else ""
         elif name in ("hold", "dig_in", "rest"):
             self.give(name)
         elif name in ("move", "attack", "road_march"):
@@ -429,7 +479,7 @@ class App:
         (ui.selected, ui.alone), ui.mode = stops[at % len(stops)], None
         name = s.unit(ui.selected)["name"] if ui.alone else s.group_name(ui.selected)
         ui.message = f"{at % len(stops) + 1} of {len(stops)} in this hex: {name}" + (
-            " by itself. An order now splits it from its group." if ui.alone else ".")
+            " by itself. Split leaves it here on Hold." if ui.alone else ".")
 
     def cursor(self, dx, dy):
         """Move the keyboard's hex cursor. Up and down go along the column. Left and right go to
@@ -445,17 +495,23 @@ class App:
 
     def end_turn(self):
         """End turn, asked for by key or button: once more to be sure if units still wait."""
+        if self.session.state["over"]:
+            self.ui.message = "The battle has ended; there is no next turn."
+            return
         left = len(self.session.idle_units())
         if left and self.ui.remind and not self.asked and not self.session.state["over"]:
             self.confirm = True
+            self.ui.end_confirmation = True
             self.ui.message = (f"{T.count(left, 'unit')} {'has' if left == 1 else 'have'} not been gone through and will "
-                               f"hold {'its' if left == 1 else 'their'} ground. Press End turn again to end the turn.")
+                               f"hold {'its' if left == 1 else 'their'} ground. Click Confirm turn to continue.")
             return
+        self.ui.end_confirmation = False
         self.done()
 
     def click(self, pos, button=1):
         ui, s = self.ui, self.session
         self.asked, self.confirm = self.confirm, False
+        ui.end_confirmation = False
         if ui.cover:
             ui.cover = None
             return self.begin_orders()
@@ -579,7 +635,7 @@ class App:
         for uid, r in self.painter.member_rects.items():  # a unit in the panel's list: take it up by itself
             if r.collidepoint(pos) and button == 1:
                 ui.selected, ui.alone, ui.mode = uid, True, None
-                ui.message = "This unit alone: an order now splits it from its group. Split leaves it where it is."
+                ui.message = "Selected alone. Split leaves this unit here on Hold; any order separates it from the group."
                 return
         h = self.hex_under(pos)
         if h is None or s.state["over"]:                  # nothing to order there; say so
@@ -701,11 +757,16 @@ class App:
         elif not points:
             self.ui.message = f"Air force: {choice}. No air points this turn."
         else:
-            self.ui.message = f"Air force: {choice} ({points} {'point' if points == 1 else 'points'} this turn)."
+            self.ui.message = {
+                "support": f"Air support: +{AIR_SUPPORT_PCT * points}% in combat this turn.",
+                "interdict": f"Air interdict: enemy truck lift −{AIR_INTERDICT_PCT * points}% in next turn's supply phase.",
+                "recon": f"Air recon: your units spot {points} hexes farther next turn.",
+            }[choice]
 
     def key(self, key):
         ui = self.ui
         self.asked, self.confirm = self.confirm, False
+        ui.end_confirmation = False
         if ui.cover:
             if key in (pygame.K_SPACE, pygame.K_RETURN):
                 ui.cover = None
@@ -809,12 +870,44 @@ class App:
         if event.type == pygame.VIDEORESIZE:
             self.size = (max(900, event.w), max(560, event.h))
             self.clamp()
-        elif self.play:                                   # F goes faster; any other key or a click skips
-            if event.type == pygame.KEYDOWN and event.key == pygame.K_f:
+        elif self.title:
+            if event.type == pygame.MOUSEMOTION:
+                ui.mouse = event.pos
+            elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 1 and title_button(self.size).collidepoint(event.pos):
+                self.title = False
+            elif event.type == pygame.KEYDOWN and event.key in (pygame.K_RETURN, pygame.K_KP_ENTER, pygame.K_SPACE):
+                self.title = False
+        elif self.play:                                   # visible controls and the same keyboard shortcuts
+            spectator = not self.session.humans
+            if event.type == pygame.MOUSEMOTION:
+                ui.mouse = event.pos
+            elif spectator and event.type == pygame.KEYDOWN and event.key in (pygame.K_SPACE, pygame.K_p):
+                ui.playback_paused = not ui.playback_paused
+            elif event.type == pygame.KEYDOWN and event.key == pygame.K_f:
                 self.fast = not self.fast
+                if spectator:
+                    self.spectator_fast = self.fast
+            elif event.type == pygame.KEYDOWN and event.key in (pygame.K_LEFT, pygame.K_b):
+                self.rewind_scene()
             elif event.type == pygame.KEYDOWN and event.key in (pygame.K_RIGHT, pygame.K_n):
                 self.skip_scene()
-            elif event.type in (pygame.KEYDOWN, pygame.MOUSEBUTTONDOWN):
+            elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+                chosen = next((name for name, rect in playback_controls(self.size, ui.details_collapsed, spectator).items()
+                               if rect.collidepoint(event.pos)), None)
+                if chosen == "pause":
+                    ui.playback_paused = not ui.playback_paused
+                elif chosen == "back":
+                    self.rewind_scene()
+                elif chosen == "speed":
+                    self.fast = not self.fast
+                    if spectator:
+                        self.spectator_fast = self.fast
+                elif chosen == "next":
+                    self.skip_scene()
+                elif chosen == "skip":
+                    self.stop_watching()
+                    self.begin_message()
+            elif event.type == pygame.KEYDOWN:
                 self.stop_watching()
                 self.begin_message()
         elif event.type == pygame.KEYDOWN and ui.editing is not None:       # typing a group's name
@@ -858,13 +951,17 @@ class App:
         return True
 
     def paint(self, surface):
+        if self.title:
+            self.painter.title_screen(surface, self.session, self.ui)
+            return
         stage = self.play.stage(self.play_t) if self.play else None
-        self.painter.frame(surface, self.session, self.ui, stage)
+        self.painter.frame(surface, self.session, self.ui, stage, self.fast)
 
     def run(self):
         pygame.init()
         pygame.display.set_caption("Benghazi Handicap")
         window = pygame.display.set_mode(self.size, pygame.RESIZABLE)
+        pygame.display.set_icon(brand_icon(64))
         try:
             self.painter.base = self.painter.base.convert()
             if len(self.session.humans) > 1:

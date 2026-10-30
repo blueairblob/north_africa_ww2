@@ -30,6 +30,8 @@ def room(units_there, comers):
     of one side: the units of at most STACK_FORMATIONS formations may share a hex, and HQs do
     not count (20.1.4)."""
     comers = comers if isinstance(comers, list) else [comers]
+    if units_there and comers and any(u["side"] != comers[0]["side"] for u in units_there):
+        return False
     ids = {u["id"] for u in comers}
     there = U.stacked(v for v in units_there if v["id"] not in ids)
     return len(there | U.stacked(comers)) <= U.STACK_FORMATIONS
@@ -67,6 +69,9 @@ def join(state, u, other):
 
 def enter(state, u, h, entered):
     """Put a unit in a hex it has moved, retreated or advanced into."""
+    if any(v["status"] == "on_map" and v["hex"] is not None and tuple(v["hex"]) == tuple(h)
+           and v["side"] != u["side"] for v in state["units"]):
+        raise ValueError(f"opposing units cannot share hex {tuple(h)}")
     u["hex"] = list(h)
     entered.add(u["id"])
     fort = state["forts"].get(S.fort_key(h))

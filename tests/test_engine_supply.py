@@ -52,6 +52,19 @@ def test_a_haul_uses_lift_and_burns_fuel_by_distance():                         
     assert state["sides"]["axis"]["burnt"] == -(-500 * 22 // 2000)               # 6 tonnes of fuel
 
 
+def test_interdiction_reduces_the_next_supply_phases_actual_haul():             # 7.4, 6.5.1
+    from copy import deepcopy
+    units = [unit(104, "axis", "hq", "Gazala", steps=1, fuel=120, stores=300),
+             unit(101, "axis", "foot", "Gazala", size=3, stores=0)]
+    sc, state = start(units, ports={"Derna": {"fuel": 1000, "stores": 5000}})
+    sc["sides"]["axis"]["lift"] = [["1941-11-18", 22 * 300]]
+    ordinary = begin_turn(deepcopy(state), GMAP, sc)
+    state["sides"]["axis"]["interdiction"] = 15
+    interdicted = begin_turn(state, GMAP, sc)
+    assert ordinary["sides"]["axis"]["issued"] == 300
+    assert interdicted["sides"]["axis"]["issued"] == 255
+
+
 def test_no_lift_no_haul_but_a_port_feeds_units_close_by():                      # 6.5.3, 6.6.2, 6.8.3
     units = [unit(104, "axis", "hq", "Gazala", steps=1), unit(101, "axis", "foot", "Gazala", stores=0),
              unit(102, "axis", "foot", "Derna", stores=0)]
