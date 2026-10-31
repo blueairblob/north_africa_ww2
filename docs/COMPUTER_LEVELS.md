@@ -6,9 +6,11 @@ Each side can use `computer-easy`, `computer` (Standard), or `computer-hard` ind
 | --- | --- |
 | Easy | Chooses nearby objectives, rests sooner, builds only basic fieldworks, and avoids long road marches. |
 | Standard | Weighs objective value against distance, spreads assignments, and uses road marches and air interdiction. This is the original computer opponent. |
-| Hard | Gives the Sidi Rezegh corridor more weight, concentrates formations on key ground, protects held high-value objectives under threat, and can build level 4 fieldworks. In the longer campaign it may send one mobile formation and a command HQ on a supply-aware desert raid, then withdraw both. |
+| Hard | Gives the Sidi Rezegh corridor more weight, protects held high-value objectives under threat, and can build level 4 fieldworks. It compares nearby, visible attack packages before redirecting a formation to an objective, retaining a strong second attack. In the longer campaign it may send one mobile formation and a command HQ on a supply-aware desert raid, then withdraw both. |
 
 The flank is a deliberate operation chosen from public objectives and enemy units the computer can see. It checks fuel, supply, a safe approach and a second command HQ for the main force. Moving an HQ destroys dump stock above 300 tonnes of each kind, so Hard declines low-value raids that would discard a large dump. The earlier unrestricted policy sent 7th Armoured Division and XXX Corps HQ south of Sidi Rezegh on Crusader seed 1941; the cost-aware policy declines that opening but will plan the raid when XXX Corps HQ carries a lighter dump. It does not use hidden enemy positions or extra movement allowances. Hard does not attempt a deep raid in the five-turn Sidi Rezegh scenario.
+
+The coordinated attack check is deliberately narrow. It can redirect one supplied formation from a visible, well-covered fight to an under-supported attack on an enemy-held objective. It protects a formation on a held objective and the active flank plan. It is a one-turn comparison of orders, not a persistent multi-turn mission planner. The tested scripted openings were essentially unchanged, so this feature has not yet shown a measurable difficulty gain; see [COMPUTER_BENCHMARK.md](COMPUTER_BENCHMARK.md).
 
 ## First Sidi Rezegh comparison
 

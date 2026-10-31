@@ -194,6 +194,7 @@ class ComputerHard(ComputerOpponent):
     dig_limit = 4
     guard_objective = True
     tactical_enabled = False
+    coordination_enabled = True
     limit_dump_discard = True
 
     FLANK_OFFSETS = ((-4, 3), (-3, 3), (-2, 3), (-4, 4), (-3, 4), (-2, 4),
@@ -282,6 +283,10 @@ class ComputerHard(ComputerOpponent):
 
     def _tactical_orders(self, view, given, formations):
         """Reject clearly poor adjacent attacks using visible defenders and own stores."""
+        if self.coordination_enabled:
+            from .coordinated import coordinate
+            protected = (self.flank["lead"], self.flank["hq"]) if self.flank else ()
+            given = coordinate(self.gmap, view, given, formations, protected)
         if not self.tactical_enabled:
             return given
         by_id = {lead["id"]: (lead, members) for lead, members in formations}
@@ -381,15 +386,23 @@ class ComputerHard(ComputerOpponent):
 
 
 class ComputerHardBaseline(ComputerHard):
-    """The current playable Hard policy, retained for paired benchmarks."""
+    """Hard before coordinated attack planning, retained for paired benchmarks."""
 
     tactical_enabled = False
+    coordination_enabled = False
 
 
 class ComputerHardTactical(ComputerHard):
     """Experimental attack filter; benchmark evidence does not support release yet."""
 
     tactical_enabled = True
+    coordination_enabled = False
+
+
+class ComputerHardCoordinated(ComputerHard):
+    """Explicit alias for the playable coordinated Hard policy in benchmarks."""
+
+    coordination_enabled = True
 
 
 class ComputerHardUnrestrictedFlank(ComputerHardBaseline):

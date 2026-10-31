@@ -65,6 +65,8 @@ The first implementation should be **benchmark + tactical/supply evaluation**, b
 
 **Implementation note, 30 October 2026:** The paired harness and an experimental local tactical evaluator are now in the repository. See [COMPUTER_BENCHMARK.md](COMPUTER_BENCHMARK.md) for commands and initial results. The evaluator stays outside playable difficulty levels because the multi-opponent matches found regressions. The harness also exposed a costly opening raid; playable Hard now checks the moving HQ's discarded dump stock before committing. The next work is a coordinated, supply-aware evaluation of attack versus holding ground over a whole turn.
 
+**Implementation note, 31 October 2026:** A bounded, visible-information coordinated attack check is now in playable Hard. It compares the whole turn's attack package with one-formation redirects and keeps a second attack safe before reinforcing an objective. Initial permissive versions regressed in paired matches; the narrower version was neutral on the tested openings. This is a first tactical coordination step, not the multi-turn mission, enemy-belief or opponent-response planner described above. See [COMPUTER_BENCHMARK.md](COMPUTER_BENCHMARK.md) for the measured limits.
+
 ## Suggested player-facing standard
 
 A credible opponent should have a recognizable operational aim, preserve a reserve, support attacks with HQs and supply, scout uncertainty, exploit a weak flank when conditions justify it, and withdraw when a raid has spent its advantage. It should occasionally surprise a human, while a replay and optional post-game explanation can identify the plan and the information it used. Stronger difficulty should come from decisions and planning depth, never extra knowledge or altered combat rules.

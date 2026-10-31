@@ -6,7 +6,9 @@ import pytest
 from engine import invariants, players, runner, scenarios
 from engine import state as S
 from engine import view as V
-from engine.computer import ComputerHardBaseline, ComputerHardTactical, ComputerHardUnrestrictedFlank
+from engine.computer import ComputerHardBaseline, ComputerHardCoordinated, ComputerHardTactical, ComputerHardUnrestrictedFlank
+from engine.coordinated import coordinate
+from engine.players import parties
 from engine.turn import begin_turn, finish_turn
 from helpers import GMAP
 from screen.session import Session
@@ -134,6 +136,57 @@ def test_experimental_tactics_rejects_weak_attack_without_changing_playable_hard
     assert old == {"unit": 308, "order": "attack", "to": [53, 10]}
     assert new == {"unit": 308, "order": "hold"}
     assert shown == session.views["cw"]
+
+
+def test_coordinator_keeps_two_valuable_attacks_when_objective_is_already_well_assaulted():
+    scenario = scenarios.load("crusader")
+    state = begin_turn(S.new_game(scenario, GMAP, 1941), GMAP, scenario)
+    shown = V.view(state, GMAP, scenario, "cw")
+    snapshot = deepcopy(shown)
+    baseline = ComputerHardBaseline(GMAP).orders(shown)
+    candidate = ComputerHardCoordinated(GMAP).orders(shown)
+    old = next(o for o in baseline["orders"] if o["unit"] == 330)
+    new = next(o for o in candidate["orders"] if o["unit"] == 330)
+    assert old == {"unit": 330, "order": "attack", "to": [65, 17]}
+    assert new == old
+    assert shown == snapshot
+    _, replies = finish_turn(state, GMAP, scenario, {"cw": candidate, "axis": {"orders": [], "air": "recon"}})
+    assert all(reply["ok"] for reply in replies["cw"])
+
+
+def test_coordinator_preserves_a_needed_second_attack_but_recruits_it_when_safe():
+    scenario = scenarios.load("sidi_rezegh")
+    state = S.new_game(scenario, GMAP, 1941)
+    axis, cw = ComputerHardCoordinated(GMAP), players.ComputerOpponent(GMAP)
+    for _ in range(2):
+        state = begin_turn(state, GMAP, scenario)
+        state, _ = finish_turn(state, GMAP, scenario, {
+            "axis": axis.orders(V.view(state, GMAP, scenario, "axis")),
+            "cw": cw.orders(V.view(state, GMAP, scenario, "cw"))})
+    state = begin_turn(state, GMAP, scenario)
+    shown = V.view(state, GMAP, scenario, "axis")
+    baseline = ComputerHardBaseline(GMAP).orders(shown)
+    candidate = axis.orders(shown)
+    assert next(o for o in baseline["orders"] if o["unit"] == 120) == {
+        "unit": 120, "order": "attack", "to": [56, 14]}
+    assert next(o for o in candidate["orders"] if o["unit"] == 120) == {
+        "unit": 120, "order": "attack", "to": [56, 14]}
+    # When the visible defenders of the old target are weak, its remaining
+    # attacker can handle that fight and group 120 can help at Sidi Rezegh.
+    weakened = deepcopy(shown)
+    for enemy in weakened["enemy"]:
+        if enemy["hex"] == [56, 14]:
+            enemy["strength"] = "weak"
+    snapshot = deepcopy(weakened)
+    proposal = coordinate(GMAP, weakened, deepcopy(baseline), parties(weakened))
+    assert next(o for o in proposal["orders"] if o["unit"] == 120) == {
+        "unit": 120, "order": "attack", "to": [56, 13]}
+    assert next(o for o in players.ComputerHard(GMAP).orders(weakened)["orders"] if o["unit"] == 120) == {
+        "unit": 120, "order": "attack", "to": [56, 13]}
+    assert next(o for o in baseline["orders"] if o["unit"] == 120)["to"] == [56, 14]
+    assert weakened == snapshot
+    _, replies = finish_turn(state, GMAP, scenario, {"axis": proposal, "cw": {"orders": [], "air": "recon"}})
+    assert all(reply["ok"] for reply in replies["axis"])
 
 
 def test_active_flank_survives_save_and_replays_same_turn():

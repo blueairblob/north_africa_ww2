@@ -15,7 +15,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
 from engine import invariants, players, scenarios, state as S  # noqa: E402
-from engine.computer import ComputerHardBaseline, ComputerHardBeforeFlank, ComputerHardTactical, ComputerHardUnrestrictedFlank  # noqa: E402
+from engine.computer import ComputerHardBaseline, ComputerHardBeforeFlank, ComputerHardCoordinated, ComputerHardTactical, ComputerHardUnrestrictedFlank  # noqa: E402
 from engine.gamemap import GameMap  # noqa: E402
 from engine.turn import begin_turn, finish_turn  # noqa: E402
 from engine.view import leaks, view  # noqa: E402
@@ -24,6 +24,7 @@ from engine.view import leaks, view  # noqa: E402
 OPPONENTS = {"easy": players.ComputerEasy, "standard": players.ComputerOpponent,
              "hard": ComputerHardBaseline, "passive": players.DoNothing}
 POLICIES = {"hard": players.ComputerHard, "tactical": ComputerHardTactical,
+            "coordinated": ComputerHardCoordinated,
             "baseline": ComputerHardBaseline, "unrestricted": ComputerHardUnrestrictedFlank,
             "pre-flank": ComputerHardBeforeFlank}
 
@@ -117,7 +118,7 @@ def main():
     parser.add_argument("--sides", nargs="+", choices=S.SIDES, default=S.SIDES)
     parser.add_argument("--opponents", nargs="+", choices=OPPONENTS, default=("standard", "hard"))
     parser.add_argument("--baseline", choices=("baseline", "unrestricted", "pre-flank"), default="baseline")
-    parser.add_argument("--candidate", choices=("tactical", "hard"), default="tactical")
+    parser.add_argument("--candidate", choices=("tactical", "hard", "coordinated"), default="tactical")
     parser.add_argument("--json", action="store_true", help="Print full paired results as JSON")
     args = parser.parse_args()
     gmap = GameMap(json.loads((ROOT / "data" / "map.json").read_text()))

@@ -88,6 +88,10 @@ Publishing:
   placed this work next on 28 October 2026. Easy, Standard and Hard now use
   the same side view as a human; the first five-seed comparison is in
   `docs/COMPUTER_LEVELS.md`. Larger trials and scenario balance remain open.
+  Hard now has a guarded one-turn coordinated attack check. Next, measure its
+  interventions against human and varied scripted opponents; add a saved
+  multi-turn mission with a reserve, HQ support, withdrawal condition and
+  uncertainty about last-seen enemies before claiming an intelligence gain.
 - **[build]** The front-line history overlay (F), in `DESIGN.md` §12. Not
   built.
 - **[build]** The optional retro look, in `DESIGN.md` §12. Not built.
