@@ -5,6 +5,7 @@ import os
 import pygame
 
 from engine import orders as O
+from engine import mission as M
 from engine import paths
 from engine import units as U
 from engine.computer import ComputerOpponent
@@ -17,15 +18,26 @@ from engine.view import spot_range
 
 from . import theme as T
 from .branding import icon as brand_icon
-from .layout import EDGE, HEAD_Y, Layout, air_controls, areas, buttons, details_toggle, footer_flag, game, layers, playback_controls, saves_list, tabs, title_button
+from .layout import EDGE, HEAD_Y, Layout, air_controls, areas, buttons, campaign_continue, details_toggle, footer_flag, game, layers, playback_controls, saves_list, tabs, title_button
 from .session import GOES, where
 from .pictures import AIR_LABELS, air_example, aircraft, picture
 
 ROOT = os.path.dirname(os.path.dirname(__file__))
 ART = os.path.join(ROOT, "art", "counters")
+HQ_BADGES = {
+    "Eighth Army": "eighth_army.png",
+    "XXX Corps": "xxx_corps.jpg",
+    "XIII Corps": "xiii_corps.png",
+    "7th Armoured Division": "seventh_armoured.png",
+    "1st South African Division": "first_south_african.png",
+    "2nd New Zealand Division": "second_new_zealand.png",
+    "4th Indian Division": "fourth_indian.png",
+    "70th Division": "seventieth_division.png",
+    "2nd South African Division": "second_south_african.png",
+}
 BASE = os.path.join(ROOT, "art", "basemap.jpg")
-FONT = "/usr/share/fonts/truetype/dejavu/DejaVuSans%s.ttf"
-SERIF = "/usr/share/fonts/truetype/dejavu/DejaVuSerif%s.ttf"
+FONT = os.path.join(ROOT, "art", "fonts", "DejaVuSans%s.ttf")
+SERIF = os.path.join(ROOT, "art", "fonts", "DejaVuSerif%s.ttf")
 FLAME = {"fire0": (255, 214, 40, 150), "fire1": (226, 52, 24, 150)}        # a burning unit: yellow, then red
 
 
@@ -36,7 +48,7 @@ class UI:
         self.cam = [0.0, 0.0]           # the base-map pixel at the top left of the map area
         self.selected = None            # unit id
         self.mode = None                # an order waiting for its destination
-        self.overlays = set()           # "s" supply, "z" zones of control and what is seen
+        self.overlays = set()           # "s" supply, "z" zones, "mission" High Command orders
         self.hover = None               # the hex under the mouse
         self.mouse = (-1, -1)           # where the mouse is in the window; off it until it moves
         self.message = ""
@@ -170,6 +182,14 @@ def flag(which, w, h):
     elif which == "pl":
         big.fill(white)
         pygame.draw.rect(big, (212, 33, 61), (0, high // 2, wide, high - high // 2))
+    elif which == "fr":
+        for n, colour in enumerate(((0, 38, 128), white, (205, 30, 44))):
+            pygame.draw.rect(big, colour, (n * wide // 3, 0, wide // 3 + 1, high))
+        cross = (205, 30, 44)
+        stem = max(2, high // 14)
+        pygame.draw.rect(big, cross, (wide // 2 - stem // 2, high // 5, stem, high * 3 // 5))
+        pygame.draw.rect(big, cross, (wide * 2 // 5, high * 2 // 5, wide // 5, stem))
+        pygame.draw.rect(big, cross, (wide * 7 // 16, high * 3 // 5, wide // 8, stem))
     elif which == "it":
         for n, colour in enumerate(((0, 140, 69), white, (205, 33, 42))):
             pygame.draw.rect(big, colour, (n * wide // 3, 0, wide - n * wide // 3, high))
@@ -410,7 +430,7 @@ class Painter:
 
     def weather_chip(self, surface, kind, outlook, top=10, right_pad=10):
         """The weather, in the map's top right corner: a small picture, its name, and the word
-        on the next two days. A tap says what it does."""
+        on the next turn. A tap says what it does."""
         if kind is None:
             self.weather_rect = None
             return
@@ -438,6 +458,106 @@ class Painter:
         self.text(surface, name, (r.x + 52, r.y + 5), 15, T.SHORT if kind != "clear" else T.INK, True)
         self.text(surface, "Outlook: " + outlook, (r.x + 52, r.y + 26), 12, T.DIM)
         self.weather_rect = r
+
+    def mission_marks(self, surface, session, at, shown, zoom):
+        """Mark clearance hexes and traversable links, without revealing enemies."""
+        mission = session.scenario.get("mission", {})
+        spec = mission.get(session.side, {})
+        orders = [*spec.get("orders", []), *(a["order"] for a in spec.get("commendations", []))]
+        routes = {order["route"] for order in orders if order["verb"] in ("clear", "deny")}
+        for name in sorted(routes):
+            path = [tuple(h) for h in mission["routes"][name]["hexes"]]
+            for a, b in zip(path, path[1:]):
+                if shown(a) or shown(b):
+                    ax, ay = at(a)
+                    bx, by = at(b)
+                    if session.gmap.cliff_between(a, b):
+                        # This edge is a gameplay obstacle, not a green assault route.
+                        mx, my = (ax + bx) // 2, (ay + by) // 2
+                        size = max(9, int(11 * zoom))
+                        pygame.draw.line(surface, T.MISSION_DARK, (mx - size, my - size),
+                                         (mx + size, my + size), 4)
+                        pygame.draw.line(surface, T.MISSION_DARK, (mx - size, my + size),
+                                         (mx + size, my - size), 4)
+                    else:
+                        # A dotted connector shows a mission relationship, not a road.
+                        for step in (0, 2, 4, 6):
+                            p = step / 8
+                            q = (step + 1) / 8
+                            start = (round(ax + (bx - ax) * p), round(ay + (by - ay) * p))
+                            end = (round(ax + (bx - ax) * q), round(ay + (by - ay) * q))
+                            pygame.draw.line(surface, T.MISSION_DARK, start, end, max(5, int(7 * zoom)))
+                            pygame.draw.line(surface, T.MISSION, start, end, max(2, int(3 * zoom)))
+            for h in path:
+                if shown(h):
+                    pygame.draw.circle(surface, T.MISSION_DARK, at(h), max(14, int(18 * zoom)), 5)
+                    pygame.draw.circle(surface, T.MISSION, at(h), max(14, int(18 * zoom)), 2)
+            for place in [mission["routes"][name]["from"], *mission["routes"][name]["via"], mission["routes"][name]["to"]]:
+                h = session.gmap.places[place]["hex"]
+                if shown(h):
+                    pygame.draw.circle(surface, T.MISSION_DARK, at(h), max(30, int(38 * zoom)), 7)
+                    pygame.draw.circle(surface, T.MISSION, at(h), max(30, int(38 * zoom)), 4)
+        for order in orders:
+            if order["verb"] in ("hold", "reach", "surround"):
+                h = session.gmap.places[order["place"]]["hex"]
+                if shown(h):
+                    pygame.draw.circle(surface, T.MISSION_DARK, at(h), max(30, int(38 * zoom)), 7)
+                    pygame.draw.circle(surface, T.MISSION, at(h), max(30, int(38 * zoom)), 4)
+            elif order["verb"] in ("stage", "breach"):
+                h = tuple(order["hex"])
+                if shown(h):
+                    pygame.draw.circle(surface, T.MISSION_DARK, at(h), max(17, int(22 * zoom)), 6)
+                    pygame.draw.circle(surface, T.MISSION, at(h), max(17, int(22 * zoom)), 3)
+
+    def mission_box(self, surface, session):
+        mission = session.scenario.get("mission", {})
+        spec = mission.get(session.side, {})
+        orders = spec.get("orders", [])
+        awards = spec.get("commendations", [])
+        if not orders:
+            return
+        compact = surface.get_width() < 700
+        width = min(350 if compact else 410, surface.get_width() - 24)
+        aim = session.scenario.get("aim", {}).get(session.side, "")
+        if compact:
+            aim = aim.split(":")[0].split(",")[0].rstrip(". ") + "."
+        lines = wrap(self.font(12), aim, width - 24)
+        has_route = any(order["verb"] in ("clear", "deny") for order in orders)
+        height = 40 + len(lines) * 17 + len(orders) * 19 + (17 if has_route else 0)
+        if awards:
+            height += 20 + 35 * len(awards)
+        y = 116 if compact else T.MASTHEAD + 12
+        box = pygame.Rect(12, y, width, height)
+        pygame.draw.rect(surface, T.PAPER, box, border_radius=6)
+        pygame.draw.rect(surface, T.MISSION_DARK, box, 2, border_radius=6)
+        pygame.draw.rect(surface, T.MISSION, (box.x + 2, box.y + 2, 6, box.h - 4))
+        self.text(surface, "MISSION · " + T.SIDE_NAME[session.side].upper(), (box.x + 16, box.y + 10), 12, T.MISSION_DARK, True)
+        row = box.y + 29
+        for line in lines:
+            self.text(surface, line, (box.x + 16, row), 12)
+            row += 17
+        for order in orders:
+            label = M.describe(order, mission)
+            if order["verb"] == "preserve":
+                kept, started = M.preserve_progress(session.state, session.side, order)
+                label = f"{order['label']}: {kept * 100 // started if started else 0}% remains (need {order['minimum_pct']}%)"
+            self.text(surface, "• " + label, (box.x + 16, row + 3), 12, T.MISSION_DARK, True)
+            row += 19
+        if has_route:
+            self.text(surface, "Rings: clear hexes · X: cliff crossing", (box.x + 16, row + 4), 11, T.DIM)
+            row += 17
+        if awards:
+            self.text(surface, "OPTIONAL · HIGH COMMAND COMMENDATIONS", (box.x + 16, row + 5), 10, T.DIM, True)
+            row += 21
+            for award in awards:
+                order = award["order"]
+                self.text(surface, "◇ " + award["title"], (box.x + 16, row), 12, T.MISSION_DARK, True)
+                detail = M.describe(order, mission)
+                if order["verb"] == "preserve":
+                    kept, started = M.preserve_progress(session.state, session.side, order)
+                    detail = f"{kept * 100 // started if started else 0}% remains · need {order['minimum_pct']}% at debrief"
+                self.text(surface, detail, (box.x + 31, row + 15), 11, T.DIM)
+                row += 35
 
     def map(self, surface, session, ui):
         g, lay, view, z = session.gmap, ui.layout, session.view, ui.zoom
@@ -476,6 +596,8 @@ class Painter:
         if "s" in ui.overlays:
             self.hauls(surface, session, at, z)
         self.ways(surface, session, ui, at, z)
+        if "mission" in ui.overlays:
+            self.mission_marks(surface, session, at, shown, z)
 
         stacks = {}
         for u in mine:
@@ -535,11 +657,15 @@ class Painter:
                 self.chooser_rects[uid] = row
         elif ui.hover and g.on_map(ui.hover):
             pygame.draw.polygon(surface, T.SELECT, poly(ui.hover), 2)
-            if stacks.get(ui.hover) or ui.hover in self.named or f"{ui.hover[0]},{ui.hover[1]}" in view["forts"]:
+            if (stacks.get(ui.hover) or ui.hover in self.named
+                    or f"{ui.hover[0]},{ui.hover[1]}" in view["forts"]
+                    or f"{ui.hover[0]},{ui.hover[1]}" in view.get("fort_work", {})):
                 self.tooltip(surface, session, ui, stacks.get(ui.hover, []))     # only where there is something to say
         self.weather_rect = None
         if ui.weather_visible:
             self.weather_chip(surface, session.weather, view["outlook"], top=T.MASTHEAD + 12, right_pad=45)
+        if "mission" in ui.overlays:
+            self.mission_box(surface, session)
         if "k" in ui.overlays:
             self.key(surface)
         if ui.layers_open:
@@ -547,13 +673,13 @@ class Painter:
         window = (w + (0 if ui.details_collapsed else T.PANEL), h + T.BAR + T.CONSOLE)
         if ui.layers_open:
             menu = layers(window, True, ui.details_collapsed)
-            box = pygame.Rect(menu["k"].x - 4, menu["k"].y - 30, 160,
-                              menu["nato"].bottom - menu["k"].y + 34)
+            box = pygame.Rect(menu["mission"].x - 4, menu["mission"].y - 30, 160,
+                              menu["nato"].bottom - menu["mission"].y + 34)
             pygame.draw.rect(surface, T.PAPER, box, border_radius=6)
             pygame.draw.rect(surface, T.INK, box, 2, border_radius=6)
             self.text(surface, "MAP LAYERS", (box.x + 12, box.y + 7), 12, T.DIM, True)
         for name, r in layers(window, ui.layers_open, ui.details_collapsed).items():
-            label = {"layers": "Layers", "k": "Terrain key", "weather": "Weather chip",
+            label = {"layers": "Layers", "mission": "Mission", "k": "Terrain key", "weather": "Weather chip",
                      "s": "Supply", "z": "Zones", "pictures": "Pictures", "nato": "NATO"}[name]
             on = (ui.layers_open if name == "layers" else ui.weather_visible if name == "weather"
                   else ui.symbols == name if name in ("pictures", "nato") else name in ui.overlays)
@@ -808,6 +934,13 @@ class Painter:
         for name, port in sorted(view["ports"].items()):
             if shown(g.places[name]["hex"]):
                 notes.append((g.places[name]["hex"], (-1, -1), [f"{name} port", f"fuel {port['fuel']:,} t   stores {port['stores']:,} t"]))
+        for _, name in g.ports:
+            if view["places"].get(name) != session.side and shown(g.places[name]["hex"]):
+                notes.append((g.places[name]["hex"], (1, -2), [f"{name} · enemy port", "Possible supply source; stock unknown"]))
+        for h in view.get("enemy_convoys", []):
+            hx = tuple(h)
+            if shown(hx):
+                notes.append((hx, (1, 1), ["Enemy convoy observed", "Local sighting; route and load unknown"]))
         got = {}
         for e in view["events"]:
             if e["event"] == "haul":
@@ -820,18 +953,20 @@ class Painter:
         font = self.font(12)
         for hx, (dx, dy), rows in notes:
             x, y = at(hx)
+            enemy_note = rows[0].endswith("enemy port") or rows[0] == "Enemy convoy observed"
+            colour = T.ENEMY_SUPPLY if enemy_note else T.SUPPLY
             wide = max(self.font(12, n == 0).size(r)[0] for n, r in enumerate(rows)) + 14
             high = len(rows) * (font.get_height() + 2) + 8
             reach = 46 * max(z, 0.7)
             box = pygame.Rect(0, 0, wide, high)
             box.center = (x + dx * (reach + wide / 2), y + dy * (reach * 0.8 + high / 2))
             box.clamp_ip(surface.get_rect().inflate(-8, -8))
-            pygame.draw.line(surface, T.INK, (x, y), box.center, 2)
-            pygame.draw.circle(surface, T.INK, (x, y), 3)
+            pygame.draw.line(surface, colour, (x, y), box.center, 2)
+            pygame.draw.circle(surface, colour, (x, y), 4 if enemy_note else 3)
             pygame.draw.rect(surface, (250, 244, 228), box, border_radius=5)
-            pygame.draw.rect(surface, T.SUPPLY, box, 2, border_radius=5)
+            pygame.draw.rect(surface, colour, box, 2, border_radius=5)
             for n, r in enumerate(rows):
-                self.text(surface, r, (box.x + 7, box.y + 4 + n * (font.get_height() + 2)), 12, T.INK if n else T.SUPPLY, n == 0)
+                self.text(surface, r, (box.x + 7, box.y + 4 + n * (font.get_height() + 2)), 12, T.INK if n else colour, n == 0)
 
     def ways(self, surface, session, ui, at, z):
         """The paths of the orders given, and of the one being chosen: a way is tried out under
@@ -871,7 +1006,7 @@ class Painter:
                 turns = -(-len(p["path"]) // p["reach"]) if p["reach"] else 0
                 when = "this turn" if turns == 1 else f"about {turns} turns" if turns else "it cannot set off"
                 dry = p["range"] is not None and p["range"] < len(p["path"])
-                fuel = f"   Its fuel gives out after {T.fuel_words(p['range'])}, at the cross." if dry else ""
+                fuel = f"   Its fuel gives out after {T.fuel_words(p['range'], session.side)}, at the cross." if dry else ""
                 ui.preview = f"{T.order_name(name, session.members(u['id']))} here: {when}.{fuel}   Click to order."
 
     # ---- a counter -----------------------------------------------------------------------
@@ -925,6 +1060,64 @@ class Painter:
             words = words[:-1]
         self.text(surface, words, centre, px, colour, True, True)
 
+    def hq_label(self, surface, session, u, rect, large=False):
+        """A flag and formation name for map HQs and the side-panel fallback."""
+        nation = session.nation[u["id"]]
+        flies = session.flag[u["id"]]
+        x, y, w, h = rect
+        if large:
+            plaque = rect.inflate(-8, -8)
+            pygame.draw.rect(surface, (237, 225, 192), plaque, border_radius=4)
+            pygame.draw.rect(surface, T.INK, plaque, 1, border_radius=4)
+            flag_size = (58, 38)
+            spot = pygame.Rect(x + 17, y + 22, *flag_size)
+            surface.blit(flag(flies, *flag_size), spot)
+            self.fitted(surface, "HQ", (x + 122, y + 42), 31, T.INK, 84, 19)
+            name = u["name"]
+            words = name.split()
+            if self.font(11, True).size(name)[0] > w - 20 and len(words) > 1:
+                breaks = [(" ".join(words[:at]), " ".join(words[at:])) for at in range(1, len(words))]
+                first, second = min(breaks, key=lambda pair: max(self.font(11, True).size(line)[0] for line in pair))
+                self.fitted(surface, first, (x + w / 2, y + h - 38), 13, T.INK, w - 20, 10)
+                self.fitted(surface, second, (x + w / 2, y + h - 21), 13, T.INK, w - 20, 10)
+            else:
+                self.fitted(surface, name, (x + w / 2, y + h - 27), 16, T.INK, w - 20, 11)
+            self.tips.append((spot, T.FLAG_NAME[flies]))
+            return
+        size = min(w, h)
+        flag_size = (max(15, int(size * 0.46)), max(10, int(size * 0.29)))
+        spot = pygame.Rect(x + (w - flag_size[0]) // 2, y + max(3, int(size * 0.08)), *flag_size)
+        surface.blit(flag(flies, *flag_size), spot)
+        self.fitted(surface, "HQ", (x + w / 2, y + h * 0.52), size * 0.34, T.MARK[nation], w - 8, 11)
+        short = (T.short(u["name"]).replace(" Corps", " Cps").replace("Eighth Army", "8 Army")
+                 .replace(" Armd Div", " Armd"))
+        self.fitted(surface, short, (x + w / 2, y + h * 0.75), size * 0.18,
+                    T.MARK[nation], w, 9)
+
+    def hq_badge(self, name, size):
+        """A sourced formation sign, fitted without distorting its aspect ratio."""
+        badge = HQ_BADGES.get(name)
+        if not badge:
+            return None
+        key = ("hq_badge", badge, size)
+        if key not in self.sprites:
+            path = os.path.join(ART, "badges", badge)
+            if os.path.exists(path):
+                source = pygame.image.load(path)
+                if source.get_bitsize() not in (24, 32):
+                    rgba = pygame.Surface(source.get_size(), pygame.SRCALPHA, 32)
+                    rgba.blit(source, (0, 0))
+                    source = rgba
+                scale = min(size[0] / source.get_width(), size[1] / source.get_height())
+                fitted = pygame.transform.smoothscale(source, (round(source.get_width() * scale), round(source.get_height() * scale)))
+                framed = pygame.Surface(size, pygame.SRCALPHA)
+                framed.fill((20, 23, 27))
+                framed.blit(fitted, ((size[0] - fitted.get_width()) // 2, (size[1] - fitted.get_height()) // 2))
+                self.sprites[key] = framed
+            else:
+                self.sprites[key] = None
+        return self.sprites[key]
+
     def counter(self, surface, session, ui, u, own, centre, size, taken=None, pile=1, ours=(), hq=False):
         nation = session.nation[u["id"]]
         x, y = int(centre[0] - size / 2), int(centre[1] - size / 2)
@@ -940,16 +1133,21 @@ class Painter:
             pygame.draw.rect(surface, T.INK, face.inflate(4, 4), max(5, size // 9) + 2, border_radius=6)
             pygame.draw.rect(surface, glow, face.inflate(2, 2), max(5, size // 9), border_radius=6)
         big, named = size >= 34, size >= T.NAMED                     # named: at the closest zoom, its name along the top
+        label_hq = u["type"] == "hq" and session.counter_art.get(u["id"]) == "hq_label" and ui.symbols != "nato"
         if size >= 22:
             self.notch(surface, session, u["id"], x, y, size, size * 0.4, max(3, size // 18))
-        if named:
+        if named and not label_hq:
             inset = max(5, size // 9) if chosen else edge            # the border of the one taken up is wider
             self.fitted(surface, T.short(u["name"]), (x + size * 0.5, y + size * 0.15), size * 0.125, mark, size - 2 * inset - 4)
         low = 0.1 if named else 0                                    # the picture makes room for the name
         box = pygame.Rect(x + size * 0.17, y + size * (0.22 if named else 0.1 if big else 0.2), size * 0.66,
                           size * (0.36 if named else 0.42 if big else 0.6))
-        art = ui.symbols != "nato" and self.sprite(nation, u["type"], (int(size * (0.92 - low)), int(size * (0.552 - low * 0.6))), session.counter_art.get(u["id"]))
-        if art:
+        art = None if label_hq or ui.symbols == "nato" else self.sprite(
+            nation, u["type"], (int(size * (0.92 - low)), int(size * (0.552 - low * 0.6))),
+            session.counter_art.get(u["id"]))
+        if label_hq:
+            self.hq_label(surface, session, u, face.inflate(-2 * edge, -2 * edge))
+        elif art:
             surface.blit(art, (x + size * (0.04 + low / 2), y + size * (0.045 + low * 1.5)))
         elif ui.symbols == "nato":
             self.symbol(surface, u["type"], box, T.BOX[nation], 2 if size >= 30 else 1)
@@ -958,9 +1156,9 @@ class Painter:
                                size * (0.44 if named else 0.5 if big else 0.6))
             picture(surface, u["type"], area, mark, T.FACE[nation])
         flag = hq and u["type"] != "hq" and own                      # a headquarters is in the pile
-        if named:                                                    # strength on the left, and on the right its pace
+        if named and not label_hq:                                   # strength on the left, and on the right its pace
             self.text(surface, u.get("steps", "?"), (x + size * (0.37 if flag else 0.3), y + size * 0.77), size * 0.19, mark, True, True)
-        elif big:
+        elif big and not label_hq:
             self.text(surface, u.get("steps", "?"), (x + size * 0.5, y + size * 0.71), size * 0.25, mark, True, True)
         tag = pygame.Rect(x - 6, y - 14, 26, 22) if named else pygame.Rect(x - size * 0.08, y - size * 0.08, size * 0.36, size * 0.34)
         if pile > 1 and size >= 22:                                  # how many units are in the pile
@@ -969,7 +1167,7 @@ class Painter:
             self.text(surface, pile, tag.center, min(size * 0.24, 15), T.INK, True, True)
         if not own:
             return
-        if named:                                                    # hexes of open desert in a turn, in this weather
+        if named and not label_hq:                                   # hexes of open desert in a turn, in this weather
             pace = session.allowance(session.members(u["id"])) // paths.OPEN_COST
             ax, my, r = x + size * 0.52, y + size * 0.77, size * 0.055
             pygame.draw.polygon(surface, T.PACE[nation], [(ax, my - r), (ax + r * 1.5, my), (ax, my + r)])     # an arrowhead: it goes
@@ -1019,8 +1217,15 @@ class Painter:
         under = session.title[head[0]] if head and head[0] != u["id"] else T.TYPE_NAME[u["type"]]
         self.text(surface, under, (x + w / 2, y + 35), 12, T.MARK[nation], False, True)
         area = pygame.Rect(x + w / 2 - 90, y + strip + 4, 180, 108)
-        art = self.sprite(nation, u["type"], area.size, session.counter_art.get(u["id"]))
-        if art:
+        label_hq = u["type"] == "hq" and session.counter_art.get(u["id"]) == "hq_label"
+        badge = self.hq_badge(u["name"], (104, 104)) if label_hq else None
+        art = None if label_hq else self.sprite(nation, u["type"], area.size, session.counter_art.get(u["id"]))
+        if badge:
+            surface.blit(badge, (area.centerx - 52, area.y + 2))
+            self.tips.append((area, f"{u['name']} formation sign."))
+        elif label_hq:
+            self.hq_label(surface, session, u, area, large=True)
+        elif art:
             surface.blit(art, area)
         else:
             picture(surface, u["type"], area.inflate(-30, -24), T.INK, T.TILE)
@@ -1033,13 +1238,17 @@ class Painter:
         now, level = T.strength_now(u), T.morale(u["cohesion"])
         hexes = u["fuel"] // U.step_fuel(u) if U.is_vehicle(u) else None
         pace = session.allowance([u]) // paths.OPEN_COST
-        slots = [(44, 88, f"{now[0]:,}", now[2], "", T.strength_colour(u), T.strength_tip(u)),
+        slots = [(44, 88, "HQ" if u["type"] == "hq" else f"{now[0]:,}",
+                  "staff" if u["type"] == "hq" else now[2], "", T.strength_colour(u),
+                  "Headquarters staff; no verified headcount is shown." if u["type"] == "hq" else T.strength_tip(u)),
                  (w - 44, 88, pace, "move" if pace == 1 else "moves", "", T.STRONG,
                   "Hexes a turn across open desert in this weather. Travel by road goes farther."),
                  (44, 146, level[0], "morale", level[1].lower(), T.GOOD if u["cohesion"] >= 40 else T.POOR,
                   f"Morale {level[0]} of 9: {level[1].lower()}" + ("" if u["cohesion"] >= 40 else ". Too low to attack"))]
         if hexes is not None:
-            slots.append((w - 44, 146, f"{hexes * 10:,}", "km of fuel", "", T.FUEL if hexes else T.SHORT, "Fuel for " + T.fuel_words(hexes)))
+            fuel_distance, fuel_unit = T.travel_distance(hexes, session.side)
+            slots.append((w - 44, 146, f"{fuel_distance:,}", f"{fuel_unit} of fuel", "", T.FUEL if hexes else T.SHORT,
+                          "Fuel for " + T.fuel_words(hexes, session.side)))
         for cx, cy, figure, word, more, colour, tip in slots:
             self.fitted(surface, figure, (x + cx, y + cy), 30, colour, 80, 14)
             self.text(surface, "open hexes" if word in ("move", "moves") else word,
@@ -1108,7 +1317,8 @@ class Painter:
         level, word = T.morale(min(m["cohesion"] for m in fighters))
         lines.append((", ".join(f"{n:,} {what}" for what, n in sums.items()) + f"   Morale {level} {word.lower()}", False, T.INK))
         wheels = [m for m in group if U.is_vehicle(m)]
-        fuel = f"Fuel {min(m['fuel'] // U.step_fuel(m) for m in wheels) * 10} km   " if wheels else ""
+        distance, unit = T.travel_distance(min(m["fuel"] // U.step_fuel(m) for m in wheels), side) if wheels else (0, "")
+        fuel = f"Fuel {distance} {unit}   " if wheels else ""
         cut = any(not m["traced"] for m in group)
         short = any(m["out_of_stores"] for m in group)
         lines.append((fuel + ("OUT OF SUPPLY" if cut else "Out of stores" if short else "In supply"), False,
@@ -1149,8 +1359,11 @@ class Painter:
             if not own:
                 lines.append((f"Enemy  {u['name']}: {T.TYPE_NAME[u['type']].lower()}"
                               + (f", {u['strength']}" if "strength" in u else ""), False, T.INK))
-        fort = view["forts"].get(f"{hx[0]},{hx[1]}")
-        lines.append((T.TERRAIN_NAME[g.terrain[hx[1]][hx[0]]] + (f", fortified level {fort[0]}" if fort else ""), False, T.DIM))
+        key = f"{hx[0]},{hx[1]}"
+        fort = view["forts"].get(key)
+        work = view.get("fort_work", {}).get(key)
+        ground = T.TERRAIN_NAME[g.terrain[hx[1]][hx[0]]] + (f", fortified level {fort[0]}" if fort else "")
+        lines.append((ground + (", fieldworks 1 of 2 days" if work else ""), False, T.DIM))
         font = self.font(13)
         w = max(self.font(13, bold).size(s)[0] for s, bold, _ in lines) + 14
         h = len(lines) * (font.get_height() + 2) + 8
@@ -1249,8 +1462,19 @@ class Painter:
         pygame.draw.rect(surface, T.COMMAND[session.side], band)
         pygame.draw.line(surface, T.GRID, band.bottomleft, band.bottomright, 2)
         compact = band.w < 760
-        self.text(surface, session.scenario["name"], (band.x + 22, band.y + (12 if compact else 7)),
-                  22 if compact else 27, T.PAPER, True, serif=True)
+        title = session.scenario["name"]
+        if session.scenario.get("campaign_only") and ":" in title:
+            title = title.split(":", 1)[0]  # date is shown separately on this same band
+        title_px = 22 if compact else 27
+        date_words = f"{session.day:%d %B %Y}  ·  TURN {min(session.view['turn'], session.scenario['turns'])} / {session.scenario['turns']}"
+        title_room = (band.w - 165 if compact else band.w - self.font(12, True, serif=True).size(date_words)[0] - 80)
+        font = self.font(title_px, True, serif=True)
+        if font.size(title)[0] > title_room:
+            while title and font.size(title + "…")[0] > title_room:
+                title = title[:-1]
+            title += "…"
+        self.text(surface, title, (band.x + 22, band.y + (12 if compact else 7)),
+                  title_px, T.PAPER, True, serif=True)
         turn = min(session.view["turn"], session.scenario["turns"])
         if compact:
             right = band.right - 14
@@ -1261,8 +1485,8 @@ class Painter:
             self.text(surface, turn_line, (right - self.font(10, True).size(turn_line)[0], band.y + 27),
                       10, T.PAPER, True)
         else:
-            date_x = band.x + 22 + self.font(27, True, serif=True).size(session.scenario["name"])[0] + 28
-            self.text(surface, f"{session.day:%d %B %Y}  ·  TURN {turn} / {session.scenario['turns']}",
+            date_x = band.x + 22 + font.size(title)[0] + 28
+            self.text(surface, date_words,
                       (date_x, band.y + 19), 12, T.PAPER, True, serif=True)
         badge_x = band.right
         if ui.details_collapsed and band.w >= 760:
@@ -1365,6 +1589,24 @@ class Painter:
             self.fitted(surface, "Axis view" if not session.humans else T.SIDE_NAME[session.side], (emblem.right + 10 +
                         (buttons(surface.get_size())["move"].x - emblem.right - 26) / 2, console.centery),
                         16, T.PAPER, buttons(surface.get_size())["move"].x - emblem.right - 26, 10)
+        if session.state["over"] and not self.playing:
+            following = session.following_chapter()
+            if following:
+                self.fitted(surface, "Battle concluded", (grid["move"].x + (grid["next"].x - grid["move"].x) / 2,
+                                                        console.centery), 16, T.PAPER,
+                            grid["next"].x - grid["move"].x - 20, 10)
+                r = campaign_continue(surface.get_size())
+                pygame.draw.rect(surface, T.BUTTON_GO, r, border_radius=6)
+                pygame.draw.rect(surface, T.INK, r, 1, border_radius=6)
+                self.fitted(surface, "Continue campaign", r.center, 16, T.INK, r.w - 16, 10)
+                self.tips.append((r, f"Continue into {following['name']} with this battle's losses and positions."))
+            else:
+                r = grid["done"]
+                pygame.draw.rect(surface, (206, 198, 178), r, border_radius=6)
+                pygame.draw.rect(surface, (150, 140, 120), r, 1, border_radius=6)
+                self.fitted(surface, "Game over", r.center, 13, T.DIM, r.w - 10, 10)
+                self.tips.append((r, "The battle has ended."))
+            return
         if self.playing or not session.humans:
             return
         has = session.pending[session.side].get(session.leader(u["id"]), {}).get("order") if u and not ui.alone else None
@@ -1481,7 +1723,7 @@ class Painter:
             y += 9
         rows = session.timetable()
         ahead = [r for r in rows if not r["past"]]
-        self.text(surface, f"{T.count(len(ahead), 'event')} to come, on the dates of 1941" if ahead
+        self.text(surface, f"{T.count(len(ahead), 'event')} to come in this chapter" if ahead
                   else "Nothing more is due before the end" if rows else "Nothing is due in this battle", (x, y), 12, T.DIM)
         y += 22
         font, items = self.font(12), []                              # each section's heading, then its events, soonest first
@@ -1668,15 +1910,20 @@ class Painter:
         pct = steps * 100 // max(1, maximum)
         mp = session.allowance(members)
         hx, hy = members[0]["hex"]
-        terrain = T.TERRAIN_NAME[session.gmap.terrain[hy][hx]].title()
+        ground = T.TERRAIN_NAME[session.gmap.terrain[hy][hx]].title()
+        place = next(((name, p["kind"]) for name, p in session.gmap.places.items()
+                      if p["hex"] == (hx, hy)), None)
+        terrain = f"{place[0]} · {ground}" if place else ground
         weather = session.weather.title() if session.weather else "—"
-        strength = "Full strength" if pct == 100 else f"{pct}% of full strength"
+        strength, strength_tip = T.formation_strength(members)
         strength_ink = T.GOOD if pct == 100 else T.STRONG if pct >= 70 else T.WORN if pct >= 50 else T.WEAK
         facts = (("STRENGTH", strength, strength_ink,
-                  f"{steps} of {maximum} combat steps. A step is a rules measure; the vehicle or men count is on the unit card."),
-                 ("MOVEMENT", f"{mp} MP = {mp // paths.OPEN_COST} open hexes", T.INK,
-                  f"This turn has {mp} movement points. Open desert costs {paths.OPEN_COST} per hex; roads and other ground differ."),
-                 ("TERRAIN", terrain, T.INK, "The ground under this unit."),
+                  strength_tip + f" About {pct}% of original strength remains."),
+                 ("MOVEMENT", T.movement_distance(mp // paths.OPEN_COST, session.side), T.INK,
+                  f"Approximate open-desert range this turn. Roads and other ground change it; {mp} movement points are available."),
+                 ("TERRAIN", terrain, T.INK,
+                  f"{place[0]} is a {place[1]}; underlying ground is {ground.lower()}." if place else
+                  f"Underlying ground is {ground.lower()}."),
                  ("WEATHER", weather, T.INK, "The current turn's weather."))
         pygame.draw.line(surface, T.GRID, (x, y), (x + w, y), 2)
         self.text(surface, "FIELD INTELLIGENCE", (x, y + 8), 12, T.DIM, True, serif=True)
@@ -1829,7 +2076,7 @@ class Painter:
             if wheels:
                 least = min(wheels, key=lambda m: m["fuel"] * 100 // max(1, U.fuel_cap(m)))
                 meter("Fuel", least["fuel"], U.fuel_cap(least),
-                      T.FUEL, "for " + T.fuel_words(min(m["fuel"] // U.step_fuel(m) for m in wheels)))
+                      T.FUEL, "for " + T.fuel_words(min(m["fuel"] // U.step_fuel(m) for m in wheels), session.side))
             if any(not m["traced"] or m["out_of_stores"] for m in group):
                 line("SHORT OF SUPPLY", 13, T.SHORT, True)
             if u["id"] in session.pending[session.side]:
@@ -2093,6 +2340,38 @@ def broken(surface, colour, pts, width, dash, gap):
 def result_assessment(view, scenario):
     """Describe the ground actually held, without claiming battles or tactics the log cannot prove."""
     places = view["places"]
+    result = view.get("result") or {}
+    summary = result.get("campaign")
+    if summary:
+        held = {side: [name for name, owner in summary["places"].items() if owner == side]
+                for side in ("cw", "axis")}
+        return [
+            summary["reason"],
+            "Final ground: Commonwealth — " + ", ".join(held["cw"]) + "; Axis — " + ", ".join(held["axis"]) + ".",
+            f"High Command orders completed across {summary['chapters']} chapters: Commonwealth "
+            f"{summary['missions_met']['cw']}; Axis {summary['missions_met']['axis']}.",
+            f"Surviving field strength: Commonwealth {summary['surviving_steps']['cw']} steps; "
+            f"Axis {summary['surviving_steps']['axis']} steps. Stocks: Commonwealth "
+            f"{summary['supply_tonnes']['cw']:,} tonnes; Axis {summary['supply_tonnes']['axis']:,} tonnes."
+        ]
+    mission = result.get("mission", {})
+    if mission.get("checks", {}).get("cw", {}).get("complete") is False and scenario["id"] == "crusader" and places["Tobruk"] == "axis":
+        return ["Axis forces took Tobruk. The Commonwealth failed its relief objective.",
+                "Axis forces also hold " + ", ".join(p for p in ("Sidi Rezegh", "El Adem", "Gazala", "Derna", "Benghazi")
+                                                   if places.get(p) == "axis") + "."]
+    if mission.get("checks"):
+        lines = []
+        for side in ("cw", "axis"):
+            checks = mission["checks"].get(side)
+            if checks:
+                failed = [item["order"] for item in checks["checks"] if not item["met"]]
+                done = [item["order"] for item in checks["checks"] if item["met"]]
+                lines.append(T.SIDE_NAME[side] + (": mission failed — " + "; ".join(failed) if failed else
+                                                  ": mission fulfilled — " + "; ".join(done)) + ".")
+                awarded = [item["title"] for item in checks.get("commendations", []) if item["met"]]
+                if awarded:
+                    lines.append(T.SIDE_NAME[side] + ": High Command commendation — " + "; ".join(awarded) + ".")
+        return lines
     if scenario["id"] == "sidi_rezegh":
         sidi, belhamed = places["Sidi Rezegh"], places["Belhamed"]
         if sidi == belhamed == "cw":
@@ -2115,6 +2394,8 @@ def result_assessment(view, scenario):
 def score_lines(view):
     """Explain objective points, losses and the change from the scenario's starting baseline."""
     out = []
+    if (view.get("result") or {}).get("campaign"):
+        out.append("Final strategic holdings decide the campaign; these points describe the last chapter only.")
     for side in ("axis", "cw"):
         kills, total = view["kills"][side], view["vp"][side]
         out.append(f"{T.SIDE_NAME[side]}: {total} points ({total - kills} for ground held; {kills} for enemy losses).")
@@ -2122,6 +2403,9 @@ def score_lines(view):
     margin = lead - par
     out.append("Against the starting position: no change." if margin == 0 else
                f"Against the starting position: {T.SIDE_NAME['axis' if margin > 0 else 'cw']} gained {abs(margin)} points.")
+    mission = (view.get("result") or {}).get("mission", {})
+    if mission.get("decides"):
+        out.append("High Command orders decide this result; the points swing records secondary progress.")
     return out
 
 

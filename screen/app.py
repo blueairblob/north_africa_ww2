@@ -2,21 +2,27 @@
 import math
 import time
 import traceback
+import webbrowser
 from datetime import datetime
 from pathlib import Path
 
 import pygame
 
+from history import for_chapter
 from engine import units as U
+from engine import scenario_options
 from engine.air import AIR_INTERDICT_PCT, AIR_SUPPORT_PCT
 
 from . import saves
+from . import preferences
 from . import theme as T
 from .branding import icon as brand_icon
 from .draw import UI, Painter
-from .layout import HEAD_Y, Layout, air_controls, areas, buttons, details_toggle, game, layers, playback_controls, saves_list, tabs, title_button
+from .front import Front, HELP, PLAYER_CHOICES, RESEARCH_FOLDER, choice_at, draw as draw_front, history_pages
+from .layout import HEAD_Y, Layout, air_controls, areas, buttons, campaign_continue, details_toggle, game, layers, playback_controls, saves_list, tabs, title_button
 from .session import GOES
 from .sound import Sounds
+from .paths import open_game_files, user_folder
 
 GO = {pygame.K_m: "move", pygame.K_a: "attack", pygame.K_t: "road_march",        # orders with a destination
       pygame.K_j: "join", pygame.K_x: "split", pygame.K_c: "recall",             # the three for groups
@@ -30,13 +36,17 @@ CURSOR_EDGE = 2.5       # hexes from the edge of the view at which the map follo
 PLAY_ZOOM = 1.0         # the playback is never watched from further out than this
 EDGE_PX = 26            # with a unit taken up, the mouse this near the map's edge scrolls the map
 EDGE_SPEED = 0.9        # base-map pixels a millisecond
-SCREENSHOTS = Path(__file__).resolve().parent.parent / "screenshots"
+SCREENSHOTS = user_folder("screenshots")
 
 
 class App:
-    def __init__(self, session, size=T.WINDOW):
+    def __init__(self, session, size=T.WINDOW, review_menu=False):
         self.session, self.ui, self.size = session, UI(), size
         self.painter = Painter(session.gmap)
+        self.front = Front() if review_menu else None
+        self.has_started = not review_menu
+        self.options = dict(preferences.DEFAULTS)
+        self.settings_path = None
         self.press = None               # where the left button went down, and whether it has dragged
         self.title = False              # enabled for an interactive launch, not an offscreen game frame
         self.play, self.play_t, self.sounds, self.fast = None, 0.0, None, False   # last turn being played back
@@ -95,6 +105,8 @@ class App:
 
     def tick(self, ms):
         """Time passes: the playback moves on, and the map glides towards where it is going."""
+        if self.front is not None:
+            return
         self.advance(ms)
         if not self.title and not self.session.humans and not self.play and not self.session.state["over"]:
             self.auto_delay += min(ms, 50)
@@ -131,7 +143,7 @@ class App:
         """Something is moving on the screen, so frames must keep coming: the playback, the map
         gliding or scrolling at its edge, or the pulse round the unit taken up."""
         auto = not self.session.humans and not self.session.state["over"] and not self.play
-        return not self.title and bool((self.play and not self.ui.playback_paused) or auto or self.target
+        return self.front is None and not self.title and bool((self.play and not self.ui.playback_paused) or auto or self.target
                                        or self.session.unit(self.ui.selected))
 
     def span(self):
@@ -349,10 +361,196 @@ class App:
         except (OSError, pygame.error) as e:
             self.ui.message = f"Screenshot could not be saved: {e}."
             return None
-        self.ui.message = f"Screenshot saved in screenshots/: {path.name}"
+        self.ui.message = f"Screenshot saved: {path.name}. Find it in Options > Game Files."
         return path
 
     # ---- saved games ---------------------------------------------------------------------
+
+    def apply_options(self, data):
+        """Apply presentation choices without changing the game state."""
+        self.options = preferences.valid(data)
+        for name in ("symbols", "weather_visible", "details_collapsed", "remind"):
+            setattr(self.ui, name, self.options[name])
+        self.clamp()
+        if self.sounds is not None:
+            if not self.options["sound"]:
+                self.sounds.stop()
+            self.sounds.muted = not self.options["sound"]
+
+    def save_options(self):
+        if self.settings_path is None:
+            return
+        for name in ("symbols", "weather_visible", "details_collapsed", "remind"):
+            self.options[name] = getattr(self.ui, name)
+        self.options["window"] = list(self.size)
+        try:
+            preferences.write(self.settings_path, self.options)
+        except OSError as e:
+            self.ui.message = f"Options could not be saved: {e}."
+
+    def open_front(self, page, back=None):
+        if self.front is None:
+            self.front = Front(page=page, back=back or "pause")
+        else:
+            self.front.back = back or self.front.page
+            self.front.page = page
+        if page == "options":
+            self.front.message = ""
+        self.ui.game_open = self.ui.layers_open = self.ui.air_open = False
+
+    def open_history(self, back):
+        chapter = self.front.scenario if back == "setup" else self.session.scenario["id"]
+        self.front.history_episode = for_chapter(chapter)
+        self.front.history_page = 0
+        self.front.back, self.front.page = back, "history"
+
+    def start_review_game(self):
+        """Start the selected setup, preserving the current game first."""
+        from engine import campaign, checker, scenarios, scenario_options
+        from engine.players import SCRIPTED
+        from .session import Session
+
+        chosen = self.front
+        source = RESEARCH_FOLDER if chosen.mode == "research" else scenarios.FOLDER
+        scenario = scenario_options.apply(scenarios.load(chosen.scenario, source), chosen.shipping)
+        problems = checker.problems(scenario, self.session.gmap)
+        if problems:
+            chosen.message = problems[0]
+            return
+        if self.has_started:
+            self.save(auto=True)
+        kinds = {"axis": chosen.axis, "cw": chosen.cw}
+        humans = [side for side, kind in kinds.items() if kind == "human"]
+        scripted = {side: SCRIPTED[kind](self.session.gmap) for side, kind in kinds.items() if kind != "human"}
+        seed = int(time.time() * 1000) % 2147483646 + 1
+        initial = campaign.start(scenario, self.session.gmap, seed) if chosen.mode in ("campaign", "research") else None
+        self.take(Session(scenario, self.session.gmap, humans, scripted, seed, initial_state=initial))
+        self.front, self.title, self.has_started = None, False, True
+
+    def front_action(self, name):
+        """One menu action. False asks the window loop to exit."""
+        front = self.front
+        if name is None:
+            return True
+        if front.page == "setup":
+            for field in ("scenario", "shipping", "cw", "axis"):
+                if name in (field + "_prev", field + "_next"):
+                    if ((field == "scenario" and front.mode != "battle")
+                            or (field == "shipping" and front.mode == "research")):
+                        return True
+                    values = (front.names if field == "scenario" else
+                              [entry[0] for entry in scenario_options.SEA_DELIVERY] if field == "shipping" else
+                              [kind for kind, _ in PLAYER_CHOICES])
+                    front.cycle(field, values, -1 if name.endswith("prev") else 1)
+                    return True
+            if name == "start":
+                self.start_review_game()
+            elif name == "history":
+                self.open_history("setup")
+            elif name == "back":
+                if front.back == "game":
+                    self.front = None
+                else:
+                    front.page = front.back
+            return True
+        if front.page == "help":
+            if name == "prev":
+                front.help_page = max(0, front.help_page - 1)
+            elif name == "next":
+                front.help_page = min(len(HELP) - 1, front.help_page + 1)
+            elif name == "back":
+                if front.back == "game":
+                    self.front = None
+                else:
+                    front.page = front.back
+            return True
+        if front.page == "history":
+            if name == "prev":
+                front.history_page = max(0, front.history_page - 1)
+            elif name == "next":
+                front.history_page = min(len(history_pages(front.history_episode)) - 1, front.history_page + 1)
+            elif name == "back":
+                front.page = front.back
+            elif name == "image_source":
+                if history_pages(front.history_episode)[front.history_page][0] == "PERIOD · ARCHIVE IMAGE":
+                    image = (front.history_episode.get("period_image")
+                             or front.history_episode.get("image"))
+                    if image:
+                        webbrowser.open(image["source"])
+            return True
+        if front.page == "options":
+            if name == "back":
+                if front.back == "game":
+                    self.front = None
+                else:
+                    front.page = front.back
+            elif name == "game_files":
+                try:
+                    open_game_files()
+                    front.message = ""
+                except OSError as e:
+                    front.message = f"Could not open Game Files: {e.strerror or e}."
+            elif name in preferences.DEFAULTS and name != "window":
+                if name == "symbols":
+                    self.options[name] = "nato" if self.options[name] == "pictures" else "pictures"
+                else:
+                    self.options[name] = not self.options[name]
+                self.apply_options(self.options)
+                self.save_options()
+            return True
+        if name == "new":
+            front.back, front.page, front.mode = front.page, "setup", "battle"
+            front.scenario = "sidi_rezegh"
+        elif name == "research":
+            if front.research_start is None:
+                front.message = "The campaign research trial is not installed in this build."
+            else:
+                front.back, front.page, front.mode = front.page, "setup", "research"
+                front.scenario, front.shipping = front.research_start, "baseline"
+        elif name == "campaign":
+            if front.campaign_start is None:
+                front.message = "The 1940 campaign opening is still under historical review."
+            else:
+                front.back, front.page, front.mode = front.page, "setup", "campaign"
+                front.scenario = front.campaign_start
+        elif name == "help":
+            front.back, front.page, front.help_page = front.page, "help", 0
+        elif name == "history":
+            self.open_history(front.page)
+        elif name == "options":
+            front.back, front.page = front.page, "options"
+            front.message = ""
+        elif name == "resume":
+            self.front = None
+        elif name == "save":
+            self.save()
+            self.front = None
+        elif name == "load":
+            if self.saves is not None and saves.newest(self.saves) is not None:
+                self.front = None
+                if self.play:
+                    self.stop_watching()
+                self.open_saves()
+            else:
+                front.message = "No saved game is available."
+        elif name == "continue":
+            path = saves.newest(self.saves) if self.saves is not None else None
+            if path is None:
+                front.message = "No saved game is available."
+            elif self.load(path):
+                self.front, self.title, self.has_started = None, False, True
+            else:
+                front.message = self.ui.message
+        elif name == "home":
+            if self.has_started:
+                self.save(auto=True)
+            front.page = "home"
+        elif name == "quit":
+            if self.has_started:
+                self.save(auto=True)
+            self.save_options()
+            return False
+        return True
 
     def save(self, auto=False):
         """Save the game as it stands; returns the file, or None. An autosave says nothing."""
@@ -384,6 +582,7 @@ class App:
             self.ui.message = str(e)
             return False
         self.take(session)
+        self.has_started = True
         if not self.play:
             self.ui.message = "Loaded: " + saves.about(session.to_save()) + ".   " + self.left_words()
         return True
@@ -541,6 +740,11 @@ class App:
             else:
                 self.load(found[picked][0])
             return
+        following = s.following_chapter() if s.state["over"] and not self.play else None
+        if button == 1 and following and campaign_continue(self.size).collidepoint(pos):
+            self.save(auto=True)
+            self.take(s.continue_campaign(following))
+            return
         if ui.air_open and (self.play or s.state["over"]):
             ui.air_open = False
         if not self.play and not s.state["over"]:
@@ -566,10 +770,18 @@ class App:
                 ui.game_open, ui.layers_open = name == "game" and not ui.game_open, False
                 if name == "save":
                     self.save()
+                elif name == "advance":
+                    self.fast_advance()
                 elif name == "load":
                     self.open_saves()
                 elif name == "screenshot":
                     self.screenshot()
+                elif name == "help":
+                    self.open_front("help", "game")
+                elif name == "options":
+                    self.open_front("options", "game")
+                elif name == "menu":
+                    self.open_front("pause")
                 return
         chip = self.painter.weather_rect                  # the weather on the map: a tap says what it does
         if chip and not self.play and chip.move(self.map_rect().topleft).collidepoint(pos):
@@ -585,6 +797,8 @@ class App:
                     ui.symbols = name
                 else:
                     ui.overlays ^= {name}
+                    if name == "mission":
+                        ui.layers_open = False
                 return
         if self.map_rect().collidepoint(pos) and pos[1] < T.MASTHEAD:
             return                                      # title band is not part of the interactive map
@@ -599,7 +813,7 @@ class App:
                     ui.tab, ui.scroll = name, 0
                     ui.panel_scroll = 0
                     ui.message = {"orders": "Every unit and its order. Tap one to take it up.",
-                                  "timetable": "What arrives, is made good and is called away, on the dates it happened."}.get(name, "")
+                                  "timetable": "Dated arrivals, replacements, withdrawals and formation names."}.get(name, "")
                     return
             for name, r in self.painter.panel_scroll_rects.items():
                 if r.collidepoint(pos):
@@ -746,6 +960,24 @@ class App:
         else:
             self.begin_orders()
 
+    def fast_advance(self):
+        """Advance only while the human's campaign position stays quiet."""
+        if self.play:
+            self.ui.message = "Finish or skip the replay before advancing."
+            return
+        if self.ui.mode:
+            self.ui.message = "Finish choosing this unit's order before advancing."
+            return
+        count, reason = self.session.advance_quiet(after_turn=lambda: self.save(auto=True))
+        self.ui.selected, self.ui.mode = None, None
+        self.painter.reach_cache = (None, None)
+        if count:
+            if self.session.state["over"]:
+                self.watch()
+            else:
+                self.begin_orders()
+        self.ui.message = f"Advanced {count} {'turn' if count == 1 else 'turns'}. {reason}" if count else reason
+
     def set_air(self, choice):
         """Mouse and number keys make the same choice; the engine still resolves its effects."""
         self.session.set_air(choice)
@@ -774,8 +1006,13 @@ class App:
             return
         if ui.saves is not None:                          # the list of saved games is up: any key puts it away
             ui.saves, ui.message = None, "The list is closed: no game was loaded."
+        elif key in (pygame.K_RETURN, pygame.K_KP_ENTER) and self.session.state["over"] and self.session.following_chapter():
+            self.save(auto=True)
+            self.take(self.session.continue_campaign(self.session.following_chapter()))
         elif key == pygame.K_F5:
             self.save()
+        elif key == pygame.K_F6:
+            self.fast_advance()
         elif key == pygame.K_F9:
             self.open_saves()
         elif ui.mode and self.session.unit(ui.selected) and key in SCROLL:     # choosing a destination
@@ -800,6 +1037,8 @@ class App:
             self.target = None
         elif key in (pygame.K_s, pygame.K_z, pygame.K_k):
             ui.overlays ^= {pygame.key.name(key)}
+        elif key == pygame.K_F2:
+            ui.overlays ^= {"mission"}
         elif key == pygame.K_l:
             ui.layers_open = not ui.layers_open
         elif key in (pygame.K_PLUS, pygame.K_EQUALS, pygame.K_KP_PLUS):
@@ -818,6 +1057,8 @@ class App:
                 ui.air_open = False
             elif ui.chooser or ui.layers_open or ui.game_open:
                 ui.chooser, ui.layers_open, ui.game_open = None, False, False
+            elif not ui.mode:
+                self.open_front("pause")
             else:
                 ui.mode, ui.selected = (None, ui.selected) if ui.mode else (None, None)
         elif key in (pygame.K_RETURN, pygame.K_KP_ENTER):
@@ -862,7 +1103,9 @@ class App:
     def handle_one(self, event):
         ui = self.ui
         if event.type in (pygame.QUIT, pygame.WINDOWCLOSE):
-            self.save(auto=True)                          # left in the middle of a turn: the orders given so far are kept
+            if self.has_started:
+                self.save(auto=True)                      # orders given so far are kept
+            self.save_options()
             return False
         if event.type == pygame.KEYDOWN and event.key == pygame.K_F12:
             self.screenshot()                             # available even during playback, editing or a cover
@@ -870,6 +1113,31 @@ class App:
         if event.type == pygame.VIDEORESIZE:
             self.size = (max(900, event.w), max(560, event.h))
             self.clamp()
+        elif event.type == pygame.KEYDOWN and event.key == pygame.K_F1 and self.front is None:
+            self.open_front("help", "game" if self.has_started else "home")
+        elif event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE and self.play and self.front is None:
+            self.open_front("pause")
+        elif event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE and ui.cover and self.front is None:
+            self.open_front("pause")
+        elif self.front is not None:
+            if event.type == pygame.MOUSEMOTION:
+                ui.mouse = event.pos
+            elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+                name = choice_at(self.size, self.front.page, event.pos)
+                return self.front_action(name)
+            elif event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_ESCAPE:
+                    if self.front.page in ("help", "history", "options", "setup"):
+                        if self.front.back == "game":
+                            self.front = None
+                        else:
+                            self.front.page = self.front.back
+                    elif self.front.page == "pause":
+                        self.front = None
+                elif event.key in (pygame.K_RETURN, pygame.K_KP_ENTER):
+                    primary = {"home": "new", "setup": "start", "pause": "resume",
+                               "help": "next", "history": "next", "options": "back"}.get(self.front.page)
+                    return self.front_action(primary)
         elif self.title:
             if event.type == pygame.MOUSEMOTION:
                 ui.mouse = event.pos
@@ -951,6 +1219,10 @@ class App:
         return True
 
     def paint(self, surface):
+        if self.front is not None:
+            has_save = self.saves is not None and saves.newest(self.saves) is not None
+            draw_front(surface, self.painter, self.ui, self.front, self.options, has_save)
+            return
         if self.title:
             self.painter.title_screen(surface, self.session, self.ui)
             return
@@ -967,6 +1239,7 @@ class App:
             if len(self.session.humans) > 1:
                 self.ui.cover = f"{T.SIDE_NAME[self.session.side]}: your orders. Click or press Space."
             self.sounds = Sounds()
+            self.sounds.muted = not self.options["sound"]
             clock, running = pygame.time.Clock(), True
             while running:
                 self.paint(window)

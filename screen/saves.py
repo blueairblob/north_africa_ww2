@@ -11,7 +11,10 @@ from pathlib import Path
 
 from .session import Session
 
-FOLDER = Path(__file__).parent.parent / "saves"
+from .paths import user_folder
+from engine import scenario_options
+
+FOLDER = user_folder("saves")
 LISTED = 8              # how many saves the screen lists, newest first
 SIDE = {"axis": "Axis", "cw": "Commonwealth"}
 
@@ -19,9 +22,14 @@ SIDE = {"axis": "Axis", "cw": "Commonwealth"}
 def about(data):
     """A save in a few words, for the list: the scenario, the turn and its date, who is to order."""
     scenario, state = data["scenario"], data["state"]
-    day = date.fromisoformat(scenario["start"]) + timedelta(days=2 * (state["turn"] - 1))
-    who = "the game is over" if state["over"] else f"{SIDE[data['waiting'][0]]} to order"
-    return f"{scenario['name']}, turn {state['turn']} of {scenario['turns']}, {day.day} {day:%B %Y}: {who}"
+    elapsed = scenario.get("turn_days", 2) * (state["turn"] - 1) - int(state["over"])
+    day = date.fromisoformat(scenario["start"]) + timedelta(days=elapsed)
+    who = ("the game is over" if state["over"] else
+           f"{SIDE[data['waiting'][0]]} to order" if data["waiting"] else "computer vs computer")
+    variant = scenario.get("assumption", "baseline")
+    setting = f" [{scenario_options.label(variant)}]" if variant != "baseline" else ""
+    campaign = f" [{state['campaign']['id']} campaign]" if state.get("campaign") else ""
+    return f"{scenario['name']}{campaign}{setting}, turn {state['turn']} of {scenario['turns']}, {day.day} {day:%B %Y}: {who}"
 
 
 def write(session, folder=FOLDER, auto=False):
@@ -32,8 +40,12 @@ def write(session, folder=FOLDER, auto=False):
     folder.mkdir(parents=True, exist_ok=True)
     data = session.to_save()
     data["saved"], data["auto"] = time.strftime("%Y-%m-%d %H:%M"), auto
-    stem = f"{session.scenario['id']}-turn{session.state['turn']:02d}-{time.strftime('%Y%m%d-%H%M%S')}"
-    name, n = f"{session.scenario['id']}-autosave.json" if auto else stem + ".json", 1
+    variant = session.scenario.get("assumption", "baseline")
+    prefix = session.scenario["id"] + (f"-{variant}" if variant != "baseline" else "")
+    if session.state.get("campaign"):
+        prefix += "-" + session.state["campaign"]["id"]
+    stem = f"{prefix}-turn{session.state['turn']:02d}-{time.strftime('%Y%m%d-%H%M%S')}"
+    name, n = f"{prefix}-autosave.json" if auto else stem + ".json", 1
     while not auto and (folder / name).exists():        # a second save in the same second is kept too
         name, n = f"{stem}-{n + 1}.json", n + 1
     part = folder / (name + ".part")

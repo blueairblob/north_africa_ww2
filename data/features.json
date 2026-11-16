@@ -123,7 +123,13 @@
   ],
   "passes": [
     {"name": "Sollum Pass", "lat": 31.56, "lon": 25.15, "about": "the coast road's climb behind Sollum"},
-    {"name": "Halfaya Pass", "lat": 31.50, "lon": 25.18}
+    {"name": "Halfaya Pass", "lat": 31.50, "lon": 25.18},
+    {"name": "Sidi Rezegh track", "lat": 31.85523, "lon": 24.08842,
+     "about": "Approximate vehicle approach down the Sidi Rezegh escarpment near the mosque; W. E. Murphy, The Relief of Tobruk. Grid placement is an interpretation at 10 km per hex."},
+    {"name": "Bardia western approach", "lat": 31.78760, "lon": 24.95063,
+     "about": "Approximate accessible western face for the 3 January 1941 assault. UK official history vol I ch XV says this ground allowed I tanks after engineers made ditch crossings. A map-scale pass is a terrain abstraction, not a pre-existing breach in the wire or ditch."},
+    {"name": "Bardia coast road", "lat": 31.74252, "lon": 25.04139,
+     "about": "Preserves the coast-road crossing south of Bardia town at the current hex scale."}
   ],
   "oases": [
     {"name": "Siwa", "at": [[29.22, 25.22], [29.21, 25.36], [29.20, 25.52], [29.19, 25.66], [29.16, 25.80]]},

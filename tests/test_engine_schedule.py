@@ -1,6 +1,6 @@
 """docs/RULES.md §12 and §13: reinforcement, withdrawal, replacement, victory."""
-from engine import state as S
-from helpers import by_id, start, turn, unit
+from engine import invariants, state as S
+from helpers import GMAP, by_id, start, turn, unit
 
 
 def play(sc, state, n, **orders):
@@ -25,6 +25,16 @@ def test_a_unit_arrives_in_the_turn_of_its_date_not_before():                   
     assert state["sides"]["axis"]["brought"] == 90 + 300                        # full on arrival
 
 
+def test_arriving_hq_dump_discard_is_counted_in_the_supply_ledger():
+    sc, state = start([unit(105, "axis", "hq", "Derna", steps=1,
+                            arrives="1941-11-18", entry="Derna",
+                            dump={"fuel": 300, "stores": 500})])
+    state = play(sc, state, 1)
+    assert S.unit(state, 105)["dump"] == {"fuel": 300, "stores": 300}
+    assert state["sides"]["axis"]["lost"] >= 200
+    assert invariants.check(state, GMAP) == []
+
+
 def test_a_full_entry_hex_sends_the_arrival_next_door():                         # 12.4: 2
     units = [unit(101, "axis", "foot", "Derna"), unit(102, "axis", "foot", "Derna"),
              unit(105, "axis", "motorised", "Derna", arrives="1941-11-18", entry="Derna")]
@@ -39,7 +49,15 @@ def test_an_entry_port_in_enemy_hands_sends_the_arrival_to_its_base():          
     assert state["places"]["Derna"] == "axis"
     state = play(sc, state, 1)
     u = S.unit(state, 205)
-    assert u["status"] == "on_map" and S.distance(tuple(u["hex"]), (40, 3)) in (1, 2, 3)   # nearby, not in the port
+    assert u["status"] == "on_map" and u["hex"] == list(GMAP.base["cw"])
+
+
+def test_west_edge_arrival_still_enters_when_el_agheila_is_enemy_held():
+    sc, state = start([unit(105, "axis", "recon", [1, 30],
+                            arrives="1941-11-18", entry=[1, 30])])
+    state["places"]["El Agheila"] = "cw"
+    state = play(sc, state, 1)
+    assert S.unit(state, 105)["hex"] == [1, 30]
 
 
 def test_with_no_room_anywhere_the_arrival_waits_a_turn():                       # 12.4: 4
@@ -69,6 +87,44 @@ def test_a_withdrawal_removes_the_unit_on_its_date_wherever_it_is():            
     assert u[101]["status"] == "withdrawn" and u[101]["hex"] is None
     assert u[102]["status"] == "withdrawn"                                       # never arrives
     assert state["sides"]["cw"]["vp"] == 0                                       # not counted as destroyed
+
+
+def test_conditional_sea_relief_keeps_a_unit_that_is_not_at_its_friendly_port():
+    units = [unit(201, "cw", "foot", "Tobruk"), unit(202, "cw", "foot", "Mersa Matruh"),
+             unit(101, "axis", "foot", "Bardia")]
+    relief = {"date": "1941-11-18", "if_near": "Tobruk", "radius": 2}
+    sc, state = start(units, objectives=[], withdrawals=[dict(relief, unit=i) for i in (201, 202)])
+    state = play(sc, state, 1)
+    assert S.unit(state, 201)["status"] == "withdrawn"
+    assert S.unit(state, 202)["status"] == "on_map"
+    assert [(e["event"], e["unit"]) for e in state["log"] if "withdrawn" in e["event"]] == [
+        ("withdrawn", 201), ("not_withdrawn", 202)]
+    assert invariants.check(state, GMAP) == []
+
+
+def test_sea_relief_cannot_withdraw_a_unit_when_the_port_has_fallen():
+    sc, state = start([unit(201, "cw", "foot", [56, 11]), unit(101, "axis", "foot", "Bardia")],
+                      objectives=[], withdrawals=[{"date": "1941-11-18", "unit": 201,
+                                                   "if_near": "Tobruk", "radius": 2}])
+    state["places"]["Tobruk"] = "axis"
+    state = play(sc, state, 1)
+    assert S.unit(state, 201)["status"] == "on_map"
+    assert any(e["event"] == "not_withdrawn" and e["unit"] == 201 for e in state["log"])
+
+
+def test_conditional_relief_can_leave_a_named_battalion_without_restoring_losses():
+    sc, state = start([unit(201, "cw", "foot", "Tobruk", size=2, men=3000),
+                       unit(101, "axis", "foot", "Bardia")], objectives=[],
+                      withdrawals=[{"date": "1941-11-18", "unit": 201, "if_near": "Tobruk", "radius": 2,
+                                    "remain_as": {"name": "2/13th Battalion", "men": 800, "size": 1}}])
+    S.unit(state, 201)["steps"] = 2
+    state = play(sc, state, 1)
+    remnant = S.unit(state, 201)
+    assert (remnant["status"], remnant["name"], remnant["size"], remnant["steps"], remnant["max"]) == (
+        "on_map", "2/13th Battalion", 1, 1, 1)
+    assert remnant["real"] == [800, "men", 1]
+    assert any(e["event"] == "remnant" and e["unit"] == 201 for e in state["log"])
+    assert invariants.check(state, GMAP) == []
 
 
 def test_replacements_reach_a_unit_in_supply_up_to_its_full_strength():          # 12.3
@@ -160,6 +216,9 @@ def test_the_checker_refuses_a_dated_event_with_no_source_or_outside_the_game():
                  "arrival: its date names no source", "1942-06-01 falls after the last turn", "brings men, which is not what the unit is counted in",
                  "needs one whole number", "Atlantis is not a place"):
         assert clue in found, clue
+    sc = small()
+    sc["withdrawals"][0].update(if_near="Atlantis", radius=4)
+    assert "conditional relief needs a place and radius 0–3" in "\n".join(checker.problems(sc, GMAP))
 
 
 def test_objectives_score_every_turn_and_again_at_the_end():                     # 13.2, 13.3
@@ -181,6 +240,26 @@ def test_the_result_is_graded_by_the_margin():                                  
         state["sides"]["axis" if margin > 0 else "cw"]["vp"] = abs(margin)
         victory_phase(state, sc)
         assert (state["result"]["winner"], state["result"]["grade"]) == (winner, grade), margin
+
+
+def test_crusader_tobruk_loss_overrides_a_commonwealth_points_swing():
+    from engine.scenarios import load
+    from engine.victory import result_for
+    from helpers import GMAP
+    sc = load("crusader")
+    state = {"sides": {"axis": {"vp": 195}, "cw": {"vp": 119}},
+             "places": {"Tobruk": "axis"},
+             "units": [{"side": "axis", "status": "on_map", "hex": [55, 10]}]}
+    result = result_for(state, sc, GMAP)
+    assert (result["winner"], result["grade"], result["margin"]) == ("axis", "major", -30)
+    assert not result["mission"]["checks"]["cw"]["complete"]
+    state["places"]["Tobruk"] = "cw"
+    state["units"][0]["side"] = "cw"
+    assert result_for(state, sc, GMAP)["winner"] == "cw"
+    state["places"]["Tobruk"] = "axis"
+    state["units"][0]["side"] = "axis"
+    state["sides"]["axis"]["vp"] = 400
+    assert result_for(state, sc, GMAP)["grade"] == "decisive"
 
 
 def test_the_game_ends_when_a_side_has_nothing_left():                           # 13.5, 13.4

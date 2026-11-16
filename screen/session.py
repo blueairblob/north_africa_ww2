@@ -8,15 +8,16 @@ unit with no order holds, and needs none to be given. Every turn the player is t
 every unit or group: each is shown with what it will do, to let stand or to change. The engine
 still receives one order per unit per turn (docs/RULES.md 8.1.4)."""
 from datetime import date, timedelta
+from copy import deepcopy
 
 from engine import board as B
-from engine import checker, invariants
+from engine import campaign, campaigns, checker, invariants, scenarios, victory
 from engine import orders as O
 from engine import paths
 from engine import state as S
 from engine import units as U
 from engine import weather as W
-from engine.movement import ALLOWANCE, IMPULSES
+from engine.movement import IMPULSES, turn_allowance
 from engine.players import SCRIPTED
 from engine.recovery import FORT_MAX
 from engine.turn import begin_turn, finish_turn
@@ -67,8 +68,9 @@ BY_UNIT = ("standing", "pending", "said")              # kept by side, then by u
 
 
 class Session:
-    def __init__(self, scenario, gmap, humans=S.SIDES, scripted=None, seed=0, saved=None):
+    def __init__(self, scenario, gmap, humans=S.SIDES, scripted=None, seed=0, saved=None, initial_state=None):
         self.scenario, self.gmap = scenario, gmap
+        self._following_checked, self._following = False, None
         self.humans = [s for s in S.SIDES if s in humans]
         self.scripted = scripted or {}
         self.nation = {u["id"]: u.get("nation", "cw" if u["side"] == "cw" else "de") for u in scenario["units"]}
@@ -79,6 +81,9 @@ class Session:
                 variant = LEGACY_CRUSADER_ART.get((u["id"], u["name"]))
                 if variant:
                     self.counter_art.setdefault(u["id"], variant)
+        for u in scenario["units"]:
+            if u["type"] == "hq":
+                self.counter_art.setdefault(u["id"], "hq_label")
         heads = {side: sorted({u["parent"] for u in scenario["units"] if u.get("parent") and u["side"] == side}) for side in S.SIDES}
         self.title = {u["id"]: u["name"] for u in scenario["units"]}
         # a unit -> (its division's HQ, the division's place among its side's by HQ id); a unit of no division is not in it
@@ -90,7 +95,12 @@ class Session:
         if saved is not None:                           # a game taken up again (from_save)
             self._restore(saved)
             return
-        self.state = S.new_game(scenario, gmap, seed)   # the seed draws the weather; with none every turn is clear
+        if initial_state is not None:
+            if initial_state.get("scenario") != scenario["id"] or initial_state.get("over") or invariants.check(initial_state, gmap):
+                raise ValueError("The campaign state cannot begin this chapter.")
+            self.state = deepcopy(initial_state)
+        else:
+            self.state = S.new_game(scenario, gmap, seed)   # the seed draws the weather; with none every turn is clear
         self.record, self.replies = [], {}
         self.before, self.watched = None, set()         # last turn's views, and who has watched it
         self.standing = {s: {} for s in S.SIDES}        # the orders that stand from turn to turn
@@ -143,6 +153,44 @@ class Session:
         self.air = {s: self.state["sides"][s]["air"] for s in S.SIDES}
         self.waiting = [] if self.state["over"] else list(self.humans)
 
+    def continue_campaign(self, following):
+        """Enter a contiguous chapter with this game's players and played outcome."""
+        campaign_id = self.state.get("campaign", {}).get("id", "north_africa")
+        carried = campaign.handoff(self.state, self.scenario, following, self.gmap,
+                                   campaign_id=campaign_id, record=self.record)
+        next_session = Session(following, self.gmap, humans=self.humans,
+                               scripted=self.scripted, initial_state=carried)
+        known = {u["id"] for u in following["units"]}
+        next_session.names = {uid: name for uid, name in self.names.items() if uid in known}
+        return next_session
+
+    def following_chapter(self):
+        """Return a checked installed or opt-in research successor, if it can continue."""
+        if not self.state["over"] or not self.state.get("campaign"):
+            return None
+        if not self._following_checked:
+            self._following_checked = True
+            try:
+                campaign_id = self.state["campaign"]["id"]
+                research_next = self.scenario.get("research_next")
+                if not research_next:
+                    # A research save embeds the scenario as it was played.
+                    # An installed successor may have been added since it was
+                    # saved; handoff below still checks the old roster and the
+                    # actual played state before offering Continue.
+                    drafts = scenarios.FOLDER.parent / "scenario_drafts"
+                    if self.scenario["id"] in scenarios.names(drafts):
+                        research_next = scenarios.load(self.scenario["id"], drafts).get("research_next")
+                name = research_next or campaigns.following(campaigns.load(campaign_id), self.scenario["id"])
+                if name:
+                    candidate = scenarios.load(name, scenarios.FOLDER.parent / "scenario_drafts") if research_next else scenarios.load(name)
+                    campaign.handoff(self.state, self.scenario, candidate, self.gmap,
+                                     campaign_id=campaign_id, record=self.record)
+                    self._following = candidate
+            except (OSError, ValueError, KeyError):
+                pass
+        return self._following
+
     # ---- saving ----------------------------------------------------------------------------
 
     def to_save(self):
@@ -167,9 +215,24 @@ class Session:
         if not isinstance(data, dict) or data.get("format") != SAVE_FORMAT:
             raise ValueError("That is not a saved game this version can read.")
         try:
-            if checker.problems(data["scenario"], gmap):
+            scenario = data["scenario"]
+            # Review saves embed their scenario. Upgrade only the known older
+            # mission layouts when the rest of the shipped rules still match.
+            old_mission = scenario.get("mission")
+            legacy = (old_mission is None or old_mission == {} or
+                      any(isinstance(v, dict) and "must_hold" in v for v in old_mission.values()))
+            if legacy and scenario["id"] in scenarios.names():
+                current = scenarios.load(scenario["id"])
+                core = lambda sc: {k: v for k, v in sc.items() if k not in ("mission", "aim", "about")}
+                if core(current) == core(scenario):
+                    scenario = current
+                    if data["state"]["over"]:
+                        state = dict(data["state"])
+                        state["result"] = victory.result_for(state, scenario, gmap)
+                        data = {**data, "state": state}
+            if checker.problems(scenario, gmap):
                 raise KeyError("scenario")              # not a scenario this map and these rules take
-            return cls(data["scenario"], gmap, data["humans"],
+            return cls(scenario, gmap, data["humans"],
                        {s: SCRIPTED[kind](gmap) for s, kind in data["scripted"].items()}, saved=data)
         except (KeyError, TypeError, IndexError, AttributeError, ValueError):
             raise ValueError("That saved game does not fit this version of the game: it was saved by another.") from None
@@ -207,7 +270,8 @@ class Session:
     @property
     def day(self):
         start = date.fromisoformat(self.scenario["start"])
-        return start + timedelta(days=2 * (self.state["turn"] - 1))
+        elapsed = S.turn_days(self.scenario) * (self.state["turn"] - 1) - int(self.state["over"])
+        return start + timedelta(days=elapsed)
 
     @property
     def weather(self):
@@ -216,12 +280,13 @@ class Session:
 
     def weather_words(self):
         """The weather and what it does, and the word on the next turn."""
-        return (f"{WEATHER[self.view['weather']]}   Outlook for the next two days: {self.view['outlook']}. "
+        span = "day" if S.turn_days(self.scenario) == 1 else "two days"
+        return (f"{WEATHER[self.view['weather']]}   Outlook for the next {span}: {self.view['outlook']}. "
                 "The outlook is often wrong.")
 
     def allowance(self, group):
         """The MP a unit or group has this turn: its slowest member's, less in a sandstorm."""
-        return W.allowance(self.view["weather"], min(ALLOWANCE[m["type"]] for m in group))
+        return W.allowance(self.view["weather"], turn_allowance(group, S.turn_days(self.scenario)))
 
     def unit(self, uid):
         return next((u for u in self.view["units"] if u["id"] == uid and u["status"] == "on_map"), None)
@@ -477,13 +542,13 @@ class Session:
         sets = {}
         for r in rows:
             spec = specs[r["unit"]]
-            whose = r["unit"] if r["kind"] == "replacement" else spec.get("parent") or r["unit"]
+            whose = r["unit"] if r["kind"] in ("replacement", "redesignation") else spec.get("parent") or r["unit"]
             sets.setdefault((r["turn"], r["kind"], r.get("date"), str(r.get("entry", r.get("hex"))), whose), []).append(r)
         return [(rs, specs[rs[0]["unit"]]["name"] if len(rs) == 1 else specs[key[4]]["name"]) for key, rs in sets.items()]
 
     def timetable(self):
         """The side's dated events as the player reads them, soonest first: what arrives, what
-        is made good and what is called away, on the day it happened in 1941 (RULES 12).
+        is made good, redesignated and called away, on its chapter date (RULES 12).
         [{"day", "turn", "when", "words", "note", "unit", "past", "kind"}]; unit is one to go to, or None."""
         now, out = self.view["turn"], []
         for rows, name in self._together(self.view["timetable"]):
@@ -495,8 +560,20 @@ class Session:
                          else f"{n} units of {name} {'arrived' if past else 'arrive'} at {entry}." if n > 1
                          else f"{name} {'arrived' if past else 'arrives'} at {entry}.")
             elif r["kind"] == "withdrawal":
-                words = (f"{n} units of {name} {'were' if past else 'are'} withdrawn." if n > 1
+                unit_now = next((u for u in self.view["units"] if u["id"] == r["unit"]), None)
+                name = r.get("if_name", name)
+                words = (f"Most of {name} was relieved; {r['remain_as']} remains at {r['if_near']}."
+                         if past and "remain_as" in r and unit_now and unit_now["name"] == r["remain_as"] else
+                         f"{name} remains in the campaign: relief at {r['if_near']} did not apply."
+                         if past and "if_near" in r and self.state_of(r["unit"]) != "withdrawn" else
+                         f"{name} leaves {r['remain_as']} at {r['if_near']} if still near the friendly-held port."
+                         if not past and "remain_as" in r else
+                         f"{name} is withdrawn if still near friendly-held {r['if_near']}."
+                         if not past and "if_near" in r else
+                         f"{n} units of {name} {'were' if past else 'are'} withdrawn." if n > 1
                          else f"{name} {'was' if past else 'is'} withdrawn.")
+            elif r["kind"] == "redesignation":
+                words = f"{name} {'was' if past else 'is'} redesignated {r['name']}."
             else:
                 what = T.count(r["n"], r["what"][:-1], r["what"])
                 words = (f"{name} {'was sent' if past else 'receives'} {what}"
@@ -533,6 +610,12 @@ class Session:
                 out.append((f"{n} units of {name} have arrived {place}." if n > 1 else f"{name} has arrived {place}.", here))
         due = {r["unit"]: r for r in view["timetable"] if r["kind"] == "replacement" and r["turn"] == view["turn"] - 1}
         for e in view["events"]:
+            if e["event"] == "redesignated" and e["unit"] in mine:
+                out.append((f"{e['old_name']} is now {e['name']}.", e["unit"]))
+            if e["event"] == "not_withdrawn" and e["unit"] in mine:
+                out.append((f"{mine[e['unit']]['name']} remains in the campaign: relief at {e['place']} did not apply.", e["unit"]))
+            if e["event"] == "remnant" and e["unit"] in mine:
+                out.append((f"Most of {e['old_name']} was relieved; {e['name']} remains at {e['place']}.", e["unit"]))
             u = mine.get(e["unit"]) if e["event"] in ("replaced", "not_replaced") else None
             if u is None or e.get("why") == "gone":
                 continue
@@ -699,3 +782,47 @@ class Session:
         self.state, self.replies = finish_turn(self.state, self.gmap, self.scenario, submissions)
         self._begin()
         return "over" if self.state["over"] else "turn"
+
+    def advance_quiet(self, limit=5, after_turn=None):
+        """Carry standing orders through a few quiet campaign turns, stopping at a decision.
+
+        Only the human's view is inspected for enemy contact and events. Each
+        turn uses done(), so the normal record, fog, supply and save format apply.
+        """
+        if (not self.state.get("campaign") or len(self.humans) != 1
+                or self.waiting != self.humans or self.state["over"]):
+            return 0, "Fast advance needs an active campaign with one human commander."
+        side = self.humans[0]
+        if self.view["enemy"]:
+            return 0, "Enemy units are already in view. Give orders for this turn."
+        if any(uid not in self.standing[side] or self.standing[side][uid] != order
+               for uid, order in self.pending[side].items()):
+            return 0, "A one-turn order is pending. Finish this turn normally."
+        if not 1 <= limit <= 5:
+            raise ValueError("Fast advance is limited to five turns.")
+        alert_events = {"arrived", "battle", "captured", "destroyed", "no attack", "redesignated",
+                        "not_replaced", "not_withdrawn", "remnant", "replaced", "retreated", "stopped", "surrender", "withdrawn"}
+        for count in range(1, limit + 1):
+            before = self.view
+            own = {u["id"]: (u["status"], u["steps"], u["traced"], u["out_of_stores"])
+                   for u in before["units"]}
+            self.done()
+            if after_turn is not None:
+                after_turn()
+            now = self.view
+            if self.state["over"]:
+                return count, "The chapter has ended."
+            if now["enemy"]:
+                return count, "Enemy units came into view."
+            if any(e["event"] in alert_events for e in now["events"]):
+                return count, "A battle, arrival or other field event needs attention."
+            if now["places"] != before["places"]:
+                return count, "Control of a place changed."
+            if now["mission_reached"] != before["mission_reached"]:
+                return count, "A mission objective was reached."
+            if self.ended[side]:
+                return count, "A standing order has ended."
+            if any((u["status"], u["steps"], u["traced"], u["out_of_stores"]) != own.get(u["id"])
+                   for u in now["units"]):
+                return count, "A formation's strength, supply or status changed."
+        return limit, f"{limit} quiet turns passed. Review your orders."

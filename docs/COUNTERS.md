@@ -81,7 +81,35 @@ One per unit type per nation, so that a set stays consistent.
 | Motorised infantry | Bedford or CMP 15-cwt truck | Opel Blitz lorry | covered Lancia-pattern lorry for line infantry; open lorry with feathered riders for 8th/9th Bersaglieri (vehicle type illustrative) |
 | Foot infantry | Brodie-helmeted riflemen | tropical-field-cap riflemen | M33-helmeted riflemen; dark-plumed Bersaglieri variant for 7th Regiment |
 | Reconnaissance | Marmon-Herrington Mk III-pattern car for KDG, other cars unverified | SdKfz 222 | AB 41 |
-| HQ | a command truck, or a jeep (jeeps reached the desert only in 1942) | Kübelwagen with an aerial | a staff car |
+| HQ | national flag, HQ and formation name on the map; sourced formation sign in the side panel, or flag and full name when the badge is unverified | Kübelwagen with an aerial | a staff car |
+
+### Commonwealth headquarters signs
+
+The small map HQ counter keeps the flag, `HQ` and shortened formation name.
+The large side-panel picture shows a sourced period formation sign where its
+identity is established. This is a visual identification aid, not an assertion
+that a headquarters was physically a flag or a badge. The Commonwealth corps
+and divisional images come from Wikimedia Commons; their provenance and
+licence are in `docs/ART_CREDITS.md`. Eighth Army is an original vector drawing.
+
+| Formation | Sign used | Evidence |
+| --- | --- | --- |
+| Eighth Army | White shield and gold cross on dark ground | [National Army Museum: adopted September 1941](https://collection.nam.ac.uk/detail.php?acc=1996-05-82-1); [IWM badge](https://www.iwm.org.uk/collections/item/object/30071627) |
+| XXX Corps | Rampant boar on a white disc on black | [Wikimedia Commons file used](https://commons.wikimedia.org/wiki/File:XXX_Corps_1944-1945_shoulder_flash.jpg); [National Army Museum: sign adopted by 1941](https://collection.nam.ac.uk/detail.php?acc=1983-05-82-2) |
+| 7th Armoured Division | Red jerboa in a white disc on red | [Wikimedia Commons file used: original design c.1940](https://commons.wikimedia.org/wiki/File:7th_armoured_division_insignia_1944_3000px.png); [National Army Museum: 1942 divisional pennant](https://collection.nam.ac.uk/detail.php?acc=1974-08-98-1) |
+| XIII Corps | Red gazelle in a white disc on a red diamond | [Wikimedia Commons c.1941 sign](https://commons.wikimedia.org/wiki/File:XIII_corps.svg), citing IWM object INS 5317 |
+| 1st South African Division | Yellow and green diamond | [Wikimedia Commons formation sign](https://commons.wikimedia.org/wiki/File:1SADivB_vector.svg) |
+| 2nd New Zealand Division | Silver fern | [Wikimedia Commons wartime sign](https://commons.wikimedia.org/wiki/File:2nd_NZ.svg) |
+| 4th Indian Division | Red Eagle on black | [Wikimedia Commons formation sign](https://commons.wikimedia.org/wiki/File:4th_indian_infantry_div.svg); [IWM wartime badge](https://www.iwm.org.uk/collections/item/object/30076605) |
+| 70th Division | Red four-pointed star | [Wikimedia Commons vehicle sign](https://commons.wikimedia.org/wiki/File:British_WWII_6th_Infantry_Division.svg); likely not worn on uniforms |
+| 2nd South African Division | Yellow and green disc | [Wikimedia Commons formation sign](https://commons.wikimedia.org/wiki/File:2SADiv.svg) |
+
+Badge shapes and colours had field-made variations. The XXX Corps Commons
+rendering depicts a 1944–45 example of the sign already recorded in 1941;
+the 7th Armoured Commons file, despite its filename, describes the initial
+c.1940 design. The Desert Rat belongs to 7th Armoured,
+not Eighth Army. Any HQ without a vetted formation sign falls back to the
+flag and full HQ name.
 
 Markers, not counters: a supply lorry; a goods locomotive with one wagon for
 the railhead. The air menu now uses small example silhouettes, never unit
@@ -190,14 +218,27 @@ from any other game's art.
 | `guns` | 25-pounder | 88 mm Flak on its mount | 75 mm field gun, spoked wheel |
 | `motorised` | Bedford 3-ton lorry | Opel Blitz | Lancia 3Ro |
 | `recon` | painted Marmon-Herrington Mk III-pattern for KDG portion of mixed unit 305; painted Mark VI light-tank variant for NZ cavalry | SdKfz 222 | AB 41 |
-| `hq` | staff car with a pennant | Kübelwagen with a pennant | Fiat staff car with a pennant |
+| `hq` | canvas field command post with aerial and pennant | Kübelwagen with a pennant | Fiat staff car with a pennant |
 
 - Plain colours, no camouflage and no markings. The nation is told by the
   counter's face, the kind by the outline.
 - Three men, not one, stand for the infantry: one figure in a 5:3 space is
   about 18 px high in play and does not read.
-- A headquarters is told from a lorry by its pennant: red on the drawn
-  pictures, the owner's colours on the Axis cars (below).
+- The drawn Commonwealth HQ sprite is a command tent and radio aerial; it is
+  retained for explicit art variants. Its canonical SVG now lives at
+  `countergen/custom/cw_hq.svg`, and the generated PNGs fit the same canvas
+  and ground line as the other counters. The Axis HQ cars are also retained for
+  explicit art variants.
+- Two Commonwealth HQ alternatives are kept under `art/counters/variants/`:
+  `cw_hq_map_table` (folding operations map) and `cw_hq_wireless_truck`
+  (radio lorry). Set an HQ's `counter_art` to `hq_map_table` or
+  `hq_wireless_truck` to use one.
+- A code-drawn `hq_label` shows that HQ's current game nationality
+  marker, "HQ" and its formation name. The marker is an identification aid,
+  not a claim about the flag flown at that field headquarters. The small counter uses a short map label such
+  as "XXX Cps"; the card retains "XXX Corps". This is the default for
+  all HQs unless a scenario explicitly sets `counter_art`.
+  NATO mode continues to show the NATO-style symbol.
 - These are likenesses at 36 px, not scale drawings. Which vehicle stands for
   which arm is a choice: German divisional artillery was mostly 105 mm
   howitzers. The Commonwealth now uses explicit representative armour variants

@@ -1,0 +1,30 @@
+{
+  "base": "gazala_battle_1942",
+  "id": "egyptian_retreat_1942",
+  "research_next": "first_alamein_1942",
+  "name": "Egyptian frontier and Matruh: 22–30 June 1942 (linked research)",
+  "campaign_only": true,
+  "start": "1942-06-22",
+  "turn_days": 1,
+  "turns": 9,
+  "aim": {
+    "cw": "Keep the Alamein line and Alexandria secure. Contest Mersa Matruh if the played force can still hold it; withdraw coherently if it cannot.",
+    "axis": "Exploit any breach toward Mersa Matruh and El Alamein without outrunning fuel and supply. The advance is a command choice, not a forced historical event."
+  },
+  "about": "Daily linked pursuit after the historical fall of Tobruk. Historically the Axis crossed the Egyptian frontier on 23 June, took Mersa Matruh on 28 June and reached the Alamein line on 30 June. The game carries the actual Gazala result, even if Tobruk never fell. It does not force a retreat, capture or a fixed 50-tank end strength.",
+  "withdrawals": [],
+  "replacements": [],
+  "port_access": [{"port": "Benghazi", "side": "cw", "date": "1942-06-22", "pct": 0, "src": "R2"}],
+  "mission": {
+    "routes": {},
+    "cw": {
+      "orders": [{"verb": "hold", "place": "El Alamein"}, {"verb": "hold", "place": "Alexandria"}],
+      "success_grade": "tactical",
+      "commendations": [{"title": "Matruh retained", "order": {"verb": "hold", "place": "Mersa Matruh"}}]
+    },
+    "axis": {
+      "orders": [{"verb": "hold", "place": "Mersa Matruh"}, {"verb": "reach", "place": "El Alamein"}],
+      "success_grade": "major"
+    }
+  }
+}

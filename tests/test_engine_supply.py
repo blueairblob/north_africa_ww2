@@ -1,5 +1,7 @@
 """docs/RULES.md §6: supply."""
-from engine import paths, supply
+from copy import deepcopy
+
+from engine import checker, paths, supply, victory
 from engine import state as S
 from engine.turn import begin_turn
 from helpers import GMAP, by_id, scenario, start, unit
@@ -27,6 +29,68 @@ def test_landing_at_a_port_and_its_fuel_share():                                
     assert port["condition"] == 55                                               # 6.3.1
     assert port["fuel"] + port["stores"] == 1500 * 55 * 60 // 10000              # 6.3.2
     assert port["fuel"] == 495 * 30 // 100                                       # 6.3.4
+
+
+def test_dated_port_access_closes_only_one_sides_one_port():
+    sc, _ = start([])
+    sc["owners"]["axis"].remove("Benghazi")
+    sc["owners"]["cw"].append("Benghazi")
+    sc["sources"] = {"T": "Synthetic port-access schedule"}
+    sc["port_access"] = [{"port": "Benghazi", "side": "cw", "date": "1941-11-20",
+                          "pct": 0, "src": "T"}]
+    sc["par"] = victory.par(sc)
+    assert checker.problems(sc, GMAP) == []
+    state = begin_turn(S.new_game(sc, GMAP), GMAP, sc)
+    assert state["ports"]["Benghazi"]["fuel"] + state["ports"]["Benghazi"]["stores"] == 1500
+    before_alexandria = state["ports"]["Alexandria"]["fuel"] + state["ports"]["Alexandria"]["stores"]
+    state["turn"] = 2
+    state = begin_turn(state, GMAP, sc)
+    assert state["ports"]["Benghazi"]["fuel"] + state["ports"]["Benghazi"]["stores"] == 1500
+    assert state["ports"]["Alexandria"]["fuel"] + state["ports"]["Alexandria"]["stores"] > before_alexandria
+    axis_open = deepcopy(sc)
+    axis_open["owners"]["cw"].remove("Benghazi")
+    axis_open["owners"]["axis"].append("Benghazi")
+    axis_open["par"] = victory.par(axis_open)
+    axis_state = begin_turn(S.new_game(axis_open, GMAP), GMAP, axis_open)
+    axis_state["turn"] = 2
+    axis_state = begin_turn(axis_state, GMAP, axis_open)
+    assert axis_state["ports"]["Benghazi"]["fuel"] + axis_state["ports"]["Benghazi"]["stores"] == 3000
+    unordered = deepcopy(sc)
+    unordered["port_access"] = [dict(sc["port_access"][0]),
+                                 {"port": "Benghazi", "side": "cw", "date": "1941-11-18",
+                                  "pct": 100, "src": "T"}]
+    assert any("dates must rise" in problem for problem in checker.problems(unordered, GMAP))
+    outside = deepcopy(sc)
+    outside["port_access"][0]["date"] = "1941-11-17"
+    assert any("date must fall within" in problem for problem in checker.problems(outside, GMAP))
+
+
+def test_scenario_landing_point_supplies_a_town_without_changing_the_map_ports():
+    sc = scenario([unit(201, "cw", "foot", "Sollum", stores=0)],
+                  turn_days=1, landing_points={"Sollum": 200}, landing_sides={"Sollum": "cw"},
+                  ports={"Sollum": {"fuel": 0, "stores": 0}})
+    sc["owners"]["axis"].remove("Sollum")
+    sc["owners"]["cw"].append("Sollum")
+    sc["par"] = victory.par(sc)
+    assert checker.problems(sc, GMAP) == []
+    assert "Sollum" not in {name for _, name in GMAP.ports}
+    state = begin_turn(S.new_game(sc, GMAP), GMAP, sc)
+    assert state["ports"]["Sollum"]["fuel"] == 40
+    assert state["ports"]["Sollum"]["stores"] == 0
+    assert S.unit(state, 201)["stores"] == 35 and S.unit(state, 201)["traced"]
+    assert state["sides"]["cw"]["landed"] >= 100
+    assert "Sollum" in [o["name"] for o in supply.outlets(
+        state, GMAP, sc, "cw", supply.blocked_for(state, GMAP, "cw"))]
+    occupied = deepcopy(sc)
+    occupied["owners"]["cw"].remove("Sollum")
+    occupied["owners"]["axis"].append("Sollum")
+    occupied["units"] = []
+    occupied["par"] = victory.par(occupied)
+    assert checker.problems(occupied, GMAP) == []
+    occupied_state = begin_turn(S.new_game(occupied, GMAP), GMAP, occupied)
+    assert occupied_state["ports"]["Sollum"] == {"condition": 100, "fuel": 0, "stores": 0}
+    bad = dict(sc, landing_points={"Bardia": 200})
+    assert any("landing_points" in problem for problem in checker.problems(bad, GMAP))
 
 
 def test_tripoli_landings_arrive_two_turns_later():                              # 6.3.5
@@ -110,6 +174,18 @@ def test_a_starving_unit_falls_apart_then_loses_steps():                        
         u = S.unit(state, 101)
         seen.append((u["cohesion"], u["steps"], u["status"]))
     assert seen == [(0, 2, "on_map"), (0, 1, "on_map"), (0, 0, "destroyed")]
+
+
+def test_starvation_clears_unfinished_fort_work_before_orders():
+    from engine import invariants
+
+    sc, state = start([unit(101, "axis", "foot", [70, 25], stores=0, cohesion=0, steps=1)],
+                      turn_days=1, sides=NO_LIFT)
+    state["fort_work"] = {"70,25": ["axis", 1]}
+    state = begin_turn(state, GMAP, sc)
+    assert S.unit(state, 101)["status"] == "destroyed"
+    assert state["fort_work"] == {}
+    assert invariants.check(state, GMAP) == []
 
 
 def test_a_cut_made_after_the_supply_phase_changes_nothing_until_the_next():     # 6.11.1

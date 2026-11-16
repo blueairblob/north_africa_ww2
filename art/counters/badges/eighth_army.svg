@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 240">
+  <!-- Original, simplified drawing of the 1941 Eighth Army shield and gold cross. -->
+  <rect x="8" y="8" width="224" height="224" rx="8" fill="#182337" stroke="#0d131e" stroke-width="5"/>
+  <path d="M44 38 H196 V135 C196 171 163 201 120 221 C77 201 44 171 44 135 Z" fill="#e8e5d9" stroke="#d0cec3" stroke-width="3"/>
+  <path d="M106 45 H134 V199 L120 208 L106 199 Z M53 101 H187 V128 H53 Z" fill="#d5ad45" stroke="#a68134" stroke-width="3"/>
+</svg>

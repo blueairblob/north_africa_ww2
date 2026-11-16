@@ -11,7 +11,7 @@ from . import tactics
 from . import units as U
 from . import weather as W
 from .gamemap import distance
-from .movement import ALLOWANCE
+from .movement import turn_allowance
 
 MAX_ROUTE = 3
 MAX_REDIRECTS = 12
@@ -35,7 +35,7 @@ def _can_join(gmap, view, lead, members, target, enemy_hexes, zoc):
     route = paths.least_path(gmap, here, target, mode)
     if not route or len(route) > MAX_ROUTE or any(h in enemy_hexes for h in route[:-1]):
         return False
-    allowance = W.allowance(view["weather"], min(ALLOWANCE[u["type"]] for u in members))
+    allowance = W.allowance(view["weather"], turn_allowance(members, view.get("turn_days", 2)))
     spent, cur = 0, here
     for i, nxt in enumerate(route[:-1]):
         if i < len(route) - 2 and nxt in zoc:

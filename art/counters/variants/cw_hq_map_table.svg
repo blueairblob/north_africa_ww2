@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="480" height="288" viewBox="0 0 480 288">
+  <defs>
+    <linearGradient id="wood" x2="0" y2="1"><stop stop-color="#9c7750"/><stop offset="1" stop-color="#64482e"/></linearGradient>
+    <linearGradient id="paper" x2="0" y2="1"><stop stop-color="#f2e4b8"/><stop offset="1" stop-color="#d5c18c"/></linearGradient>
+  </defs>
+  <g stroke="#34291e" stroke-linecap="round" stroke-linejoin="round">
+    <!-- Folding command screen and signal pennant make the table read as an HQ. -->
+    <path d="M47 78h88v104H47zM135 78h62v104h-62z" fill="#baa478" stroke-width="7"/>
+    <path d="M59 91h64v72H59zM147 91h38v72h-38z" fill="#d6c49a" stroke-width="3"/>
+    <path d="M48 78V32" fill="none" stroke-width="7"/>
+    <path d="M48 34l57 12-57 19z" fill="#b54335" stroke-width="5"/>
+    <path d="M61 105h47m-35 13h37m-43 14h46m-39 14h29" fill="none" stroke="#8d784f" stroke-width="3"/>
+    <!-- Large oblique campaign map on a collapsible wooden table. -->
+    <path d="M100 163l242-40 76 65-242 43z" fill="url(#wood)" stroke-width="9"/>
+    <path d="M115 158l223-37 65 59-225 41z" fill="url(#paper)" stroke-width="5"/>
+    <path d="M174 228l-15 43m221-75l21 72M143 218l-24 50m258-92l35 83" fill="none" stroke-width="12"/>
+    <path d="M139 177l206-36m-184 58l208-35m-183 47l210-34m-240-20l46 57m-11-62l45 60m-8-65l48 59m-11-68l49 59m-12-65l49 57" fill="none" stroke="#b6ad82" stroke-width="2.5"/>
+    <path d="M179 197c52-32 76 5 123-29 21-16 37-10 52-5" fill="none" stroke="#ad4035" stroke-width="6"/>
+    <path d="M345 154l11 8-14 2" fill="none" stroke="#ad4035" stroke-width="5"/>
+    <path d="M162 179c46 8 56 9 104-10" fill="none" stroke="#426884" stroke-width="5"/>
+    <circle cx="187" cy="183" r="6" fill="#365f79" stroke-width="2"/>
+    <circle cx="278" cy="180" r="6" fill="#9b3b34" stroke-width="2"/>
+    <path d="M362 112v56" fill="none" stroke-width="6"/>
+    <path d="M349 110h26v23h-26z" fill="#4b544a" stroke-width="5"/>
+    <circle cx="357" cy="119" r="3" fill="#d7c37b" stroke-width="2"/>
+    <path d="M372 115l38-71" fill="none" stroke-width="4"/>
+  </g>
+</svg>

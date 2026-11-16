@@ -1,0 +1,30 @@
+{
+  "base": "gazala_preparation_1942",
+  "id": "gazala_battle_1942",
+  "research_next": "egyptian_retreat_1942",
+  "name": "Gazala and Tobruk: 26 May–21 June 1942 (linked research)",
+  "campaign_only": true,
+  "start": "1942-05-26",
+  "turn_days": 1,
+  "turns": 27,
+  "aim": {
+    "cw": "Hold Tobruk and the Gazala line, guard the southern flank at Bir Hakeim and keep the armour available for counterattack.",
+    "axis": "Turn the southern flank, defeat the Commonwealth mobile force and take Tobruk. Cut the Gazala line's supply if the direct assault fails."
+  },
+  "about": "Linked daily Gazala trial. The Axis attack historically began on 26 May; Bir Hakeim held until June and Tobruk fell on 21 June. No capture, evacuation or surrender is scripted. The existing map has Bir Hakeim but no researched minefield network or Gazala boxes; fieldworks depend on player orders. Formation strengths and the February–May preparation require audit, and the historical fuel crisis in the Cauldron is not yet reproduced.",
+  "withdrawals": [],
+  "replacements": [],
+  "port_access": [{"port": "Benghazi", "side": "cw", "date": "1942-05-26", "pct": 0, "src": "R2"}],
+  "mission": {
+    "routes": {},
+    "cw": {
+      "orders": [{"verb": "hold", "place": "Tobruk"}, {"verb": "hold", "place": "Gazala"}],
+      "success_grade": "major",
+      "commendations": [{"title": "Bir Hakeim defended", "order": {"verb": "hold", "place": "Bir Hakeim"}}]
+    },
+    "axis": {
+      "orders": [{"verb": "hold", "place": "Bir Hakeim"}, {"verb": "hold", "place": "Tobruk"}],
+      "success_grade": "major"
+    }
+  }
+}

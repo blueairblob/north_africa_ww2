@@ -12,6 +12,11 @@ MOVE_COHESION_DIV = 4   # MP spent per point of cohesion lost
 FORT_MP = 2             # MP per level to enter a hex with an enemy fortification
 
 
+def turn_allowance(members, days):
+    """Movement budget for the scenario's calendar span; table values cover two days."""
+    return min(ALLOWANCE[u["type"]] for u in members) * days // 2
+
+
 def cost_of(state, gmap, m, here, nxt):
     """MP for the party's step, with any enemy fortification in the hex entered (9.3). The
     party's mode already costs the step for the member that finds it hardest."""
@@ -22,7 +27,7 @@ def cost_of(state, gmap, m, here, nxt):
     return cost
 
 
-def movement_phase(state, gmap, ctx):
+def movement_phase(state, gmap, ctx, scenario):
     if sorted(ctx["orders"]) != [u["id"] for u in S.on_map(state)]:
         ctx["audit"].append("I-15 the orders do not match the units on the map")
     movers = {}                                                              # by the id of each party's leader
@@ -33,7 +38,7 @@ def movement_phase(state, gmap, ctx):
         units = S.party(state, u)
         movers[u["id"]] = {"units": units, "side": u["side"], "path": full_path(gmap, u, order, state) or [],
                            "i": 0, "spent": 0, "stopped": False, "mode": mode(units, order["order"], state["weather"]),
-                           "allowance": W.allowance(state["weather"], min(ALLOWANCE[v["type"]] for v in units)),   # 20.2.6, 21.4.3
+                           "allowance": W.allowance(state["weather"], turn_allowance(units, S.turn_days(scenario))),   # 20.2.6, 21.4.3
                            "attack": order["order"] == "attack"}
 
     def stop(m, why=None):

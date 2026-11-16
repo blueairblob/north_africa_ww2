@@ -313,6 +313,8 @@ the losses on both sides.
 
 ## 10. Scenarios
 
+The owner confirmed on 1 November 2026 that the long campaign is the intended direction, alongside independent historical battle starts. `docs/CAMPAIGN_ROADMAP.md` sets out the chapter sequence, campaign continuity and release gates. The entries below are the intended scope, not a claim that their scenario data is complete.
+
 | Scenario | Dates | About |
 | --- | --- | --- |
 | Operation Compass | Dec 1940 – Feb 1941 | the British counter-offensive against Tenth Army |
@@ -460,8 +462,8 @@ lopsided, and situations the rules do not cover.
 
 To stay small and neat: no individual tanks or battalions on the map, no
 detailed logistics accounting (trucks are an abstraction), no naval or air units
-as counters, no weather beyond rain and sandstorm (§5), no random events but the weather
-and the luck of a battle,
+as counters, no weather beyond rain and sandstorm (§5), no random historical events but the weather
+and the luck of a battle (a future unit AI may vary its choices within orders),
 no unit editor in the game.
 
 ### 14.1 The complexity budget

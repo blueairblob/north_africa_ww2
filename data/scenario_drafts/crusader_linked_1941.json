@@ -1,0 +1,68 @@
+{
+  "base": "crusader_preparation_1941",
+  "sources": {
+    "CR41": "Auchinleck, operations despatch, London Gazette 38177, pre-Crusader enemy order of battle and dispositions: Afrika Division (90th Light) and Trento were present in eastern Cyrenaica by mid-November 1941. The game counters aggregate each formation; exact manpower and hexes are estimates. https://www.ibiblio.org/hyperwar/UN/UK/LondonGazette/38177.pdf",
+    "SA41": "Auchinleck, operations despatch, London Gazette 38177: by early December the 2nd South African Division, including 3rd and 6th Brigades, relieved Indian formations and joined Eighth Army's reorganised force. The 2 December entry and game manpower are estimates. https://www.ibiblio.org/hyperwar/UN/UK/LondonGazette/38177.pdf"
+  },
+  "id": "crusader_linked_1941",
+  "research_next": "cyrenaica_winter_1942",
+  "name": "Operation Crusader: 18 November–31 December 1941 (linked research)",
+  "campaign_only": true,
+  "start": "1941-11-18",
+  "turn_days": 2,
+  "turns": 22,
+  "aim": {
+    "cw": "Defeat the Axis mobile force, secure the frontier and open the Sidi Rezegh–Belhamed corridor to Tobruk. If Tobruk has fallen in the played campaign, recapture it; the offensive need not follow the historical sequence.",
+    "axis": "Keep the Tobruk corridor closed, protect the frontier and preserve the mobile force. Exploit a weakened Commonwealth position wherever the played campaign permits."
+  },
+  "about": "Campaign-only Crusader trial. All surviving units, positions, losses, stocks and control come from the played 17 November state. New Zealand, South African, corps and army-tank formations become available on the first turn as a coarse field-readiness abstraction, with estimated strengths and Commonwealth-base entry rather than an asserted historical map placement. The Axis Afrika Division and Trento are also represented from the first turn; their exact game strengths and placement are estimates. A compact 2nd South African formation becomes available in early December with estimated strength and entry. 32nd Army Tank Brigade enters at friendly-held Tobruk or from the Commonwealth base if it has fallen. The five-hex Sidi Rezegh–Belhamed–Tobruk route is a map-scale corridor, not an exact historical road. The independent Crusader scenario remains a separate historical opening. The linked chapter lacks validated serviceability, reserve, relief and repair modelling.",
+  "withdrawals": [
+    {"date": "1941-12-10", "unit": 351, "if_name": "2/13th Australian Infantry Battalion", "if_near": "Tobruk", "radius": 2, "src": "N2", "note": "The last Australian battalion left Tobruk on 10 December in the historical campaign. Only the relieved battalion remnant near friendly-held Tobruk leaves; an unrelieved 20th Brigade stays in the played campaign."}
+  ],
+  "replacements": [],
+  "port_access": [
+    {"port": "Benghazi", "side": "cw", "date": "1941-11-18", "pct": 0, "src": "R2"}
+  ],
+  "add_units": [
+    {"id": 481, "side": "axis", "name": "Afrika Division (90th Light)", "type": "foot", "size": 2, "men": 5600, "src": "CR41", "arrives": "1941-11-18", "arrives_src": "CR41", "entry": "El Adem", "arrives_note": "The despatch places Afrika Division near El Adem before Crusader. First-turn entry and 5,600 men are game estimates; if the played position has lost El Adem, it enters from the Axis rear."},
+    {"id": 482, "side": "axis", "name": "102nd Trento Motorised Division", "type": "foot", "size": 2, "men": 6400, "nation": "it", "src": "CR41", "arrives": "1941-11-18", "arrives_src": "CR41", "entry": "Acroma", "arrives_note": "The despatch places Trento in the Tobruk investing force. First-turn Acroma entry and 6,400 men are game estimates; if the played position has lost Acroma, it enters from the Axis rear."},
+    {"id": 470, "side": "cw", "name": "2nd South African Division HQ", "type": "hq", "size": 1, "steps": 1, "nation": "sa", "src": "SA41", "arrives": "1941-12-02", "arrives_src": "SA41", "entry": "Mersa Matruh", "arrives_note": "By early December the division had relieved Indian formations. The 2 December field date and Matruh map entry are game estimates."},
+    {"id": 471, "side": "cw", "name": "3rd and 6th South African Brigades", "type": "foot", "parent": 470, "size": 2, "men": 6000, "nation": "sa", "src": "SA41", "arrives": "1941-12-02", "arrives_src": "SA41", "entry": "Mersa Matruh", "arrives_note": "Aggregate counter for the 2nd South African Division's 3rd and 6th Brigades. 6,000 men, 2 December field date and Matruh entry are estimates."},
+    {"id": 472, "side": "cw", "name": "XIII Corps HQ", "type": "hq", "size": 1, "steps": 1, "src": "L", "arrives": "1941-11-18", "arrives_src": "L", "entry": "Mersa Matruh", "arrives_note": "XIII Corps is in the Crusader force; first-turn Matruh entry is a game convention, not its documented headquarters location."},
+    {"id": 400, "side": "cw", "name": "Eighth Army HQ", "type": "hq", "size": 1, "steps": 1, "src": "L", "arrives": "1941-11-18", "arrives_src": "L", "entry": "Mersa Matruh", "arrives_note": "Army headquarters represented on the first Crusader turn; its field entry is a model convention."},
+    {"id": 401, "side": "cw", "name": "XXX Corps HQ", "type": "hq", "size": 1, "steps": 1, "src": "L", "arrives": "1941-11-18", "arrives_src": "L", "entry": "Mersa Matruh", "arrives_note": "Corps command represented on the first Crusader turn; exact map location is not claimed."},
+    {"id": 410, "side": "cw", "name": "2nd New Zealand Division HQ", "type": "hq", "size": 1, "steps": 1, "src": "L", "arrives": "1941-11-18", "arrives_src": "L", "entry": "Mersa Matruh", "arrives_note": "First-turn field availability; exact map location is not claimed."},
+    {"id": 411, "side": "cw", "name": "4th New Zealand Infantry Brigade", "type": "motorised", "parent": 410, "size": 2, "men": 3000, "src": "E", "arrives": "1941-11-18", "arrives_src": "L", "entry": "Mersa Matruh", "arrives_note": "Brigade presence sourced; 3,000 men and entry point are game estimates."},
+    {"id": 412, "side": "cw", "name": "5th New Zealand Infantry Brigade", "type": "motorised", "parent": 410, "size": 2, "men": 3000, "src": "E", "arrives": "1941-11-18", "arrives_src": "L", "entry": "Mersa Matruh", "arrives_note": "Brigade presence sourced; 3,000 men and entry point are game estimates."},
+    {"id": 413, "side": "cw", "name": "6th New Zealand Infantry Brigade", "type": "motorised", "parent": 410, "size": 2, "men": 3000, "src": "E", "arrives": "1941-11-18", "arrives_src": "L", "entry": "Mersa Matruh", "arrives_note": "Brigade presence sourced; 3,000 men and entry point are game estimates."},
+    {"id": 420, "side": "cw", "name": "1st South African Division HQ", "type": "hq", "size": 1, "steps": 1, "src": "L", "arrives": "1941-11-18", "arrives_src": "L", "entry": "Mersa Matruh", "arrives_note": "First-turn field availability; exact map location is not claimed."},
+    {"id": 421, "side": "cw", "name": "1st South African Infantry Brigade", "type": "motorised", "parent": 420, "size": 2, "men": 3000, "src": "E", "arrives": "1941-11-18", "arrives_src": "L", "entry": "Mersa Matruh", "arrives_note": "Brigade presence sourced; 3,000 men and entry point are game estimates."},
+    {"id": 422, "side": "cw", "name": "5th South African Infantry Brigade", "type": "motorised", "parent": 420, "size": 2, "men": 3000, "src": "E", "arrives": "1941-11-18", "arrives_src": "L", "entry": "Mersa Matruh", "arrives_note": "Brigade presence sourced; 3,000 men and entry point are game estimates."},
+    {"id": 430, "side": "cw", "name": "1st Army Tank Brigade", "type": "armour", "counter_art": "matilda", "size": 2, "tanks": 100, "src": "E", "arrives": "1941-11-18", "arrives_src": "L", "entry": "Mersa Matruh", "arrives_note": "Brigade presence sourced; 100 serviceable tanks and entry point are game estimates."},
+    {"id": 431, "side": "cw", "name": "32nd Army Tank Brigade", "type": "armour", "counter_art": "matilda", "size": 2, "tanks": 80, "src": "E", "arrives": "1941-11-18", "arrives_src": "L", "entry": "Tobruk", "arrives_note": "Tobruk defence brigade; 80 serviceable tanks are a game estimate. If the port has fallen, enters from the Commonwealth base."}
+  ],
+  "mission": {
+    "routes": {
+      "Tobruk relief corridor": {
+        "terrain": "corridor", "from": "Sidi Rezegh", "via": ["Belhamed"], "to": "Tobruk",
+        "hexes": [[56, 13], [57, 12], [57, 11], [56, 11], [55, 10]]
+      }
+    },
+    "cw": {
+      "orders": [
+        {"verb": "hold", "place": "Sidi Rezegh"},
+        {"verb": "hold", "place": "Belhamed"},
+        {"verb": "clear", "route": "Tobruk relief corridor"}
+      ],
+      "success_grade": "major",
+      "commendations": [{"title": "Tobruk secured", "order": {"verb": "hold", "place": "Tobruk"}}]
+    },
+    "axis": {
+      "orders": [
+        {"verb": "deny", "route": "Tobruk relief corridor"},
+        {"verb": "hold", "place": "Bardia"}
+      ],
+      "success_grade": "major"
+    }
+  }
+}

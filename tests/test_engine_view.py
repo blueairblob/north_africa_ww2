@@ -1,9 +1,25 @@
 """docs/RULES.md §14: what each side can see, and §5.1: what each phase may change."""
 from engine import turn as T
-from engine.view import view
+from engine.view import leaks, view
 from helpers import GMAP, start, turn, unit
 
 HIDDEN = {"cohesion", "fuel", "stores", "size", "out_of_stores", "traced", "status", "max", "side"}
+
+
+def test_recon_reports_only_a_local_enemy_convoy_hex_without_supply_secrets():
+    sc, state = start([unit(101, "axis", "hq", [65, 20], steps=1),
+                       unit(201, "cw", "recon", [70, 24])])
+    state["log"] = [{"event": "haul", "side": "axis", "source": "Bardia", "hq": 101,
+                     "fuel": 100, "stores": 200, "cost": 14,
+                     "route": [[67, 23], [68, 23], [69, 23]]}]
+    close = view(state, GMAP, sc, "cw")
+    assert close["enemy_convoys"] == [[69, 23]]
+    assert close["events"] == [] and not leaks(close, state)
+    state["units"][1]["hex"] = [80, 30]
+    assert view(state, GMAP, sc, "cw")["enemy_convoys"] == []
+    state["units"][1]["type"] = "foot"
+    state["units"][1]["hex"] = [70, 24]
+    assert view(state, GMAP, sc, "cw")["enemy_convoys"] == []
 
 
 def seen(units, side="cw", recon=0):

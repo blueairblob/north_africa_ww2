@@ -1,0 +1,28 @@
+{
+  "base": "italian_frontier_1940",
+  "id": "italian_invasion_1940",
+  "research_next": "italian_camps_1940",
+  "name": "Italian advance into Egypt: 13–17 September 1940 (linked research)",
+  "campaign_only": true,
+  "start": "1940-09-13",
+  "turn_days": 1,
+  "turns": 5,
+  "par": -129,
+  "aim": {
+    "cw": "Delay the Italian advance, preserve the mobile screen, and deny a drive on Mersa Matruh. Defend forward positions only when their value outweighs the risk.",
+    "axis": "Cross the frontier and secure Sidi Barrani, with the plateau flank covered at Sofafi. Press toward Matruh only if the played force and supply can sustain it."
+  },
+  "about": "The historical Italian advance began 13 September and reached Sidi Barrani by 16 September. This linked trial allows a different advance or defence; no town changes hands automatically. Five daily turns include the day after the historical halt. The opening roster and exact unit placements remain back-projected estimates from the later Compass research scenario. The map does not model the damaged road or water pipeline that constrained the historical advance.",
+  "mission": {
+    "routes": {},
+    "cw": {
+      "orders": [{"verb": "hold", "place": "Mersa Matruh"}],
+      "success_grade": "tactical",
+      "commendations": [{"title": "Forward airfield retained", "order": {"verb": "hold", "place": "Sidi Barrani"}}]
+    },
+    "axis": {
+      "orders": [{"verb": "hold", "place": "Sidi Barrani"}, {"verb": "hold", "place": "Sofafi"}],
+      "success_grade": "major"
+    }
+  }
+}

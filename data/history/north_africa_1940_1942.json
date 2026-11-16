@@ -1,0 +1,170 @@
+{
+  "format": 1,
+  "id": "north_africa_1940_1942",
+  "purpose": "Historical reference narrative for review and optional pre/post battle context. These are historical outcomes, never instructions to overwrite a played campaign.",
+  "source_notes": "docs/HISTORICAL_STORY.md",
+  "sources": {
+    "UK1_11": {"title": "British official history, The Mediterranean and Middle East, vol. I, ch. XI", "url": "https://www.ibiblio.org/hyperwar/UN/UK/UK-Med-I/UK-Med-I-11.html"},
+    "UK1_14": {"title": "British official history, vol. I, ch. XIV", "url": "https://www.ibiblio.org/hyperwar/UN/UK/UK-Med-I/UK-Med-I-14.html"},
+    "UK1_15": {"title": "British official history, vol. I, ch. XV", "url": "https://www.ibiblio.org/hyperwar/UN/UK/UK-Med-I/UK-Med-I-15.html"},
+    "RTR_HISTORY": {"title": "7th Royal Tank Regiment association history, 1940–41", "url": "https://4and7royaltankregiment.com/1940-1941/"},
+    "AU_BENGHAZI_6": {"title": "Australian official history, To Benghazi, ch. 6", "url": "https://www.ibiblio.org/hyperwar/UN/Australia/Bengazi/Benghazi-6.html"},
+    "UK2_1": {"title": "British official history, vol. II, ch. I", "url": "https://www.ibiblio.org/hyperwar/UN/UK/UK-Med-II/UK-Med-2-1.html"},
+    "UK2_2": {"title": "British official history, vol. II, ch. II, The Loss of Cyrenaica", "url": "https://www.ibiblio.org/hyperwar/UN/UK/UK-Med-II/UK-Med-2-2.html"},
+    "UK2_8": {"title": "British official history, vol. II, ch. VIII", "url": "https://www.ibiblio.org/hyperwar/UN/UK/UK-Med-II/UK-Med-2-8.html"},
+    "UK2_13": {"title": "British official history, vol. II, ch. XIII", "url": "https://www.ibiblio.org/hyperwar/UN/UK/UK-Med-II/UK-Med-2-13.html"},
+    "UK2_CHRON": {"title": "British official history, vol. II, chronology", "url": "https://www.ibiblio.org/hyperwar/UN/UK/UK-Med-II/UK-Med-2-Chronology.html"},
+    "UK2_15": {"title": "British official history, vol. II, ch. XV", "url": "https://www.ibiblio.org/hyperwar/UN/UK/UK-Med-II/UK-Med-2-15.html"},
+    "WAVELL_COMPASS": {"title": "Wavell, Western Desert operations despatch, London Gazette 37628", "url": "https://www.ibiblio.org/hyperwar/UN/UK/LondonGazette/37628.pdf"},
+    "AU_BARDIA_ORDER": {"title": "6th Australian Division operation order, 1 January 1941", "url": "https://www.ibiblio.org/hyperwar/UN/Australia/Bengazi/Benghazi-B.html"},
+    "AU_BARDIA": {"title": "Australian War Memorial, Battle of Bardia", "url": "https://www.awm.gov.au/collection/E84311"},
+    "AU_TOBRUK": {"title": "Australian official history, To Benghazi, ch. 9", "url": "https://www.ibiblio.org/hyperwar/UN/Australia/Bengazi/Benghazi-9.html"},
+    "AU_DERNA": {"title": "Australian official history, To Benghazi, ch. 10", "url": "https://www.ibiblio.org/hyperwar/UN/Australia/Bengazi/Benghazi-10.html"},
+    "AU_BEDA": {"title": "Australian official history, To Benghazi, ch. 11", "url": "https://www.ibiblio.org/hyperwar/UN/Australia/Bengazi/Benghazi-11.html"},
+    "AWM_TOBRUK": {"title": "Australian War Memorial, Tobruk timeline", "url": "https://www.awm.gov.au/learn/schools/resources/tobruk-diaries/timeline"},
+    "AWM_TOBRUK_BATTLES": {"title": "Australian War Memorial, Battles for Tobruk", "url": "https://www.awm.gov.au/collection/E84833"},
+    "AWM_ED_DUDA": {"title": "Australian official history, Tobruk and El Alamein, ch. 10, Ed Duda", "url": "https://www.awm.gov.au/collection/C1417191"},
+    "NZ_TIMELINE": {"title": "New Zealand government, North African campaign timeline", "url": "https://nzhistory.govt.nz/war/the-north-african-campaign/timeline"},
+    "AUCHINLECK_CRUSADER": {"title": "Auchinleck, Crusader and 1942 despatch, London Gazette 38177", "url": "https://www.ibiblio.org/hyperwar/UN/UK/LondonGazette/38177.pdf"},
+    "COMMONS_GAZALA": {"title": "Auchinleck statement read in the House of Commons, 2 June 1942; contemporary account of the opening battle", "url": "https://www.ibiblio.org/pha/policy/1942/420602b.html"},
+    "TOPPE": {"title": "Toppe, Desert Warfare: German Experiences in World War II", "url": "https://www.ibiblio.org/hyperwar/USA/CSI/CSI-Desert/toppe.asp.html"},
+    "AWM_ALAMEIN": {"title": "Australian War Memorial, Alamein campaign account", "url": "https://www.awm.gov.au/collection/E84345"},
+    "MONTGOMERY": {"title": "Montgomery, Eighth Army despatch, London Gazette 38196", "url": "https://www.ibiblio.org/hyperwar/UN/UK/LondonGazette/38196.pdf"}
+  },
+  "episodes": [
+    {
+      "id": "frontier_1940", "title": "The Italian advance and the Sidi Barrani camps", "start": "1940-09-01", "end": "1940-12-08",
+      "image": {"file": "art/history/frontier_1940.jpg", "caption": "Italian armoured vehicles heading toward Sidi Barrani, 17 September 1940.", "credit": "Italian state archive via Wikimedia Commons · CC0", "source": "https://commons.wikimedia.org/wiki/File:Italian_armored_vehicles_heading_to_Sidi_Barrani.jpg", "commons_file": "Italian armored vehicles heading to Sidi Barrani.jpg"},
+      "chapters": ["italian_frontier_1940", "italian_invasion_1940", "italian_camps_1940"],
+      "research": ["docs/FULL_CAMPAIGN_TRIAL_1940_1942.md", "docs/HISTORICAL_VALIDATION_LEDGER.md"],
+      "pre": {"objective": "Italy sought to advance from Libya into Egypt; the British covering force aimed to delay without losing its mobile strength before a defence at Matruh.", "forces": "The Italian Tenth Army's advance used Libyan and Italian divisions and Maletti's mobile group. The British frontier screen included the 7th Armoured Division Support Group and 11th Hussars; this is a selected force summary, not a complete 1 September roster.", "deployment": "The Support Group observed the Sollum–Fort Maddalena line. The 4th Blackshirt and 64th Catanzaro divisions were reserves near Tobruk before the advance.", "sources": ["UK1_11"]},
+      "timeline": [
+        {"date": "1940-09-13", "event": "The Italian advance crossed the frontier at Musaid and Sollum.", "sources": ["UK1_11"]},
+        {"date": "1940-09-16", "event": "The Italian force reached the Sidi Barrani area and halted to develop road and water supply.", "sources": ["UK1_11"]},
+        {"date": "1940-09-24", "event": "7th Royal Tank Regiment reached Port Said after sailing from Britain; it was not part of the 1 September desert screen.", "sources": ["RTR_HISTORY"]}
+      ],
+      "post": {"outcome": "Italian forces held Sidi Barrani and built separate forward camps; the British mobile force remained available for a counteroffensive.", "why": "Transport, road and water limits constrained the Italian advance; the British screen avoided a costly fixed defence of the intervening ground.", "sources": ["UK1_11"]},
+      "limits": "Opening unit strengths, exact hexes, stocks and the complete 1 September order of battle are not validated."
+    },
+    {
+      "id": "compass", "title": "Operation Compass: Sidi Barrani to Beda Fomm", "start": "1940-12-09", "end": "1941-02-09",
+      "image": {"file": "art/history/compass.jpg", "caption": "Australian 2/2nd Battalion troops in Bardia, 4 January 1941.", "credit": "Australian War Memorial 006083 via Wikimedia Commons · public domain", "source": "https://commons.wikimedia.org/wiki/File:Bardia_AWM006083.jpg", "commons_file": "Bardia AWM006083.jpg"},
+      "chapters": ["compass_opening", "compass_interval", "bardia_assault", "tobruk_approach", "tobruk_assault", "derna_pursuit", "beda_fomm_pursuit"],
+      "research": ["docs/COMPASS_OPENING_RESEARCH.md", "docs/BARDIA_OPENING_RESEARCH.md", "docs/COMPASS_PURSUIT_RESEARCH.md"],
+      "pre": {"objective": "Western Desert Force planned to destroy the separated Italian camps around Nibeiwa and Tummar, then exploit toward Sidi Barrani and into Libya if successful.", "forces": "The opening included 4th Indian Division, 7th Armoured Division and 7th Royal Tank Regiment against the Maletti Group and Libyan and Italian camp garrisons. 6th Australian Division later led the Bardia and Tobruk assaults. These are selected formations, not a complete order of battle.", "deployment": "The Italian camps were spread around Nibeiwa, Tummar, Maktila, Rabia and Sofafi; the British assault assembled south of them.", "sources": ["WAVELL_COMPASS", "UK1_14", "UK1_15", "AU_BARDIA_ORDER"]},
+      "timeline": [
+        {"date": "1940-12-09", "event": "Nibeiwa fell in the morning; 7th RTR then attacked Tummar West that afternoon.", "sources": ["UK1_14"]},
+        {"date": "1940-12-10", "event": "Tummar East was occupied and Sidi Barrani town fell later that day.", "sources": ["UK1_14"]},
+        {"date": "1940-12-14", "event": "4th Indian Division left the Sidi Barrani battlefield for its next assignment; 16th British Brigade remained.", "sources": ["AU_BENGHAZI_6"]},
+        {"date": "1941-01-03", "event": "The 6th Australian Division assault breached the Bardia perimeter.", "sources": ["AU_BARDIA_ORDER", "AU_BARDIA"]},
+        {"date": "1941-01-05", "event": "The remaining southern Bardia defences ceased resistance after the town had fallen on 4 January.", "sources": ["AU_BARDIA"]},
+        {"date": "1941-01-22", "event": "Tobruk fell after the Australian assault began on 21 January.", "sources": ["AU_TOBRUK"]},
+        {"date": "1941-01-30", "event": "Commonwealth forces entered Derna.", "sources": ["AU_DERNA"]},
+        {"date": "1941-02-07", "event": "The Italian retreat was cut near Beda Fomm and surrender followed by the morning.", "sources": ["AU_BEDA"]}
+      ],
+      "post": {"outcome": "The historical offensive captured Sidi Barrani, Bardia, Tobruk, Derna and Benghazi and destroyed the Italian Cyrenaican field position at Beda Fomm.", "why": "Successive assaults broke the dispersed camps and fortresses; armoured pursuit cut the coast road during the Italian withdrawal. Australian transport shortages and British tank serviceability shaped the tempo.", "sources": ["UK1_14", "AU_TOBRUK", "AU_BEDA"]},
+      "limits": "The game does not resolve same-day multiple attacks by 7th RTR, local minefield breaches, tank serviceability or army-scale surrender; linked chapter openings are not independent historical deployments."
+    },
+    {
+      "id": "cyrenaica_1941", "title": "The Cyrenaica reversal and Tobruk siege", "start": "1941-02-10", "end": "1941-05-04",
+      "image": {"file": "art/history/cyrenaica_1941.jpg", "caption": "Australian 2/48th Battalion troops defend Tobruk, 24 April 1941.", "credit": "Australian War Memorial 020073 via Wikimedia Commons · public domain", "source": "https://commons.wikimedia.org/wiki/File:AWM_020073_2_48th_Battalion_Tobruk_1941.jpg", "commons_file": "AWM 020073 2 48th Battalion Tobruk 1941.jpg"},
+      "chapters": ["cyrenaica_preparation", "cyrenaica_reversal", "tobruk_siege_opening"],
+      "research": ["docs/CYRENAICA_1941_RESEARCH.md"],
+      "pre": {"objective": "The Commonwealth intended to hold Cyrenaica with a reduced force while formations moved to Greece, preserving its mobile troops if compelled to withdraw.", "forces": "7th Armoured needed refit; 2nd Armoured and 9th Australian took up the defence. German and Italian mobile formations assembled in Libya. This is a selected formation summary.", "deployment": "The forward defence extended from El Agheila through Benghazi; Tobruk was the major eastern port and fortress.", "sources": ["UK2_1", "AWM_TOBRUK"]},
+      "timeline": [
+        {"date": "1941-03-09", "event": "The 9th Australian Division was relieving the 6th Australian Division at Tobruk over 8–9 March.", "sources": ["AWM_TOBRUK"]},
+        {"date": "1941-03-31", "event": "Axis troops attacked at Mersa Brega.", "sources": ["UK2_1"]},
+        {"date": "1941-04-10", "event": "Axis forces began isolating Tobruk; the siege developed over 10–11 April.", "sources": ["AWM_TOBRUK"]}
+      ],
+      "post": {"outcome": "The historical Commonwealth force retreated across Cyrenaica while Tobruk held out under siege.", "why": "A thin, under-equipped defence faced the Axis advance; orders prioritised preserving the field force over holding Benghazi at any cost.", "sources": ["UK2_1", "AWM_TOBRUK"]},
+      "limits": "The trial's relief dates, entry hexes, strengths and supply mechanisms remain estimates. No historical retreat or capture is forced in a played campaign."
+    },
+    {
+      "id": "frontier_1941", "title": "Frontier battles and relief preparations", "start": "1941-05-05", "end": "1941-09-29",
+      "image": {"file": "art/history/frontier_1941.jpg", "caption": "4th Indian Division soldiers mark their lorry with 'Khyber pass to Hellfire Pass' after Battleaxe, 21 June 1941.", "credit": "IWM E3660, W. G. Vanderson via Wikimedia Commons · public domain", "source": "https://commons.wikimedia.org/wiki/File:Soldiers_of_the_4th_Indian_Division_decorate_the_side_of_their_lorry,_North_Africa,_21_June_1941._E3660.jpg", "commons_file": "Soldiers of the 4th Indian Division decorate the side of their lorry, North Africa, 21 June 1941. E3660.jpg"},
+      "chapters": ["frontier_preparation", "brevity_frontier", "halfaya_counterstroke", "battleaxe_preparation", "battleaxe_frontier", "frontier_stalemate_1941", "tobruk_relief_1941"],
+      "research": ["docs/FRONTIER_1941_RESEARCH.md", "docs/BATTLEAXE_1941_RESEARCH.md", "docs/TOBRUK_PREPARATION_1941_RESEARCH.md"],
+      "pre": {"objective": "Commonwealth attacks on the frontier sought to open the way toward Tobruk; Axis defenders aimed to keep the frontier and continue the siege.", "forces": "British armoured and infantry formations faced German and Italian mobile troops and prepared frontier positions; the Tobruk garrison was progressively relieved by sea. The exact 18 May and 15 June rosters still need verification.", "deployment": "Halfaya, Sollum, Fort Capuzzo and the Egyptian frontier were the contested approaches while Tobruk remained isolated.", "sources": ["UK2_8", "AWM_TOBRUK"]},
+      "timeline": [
+        {"date": "1941-05-15", "event": "Operation Brevity began as a short frontier attack.", "sources": ["UK2_8"]},
+        {"date": "1941-05-27", "event": "German forces retook Halfaya Pass after the May frontier fighting.", "sources": ["UK2_8", "UK2_CHRON"]},
+        {"date": "1941-06-15", "event": "Operation Battleaxe began; it ended without relieving Tobruk.", "sources": ["UK2_8"]},
+        {"date": "1941-08-01", "event": "5th Light Division was redesignated 21st Panzer Division; this was a change of name, not a new full-strength formation.", "sources": ["UK2_13"]},
+        {"date": "1941-08-19", "event": "The first stage of Australian relief at Tobruk began in August.", "sources": ["UK2_CHRON"]},
+        {"date": "1941-09-19", "event": "The second stage of Australian relief at Tobruk began in September.", "sources": ["UK2_CHRON"]}
+      ],
+      "post": {"outcome": "The historical frontier attacks did not end the Tobruk siege. Both sides prepared for a larger autumn offensive, while the garrison relief proceeded by sea.", "why": "Prepared Axis positions, armoured losses, repair and training needs, and supply limits shaped the pause after Battleaxe.", "sources": ["UK2_8", "UK2_13", "AWM_TOBRUK"]},
+      "limits": "The trial's frontier fort levels, tank availability, garrison relief timing and exact battle rosters are partly estimated. The source dates 5th Light's redesignation to 1 August; the game applies its identity-preserving name change on an approximate 15 August turn."
+    },
+    {
+      "id": "crusader", "title": "Operation Crusader and the relief of Tobruk", "start": "1941-09-30", "end": "1941-12-31",
+      "image": {"file": "art/history/crusader.jpg", "caption": "A Crusader tank passes a burning German Panzer IV during Operation Crusader, 27 November 1941.", "credit": "IWM E6751, Lt L. B. Davies via Wikimedia Commons · public domain", "source": "https://commons.wikimedia.org/wiki/File:Crusadertankandgermantank.jpg", "commons_file": "Crusadertankandgermantank.jpg"},
+      "chapters": ["crusader_preparation_1941", "crusader_linked_1941"],
+      "scenario_aliases": ["crusader", "sidi_rezegh"],
+      "research": ["docs/TOBRUK_PREPARATION_1941_RESEARCH.md", "docs/SIDI_REZEGH_OPENING_POSITIONS.md", "docs/SIDI_REZEGH_WINNABILITY.md"],
+      "pre": {"objective": "Eighth Army intended to defeat Axis armour, relieve Tobruk and recover Cyrenaica; the Axis sought to maintain the siege and hold its field position.", "forces": "The planned Eighth Army force included XXX and XIII Corps, New Zealand and South African divisions and army tank brigades. Axis mobile formations included 15th and 21st Panzer, Ariete and Trieste. This is a selected summary, not a validated counter-level roster.", "deployment": "Tobruk remained besieged; the British mobile concentration assembled to the east and south for the November offensive.", "sources": ["AUCHINLECK_CRUSADER", "UK2_15"]},
+      "timeline": [
+        {"date": "1941-10-04", "event": "The convoy carrying 22nd Armoured Brigade reached the theatre; desert preparation followed before field use.", "sources": ["UK2_13"]},
+        {"date": "1941-11-18", "event": "Operation Crusader opened.", "sources": ["AUCHINLECK_CRUSADER"]},
+        {"date": "1941-12-10", "event": "The last Australian battalion in Tobruk was evacuated after the relief rotation.", "sources": ["AWM_TOBRUK"]}
+      ],
+      "post": {"outcome": "Historically the siege of Tobruk was lifted and Axis forces withdrew westward; the Eighth Army recovered Cyrenaica before the January reversal.", "why": "Prolonged fighting exhausted the mobile formations and forced Axis withdrawal, while the Tobruk garrison and Eighth Army reconnected.", "sources": ["AUCHINLECK_CRUSADER"]},
+      "limits": "The linked trial inherits a counterfactual played front; its relief corridor and combat outcome are game abstractions."
+    },
+    {
+      "id": "axis_return_1942", "title": "The Axis return to Cyrenaica", "start": "1942-01-01", "end": "1942-02-08",
+      "image": {"file": "art/history/axis_return_1942.jpg", "caption": "Italian prisoners near Agedabia in January 1942, before the Axis counteroffensive.", "credit": "US Office of War Information / Library of Congress via Wikimedia Commons · public domain", "source": "https://commons.wikimedia.org/wiki/File:Italian_prisoners_after_capture_during_an_engagement_near_Agedabia,_Libya,_January_1942_(37245568285).jpg", "commons_file": "Italian prisoners after capture during an engagement near Agedabia, Libya, January 1942 (37245568285).jpg"},
+      "chapters": ["cyrenaica_winter_1942", "axis_january_offensive_1942"],
+      "research": ["docs/CYRENAICA_WINTER_1942_RESEARCH.md"],
+      "pre": {"objective": "The Axis sought to regain ground after Crusader; the Commonwealth tried to hold the line and preserve Tobruk and its mobile force.", "forces": "Afrika Korps, 90th Light and Italian mobile troops opposed Eighth Army formations; unit-level 1942 strengths and serviceability remain unverified.", "deployment": "The Axis had fallen back toward the Marada–Mersa Brega line by early January.", "sources": ["TOPPE"]},
+      "timeline": [
+        {"date": "1942-01-21", "event": "The Axis counterattack began.", "sources": ["TOPPE"]},
+        {"date": "1942-01-30", "event": "Axis troops retook Benghazi.", "sources": ["TOPPE"]},
+        {"date": "1942-02-07", "event": "The renewed advance halted short of Tobruk.", "sources": ["TOPPE"]}
+      ],
+      "post": {"outcome": "The Axis regained Agedabia, Benghazi and Derna but did not immediately attack Tobruk.", "why": "Fuel shortage and the condition of the troops limited further pursuit.", "sources": ["TOPPE"]},
+      "limits": "The current trial lacks tank repair, exact stocks and complete winter orders of battle."
+    },
+    {
+      "id": "gazala", "title": "Gazala, Tobruk and the retreat into Egypt", "start": "1942-02-09", "end": "1942-06-30",
+      "image": {"file": "art/history/gazala.jpg", "caption": "British 25-pounders firing at Gazala on the night of 2 June 1942.", "credit": "IWM E12789 via Wikimedia Commons · public domain", "source": "https://commons.wikimedia.org/wiki/File:British_25-pounder_field_guns_in_action_on_the_night_of_2_June_1942_during_the_Battle_of_Gazala_in_Libya._E12789.jpg", "commons_file": "British 25-pounder field guns in action on the night of 2 June 1942 during the Battle of Gazala in Libya. E12789.jpg"},
+      "chapters": ["gazala_preparation_1942", "gazala_battle_1942", "egyptian_retreat_1942"],
+      "research": ["docs/CYRENAICA_WINTER_1942_RESEARCH.md", "docs/HISTORICAL_VALIDATION_LEDGER.md"],
+      "pre": {"objective": "Eighth Army defended the Gazala line and Tobruk; Axis forces planned to break the line and exploit eastward.", "forces": "The defence included 50th and South African formations and Free French at Bir Hakeim; Axis mobile forces included 90th Light, Ariete and Trieste. This is selected evidence, not a complete May roster.", "deployment": "The Gazala position depended on fortified boxes, minefields and mobile reserves; the trial does not yet reproduce those systems faithfully.", "sources": ["COMMONS_GAZALA", "AUCHINLECK_CRUSADER", "TOPPE"]},
+      "timeline": [
+        {"date": "1942-05-26", "event": "The Axis Gazala attack began.", "sources": ["TOPPE"]},
+        {"date": "1942-06-21", "event": "Tobruk fell in the historical campaign.", "sources": ["TOPPE"]},
+        {"date": "1942-06-30", "event": "The Axis advance approached El Alamein.", "sources": ["TOPPE"]}
+      ],
+      "post": {"outcome": "The Gazala line collapsed, Tobruk was captured and Eighth Army retreated into Egypt.", "why": "The mobile battle around the defended boxes, minefields and supply routes defeated the British position; the game does not yet model these causes adequately.", "sources": ["AUCHINLECK_CRUSADER", "TOPPE"]},
+      "limits": "Minefields, deliberate breaches, the Cauldron supply crisis, serviceable tank returns and exact unit strengths are open validation work."
+    },
+    {
+      "id": "alamein_1942", "title": "First Alamein and Alam Halfa", "start": "1942-07-01", "end": "1942-10-22",
+      "image": {"file": "art/history/alamein_1942.jpg", "caption": "British infantry at a sandbagged position near El Alamein, 17 July 1942.", "credit": "IWM E14575, Sgt Fox via Wikimedia Commons · public domain", "source": "https://commons.wikimedia.org/wiki/File:1stAlameinBritDefense.jpg", "commons_file": "1stAlameinBritDefense.jpg"},
+      "chapters": ["first_alamein_1942", "august_buildup_1942", "alam_halfa_1942", "alamein_preparation_1942"],
+      "research": ["docs/HISTORICAL_VALIDATION_LEDGER.md", "docs/FULL_CAMPAIGN_TRIAL_1940_1942.md"],
+      "pre": {"objective": "Eighth Army had to stop the Axis advance at El Alamein; the Axis sought a breakthrough toward the Nile Delta.", "forces": "The 9th Australian Division returned in July; later Eighth Army included XIII and XXX infantry corps and X Corps for armoured exploitation. The detailed order of battle remains incomplete in the trial.", "deployment": "The Mediterranean and Qattara Depression narrowed the front near El Alamein.", "sources": ["AWM_ALAMEIN", "MONTGOMERY"]},
+      "timeline": [
+        {"date": "1942-07-01", "event": "The First Battle of El Alamein began after the Axis pursuit reached Egypt.", "sources": ["AWM_ALAMEIN"]},
+        {"date": "1942-07-04", "event": "The 9th Australian Division returned to the battle area.", "sources": ["AWM_ALAMEIN"]},
+        {"date": "1942-08-30", "event": "The Axis Alam Halfa attack opened.", "sources": ["AWM_ALAMEIN"]}
+      ],
+      "post": {"outcome": "The Axis advance was stopped at Alamein and the Alam Halfa attack failed; Eighth Army prepared its own offensive.", "why": "The constrained front and strengthened British defence limited Axis manoeuvre while reinforcements and training built Eighth Army's strength.", "sources": ["AWM_ALAMEIN", "MONTGOMERY"]},
+      "limits": "The trial's minefields, training, tank serviceability and late-1942 brigade detail remain incomplete."
+    },
+    {
+      "id": "second_alamein", "title": "Second Alamein and the westward pursuit", "start": "1942-10-23", "end": "1942-11-30",
+      "image": {"file": "art/history/second_alamein.jpg", "caption": "British tanks moving into the Second Battle of El Alamein, 24 October 1942.", "credit": "IWM E18481, Sgt Gladstone via Wikimedia Commons · public domain", "source": "https://commons.wikimedia.org/wiki/File:El_Alamein_1942_-_British_tanks.jpg", "commons_file": "El Alamein 1942 - British tanks.jpg"},
+      "chapters": ["second_alamein_1942", "november_pursuit_1942"],
+      "research": ["docs/HISTORICAL_VALIDATION_LEDGER.md", "docs/FULL_CAMPAIGN_TRIAL_1940_1942.md"],
+      "pre": {"objective": "Eighth Army planned to breach the Axis position, defeat its armour and pursue west; Axis forces aimed to hold the Alamein line.", "forces": "X Corps was the armoured exploitation force, while XIII and XXX Corps supplied major infantry formations. The trial's detailed roster and serviceable equipment are not yet verified.", "deployment": "The opposing armies faced each other across the fortified Alamein line and its minefields.", "sources": ["MONTGOMERY"]},
+      "timeline": [
+        {"date": "1942-10-23", "event": "Eighth Army opened the Second Battle of El Alamein.", "sources": ["AWM_ALAMEIN", "MONTGOMERY"]},
+        {"date": "1942-11-05", "event": "The battle had broken the Axis position and the westward pursuit followed.", "sources": ["MONTGOMERY", "TOPPE"]}
+      ],
+      "post": {"outcome": "The Axis army withdrew west from Egypt and Eighth Army pursued across the frontier during November.", "why": "The British offensive breached the defended line and wore down Axis mobile resistance; the detailed mine-clearing and logistics that made this possible are not reproduced in the trial.", "sources": ["MONTGOMERY", "TOPPE"]},
+      "limits": "The game can assess a played final strategic position, but that verdict must never be presented as the historical 1942 outcome."
+    }
+  ]
+}

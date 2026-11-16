@@ -69,11 +69,17 @@ things and names no other order, it uses:
 
 No rule depends on the order in which a program happens to store things.
 
-**1.9 Turns and dates.** A scenario has a start date. Turn 1 covers the start
-date and the day after; turn `t` covers days `2(t−1)` and `2(t−1)+1` after the
-start date. A scenario event dated `D` belongs to turn
-`floor((D − start) / 2) + 1`, with `D − start` in days. An event dated before
-the start belongs to turn 1.
+**1.9 Turns and dates.** A scenario has a start date and may set `turn_days`
+to 1 or 2. An omitted `turn_days` means 2, preserving older scenarios and
+saves. With `n = turn_days`, turn `t` covers the `n` days starting at
+`n(t−1)` days after the start. An event dated `D` belongs to turn
+`floor((D − start) / n) + 1`, with `D − start` in days. An event dated before
+the start belongs to turn 1. Movement allowance, port and rail throughput,
+truck lift, unit upkeep, morale loss and rest recovery scale with `n/2` from
+their two-day table values. Combat remains one resolution per turn.
+Fortification needs two days of continuous work per level (11.3), so a daily
+turn can leave work in progress. Campaign chapters may hand off between the
+two lengths when their dates meet exactly.
 
 **1.10 Tonnes.** Supply is counted in whole tonnes.
 
@@ -113,8 +119,13 @@ another scenario, and give only what differs: its id, name, number of turns,
 objectives, par and thresholds, or any other entry. What it does not give is
 the base's. It has the base's units less those that arrive after its own last
 turn, and the base's withdrawals and replacements up to its last turn (1.9).
-The checker and the engine are given the result and treat it as any other
-scenario; the saved game holds the result, not the name of the base.
+Linked cuts can add `add_units`, update non-identity unit fields, and name
+`retire_units` whose counters have already left the active campaign. A sourced
+redesignation may update a formation's name while preserving its unit ID and
+listing the old name as an alternate for carried saves. Named
+sources added by a cut extend its base's source list. The checker and the
+engine are given the result and treat it as any other scenario; the saved
+game holds the result, not the name of the base.
 
 ---
 
@@ -320,19 +331,31 @@ carries supply to the railhead at no cost in lift or fuel. Only the
 Commonwealth uses the railway (18.8).
 
 **6.2.5 Outlets.** An **outlet** is a hex where a source's stock is issued:
-the west entry hex (Tripoli), each owned port's hex, and the effective
-railhead (Alexandria's stock). Outlets are ordered: Tripoli, then the
-railhead, then ports by hex in standard order.
+the west entry hex (Tripoli), each owned port or scenario landing point's
+hex, and the effective railhead (Alexandria's stock). Outlets are ordered:
+Tripoli, then the railhead, then ports and landing points by hex in standard
+order.
 
 ### 6.3 Landing
 
 **6.3.1 Repair.** Each port's condition rises by `PORT_REPAIR`, to at most 100.
 
 **6.3.2 Port landing.** Each port lands
-`floor(capacity × condition × sea_pct / 10000)` tonnes for its owner, where
-`capacity` is from the table in 6.12 and `sea_pct` is the owner's scenario
-value for this turn (0–100; it stands for Malta and the convoy war on the
-Axis side, and is 100 for the Commonwealth unless a scenario says otherwise).
+`floor(capacity × turn_days / 2 × condition × sea_pct × access_pct / 1000000)` tonnes for its
+owner, where `capacity` is the two-day value from the table in 6.12 and
+`sea_pct` is the owner's scenario value for this turn (0–100; it stands for
+Malta and the convoy war on the Axis side, and is 100 for the Commonwealth
+unless a scenario says otherwise). `access_pct` is 100 unless a dated
+`port_access` event changes one side's ability to land at one named port;
+it does not remove stock already there or close another side's landings.
+A scenario may name additional
+`landing_points`, a map place and a positive two-day capacity. These get
+separate port stock and use the same landing, repair and outlet rules without
+changing the permanent map's ports. The capacity of a temporary landing
+point is a scenario estimate until a source supports it.
+`landing_sides` may restrict a temporary point to one side: an enemy
+occupation then gets no new sea landing there, though captured stock remains
+on the map.
 
 **6.3.3 Tripoli landing.** Tripoli lands
 `floor(TRIPOLI_CAP × sea_pct / 100)` tonnes for the Axis.
@@ -1208,14 +1231,17 @@ one side. It stands for diggings, wire and mines together. Scenarios may
 start with fortifications in place.
 
 **11.3.2 Hold.** If a combat unit ordered `hold` is in a hex with no
-fortification and did not retreat this turn, the hex gets its side's
-fortification at level 1.
+fortification and did not retreat this turn, it works toward its side's
+level-1 field position. Two days of continuous work complete it; in a
+two-day turn that is immediate, while a daily turn records one day's work.
 
 **11.3.3 Dig in.** If one or more combat units ordered `dig_in` are in a hex
 and did not retreat this turn, the lowest-id one that holds at least
-`size × DIG_STORES` tonnes of stores pays that, and the hex's fortification
-rises by one level. If none can pay, or the level is already `FORT_MAX`,
-nothing is paid and nothing is built.
+`size × DIG_STORES × turn_days / 2` tonnes of stores pays that and works for
+the turn's number of days. Two days of continuous work raise the level once.
+If none can pay, or the level is already `FORT_MAX`, nothing is paid and
+nothing is built. Unfinished work at a hex is lost when its side stops
+working there; it is carried in the saved state while work continues.
 
 **11.3.4** A hex gains at most one level a turn.
 
@@ -1237,12 +1263,18 @@ empty, and goes only when an enemy unit enters (9.5.6).
 
 ## 12. Reinforcement and withdrawal
 
-**12.1** The scenario lists, by date (1.9): **arrivals** (a unit and its entry
-place or hex), **withdrawals** (a unit) and **replacements** (a unit and what
-it is sent). Each is handled in the Reinforcement phase of its turn, in
-the order withdrawals, replacements, arrivals, and within each by unit id.
+**12.1** The scenario lists, by date (1.9): **redesignations** (the same unit
+under a new formation name), **arrivals** (a unit and its entry place or hex),
+**withdrawals** (a unit) and **replacements** (a unit and what it is sent).
+Each is handled in the Reinforcement phase of its turn, in the order
+redesignations, withdrawals, replacements, arrivals, and within each by unit id.
 The dates are those of the campaign and are fixed: no player chooses what
 comes or goes, or when (12.7).
+
+A redesignation changes only the historical formation name of an active or
+not-yet-arrived counter; it does not create another unit, restore a destroyed
+one, or change its strength, orders or stocks. Player-given display names are
+stored separately and continue to work. The chapter timetable shows the change.
 
 **12.2 Withdrawal.** The unit, if on the map, is removed wherever it is and
 whatever it is doing; its status becomes `withdrawn`. It does not count as
@@ -1250,6 +1282,32 @@ destroyed. What it holds, and an HQ's dump, are lost (6.11.4). A unit that
 has not yet arrived never does. A unit already destroyed is not affected.
 The units of a division whose HQ is withdrawn and which stay behind are not
 counted as having lost it (20.3.2).
+
+For a specified sea relief, the schedule may name `if_near` (a friendly-held
+port) and a radius of 0–3 hexes. The unit is withdrawn on that date only if
+it is on the map within that radius and its side still owns the port. If the
+condition is false, the unit stays in the campaign and the side receives a
+`not_withdrawn` report. This is used for Tobruk garrison rotation in a played
+campaign, where the historical port or unit position may have changed.
+The schedule may also name `if_name` to restrict withdrawal to the formation
+or explicitly listed remnant with that name. If a relief event never made the
+remnant, the original brigade stays in the played campaign.
+An eligible infantry withdrawal can instead name a one-size `remain_as`
+detachment. The larger formation leaves; the surviving counter keeps its ID,
+hex and accumulated losses, but becomes the named detachment with the stated
+maximum strength. Any stores above its smaller carrying limit leave the
+theatre. If the relief condition fails, no part of the formation is changed.
+An explicitly dated `returns` event can bring a withdrawn survivor back under
+the same ID. It never restores a destroyed unit or duplicates one still on the
+map. A named `return_as` can reconstitute an infantry remnant to its original
+brigade identity with estimated manpower; that strength is documented in the
+chapter. The returning unit enters through a friendly place or the ordinary
+base fallback, without silently regaining its old dump or carried stores.
+At a later chapter boundary, `retire_units` may remove a withdrawn or destroyed
+formation from the active scenario roster. The played save still archives it,
+with its losses and fate. The handoff rejects retirement of a formation that
+is still on the map or waiting to arrive, so a counterfactual survivor cannot
+disappear merely because the historical formation left the theatre.
 
 **12.3 Replacement.** The scenario gives what is sent as a number of steps
 or, as the histories do, of tanks, men, guns or cars; the second is turned
@@ -1262,11 +1320,12 @@ none is kept for a later turn.
 **12.4 Arrival.** The unit arrives with full fuel and stores and the cohesion
 the scenario gives, at the first of these that is possible:
 
-1. its entry hex, if its side owns every place there (or the hex is its
-   side's base hex), no enemy unit is in it, and the stacking limit allows;
-2. the nearest other hex within `ARRIVE_RADIUS` of the entry hex (1.4, then standard
-   hex order) that is passable, holds no enemy unit, is not in an enemy zone
-   of control, and is within the stacking limit;
+1. its entry hex, if its side owns every place there, no enemy unit is in it,
+   and the stacking limit allows;
+2. if that entry is still friendly but full, the nearest other hex within
+   `ARRIVE_RADIUS` of it (1.4, then standard hex order) that is passable,
+   holds no enemy unit, is not in an enemy zone of control, and is within
+   the stacking limit. An enemy-held entry is skipped entirely;
 3. its side's base hex, by the same tests as 1, then its neighbours by 2;
 4. otherwise it does not arrive, and tries again next turn.
 
@@ -1333,6 +1392,55 @@ scenario gives three thresholds `T1 < T2 < T3`. If `|d| < T1` the game is a
 draw. Otherwise the side ahead has a tactical victory (`|d| < T2`), a major
 victory (`|d| < T3`) or a decisive victory.
 
+A scenario may encode High Command orders under `mission`. `hold` means the
+named place belongs to the side **and** has one of its units in that hex at
+the end; ownership alone is insufficient. `clear` means no enemy unit stands
+on any hex of an explicitly mapped route. `deny` means at least one friendly
+unit blocks that route. `reach` means a friendly unit has ended a turn at the
+named place, even if it later moves away. `surround` means an enemy unit holds
+the named place and friendly units occupy every passable adjacent hex. A route
+can be a road, railway or scenario corridor; road and rail declarations must
+follow their actual map links. The Sidi Rezegh corridor is a modeled link
+through Belhamed, not an assertion that each marked hex is a paved road.
+`stage` marks a passable hex and is complete when a friendly fighting unit
+ends there. It can represent an approximate assembly area where the map is
+too coarse for the historical start line.
+`breach` marks a passable perimeter hex and is complete once a friendly
+fighting unit has ended a turn there, even if that unit later moves on. The
+computer prioritizes an unmet breach before attacking a named place it is
+ordered to hold. This tracks an operational sequence; it does not itself
+remove fortifications or model engineer work. `preserve` names a group of
+formations and a minimum percentage of their combined steps. Its baseline is
+the **actual played strength at chapter entry**, including newly scheduled
+formations, not a historical reset. A destroyed formation contributes zero;
+a withdrawn formation keeps the strength with which it left. Replacements
+cannot make one formation count above its own entry strength to offset another
+formation's losses. This is a strength check, not a serviceability model.
+A side's mission may also list
+`avoid_attack` places for computer planning: the computer will not initiate
+an attack on those named hexes while that chapter's orders apply. Human
+players may still choose to attack.
+
+A side may also list optional `commendations`, each with a title and one
+ordinary mission order. They are checked from the played state at the chapter
+debrief. A completed optional order appears as a High Command commendation in
+the result and remains in campaign history; an unmet one gives no award and
+does not change victory, points or losses. The April 1941 research chapter
+uses this for preserving part of the 9th Australian infantry from its actual
+entry strength. This is a game recognition of operational performance, not a
+claim of a historical medal or gallantry decoration.
+
+A side's orders are complete only if every listed order is met. A `success_grade`
+sets its minimum victory grade if complete; if both sides have such orders and
+neither completes them, the result is a draw. A `failure_grade` instead gives
+the opponent at least that grade when the side fails. A higher grade earned by
+the *same* side on points is retained. The report always shows `d` as secondary
+progress. For Crusader the Commonwealth must occupy Tobruk or the Axis wins at
+least a major victory. For Sidi Rezegh the Commonwealth must occupy Sidi Rezegh
+and Belhamed and clear the marked route to Tobruk; Axis units on that route
+fulfil the Axis order to block it. Thus a Commonwealth points gain cannot turn
+a failed relief operation into a victory.
+
 **13.7** The Victory phase then adds 1 to the turn number.
 
 | Name | Value | Meaning | Status |
@@ -1383,12 +1491,24 @@ units, with every hex each entered and in which impulse; what the timetable
 did to its own units (12.8); and its own hauls in the Supply phase
 just run, each with its source, HQ, tonnes, fuel burnt, haul cost and route.
 A surrender, in battle (10.6.5) or from hunger (6.10.2), is told to both
-sides, with the unit and the hex. It gives no other enemy event.
+sides, with the unit and the hex. It gives no other enemy event except the local
+convoy sightings described below.
+
+Reconnaissance units also report local enemy truck traffic from the current
+Supply phase: if an enemy haul passed within two hexes of a friendly recon unit,
+the view gives one observed hex for that haul (duplicates collapse). It gives
+no source, destination, full route, tonnage, stock or proof that a particular
+enemy unit was supplied. The supply layer marks these sightings and all
+publicly owned enemy ports as *possible* sources. A sighting is evidence of
+traffic at that hex, not a permanent supply line; hauls may take another path
+next turn. A reconnaissance unit's zone of control can block supply paths
+under 6.4.2, subject to alternate routes, existing dumps and the next Supply
+phase under 6.11.1.
 
 **14.7** The view holds no memory of earlier turns. A player may keep its own.
 
 **14.8** Never in the view: enemy steps; the enemy's figures in a battle
-(14.6); enemy orders, enemy supply of any kind, enemy
+(14.6); enemy orders, enemy supply except the local convoy sightings in 14.6, enemy
 lift, enemy schedules, unspotted enemy units. Nor the seed, nor the weather of any turn
 after this one.
 
@@ -1474,7 +1594,7 @@ that subject (`docs/ENGINEERING_NOTES.md` §4).
 
 *This page is the whole of it. Everything else the machine does and shows.*
 
-**The turn.** A turn is two days. You give every formation one order. Both
+**The turn.** A turn is one or two days, as the scenario states. You give every formation one order. Both
 sides' orders then run at the same time. Two things are left to chance: the
 weather, and a little luck in every battle.
 
@@ -1515,7 +1635,7 @@ up a dump for the next push. Out of fuel, you do not move. Out of stores, you
 fall apart. Press **S** to see all of it.
 
 **Weather.** Most days are clear. Some turns bring rain or a sandstorm; you
-are told as the turn opens, with a word on the next two days that is often
+are told as the turn opens, with a word on the next turn that is often
 wrong. In either, no aircraft fly. In rain, vehicles off the roads crawl. In a
 sandstorm everything moves at half pace and nothing is seen beyond the next
 hex: a bad day to march, and a good one to slip away or to close unseen.

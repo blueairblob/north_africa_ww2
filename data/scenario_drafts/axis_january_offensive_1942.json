@@ -1,0 +1,36 @@
+{
+  "base": "cyrenaica_winter_1942",
+  "id": "axis_january_offensive_1942",
+  "research_next": "gazala_preparation_1942",
+  "name": "Axis winter offensive: 21 January–8 February 1942 (linked research)",
+  "campaign_only": true,
+  "start": "1942-01-21",
+  "turn_days": 1,
+  "turns": 19,
+  "aim": {
+    "cw": "Hold the Gazala line, Tobruk and the Egyptian approaches, keep the mobile force intact and contest the Cyrenaican coast if the played position supports it.",
+    "axis": "Exploit weakness in the Commonwealth line, take Agedabia and Benghazi, and press toward Derna while maintaining a supply route. These are aims, not compulsory historical captures."
+  },
+  "about": "Daily-turn linked trial for the historical 21 January counteroffensive and pursuit, plus one aftermath turn on 8 February so the next two-day preparation chapter begins without a gap. The played 20 January position, strength, stocks and ownership carry forward without reset. The historical Agedabia, Benghazi and Derna dates are documented in Toppe's retrospective account but are not scripted as outcomes. The 1st Free French Brigade Group joins the model on 31 January with estimated strength and entry point. This chapter does not yet model surprise deception, serviceability recovery, winter shipping or the fuel shortage that stopped the historical advance.",
+  "add_units": [
+    {"id": 440, "side": "cw", "name": "1st Free French Brigade Group", "type": "foot", "size": 2, "men": 4000, "src": "E", "arrives": "1942-01-31", "arrives_src": "F42", "entry": "Mersa Matruh", "arrives_note": "Auchinleck places its joining Eighth Army at the end of January. Exact day, 4,000 men and map entry are game estimates."}
+  ],
+  "withdrawals": [],
+  "replacements": [],
+  "port_access": [
+    {"port": "Benghazi", "side": "cw", "date": "1942-01-21", "pct": 0, "src": "R2"}
+  ],
+  "mission": {
+    "routes": {},
+    "cw": {
+      "orders": [{"verb": "hold", "place": "Gazala"}, {"verb": "hold", "place": "Tobruk"}, {"verb": "hold", "place": "Mersa Matruh"}],
+      "success_grade": "tactical",
+      "commendations": [{"title": "Cyrenaica line retained", "order": {"verb": "hold", "place": "Benghazi"}}]
+    },
+    "axis": {
+      "orders": [{"verb": "hold", "place": "Agedabia"}, {"verb": "hold", "place": "Benghazi"}],
+      "success_grade": "major",
+      "commendations": [{"title": "Derna reached", "order": {"verb": "reach", "place": "Derna"}}]
+    }
+  }
+}

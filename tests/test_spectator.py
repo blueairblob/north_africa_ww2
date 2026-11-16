@@ -59,7 +59,9 @@ def test_spectator_match_advances_pauses_and_finishes_without_human_orders():
     app.paint(pygame.Surface(app.size))
     assert "ORDERS FROM HIGH COMMAND" in seen and "FIELD ASSESSMENT" in seen
     assert any("VICTORY" in words for words in seen)
-    assert {"United Kingdom", "New Zealand", "Union of South Africa"} <= {tip for _, tip in app.painter.tips}
+    flags = ({"Germany", "Italy"} if session.state["result"]["winner"] == "axis" else
+             {"United Kingdom", "New Zealand", "Union of South Africa"})
+    assert flags <= {tip for _, tip in app.painter.tips}
 
 
 def test_spectator_save_restores_both_computer_players():

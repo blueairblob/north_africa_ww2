@@ -3,10 +3,10 @@ from copy import deepcopy
 
 import pytest
 
-from engine import invariants, players, runner, scenarios
+from engine import invariants, orders, paths, players, runner, scenarios
 from engine import state as S
 from engine import view as V
-from engine.computer import ComputerHardBaseline, ComputerHardCoordinated, ComputerHardTactical, ComputerHardUnrestrictedFlank
+from engine.computer import ComputerHardBaseline, ComputerHardCoordinated, ComputerHardPoints, ComputerHardTactical, ComputerHardUnrestrictedFlank, ComputerPoints
 from engine.coordinated import coordinate
 from engine.players import parties
 from engine.turn import begin_turn, finish_turn
@@ -49,6 +49,21 @@ def test_computer_side_survives_a_save_and_plays_the_same_next_turn():
     assert loaded.record == original.record
 
 
+def test_computer_uses_safe_road_travel_for_distant_objectives():
+    scenario = scenarios.load("sidi_rezegh")
+    state = begin_turn(S.new_game(scenario, GMAP, 1941), GMAP, scenario)
+    shown = V.view(state, GMAP, scenario, "axis")
+    given = players.ComputerOpponent(GMAP).orders(shown)
+    travel = [o for o in given["orders"] if o["order"] == "road_march"]
+    assert len(travel) >= 3
+    accepted, _, replies = orders.check(state, GMAP, "axis", given)
+    assert all(reply["ok"] for reply in replies)
+    assert all(accepted[o["unit"]]["order"] == "road_march" for o in travel)
+    road = next((a, b) for a, b in GMAP.links if GMAP.links[a, b] == 2)
+    assert paths.step_cost(GMAP, *road, GMAP.side_between(*road), paths.MARCH) == 2
+    assert paths.step_cost(GMAP, *road, GMAP.side_between(*road), paths.VEHICLE) == 4
+
+
 def test_commonwealth_computer_opens_the_road_against_a_passive_axis():
     scenario = scenarios.load("sidi_rezegh")
     sides = {"axis": players.DoNothing(GMAP), "cw": players.ComputerOpponent(GMAP)}
@@ -56,6 +71,69 @@ def test_commonwealth_computer_opens_the_road_against_a_passive_axis():
     assert state["places"]["Sidi Rezegh"] == state["places"]["Belhamed"] == "cw"
     repeated, same_record = runner.play(scenario, GMAP, sides, seed=1941)
     assert S.dumps(repeated) == S.dumps(state) and same_record == record
+
+
+def test_mission_planner_clears_a_friendly_stack_for_the_belhamed_assault():
+    scenario = scenarios.load("sidi_rezegh")
+    state, _ = runner.play(scenario, GMAP, {"axis": players.DoNothing(GMAP),
+                                           "cw": players.ComputerOpponent(GMAP)}, turns=2, seed=1941)
+    state = begin_turn(state, GMAP, scenario)
+    shown = V.view(state, GMAP, scenario, "cw")
+    given = players.ComputerOpponent(GMAP).orders(shown)
+    by_id = {o["unit"]: o for o in given["orders"]}
+    assert by_id[304] == {"unit": 304, "order": "move", "to": [55, 13]}
+    assert by_id[305] == {"unit": 305, "order": "attack", "to": [57, 12]}
+    assert by_id[310] == {"unit": 310, "order": "attack", "to": [57, 12]}
+    played, replies = finish_turn(state, GMAP, scenario,
+                                  {"axis": players.DoNothing(GMAP).orders(V.view(state, GMAP, scenario, "axis")),
+                                   "cw": given})
+    assert all(r["ok"] for r in replies["cw"])
+    assert played["places"]["Sidi Rezegh"] == played["places"]["Belhamed"] == "cw"
+
+
+def test_mission_planner_takes_both_relief_places_and_garrisons_the_axis_blockade():
+    scenario = scenarios.load("sidi_rezegh")
+    old, _ = runner.play(scenario, GMAP, {"axis": players.DoNothing(GMAP),
+                                         "cw": ComputerPoints(GMAP)}, seed=1941)
+    new, _ = runner.play(scenario, GMAP, {"axis": players.DoNothing(GMAP),
+                                         "cw": players.ComputerOpponent(GMAP)}, seed=1941)
+    assert not old["result"]["mission"]["checks"]["cw"]["complete"]
+    assert new["places"]["Sidi Rezegh"] == new["places"]["Belhamed"] == "cw"
+    assert new["result"]["mission"]["checks"]["cw"]["complete"]
+    hard, _ = runner.play(scenario, GMAP, {"axis": players.DoNothing(GMAP),
+                                          "cw": players.ComputerHard(GMAP)}, seed=1941)
+    assert hard["places"]["Sidi Rezegh"] == hard["places"]["Belhamed"] == "cw"
+    assert hard["result"]["mission"]["checks"]["cw"]["complete"]
+    shown = V.view(S.new_game(scenario, GMAP), GMAP, scenario, "axis")
+    old_orders = {o["unit"]: o for o in ComputerPoints(GMAP).orders(shown)["orders"]}
+    new_orders = {o["unit"]: o for o in players.ComputerOpponent(GMAP).orders(shown)["orders"]}
+    assert old_orders[106]["order"] == "attack"
+    assert new_orders[106]["order"] in ("hold", "dig_in")
+
+
+@pytest.mark.parametrize("opponent", [players.ComputerOpponent, players.ComputerHard])
+def test_commonwealth_computer_completes_the_full_relief_mission_against_passive_axis(opponent):
+    scenario = scenarios.load("sidi_rezegh")
+    final, record = runner.play(scenario, GMAP, {"axis": players.DoNothing(GMAP),
+                                                 "cw": opponent(GMAP)}, seed=1941)
+    assert final["result"]["mission"]["checks"]["cw"]["complete"]
+    assert final["result"]["winner"] == "cw"
+    fourth = {o["unit"]: o for o in record[3]["cw"]["orders"]}
+    assert fourth[310] == {"unit": 310, "order": "attack", "to": [57, 11]}
+
+
+def test_commonwealth_scout_does_not_attack_a_visible_panzer_screen_alone():
+    scenario = scenarios.load("sidi_rezegh")
+    for axis, expected in ((players.DoNothing, "attack"), (players.ComputerEasy, "hold")):
+        state, _ = runner.play(scenario, GMAP, {"axis": axis(GMAP),
+                                               "cw": players.ComputerHard(GMAP)}, turns=1, seed=1941)
+        state = begin_turn(state, GMAP, scenario)
+        shown = V.view(state, GMAP, scenario, "cw")
+        given = players.ComputerHard(GMAP).orders(shown)
+        by_id = {o["unit"]: o for o in given["orders"]}
+        assert by_id[305]["order"] == expected
+        _, _, replies = orders.check(state, GMAP, "cw", given)
+        assert all(reply["ok"] for reply in replies)
 
 
 def test_difficulty_levels_make_distinct_orders_from_the_same_axis_view():
@@ -66,8 +144,10 @@ def test_difficulty_levels_make_distinct_orders_from_the_same_axis_view():
     orders = [cls(GMAP).orders(shown) for cls in
               (players.ComputerEasy, players.ComputerOpponent, players.ComputerHard)]
     assert shown == snapshot
-    assert len({str(given) for given in orders}) == 3
+    assert len({str(given) for given in orders}) >= 2
     for given in orders:
+        blockade = next(order for order in given["orders"] if order["unit"] == 106)
+        assert blockade["order"] in ("hold", "dig_in")
         _, replies = finish_turn(state, GMAP, scenario, {"axis": given, "cw": {"orders": [], "air": "recon"}})
         assert all(reply["ok"] for reply in replies["axis"])
 
@@ -154,10 +234,20 @@ def test_coordinator_keeps_two_valuable_attacks_when_objective_is_already_well_a
     assert all(reply["ok"] for reply in replies["cw"])
 
 
-def test_coordinator_preserves_a_needed_second_attack_but_recruits_it_when_safe():
+def test_coordinator_preserves_a_needed_second_attack_after_the_sidi_pass_change():
+    class PointsBaseline(ComputerHardBaseline):
+        mission_enabled = False
+        use_road_march = False
+
+    class PointsHardNoTravel(ComputerHardPoints):
+        use_road_march = False
+
+    class PointsNoTravel(ComputerPoints):
+        use_road_march = False
+
     scenario = scenarios.load("sidi_rezegh")
     state = S.new_game(scenario, GMAP, 1941)
-    axis, cw = ComputerHardCoordinated(GMAP), players.ComputerOpponent(GMAP)
+    axis, cw = PointsHardNoTravel(GMAP), PointsNoTravel(GMAP)
     for _ in range(2):
         state = begin_turn(state, GMAP, scenario)
         state, _ = finish_turn(state, GMAP, scenario, {
@@ -165,14 +255,14 @@ def test_coordinator_preserves_a_needed_second_attack_but_recruits_it_when_safe(
             "cw": cw.orders(V.view(state, GMAP, scenario, "cw"))})
     state = begin_turn(state, GMAP, scenario)
     shown = V.view(state, GMAP, scenario, "axis")
-    baseline = ComputerHardBaseline(GMAP).orders(shown)
+    baseline = PointsBaseline(GMAP).orders(shown)
     candidate = axis.orders(shown)
     assert next(o for o in baseline["orders"] if o["unit"] == 120) == {
         "unit": 120, "order": "attack", "to": [56, 14]}
     assert next(o for o in candidate["orders"] if o["unit"] == 120) == {
         "unit": 120, "order": "attack", "to": [56, 14]}
-    # When the visible defenders of the old target are weak, its remaining
-    # attacker can handle that fight and group 120 can help at Sidi Rezegh.
+    # The new pass changes the battle position: even a weaker defender at
+    # [56,14] does not make lending group 120 to Sidi Rezegh worthwhile.
     weakened = deepcopy(shown)
     for enemy in weakened["enemy"]:
         if enemy["hex"] == [56, 14]:
@@ -180,9 +270,9 @@ def test_coordinator_preserves_a_needed_second_attack_but_recruits_it_when_safe(
     snapshot = deepcopy(weakened)
     proposal = coordinate(GMAP, weakened, deepcopy(baseline), parties(weakened))
     assert next(o for o in proposal["orders"] if o["unit"] == 120) == {
-        "unit": 120, "order": "attack", "to": [56, 13]}
-    assert next(o for o in players.ComputerHard(GMAP).orders(weakened)["orders"] if o["unit"] == 120) == {
-        "unit": 120, "order": "attack", "to": [56, 13]}
+        "unit": 120, "order": "attack", "to": [56, 14]}
+    assert next(o for o in PointsHardNoTravel(GMAP).orders(weakened)["orders"] if o["unit"] == 120) == {
+        "unit": 120, "order": "attack", "to": [56, 14]}
     assert next(o for o in baseline["orders"] if o["unit"] == 120)["to"] == [56, 14]
     assert weakened == snapshot
     _, replies = finish_turn(state, GMAP, scenario, {"axis": proposal, "cw": {"orders": [], "air": "recon"}})

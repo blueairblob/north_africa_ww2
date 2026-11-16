@@ -1,0 +1,37 @@
+{
+  "base": "egyptian_retreat_1942",
+  "id": "first_alamein_1942",
+  "research_next": "august_buildup_1942",
+  "name": "First Alamein: 1 July–1 August 1942 (linked research)",
+  "campaign_only": true,
+  "start": "1942-07-01",
+  "turn_days": 1,
+  "turns": 32,
+  "aim": {
+    "cw": "Hold the Alamein line and Alexandria, blunt Axis armour and use available reserves for local counterattacks without sacrificing the whole army.",
+    "axis": "Find a way through the Alamein defence toward Alexandria, or hold and rebuild if fuel and armour cannot support an attack."
+  },
+  "about": "Linked First Alamein trial with one 1 August aftermath turn to keep a contiguous two-day August chapter. The 9th Australian Division historically joined the line on 4 July. Previously withdrawn Australian formations return with their same IDs if they survived; destroyed units are not resurrected and units still active elsewhere are not duplicated. The 20th Brigade remnant, if withdrawn, is reconstituted at an estimated 3,000 men on return. No historical breakthrough or withdrawal is imposed.",
+  "withdrawals": [],
+  "replacements": [],
+  "returns": [
+    {"date": "1942-07-04", "unit": 350, "entry": "Alexandria", "src": "A42", "note": "9th Australian Division HQ returns if it was withdrawn from Tobruk and survived."},
+    {"date": "1942-07-04", "unit": 351, "entry": "Alexandria", "src": "A42", "return_as": {"name": "20th Australian Infantry Brigade", "men": 3000, "size": 2}, "note": "20th Brigade returns if withdrawn. A 2/13th remnant is reconstituted to the brigade identity; 3,000 men are an estimate."},
+    {"date": "1942-07-04", "unit": 352, "entry": "Alexandria", "src": "A42", "note": "24th Australian Brigade returns if withdrawn and surviving."},
+    {"date": "1942-07-04", "unit": 353, "entry": "Alexandria", "src": "A42", "note": "26th Australian Brigade returns if withdrawn and surviving."}
+  ],
+  "port_access": [{"port": "Benghazi", "side": "cw", "date": "1942-07-01", "pct": 0, "src": "R2"}],
+  "mission": {
+    "routes": {},
+    "cw": {
+      "orders": [{"verb": "hold", "place": "El Alamein"}, {"verb": "hold", "place": "Alexandria"}],
+      "success_grade": "major",
+      "commendations": [{"title": "Matruh recovered", "order": {"verb": "hold", "place": "Mersa Matruh"}}]
+    },
+    "axis": {
+      "orders": [{"verb": "hold", "place": "El Alamein"}],
+      "success_grade": "major",
+      "commendations": [{"title": "Alexandria approached", "order": {"verb": "reach", "place": "Alexandria"}}]
+    }
+  }
+}

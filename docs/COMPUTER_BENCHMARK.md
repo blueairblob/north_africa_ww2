@@ -10,9 +10,28 @@ Examples from the repository root:
 ```
 
 `baseline` is Hard before coordinated attack planning; `unrestricted` is the previous Hard raid policy before the moving-HQ dump cost check; `pre-flank` disables the desert raid. `tactical` is the experimental local attack filter and remains benchmark-only. `coordinated` and `hard` select the playable coordinated Hard policy.
-These policy variants isolate the choices studied in this revision. Future changes to the shared planner should be compared against a fixed Git revision as well as these variants.
+`points-standard` and `points-hard` disable mission-aware decisions in the otherwise current Standard and Hard policies. Use them to isolate mission planning from other rule changes. Future changes to the shared planner should also be compared against a fixed Git revision.
+
+## High Command mission planning, 31 October 2026
+
+The playable levels now read their side's public High Command orders. They target required places, attack *visible* blockers on a clear route, occupy a deny route and keep a fighting formation on each held mission target. Hard no longer diverts the Commonwealth from the Sidi Rezegh relief mission to guard secondary Tobruk points; an explicit hold order still protects its named place. No policy sees hidden enemy positions. A place's point ownership alone does not satisfy an occupy order: the AI must leave a formation there.
+
+Paired Sidi Rezegh runs use seeds `0 1 65 1941 2026`, both sides, and the same opponent for each policy pair. The table counts completed own missions and reports mean candidate margin relative to the point-only policy. Five seeds are a regression sample, not a difficulty ranking.
+
+| Candidate | Opponent | Axis mission | CW mission | Mean Axis Δmargin | Mean CW Δmargin |
+| --- | --- | ---: | ---: | ---: | ---: |
+| Standard | Passive | 5→5 | 1→5 | +4.0 | −26.4 |
+| Standard | Point-only Standard | 5→5 | 0→0 | +96.8 | −2.4 |
+| Hard | Passive | 5→5 | 0→5 | 0.0 | +169.0 |
+| Hard | Point-only Standard | 5→5 | 0→0 | −13.0 | +31.2 |
+
+All candidate orders in these runs were legal. The lower Commonwealth point margin against a passive Axis under Standard is secondary to the now completed High Command mission, which determines the short scenario's verdict. Against an active point-only Axis, neither Commonwealth level completed all three orders in these five starts. Hard's Axis point margin varied from −57 to +67 across that pairing. Further work should improve the joint attack on Sidi Rezegh and Belhamed and test against human opponents before claiming stronger active play.
+
+Against the playable Standard Axis, mission-aware Hard Commonwealth also completed 0/5 relief missions and averaged −118.4 point margin relative to point-only Hard; mission-aware Hard Axis kept its blockade at 5/5 but averaged −48.4 margin. This is an active-opponent regression in secondary points without an increase in mission completion. The mission-first rule is retained for the review build because it follows the stated orders, but the attacking policy needs a stronger joint battle plan. In Crusader, three seeds (`0 65 1941`) against point-only Standard were unchanged for both Hard sides, with no invalid orders.
 
 ## Initial findings
+
+The following tactical, coordination and raid findings predate executable mission orders. Their numerical results describe that earlier policy and victory rules; use the mission-planning section above for current comparisons.
 
 The first tactical filter estimates visible defenders by counter type and strength word, checks the attackers' stores, and holds or withdraws groups when an adjacent attack looks poor. It changed several decisions that looked sensible locally, such as a single Commonwealth brigade attacking a defended hex near Tobruk. However, the paired five-seed Sidi Rezegh tests showed material regressions:
 

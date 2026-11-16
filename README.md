@@ -10,6 +10,7 @@ real tempo of a desert battle and, above all, the real supply problem.
   every constant named and its source given.
 - **`docs/COUNTERS.md`** — hex and counter sizes, and notes on counter art.
 - **`docs/SOURCES.md`** — where the map, the orders of battle and every date come from.
+- **`docs/HISTORICAL_STORY.md`** — sourced pre/post context for 33 campaign chapters and 20 battles or operations, with nine credited archival period photographs and a review copy.
 - **`docs/MAP.md`** — how the map is generated, and its known limitations.
 - **`docs/CLEAN_ROOM.md`** — what this project may and may not use.
 - **`PLAN.md`** — the owner's decisions by date, and the plan for later.
@@ -23,6 +24,35 @@ core** on Operation Crusader and on a short scenario cut from it, and the
 **pygame screen**, played by two people at one screen or against a deterministic
 computer opponent. The opponent is a first playable version; its decisions and
 the scenario balance still need playtesting.
+
+## First Windows review build
+
+The portable review ZIP is `dist/Benghazi-Handicap-Windows-Review.zip` after running
+`scripts/build_review.ps1` on Windows. On this development PC it is at
+`D:\dev\PROJECTS\benghazi-handicap\dist\Benghazi-Handicap-Windows-Review.zip`.
+Extract the whole ZIP and double-click **Benghazi Handicap.exe**. The main menu
+offers New battle, Campaign research trial, Continue, How to play, Options and Quit;
+New campaign is reserved for the historically reviewed full campaign.
+New battle offers Sidi Rezegh and Operation Crusader. The research trial starts
+on 1 September 1940 and continues through the Italian invasion, Compass, the
+Cyrenaica battles, Tobruk, Crusader, Gazala, the Alamein battles and the November pursuit to 30 November 1942. The played research path keeps its own Crusader chapter; the separate Operation Crusader battle is an independent historical start. The trial is labelled as estimated and remains
+separate from reviewed battles. Choose who commands each side; Escape opens
+the game menu during play. In a one-human research campaign, F6 or Game > Advance 5 turns
+resolves up to five ordinary turns with standing orders and an autosave after each;
+it stops for contact, arrivals, combat, changed control, mission progress, an ended order or
+a change in a formation's strength, supply or status. New battle also offers experimental Malta/sea-delivery
+assumptions. The campaign estimate is the default. Less or more interdiction changes Axis sea delivery by 15 percentage points; it is a simplified sensitivity test, not a historical Malta invasion simulation. Travel follows roads and tracks faster than ordinary movement but exposes a formation if it is attacked. Computer commanders now use safe Travel legs toward distant objectives.
+Layers > Mission (F2) displays the executable High Command orders and marks the
+required places and routes in green. In Sidi Rezegh, the relief corridor must
+be clear and both Sidi Rezegh and Belhamed occupied for a Commonwealth victory.
+The executable uses no installed Python and writes saves, screenshots, logs
+and preferences under `%LOCALAPPDATA%\Benghazi Handicap\`. Options shows that
+path and has an **Open Game Files** button to launch Windows Explorer. The ZIP includes
+`READ ME FIRST.txt` for reviewers. This is a playtest build; the scenario and
+computer balance remain open. The build plan and checks are in
+[docs/REVIEW_RELEASE_PLAN.md](docs/REVIEW_RELEASE_PLAN.md).
+
+To rebuild it on this machine, run `powershell.exe -NoProfile -ExecutionPolicy Bypass -File 'D:\dev\PROJECTS\benghazi-handicap\scripts\build_review.ps1'` from WSL, or run the PowerShell script directly from Windows. The script creates an isolated Windows Python environment in `.venv-review-win`, bundles only the game assets, smoke-tests the packaged menu and map, and writes the ZIP. The GitHub Actions workflow `Windows review build` can run on demand or for a `review-*` tag and uploads the same ZIP as an artifact.
 
 ## The engine
 
@@ -65,7 +95,8 @@ six orders, the supply overlay and the zones overlay.
 .venv/bin/python -m screen --load saves/FILE.json    # go on with that one
 ```
 
-An interactive launch opens on a title card over the map. Click **Continue
+Running `.venv/bin/python -m screen` without arguments opens the review menu.
+An explicit scenario launch opens on a title card over the map. Click **Continue
 to map** or press Enter/Space to begin; the window's X closes the game.
 The same hex emblem appears on the title and in the window icon.
 In computer versus computer mode, turns run automatically and each turn's

@@ -1,0 +1,38 @@
+{
+  "base": "battleaxe_frontier",
+  "id": "frontier_stalemate_1941",
+  "research_next": "tobruk_relief_1941",
+  "name": "Frontier stalemate: 18 June–31 July 1941 (linked research)",
+  "campaign_only": true,
+  "start": "1941-06-18",
+  "turn_days": 2,
+  "turns": 22,
+  "port_access": [
+    {"port": "Benghazi", "side": "cw", "date": "1941-06-18", "pct": 0, "src": "R2"}
+  ],
+  "aim": {
+    "cw": "Defend Egypt and retain or recover the Sollum frontier foothold. Refit, train and build supply for a later offensive; attack sooner only if the played position warrants it.",
+    "axis": "Retain or recover Bardia and protect the Benghazi supply route. Contain Tobruk if it remains a Commonwealth-held enclave; conserve armour and stores for later operations."
+  },
+  "about": "Linked open-play interval after Battleaxe. The UK official history describes stalemate, disputed offensive timing, armour repair and training needs, and Axis supply difficulty during this period (The Mediterranean and Middle East, vol. II, chapter XIII). The specific place-holding orders are game-scale interpretations, not a transcription of a historical directive. Earlier owners and placements inherited from Battleaxe are checker placeholders; a played campaign keeps its actual position. Workshop refit and conditional Tobruk garrison rotation are not yet modelled.",
+  "mission": {
+    "routes": {},
+    "cw": {
+      "orders": [
+        {"verb": "hold", "place": "Mersa Matruh"},
+        {"verb": "hold", "place": "Sollum"}
+      ],
+      "success_grade": "major",
+      "commendations": [
+        {"title": "Halfaya frontier secured", "order": {"verb": "hold", "place": "Halfaya Pass"}}
+      ]
+    },
+    "axis": {
+      "orders": [
+        {"verb": "hold", "place": "Bardia"},
+        {"verb": "hold", "place": "Benghazi"}
+      ],
+      "success_grade": "major"
+    }
+  }
+}

@@ -19,15 +19,16 @@ GONE = {"unit.status", "unit.hex", "unit.steps", "unit.fuel", "unit.stores", "un
 CAPTURE = {"places", "ports", "forts"}
 MAY_CHANGE = {                                       # what each phase may change (5.1)
     "weather": {"weather"},
-    "supply": {"ports", "tripoli", "unit.dump", "unit.fuel", "unit.stores", "unit.out_of_stores", "unit.group",
+    "supply": {"ports", "tripoli", "forts", "fort_work", "unit.dump", "unit.fuel", "unit.stores", "unit.out_of_stores", "unit.group",
                "unit.traced", "unit.cohesion", "unit.ceiling"} | GONE,
     "orders": {"unit.group"},
     "air": {"sides.air", "sides.interdiction", "sides.recon"},
     "movement": {"unit.hex", "unit.fuel", "unit.cohesion", "unit.stationary", "unit.dump", "unit.group"} | CAPTURE,
     "combat": {"unit.cohesion", "unit.stationary"} | GONE | CAPTURE,
-    "recovery": {"unit.steps", "unit.cohesion", "unit.stores", "forts"},
-    "reinforcement": {"unit.stationary", "forts"} | GONE - {"sides.vp", "sides.kills"},
-    "victory": {"sides.vp", "turn", "over", "result"},
+    "recovery": {"unit.steps", "unit.cohesion", "unit.stores", "forts", "fort_work"},
+    "reinforcement": {"unit.stationary", "unit.name", "unit.size", "unit.max", "unit.real", "forts", "fort_work"}
+                     | GONE - {"sides.vp", "sides.kills"},
+    "victory": {"sides.vp", "turn", "over", "result", "mission_reached"},
 }
 
 
@@ -53,7 +54,8 @@ def group_orders(state, orders):
 
 def changed(before, after):
     """The names of the parts of the state that differ (invariant I-18)."""
-    out = {k for k in after if k not in ("units", "sides") and before[k] != after[k]}
+    out = {k for k in before.keys() | after.keys() if k not in ("units", "sides")
+           and (k not in before or k not in after or before[k] != after[k])}
     for a, b in zip(before["units"], after["units"]):
         out |= {f"unit.{k}" for k in b if a[k] != b[k]}
     for side in S.SIDES:
@@ -98,9 +100,9 @@ def finish_turn(state, gmap, scenario, submissions, audit=None):
 
     run("orders", take_orders, state, audit)                                     # phase 2
     run("air", lambda: air_phase(state, scenario, ctx), state, audit)            # phase 3
-    run("movement", lambda: movement_phase(state, gmap, ctx), state, audit)      # phase 4
+    run("movement", lambda: movement_phase(state, gmap, ctx, scenario), state, audit)  # phase 4
     run("combat", lambda: combat_phase(state, gmap, ctx), state, audit)          # phase 5
-    run("recovery", lambda: recovery_phase(state, ctx), state, audit)            # phase 6
+    run("recovery", lambda: recovery_phase(state, ctx, scenario), state, audit)  # phase 6
     run("reinforcement", lambda: reinforcement_phase(state, gmap, scenario), state, audit)   # phase 7
-    run("victory", lambda: victory_phase(state, scenario), state, audit)         # phase 8
+    run("victory", lambda: victory_phase(state, scenario, gmap), state, audit)   # phase 8
     return state, replies

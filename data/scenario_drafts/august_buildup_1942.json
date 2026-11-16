@@ -1,0 +1,31 @@
+{
+  "base": "first_alamein_1942",
+  "id": "august_buildup_1942",
+  "research_next": "alam_halfa_1942",
+  "name": "Alamein summer positions: 2–29 August 1942 (linked research)",
+  "campaign_only": true,
+  "start": "1942-08-02",
+  "turn_days": 2,
+  "turns": 14,
+  "aim": {
+    "cw": "Strengthen the Alamein line and conserve armour and supply for the next battle. Maintain control of Alexandria.",
+    "axis": "Rebuild the mobile force, protect the supply route and look for an opening south of the Alamein position."
+  },
+  "about": "Linked two-day summer preparation. The historical Axis attack began 30 August, but the played army may attack earlier or remain on the defensive. No new tank stock, mine gardens or fixed fortifications are inserted; the current repair and construction rules remain limited. Exact August unit strengths and supply are not validated.",
+  "withdrawals": [],
+  "replacements": [],
+  "port_access": [{"port": "Benghazi", "side": "cw", "date": "1942-08-02", "pct": 0, "src": "R2"}],
+  "mission": {
+    "routes": {},
+    "cw": {
+      "orders": [{"verb": "hold", "place": "El Alamein"}, {"verb": "hold", "place": "Alexandria"}],
+      "success_grade": "tactical",
+      "commendations": [{"title": "Alam Halfa ridge held", "order": {"verb": "hold", "place": "Alam Halfa"}}]
+    },
+    "axis": {
+      "orders": [{"verb": "hold", "place": "Tobruk"}],
+      "success_grade": "tactical",
+      "commendations": [{"title": "Alamein threatened", "order": {"verb": "reach", "place": "El Alamein"}}]
+    }
+  }
+}

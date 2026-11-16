@@ -1,11 +1,25 @@
 {
   "id": "sidi_rezegh",
   "base": "crusader",
+  "mission": {
+    "routes": {
+      "Tobruk relief corridor": {
+        "terrain": "corridor", "from": "Sidi Rezegh", "via": ["Belhamed"], "to": "Tobruk",
+        "hexes": [[56, 13], [57, 12], [57, 11], [56, 11], [55, 10]]
+      }
+    },
+    "cw": {"orders": [
+      {"verb": "hold", "place": "Sidi Rezegh"},
+      {"verb": "hold", "place": "Belhamed"},
+      {"verb": "clear", "route": "Tobruk relief corridor"}
+    ], "success_grade": "major"},
+    "axis": {"orders": [{"verb": "deny", "route": "Tobruk relief corridor"}], "success_grade": "tactical"}
+  },
   "name": "Sidi Rezegh",
-  "about": "The road to Tobruk, 18 to 27 November 1941: the first ten days of Operation Crusader, in five turns. The Commonwealth is to open the road into Tobruk through Sidi Rezegh and Belhamed and to have it open on the evening of the 27th; the Axis is to keep it shut. On the night of 26 to 27 November 1941 the New Zealand Division and the garrison of Tobruk met at Ed Duda, between the two (W. E. Murphy, The Relief of Tobruk, ch. 15). Ed Duda is not a place on this map: Belhamed stands for the join. The units, their strengths, the map and the supply are Operation Crusader's, with what falls after the 27th left out. The points are set so that one of Sidi Rezegh and Belhamed held at the end is a tactical victory, both a major one, and both with El Adem a decisive one, before losses are counted; they are first guesses, to be tuned.",
+  "about": "The road to Tobruk, 18 to 27 November 1941: the first ten days of Operation Crusader, in five turns. The Commonwealth must occupy Sidi Rezegh and Belhamed and clear the modeled relief corridor to Tobruk; the Axis must block it. On the night of 26 to 27 November 1941 the New Zealand Division and the garrison of Tobruk met at Ed Duda, between the two (W. E. Murphy, The Relief of Tobruk, ch. 15). Ed Duda is not a place on this map: Belhamed stands for the join. The green mission corridor is a scenario abstraction, not a claim that every highlighted hex is a historical road. The units, their strengths, the map and the supply are Operation Crusader's, with what falls after the 27th left out. Victory points measure secondary progress; completing the High Command orders decides this short scenario.",
   "aim": {
-    "cw": "Open the road into Tobruk: hold Sidi Rezegh and Belhamed on the evening of 27 November.",
-    "axis": "Keep Tobruk shut in: hold Sidi Rezegh and Belhamed on the evening of 27 November."
+    "cw": "Open the Tobruk relief corridor: occupy Sidi Rezegh and Belhamed and clear the marked route of Axis units by the end.",
+    "axis": "Keep Tobruk shut in: block the Commonwealth relief corridor through Sidi Rezegh and Belhamed."
   },
   "turns": 5,
   "objectives": [

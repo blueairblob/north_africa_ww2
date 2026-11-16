@@ -1,0 +1,32 @@
+{
+  "base": "italian_invasion_1940",
+  "id": "italian_camps_1940",
+  "research_next": "compass_opening",
+  "name": "Egyptian frontier camps: 18 September–8 December 1940 (linked research)",
+  "campaign_only": true,
+  "start": "1940-09-18",
+  "turn_days": 2,
+  "turns": 41,
+  "par": -453,
+  "aim": {
+    "cw": "Protect Mersa Matruh, observe the Italian camps and build strength for a counterstroke. An earlier attack is possible if the played position permits it.",
+    "axis": "Hold the forward Egyptian position and keep the road from the frontier usable for supply. An advance on Matruh remains possible if the played force can support it."
+  },
+  "about": "Linked two-day preparation turns from the historical halt at Sidi Barrani to the eve of the Compass opening. The British official history describes the Italian road and water difficulties and the Commonwealth's preparation of a counterstroke. 7th RTR reaches Egypt on 24 September, entering at Alexandria as a map proxy. This trial has neither a dated water pipeline nor a fixed camp-building schedule; players must dig and supply their own positions. An earlier attack or retreat is allowed. All casualties and holdings pass to Compass unchanged.",
+  "add_units": [
+    {"id": 306, "side": "cw", "name": "7th Royal Tank Regiment", "type": "armour", "counter_art": "matilda", "size": 1, "tanks": 50, "src": "W", "arrives": "1940-09-24", "arrives_src": "RTR40", "entry": "Alexandria", "arrives_note": "Regiment and Matilda tanks reached Port Said 24 September; Alexandria is a map entry proxy and initial field readiness is estimated."}
+  ],
+  "mission": {
+    "routes": {},
+    "cw": {
+      "orders": [{"verb": "hold", "place": "Mersa Matruh"}],
+      "success_grade": "tactical",
+      "commendations": [{"title": "Frontier restored", "order": {"verb": "hold", "place": "Sollum"}}]
+    },
+    "axis": {
+      "orders": [{"verb": "hold", "place": "Sidi Barrani"}, {"verb": "hold", "place": "Bardia"}],
+      "success_grade": "major",
+      "commendations": [{"title": "Matruh approached", "order": {"verb": "reach", "place": "Mersa Matruh"}}]
+    }
+  }
+}

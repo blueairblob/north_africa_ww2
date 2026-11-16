@@ -1,0 +1,39 @@
+{
+  "base": "alam_halfa_1942",
+  "sources": {
+    "M42": "Montgomery, Alamein operations despatch, London Gazette 38196: on 14 September 1942, 44th Division relieved the New Zealanders and 10th Armoured Division entered X Corps' rear training concentration; X Corps was the armoured exploitation command. Game strengths and exact map entries are estimates. https://www.ibiblio.org/hyperwar/UN/UK/LondonGazette/38196.pdf"
+  },
+  "id": "alamein_preparation_1942",
+  "research_next": "second_alamein_1942",
+  "name": "Alamein offensive preparation: 7 September–22 October 1942 (linked research)",
+  "campaign_only": true,
+  "start": "1942-09-07",
+  "turn_days": 2,
+  "turns": 23,
+  "aim": {
+    "cw": "Hold the Alamein line, assemble enough strength and supply for a deliberate offensive, then choose when and where to strike.",
+    "axis": "Keep the Alamein front intact, protect fuel and prepare reserves against a Commonwealth breakthrough."
+  },
+  "about": "Linked two-day preparation up to the eve of the historical 23 October offensive. The Commonwealth attack date does not prevent an earlier or different attack. The 44th Division, X Corps and 10th Armoured Division enter as aggregate counters on a model date aligned to their documented 14 September reorganisation; their strengths and entry points are estimates. The current rules allow digging and stockpiling but do not model the full mine belt, artillery ammunition plan, training or deception programme.",
+  "withdrawals": [],
+  "replacements": [],
+  "port_access": [{"port": "Benghazi", "side": "cw", "date": "1942-09-07", "pct": 0, "src": "R2"}],
+  "add_units": [
+    {"id": 474, "side": "cw", "name": "44th British Division group", "type": "foot", "size": 2, "men": 7000, "src": "M42", "arrives": "1942-09-14", "arrives_src": "M42", "entry": "El Alamein", "arrives_note": "44th Division relieved the New Zealand Division in the line around 14 September. This aggregate counter's 7,000 men and exact map entry are estimates."},
+    {"id": 475, "side": "cw", "name": "X Corps HQ", "type": "hq", "size": 1, "steps": 1, "src": "M42", "arrives": "1942-09-14", "arrives_src": "M42", "entry": "Alexandria", "arrives_note": "X Corps trained and re-equipped roughly 50 miles behind the Alamein line. The 14 September game entry at Alexandria is a map proxy, not its documented headquarters location."},
+    {"id": 476, "side": "cw", "name": "10th Armoured Division group", "type": "armour", "size": 2, "tanks": 180, "src": "M42", "arrives": "1942-09-14", "arrives_src": "M42", "entry": "Alexandria", "arrives_note": "10th Armoured Division joined X Corps' rear training concentration on 14 September. This aggregate counter's 180 serviceable tanks and Alexandria entry are estimates."}
+  ],
+  "mission": {
+    "routes": {},
+    "cw": {
+      "orders": [{"verb": "hold", "place": "El Alamein"}, {"verb": "hold", "place": "Alexandria"}],
+      "success_grade": "tactical",
+      "commendations": [{"title": "Western approach gained", "order": {"verb": "reach", "place": "El Daba"}}]
+    },
+    "axis": {
+      "orders": [{"verb": "hold", "place": "Fuka"}],
+      "success_grade": "tactical",
+      "commendations": [{"title": "Alamein line pressed", "order": {"verb": "reach", "place": "El Alamein"}}]
+    }
+  }
+}

@@ -51,6 +51,15 @@ def check(state, gmap):
         h = tuple(int(x) for x in key.split(","))
         if not 1 <= level <= FORT_MAX or any(u["side"] != owner for u in there.get(h, [])):
             bad.append(f"I-13 fortification at {key}: level {level}, {owner}")
+    for key, work in state.get("fort_work", {}).items():
+        try:
+            h = tuple(int(x) for x in key.split(","))
+        except (TypeError, ValueError):
+            bad.append(f"I-13 fort work at {key}: invalid hex")
+            continue
+        if (len(h) != 2 or not isinstance(work, list) or len(work) != 2 or work[0] not in S.SIDES
+                or work[1] != 1 or not any(u["side"] == work[0] for u in there.get(h, []))):
+            bad.append(f"I-13 fort work at {key}: {work}")
     if any(owner not in S.SIDES for owner in state["places"].values()) or set(state["places"]) != set(gmap.places):
         bad.append("I-14 a place without one owner")
     return bad

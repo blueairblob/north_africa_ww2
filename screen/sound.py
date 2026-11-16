@@ -57,7 +57,7 @@ def fire(arm, ms):
 
 class Sounds:
     def __init__(self):
-        self.made, self.ok = {}, False
+        self.made, self.ok, self.muted = {}, False, False
         try:
             import pygame
             pygame.mixer.init(RATE, -16, 1, 512)
@@ -78,7 +78,7 @@ class Sounds:
         return wave(160, 18, "noise", 0.08)             # the tick of a column on the move
 
     def play(self, name, amount=0):
-        if not self.ok:
+        if not self.ok or self.muted:
             return
         if (name, amount) not in self.made:
             self.made[name, amount] = self.mixer.Sound(buffer=self.samples(name, amount).tobytes())

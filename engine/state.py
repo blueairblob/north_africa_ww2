@@ -17,10 +17,15 @@ def priority_side(turn):
     return "axis" if turn % 2 else "cw"                         # 1.6
 
 
+def turn_days(scenario):
+    """Days represented by one turn; older scenarios and saves used two."""
+    return scenario.get("turn_days", 2)
+
+
 def turn_of(scenario, day):
     """The turn a date belongs to (1.9)."""
     days = (date.fromisoformat(day) - date.fromisoformat(scenario["start"])).days
-    return max(1, days // 2 + 1)
+    return max(1, days // turn_days(scenario) + 1)
 
 
 def value_at(scenario, schedule, turn, default=0):
@@ -36,6 +41,20 @@ def side_value(scenario, side, name, turn, default=0):
     return value_at(scenario, scenario["sides"][side].get(name, []), turn, default)
 
 
+def mission_baseline(state, scenario):
+    """The actual strength assigned to preservation orders at chapter entry."""
+    units = {u["id"]: u for u in state["units"]}
+    baseline = {}
+    for side in SIDES:
+        spec = scenario.get("mission", {}).get(side, {})
+        orders = [*spec.get("orders", []), *(a["order"] for a in spec.get("commendations", []))]
+        selected = {uid for order in orders
+                    if order.get("verb") == "preserve" for uid in order["units"]}
+        if selected:
+            baseline[side] = {str(uid): units[uid]["steps"] for uid in sorted(selected) if uid in units}
+    return baseline
+
+
 def new_game(scenario, gmap, seed=0):
     """The state at the start of turn 1. The seed is what the weather is drawn from; with
     none, every turn is clear (21.2)."""
@@ -46,12 +65,15 @@ def new_game(scenario, gmap, seed=0):
         "scenario": scenario["id"], "turn": 1, "over": False, "result": None,
         "seed": seed, "weather": "clear",
         "units": [], "places": {name: owner[name] for name in sorted(gmap.places)},
-        "ports": {name: {"condition": 100, "fuel": 0, "stores": 0} for _, name in gmap.ports},
+        "ports": {name: {"condition": 100, "fuel": 0, "stores": 0}
+                  for name in [*(name for _, name in gmap.ports), *scenario.get("landing_points", {})]},
         "tripoli": {"fuel": 0, "stores": 0, "pipeline": []},
         "forts": {}, "log": [],
         "sides": {s: dict({"vp": 0, "kills": 0, "air": "support", "interdiction": 0, "recon": 0},
                           **{t: 0 for t in TOTALS}) for s in SIDES},
     }
+    if turn_days(scenario) == 1:
+        state["fort_work"] = {}
     for name, stock in scenario.get("ports", {}).items():
         state["ports"][name].update(stock)
     state["tripoli"].update(scenario.get("tripoli", {}))
@@ -84,6 +106,9 @@ def new_game(scenario, gmap, seed=0):
                         u["group"] = members[0]["id"]
     for side in SIDES:
         state["sides"][side]["brought"] = holdings(state, side)
+    baseline = mission_baseline(state, scenario)
+    if baseline:
+        state["mission_baseline"] = baseline
     return state
 
 

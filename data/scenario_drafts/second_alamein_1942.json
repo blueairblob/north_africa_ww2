@@ -1,0 +1,30 @@
+{
+  "base": "alamein_preparation_1942",
+  "id": "second_alamein_1942",
+  "research_next": "november_pursuit_1942",
+  "name": "Second Alamein: 23 October–4 November 1942 (linked research)",
+  "campaign_only": true,
+  "start": "1942-10-23",
+  "turn_days": 1,
+  "turns": 13,
+  "aim": {
+    "cw": "Open a breach west of El Alamein while holding the Egyptian base, then exploit it without losing the mobile force.",
+    "axis": "Keep the Alamein defence coherent, deny a Commonwealth break-through and preserve an escape route if the line fails."
+  },
+  "about": "Linked daily trial for the historical offensive beginning on the night of 23 October and the Axis withdrawal from 3 November. The marked breach is one passable map hex west of El Alamein, not a measured minefield gap. No breakthrough, surrender, retreat or fixed tank balance is imposed. The map lacks the researched mine belt and the rules lack the full bombardment and engineer plan; the trial result cannot be treated as a historical battle reconstruction.",
+  "withdrawals": [],
+  "replacements": [],
+  "port_access": [{"port": "Benghazi", "side": "cw", "date": "1942-10-23", "pct": 0, "src": "R2"}],
+  "mission": {
+    "routes": {},
+    "cw": {
+      "orders": [{"verb": "hold", "place": "El Alamein"}, {"verb": "breach", "hex": [107, 23], "label": "the western Alamein line"}],
+      "success_grade": "major",
+      "commendations": [{"title": "El Daba reached", "order": {"verb": "reach", "place": "El Daba"}}]
+    },
+    "axis": {
+      "orders": [{"verb": "hold", "place": "El Daba"}, {"verb": "hold", "place": "Fuka"}],
+      "success_grade": "tactical"
+    }
+  }
+}

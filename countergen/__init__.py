@@ -14,6 +14,7 @@ LINE = 9                    # the outline, the same on every picture
 INK = "#2c2014"
 NATIONS = ("cw", "de", "it")
 KINDS = ("armour", "foot", "guns", "motorised", "recon", "hq")
+CUSTOM_SVG = {("cw", "hq"): os.path.join(os.path.dirname(__file__), "custom", "cw_hq.svg")}
 # plain colours, no camouflage and no markings: Commonwealth pale sand, German yellow-brown, Italian sand
 TONES = {"cw": {"base": "#d8c08a", "light": "#ead7a6", "shade": "#b39a62"},
          "de": {"base": "#b9954f", "light": "#cfae69", "shade": "#8f7038"},
@@ -280,6 +281,9 @@ def fitted(pic):
 
 def svg(nation, kind):
     """The picture as an SVG drawing, the same text every time."""
+    if (nation, kind) in CUSTOM_SVG:
+        with open(CUSTOM_SVG[nation, kind], encoding="utf-8") as source:
+            return source.read()
     tones = dict(COMMON, **TONES[nation])
     pic = Pic()
     DRAW[kind](pic, nation)

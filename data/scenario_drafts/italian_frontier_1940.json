@@ -1,0 +1,322 @@
+{
+  "base": "compass_opening",
+  "sources": {
+    "RTR40": "7th Royal Tank Regiment association history, 1940–1941: regiment and Matilda tanks sailed 21 August 1940 and reached Port Said 24 September. The game's Alexandria entry is a map-scale proxy, not its actual port of arrival. https://4and7royaltankregiment.com/1940-1941/",
+    "MED40": "British official history, The Mediterranean and Middle East, vol. I, chapter XI: 4th Blackshirt and 64th Catanzaro divisions were in reserve near Tobruk before the September advance; the 7th Armoured Division Support Group observed the Sollum–Fort Maddalena frontier line from 13 August. Exact 10 km hexes are game estimates. https://www.ibiblio.org/hyperwar/UN/UK/UK-Med-I/UK-Med-I-11.html"
+  },
+  "id": "italian_frontier_1940",
+  "research_next": "italian_invasion_1940",
+  "name": "Western Desert frontier: 1–12 September 1940 (research trial)",
+  "start": "1940-09-01",
+  "turn_days": 2,
+  "turns": 6,
+  "aim": {
+    "cw": "Screen the frontier, preserve the mobile force and hold Mersa Matruh if the Italian Tenth Army advances.",
+    "axis": "Prepare the frontier force and its supply for an advance into Egypt. You may attack before the historical date if ready."
+  },
+  "about": "Opening campaign research trial before the historical 13 September Italian advance. The December Compass roster is back-projected here to preserve unit identities across the campaign; September unit-level placements, strengths, stocks and camps are estimates, not a validated 1 September order of battle. The 4th Blackshirt and 64th Catanzaro divisions start as reserves near Tobruk; the 7th RTR is withheld until its documented 24 September arrival in Egypt. Italian troops begin west of the frontier and the Commonwealth retains Egypt. No historical advance is forced.",
+  "owners": {
+    "axis": [
+      "Acroma",
+      "Agedabia",
+      "Antelat",
+      "Augila",
+      "Barce",
+      "Bardia",
+      "Beda Fomm",
+      "Belhamed",
+      "Ben Gania",
+      "Benghazi",
+      "Bir Hakeim",
+      "Bir el Gubi",
+      "Cyrene",
+      "Derna",
+      "El Adem",
+      "El Agheila",
+      "Fort Capuzzo",
+      "Fort Maddalena",
+      "Gambut",
+      "Gazala",
+      "Gicherra",
+      "Jarabub",
+      "Knightsbridge",
+      "Maaten el Grara",
+      "Marada",
+      "Martuba",
+      "Mechili",
+      "Mersa Brega",
+      "Msus",
+      "Sceleidima",
+      "Sidi Omar",
+      "Sidi Rezegh",
+      "Soluch",
+      "Tengeder",
+      "Tmimi",
+      "Tobruk",
+      "Tocra"
+    ],
+    "cw": [
+      "Alam Halfa",
+      "Alexandria",
+      "Bir Rabia",
+      "Buq Buq",
+      "El Alamein",
+      "El Daba",
+      "Fuka",
+      "Halfaya Pass",
+      "Maktila",
+      "Mersa Matruh",
+      "Misheifa",
+      "Nibeiwa",
+      "Sidi Barrani",
+      "Siwa",
+      "Sofafi",
+      "Sollum"
+    ]
+  },
+  "sides": {
+    "axis": {
+      "lift": [
+        [
+          "1940-09-01",
+          150000
+        ]
+      ],
+      "air": [
+        [
+          "1940-09-01",
+          1
+        ]
+      ],
+      "sea_pct": [
+        [
+          "1940-09-01",
+          70
+        ]
+      ],
+      "fuel_pct": [
+        [
+          "1940-09-01",
+          50
+        ]
+      ]
+    },
+    "cw": {
+      "lift": [
+        [
+          "1940-09-01",
+          200000
+        ]
+      ],
+      "air": [
+        [
+          "1940-09-01",
+          2
+        ]
+      ],
+      "railhead": [
+        [
+          "1940-09-01",
+          "Mersa Matruh"
+        ]
+      ]
+    }
+  },
+  "forts": [
+    [
+      67,
+      13,
+      3,
+      "axis"
+    ],
+    [
+      66,
+      13,
+      2,
+      "axis"
+    ],
+    [
+      67,
+      14,
+      2,
+      "axis"
+    ],
+    [
+      55,
+      10,
+      3,
+      "axis"
+    ],
+    [
+      56,
+      11,
+      2,
+      "axis"
+    ]
+  ],
+  "unit_updates": {
+    "101": {
+      "at": "Bardia"
+    },
+    "110": {
+      "at": "Fort Capuzzo"
+    },
+    "111": {
+      "at": "Fort Capuzzo"
+    },
+    "112": {
+      "at": "Fort Capuzzo"
+    },
+    "120": {
+      "hex": [
+        65,
+        17
+      ]
+    },
+    "130": {
+      "at": "Sidi Omar"
+    },
+    "140": {
+      "at": "Tobruk"
+    },
+    "149": {
+      "at": "Fort Capuzzo"
+    },
+    "150": {
+      "at": "Fort Capuzzo"
+    },
+    "151": {
+      "at": "Fort Capuzzo"
+    },
+    "160": {
+      "hex": [
+        66,
+        14
+      ]
+    },
+    "170": {
+      "hex": [
+        56,
+        12
+      ]
+    },
+    "301": {
+      "hex": [
+        89,
+        18
+      ]
+    },
+    "302": {
+      "hex": [
+        88,
+        19
+      ]
+    },
+    "303": {
+      "hex": [
+        88,
+        19
+      ]
+    },
+    "304": {
+      "hex": [
+        88,
+        19
+      ]
+    },
+    "305": {
+      "hex": [
+        87,
+        18
+      ]
+    },
+    "306": {
+      "arrives": "1940-09-24",
+      "arrives_src": "RTR40",
+      "entry": "Alexandria",
+      "arrives_note": "Regiment reached Port Said on 24 September; Alexandria is the nearest game entry on this map. Initial field readiness is estimated."
+    },
+    "307": {
+      "hex": [
+        88,
+        19
+      ]
+    },
+    "310": {
+      "hex": [
+        84,
+        18
+      ]
+    },
+    "311": {
+      "hex": [
+        84,
+        18
+      ]
+    },
+    "312": {
+      "hex": [
+        68,
+        16
+      ]
+    },
+    "313": {
+      "hex": [
+        82,
+        17
+      ]
+    },
+    "314": {
+      "hex": [
+        69,
+        17
+      ]
+    },
+    "320": {
+      "hex": [
+        91,
+        18
+      ]
+    }
+  },
+  "mission": {
+    "routes": {},
+    "cw": {
+      "orders": [
+        {
+          "verb": "hold",
+          "place": "Mersa Matruh"
+        }
+      ],
+      "success_grade": "tactical",
+      "commendations": [
+        {
+          "title": "Frontier screen",
+          "order": {
+            "verb": "hold",
+            "place": "Sollum"
+          }
+        }
+      ]
+    },
+    "axis": {
+      "orders": [
+        {
+          "verb": "hold",
+          "place": "Bardia"
+        }
+      ],
+      "success_grade": "tactical",
+      "commendations": [
+        {
+          "title": "Early advance",
+          "order": {
+            "verb": "reach",
+            "place": "Sollum"
+          }
+        }
+      ]
+    }
+  },
+  "par": -138
+}

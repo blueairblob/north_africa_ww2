@@ -29,28 +29,48 @@ MORALE_FALL = 10        # cohesion lost per turn above the ceiling
 KINDS = ("stores", "fuel")                                   # stores are settled first (6.5.4)
 
 
+def landing_sites(gmap, scenario):
+    """Permanent ports and scenario seaheads in stable map order."""
+    return sorted([*((h, name, PORT_CAP[name]) for h, name in gmap.ports),
+                   *((gmap.places[name]["hex"], name, cap)
+                     for name, cap in scenario.get("landing_points", {}).items())])
+
+
 def split(tonnes, fuel_pct):
     fuel = tonnes * fuel_pct // 100                           # 6.3.4
     return fuel, tonnes - fuel
 
 
+def port_access_pct(scenario, side, name, turn):
+    """Latest dated landing access for one side at one port."""
+    pct = 100
+    for event in scenario.get("port_access", []):
+        if event["side"] == side and event["port"] == name and S.turn_of(scenario, event["date"]) <= turn:
+            pct = event["pct"]
+    return pct
+
+
 def land(state, gmap, scenario):
     """Repair and landing (6.3)."""
-    turn = state["turn"]
-    for _, name in gmap.ports:
+    turn, days = state["turn"], S.turn_days(scenario)
+    for _, name, cap in landing_sites(gmap, scenario):
         port, owner = state["ports"][name], state["places"][name]
-        port["condition"] = min(100, port["condition"] + PORT_REPAIR)                         # 6.3.1
-        tonnes = PORT_CAP[name] * port["condition"] * S.side_value(scenario, owner, "sea_pct", turn, 100) // 10000
+        port["condition"] = min(100, port["condition"] + PORT_REPAIR * days // 2)             # 6.3.1
+        if scenario.get("landing_sides", {}).get(name, owner) != owner:
+            continue
+        tonnes = (cap * days * port["condition"] *
+                  S.side_value(scenario, owner, "sea_pct", turn, 100) *
+                  port_access_pct(scenario, owner, name, turn) // 2000000)
         fuel, stores = split(tonnes, S.side_value(scenario, owner, "fuel_pct", turn, 40))     # 6.3.2
         port["fuel"] += fuel
         port["stores"] += stores
         state["sides"][owner]["landed"] += tonnes                                             # 6.3.6
     tripoli = state["tripoli"]
-    while len(tripoli["pipeline"]) >= TRIPOLI_DELAY:                                          # 6.3.5
+    while len(tripoli["pipeline"]) >= TRIPOLI_DELAY * 2 // days:                              # 6.3.5
         fuel, stores = tripoli["pipeline"].pop(0)
         tripoli["fuel"] += fuel
         tripoli["stores"] += stores
-    tonnes = TRIPOLI_CAP * S.side_value(scenario, "axis", "sea_pct", turn, 100) // 100        # 6.3.3
+    tonnes = TRIPOLI_CAP * days * S.side_value(scenario, "axis", "sea_pct", turn, 100) // 200
     tripoli["pipeline"].append(list(split(tonnes, S.side_value(scenario, "axis", "fuel_pct", turn, 40))))
     state["sides"]["axis"]["landed"] += tonnes
 
@@ -86,7 +106,7 @@ def outlets(state, gmap, scenario, side, blocked):
         if head:
             out.append({"name": "railhead", "hex": head, "extra": 0, "rail": True,
                         "stock": state["ports"]["Alexandria"]})
-    for h, name in gmap.ports:
+    for h, name, _ in landing_sites(gmap, scenario):
         if state["places"][name] == side:
             out.append({"name": name, "hex": h, "extra": 0, "stock": state["ports"][name]})
     for o in out:
@@ -153,8 +173,9 @@ def distribute(state, gmap, scenario, side, audit):
     units = S.on_map(state, side)
     hqs = [u for u in units if U.is_hq(u)]
     hq_dist = {u["id"]: haul_distances(gmap, tuple(u["hex"]), blocked, REACH) for u in hqs}
-    pool = {"lift": S.side_value(scenario, side, "lift", state["turn"]) * (100 - totals["interdiction"]) // 100,
-            "rail": RAIL_CAP}                                 # 6.5.1
+    pool = {"lift": S.side_value(scenario, side, "lift", state["turn"]) * S.turn_days(scenario)
+                    * (100 - totals["interdiction"]) // 200,
+            "rail": RAIL_CAP * S.turn_days(scenario) // 2}   # 6.5.1
 
     depots = {}                                               # 6.6.2, 6.6.3
     for u in units:
@@ -223,10 +244,10 @@ def distribute(state, gmap, scenario, side, audit):
         audit.append(f"I-11 {side} units drew {totals['issued'] - before} from depots holding {on_hand}")
 
 
-def upkeep(state, gmap):
+def upkeep(state, gmap, scenario):
     """Upkeep, and what being out of stores does (6.9.1, 6.10.2)."""
     for u in S.on_map(state):
-        due = u["size"] * UPKEEP
+        due = u["size"] * UPKEEP * S.turn_days(scenario) // 2
         paid = min(due, u["stores"])
         u["stores"] -= paid
         state["sides"][u["side"]]["spent"] += paid
@@ -241,15 +262,24 @@ def upkeep(state, gmap):
                 if u["steps"] == 0:
                     B.destroy(state, u, "starved")
             else:
-                u["cohesion"] = max(0, u["cohesion"] - STARVE_COHESION)
+                u["cohesion"] = max(0, u["cohesion"] - STARVE_COHESION * S.turn_days(scenario) // 2)
     B.regroup(state)                                          # 20.2.8: a group that lost a unit closes up
     for u in S.on_map(state):                                 # 20.3.3
         if u["cohesion"] > u["ceiling"]:
-            u["cohesion"] = max(u["ceiling"], u["cohesion"] - MORALE_FALL)
+            u["cohesion"] = max(u["ceiling"], u["cohesion"] - MORALE_FALL * S.turn_days(scenario) // 2)
 
 
 def supply_phase(state, gmap, scenario, audit):
     land(state, gmap, scenario)
     for side in S.SIDES:
         distribute(state, gmap, scenario, side, audit)
-    upkeep(state, gmap)
+    upkeep(state, gmap, scenario)
+    # Starvation can remove the last worker before orders are taken this turn.
+    workers = {S.fort_key(tuple(u["hex"])) for u in S.on_map(state) if not U.is_hq(u)}
+    for key in list(state.get("fort_work", {})):
+        if key not in workers:
+            del state["fort_work"][key]
+    occupied = {S.fort_key(tuple(u["hex"])) for u in S.on_map(state)}
+    for key, (level, _) in list(state["forts"].items()):
+        if level == 1 and key not in occupied:
+            del state["forts"][key]

@@ -30,6 +30,17 @@ def test_tanks_lose_to_guns_and_beat_infantry_in_the_open():                    
         assert (battle["att"] > battle["def"]) == wins, kind
 
 
+def test_short_of_stores_halves_the_same_attack_before_losses():                 # 10.3, 10.4.2
+    defender = unit(101, "axis", "foot", [70, 25], steps=6)
+    supplied = battle_of([defender, unit(201, "cw", "armour", [70, 24], steps=15, stores=300)],
+                         [attack(201, [70, 25])])
+    short = battle_of([defender, unit(201, "cw", "armour", [70, 24], steps=15, stores=0)],
+                      [attack(201, [70, 25])])
+    assert short["def"] == supplied["def"]
+    assert abs(2 * short["att"] - supplied["att"]) <= 2
+    assert short["cla"] >= supplied["cla"]
+
+
 def test_the_loser_retreats_away_from_the_attack_and_the_winner_advances():      # 10.6, 10.7
     sc, state = start([unit(101, "axis", "foot", [70, 25], steps=3),
                        unit(201, "cw", "armour", [70, 24], steps=15)])

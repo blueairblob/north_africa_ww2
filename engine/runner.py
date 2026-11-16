@@ -1,15 +1,26 @@
 """Plays any two players against each other with no screen (DESIGN.md §13)."""
+from copy import deepcopy
+
 from . import invariants
 from . import state as S
 from .turn import begin_turn, finish_turn
 from .view import leaks, view
 
 
-def play(scenario, gmap, players, turns=None, check=True, seed=0):
+def play(scenario, gmap, players, turns=None, check=True, seed=0, initial_state=None):
     """Play to the end, or for so many turns. Returns the final state and the record:
     one entry per turn holding each side's submission. The scenario, the seed and the record
     are the game."""
-    state = S.new_game(scenario, gmap, seed)
+    if initial_state is None:
+        state = S.new_game(scenario, gmap, seed)
+    else:
+        if (initial_state.get("scenario") != scenario["id"] or initial_state.get("over")
+                or (seed and initial_state.get("seed") != seed)):
+            raise ValueError("The supplied state does not begin this scenario and seed.")
+        bad = invariants.check(initial_state, gmap)
+        if bad:
+            raise ValueError("The supplied state fails the engine invariants: " + "; ".join(bad))
+        state = deepcopy(initial_state)
     record = []
     while not state["over"] and (turns is None or state["turn"] <= turns):
         audit = [] if check else None

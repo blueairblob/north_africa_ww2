@@ -1,0 +1,18 @@
+{
+  "format": 1,
+  "id": "north_africa",
+  "name": "North African Campaign",
+  "research_trial": "italian_frontier_1940",
+  "scope": "1940-09/1942-11",
+  "chapters": [
+    {"id": "frontier_1940", "period": "1940-09/1940-11", "title": "The frontier and Sidi Barrani", "status": "research"},
+    {"id": "compass", "period": "1940-12/1941-02", "title": "Compass and the pursuit", "status": "research", "research": "docs/COMPASS_OPENING_RESEARCH.md"},
+    {"id": "cyrenaica_1941", "period": "1941-03/1941-04", "title": "Cyrenaica and the siege of Tobruk", "status": "research"},
+    {"id": "frontier_1941", "period": "1941-05/1941-10", "title": "The Tobruk and frontier battles", "status": "research"},
+    {"id": "crusader", "period": "1941-11/1941-12", "title": "Operation Crusader", "status": "review", "scenario": "crusader", "short_scenarios": ["sidi_rezegh"]},
+    {"id": "axis_return_1942", "period": "1942-01/1942-04", "title": "The Axis return", "status": "research"},
+    {"id": "gazala", "period": "1942-05/1942-06", "title": "Gazala and Tobruk", "status": "research"},
+    {"id": "alamein_1942", "period": "1942-07/1942-09", "title": "First Alamein and Alam Halfa", "status": "research"},
+    {"id": "second_alamein", "period": "1942-10/1942-11", "title": "Second Alamein and pursuit", "status": "research"}
+  ]
+}

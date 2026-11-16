@@ -63,6 +63,46 @@ def test_a_game_taken_up_from_a_save_is_the_same_game_and_goes_on_the_same(tmp_p
     assert len({v["weather"] for v in (a.view, b.view)}) == 1
 
 
+def test_a_pre_mission_crusader_save_acquires_the_new_rule():
+    a = game(turns=1)
+    old = a.to_save()
+    old["scenario"] = {k: v for k, v in old["scenario"].items() if k != "mission"}
+    b = Session.from_save(old, GMAP)
+    assert b.scenario["mission"]["cw"]["orders"] == [{"verb": "hold", "place": "Tobruk"}]
+    assert "mission" not in old["scenario"]  # the caller's save data was not changed
+    old["state"]["over"] = True
+    captured_stock = sum(old["state"]["ports"]["Tobruk"][item] for item in ("fuel", "stores"))
+    old["state"]["sides"]["axis"]["brought"] += captured_stock
+    old["state"]["sides"]["cw"]["lost"] += captured_stock
+    old["state"]["places"]["Tobruk"] = "axis"
+    old["state"]["sides"]["axis"]["vp"] = 195
+    old["state"]["sides"]["cw"]["vp"] = 119
+    old["state"]["result"] = {"winner": "cw", "grade": "tactical", "margin": -30}
+    ended = Session.from_save(old, GMAP)
+    assert ended.state["result"]["winner"] == "axis" and ended.state["result"]["grade"] == "major"
+    assert old["state"]["result"]["winner"] == "cw"  # the original save remains untouched
+
+
+def test_an_old_sidi_result_is_rejudged_against_the_relief_orders():
+    from engine.scenarios import load
+    a = Session(load("sidi_rezegh"), GMAP, humans=["cw"])
+    old = a.to_save()
+    old["scenario"]["mission"] = {}
+    old["scenario"]["about"] = "The previous points-only version."
+    old["scenario"]["aim"] = {"cw": "Old relief words.", "axis": "Old defence words."}
+    old["state"]["over"] = True
+    old["state"]["turn"] = 6  # five completed two-day turns
+    old["state"]["sides"]["axis"]["vp"] = 99
+    old["state"]["sides"]["cw"]["vp"] = 106
+    old["state"]["result"] = {"winner": "cw", "grade": "tactical", "margin": -47}
+    loaded = Session.from_save(old, GMAP)
+    assert loaded.scenario["mission"]["routes"]["Tobruk relief corridor"]["to"] == "Tobruk"
+    assert loaded.state["result"]["winner"] == "axis"
+    assert loaded.day.isoformat() == "1941-11-27"
+    assert "27 November 1941" in saves.about(loaded.to_save())
+    assert old["state"]["result"]["winner"] == "cw"
+
+
 def test_a_file_that_is_no_save_of_this_version_is_refused_in_plain_words(tmp_path):
     a = game(turns=1)
     path = saves.write(a, tmp_path)

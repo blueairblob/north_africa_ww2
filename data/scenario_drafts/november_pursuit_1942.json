@@ -1,0 +1,32 @@
+{
+  "base": "second_alamein_1942",
+  "id": "november_pursuit_1942",
+  "research_next": null,
+  "campaign_finale": true,
+  "name": "November pursuit: 5–30 November 1942 (linked research finale)",
+  "campaign_only": true,
+  "start": "1942-11-05",
+  "turn_days": 2,
+  "turns": 13,
+  "aim": {
+    "cw": "Pursue the retreating Axis force, recover the Egyptian frontier and press into Cyrenaica while keeping fuel and supply close enough to sustain the advance.",
+    "axis": "Keep a surviving mobile force and a supply route in Libya. Retake ground only where the played balance permits; do not sacrifice the army to hold an untenable frontier."
+  },
+  "about": "Linked two-day pursuit to the end of November 1942. The historical Alamein breakthrough and retreat are background dates, not scripted facts in a played campaign; either side may occupy different ground. The Commonwealth's final chapter requires the frontier and Tobruk and awards Benghazi as an extra objective. The Axis final chapter tests whether its western positions still hold. This is an end-to-end research trial, not a validated campaign result or a model of the later Tunisia campaign.",
+  "withdrawals": [],
+  "replacements": [],
+  "port_access": [{"port": "Benghazi", "side": "cw", "date": "1942-11-05", "pct": 0, "src": "R2"}],
+  "mission": {
+    "routes": {},
+    "cw": {
+      "orders": [{"verb": "hold", "place": "Sidi Barrani"}, {"verb": "hold", "place": "Tobruk"}],
+      "success_grade": "major",
+      "commendations": [{"title": "Benghazi recovered", "order": {"verb": "hold", "place": "Benghazi"}}]
+    },
+    "axis": {
+      "orders": [{"verb": "hold", "place": "El Agheila"}, {"verb": "hold", "place": "Benghazi"}],
+      "success_grade": "tactical",
+      "commendations": [{"title": "Tobruk retained", "order": {"verb": "hold", "place": "Tobruk"}}]
+    }
+  }
+}

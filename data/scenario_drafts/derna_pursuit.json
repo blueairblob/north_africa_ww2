@@ -1,0 +1,732 @@
+{
+  "id": "derna_pursuit",
+  "name": "Derna and Mechili: 23 January–2 February 1941 (linked research)",
+  "campaign_only": true,
+  "start": "1941-01-23",
+  "turn_days": 1,
+  "turns": 11,
+  "aim": {
+    "cw": "Advance west from the actual Tobruk result; reach Mechili and occupy Derna.",
+    "axis": "Hold Derna and secure the Benghazi rear-area port."
+  },
+  "about": "Linked research pursuit after Tobruk. The 7th Armoured and Australian advance toward Mechili and Derna; Derna was entered on 30 January. The 60th Sabratha and Babini counters enter the model on 23 January as newly represented western forces, not as historical reinforcements. Their strengths and precise positions are estimates. The played Tobruk result is retained; an Axis-held Tobruk may prevent this advance. Copied opening placements and owners are checker placeholders, not a standalone historical snapshot. A provisional 2,000-man Benghazi security counter is a game estimate so port control requires occupation; its identity and strength need documentary verification.",
+  "sources": {
+    "W": "Wavell, Western Desert operations despatch, London Gazette 37628, sections 10–21: plan, forces, opening, Nibeiwa and Sidi Barrani",
+    "P": "Playfair et al., The Mediterranean and Middle East, vol. I, chapter XIV: positions, supply preparation, assault sequence and withdrawal of 4th Indian Division",
+    "A": "Australian official history, To Benghazi, chapter 6: Commonwealth formations and armoured screening task",
+    "E": "Game estimate: individual-unit strength, exact 10 km placement, opening stock or supply setting not verified by the cited account",
+    "B": "Australian official history, To Benghazi, chapter VII Before Bardia: 16th Brigade via Buq Buq and Sollum 17-19 December; 17th Brigade and divisional HQ move ordered for 22 December; 19th Brigade forward 1 January",
+    "P2": "Playfair et al., The Mediterranean and Middle East, vol. I, chapter XV: Sollum port and supply, Bardia perimeter preparations, ammunition delay and 7th RTR serviceability",
+    "O": "6th Australian Division operation order, 1 January 1941, Appendix 2 of Australian official history To Benghazi: western attack, phases, 7th RTR and 17th Brigade",
+    "H": "Australian War Memorial Battle of Bardia: breach 3 January, town 4 January, southern surrender 5 January",
+    "T": "Australian official history, To Benghazi, chapter 9: XXII Corps, 61st Sirte and Tobruk garrison; approximately 25,000 men and 220 guns estimated 15 January",
+    "T2": "Australian official history, To Benghazi, chapter 9: Bardia to Tobruk, XXII Corps garrison, preparation and attack on 21 January",
+    "P3": "UK official history, The Mediterranean and Middle East vol I chapter XV: Tobruk garrison, routes, preparations and fall",
+    "D": "Australian official history, To Benghazi, chapter 10, The Engagement at Derna: 22 January advance, Derna rearguard and 30 January occupation; contemporary estimate of 60th Sabratha and Babini armour near Derna/Mechili. Exact strength and scenario-entry placement remain unverified.",
+    "F": "Australian official history, To Benghazi, chapter 11, Beda Fomm and Benghazi: 3 February withdrawal, 4 February desert march, 5–7 February road block and surrender, and the Benghazi occupation."
+  },
+  "owners": {
+    "axis": [
+      "Acroma",
+      "Agedabia",
+      "Antelat",
+      "Augila",
+      "Barce",
+      "Bardia",
+      "Beda Fomm",
+      "Belhamed",
+      "Ben Gania",
+      "Benghazi",
+      "Bir Hakeim",
+      "Bir Rabia",
+      "Bir el Gubi",
+      "Buq Buq",
+      "Cyrene",
+      "Derna",
+      "El Adem",
+      "El Agheila",
+      "Fort Capuzzo",
+      "Fort Maddalena",
+      "Gambut",
+      "Gazala",
+      "Gicherra",
+      "Halfaya Pass",
+      "Jarabub",
+      "Knightsbridge",
+      "Maaten el Grara",
+      "Maktila",
+      "Marada",
+      "Martuba",
+      "Mechili",
+      "Mersa Brega",
+      "Misheifa",
+      "Msus",
+      "Nibeiwa",
+      "Sceleidima",
+      "Sidi Barrani",
+      "Sidi Omar",
+      "Sidi Rezegh",
+      "Sofafi",
+      "Sollum",
+      "Soluch",
+      "Tengeder",
+      "Tmimi",
+      "Tobruk",
+      "Tocra"
+    ],
+    "cw": [
+      "Alam Halfa",
+      "Alexandria",
+      "El Alamein",
+      "El Daba",
+      "Fuka",
+      "Mersa Matruh",
+      "Siwa"
+    ]
+  },
+  "sides": {
+    "axis": {
+      "lift": [
+        [
+          "1941-01-23",
+          150000
+        ]
+      ],
+      "air": [
+        [
+          "1941-01-23",
+          1
+        ]
+      ],
+      "sea_pct": [
+        [
+          "1941-01-23",
+          70
+        ]
+      ],
+      "fuel_pct": [
+        [
+          "1941-01-23",
+          50
+        ]
+      ]
+    },
+    "cw": {
+      "lift": [
+        [
+          "1941-01-23",
+          200000
+        ]
+      ],
+      "air": [
+        [
+          "1941-01-23",
+          2
+        ]
+      ],
+      "railhead": [
+        [
+          "1941-01-23",
+          "Mersa Matruh"
+        ]
+      ]
+    }
+  },
+  "landing_points": {
+    "Sollum": 200
+  },
+  "ports": {
+    "Benghazi": {
+      "fuel": 5000,
+      "stores": 8000
+    },
+    "Tobruk": {
+      "fuel": 5000,
+      "stores": 8000
+    },
+    "Bardia": {
+      "fuel": 3000,
+      "stores": 6000
+    },
+    "Alexandria": {
+      "fuel": 15000,
+      "stores": 30000
+    },
+    "Mersa Matruh": {
+      "fuel": 3000,
+      "stores": 5000
+    },
+    "Sollum": {
+      "fuel": 0,
+      "stores": 0
+    }
+  },
+  "tripoli": {
+    "fuel": 8000,
+    "stores": 20000,
+    "pipeline": [
+      [
+        200,
+        350
+      ],
+      [
+        200,
+        350
+      ],
+      [
+        200,
+        350
+      ],
+      [
+        200,
+        350
+      ]
+    ]
+  },
+  "forts": [
+    [
+      67,
+      13,
+      3,
+      "axis"
+    ],
+    [
+      66,
+      13,
+      2,
+      "axis"
+    ],
+    [
+      67,
+      14,
+      2,
+      "axis"
+    ],
+    [
+      55,
+      10,
+      3,
+      "axis"
+    ],
+    [
+      56,
+      11,
+      2,
+      "axis"
+    ]
+  ],
+  "units": [
+    {
+      "id": 101,
+      "side": "axis",
+      "name": "Group of Libyan Divisions HQ",
+      "type": "hq",
+      "nation": "it",
+      "size": 1,
+      "steps": 1,
+      "at": "Sidi Barrani",
+      "dump": {
+        "fuel": 1000,
+        "stores": 1600
+      },
+      "src": "E"
+    },
+    {
+      "id": 110,
+      "side": "axis",
+      "name": "Maletti Group HQ",
+      "type": "hq",
+      "nation": "it",
+      "size": 1,
+      "steps": 1,
+      "at": "Nibeiwa",
+      "src": "W"
+    },
+    {
+      "id": 111,
+      "side": "axis",
+      "name": "Maletti Group infantry",
+      "type": "motorised",
+      "nation": "it",
+      "parent": 110,
+      "size": 1,
+      "men": 3000,
+      "xp": "green",
+      "cohesion": 60,
+      "src": "W",
+      "at": "Nibeiwa"
+    },
+    {
+      "id": 112,
+      "side": "axis",
+      "name": "Maletti Group M11/39 tanks",
+      "type": "armour",
+      "nation": "it",
+      "parent": 110,
+      "size": 1,
+      "tanks": 35,
+      "xp": "green",
+      "cohesion": 60,
+      "src": "P",
+      "art_note": "M11/39 shown as an approximate mixed tank group.",
+      "at": "Nibeiwa"
+    },
+    {
+      "id": 120,
+      "side": "axis",
+      "name": "2nd Libyan Division (Tummar sector)",
+      "type": "foot",
+      "nation": "it",
+      "size": 2,
+      "men": 4800,
+      "xp": "green",
+      "cohesion": 60,
+      "src": "E",
+      "hex": [
+        78,
+        17
+      ]
+    },
+    {
+      "id": 130,
+      "side": "axis",
+      "name": "1st Libyan Division (Maktila)",
+      "type": "foot",
+      "nation": "it",
+      "size": 2,
+      "men": 4800,
+      "xp": "green",
+      "cohesion": 60,
+      "src": "E",
+      "at": "Maktila"
+    },
+    {
+      "id": 140,
+      "side": "axis",
+      "name": "4th Blackshirt Division (Sidi garrison)",
+      "type": "foot",
+      "nation": "it",
+      "size": 2,
+      "men": 3200,
+      "xp": "green",
+      "cohesion": 60,
+      "src": "E",
+      "at": "Sidi Barrani"
+    },
+    {
+      "id": 149,
+      "side": "axis",
+      "name": "63rd Cirene Division HQ",
+      "type": "hq",
+      "nation": "it",
+      "size": 1,
+      "steps": 1,
+      "dump": {
+        "fuel": 600,
+        "stores": 1200
+      },
+      "src": "E",
+      "at": "Sofafi"
+    },
+    {
+      "id": 150,
+      "side": "axis",
+      "name": "63rd Cirene Division (Sofafi)",
+      "type": "foot",
+      "nation": "it",
+      "parent": 149,
+      "size": 2,
+      "men": 4800,
+      "src": "E",
+      "at": "Sofafi"
+    },
+    {
+      "id": 151,
+      "side": "axis",
+      "name": "63rd Cirene detachment (Rabia)",
+      "type": "foot",
+      "nation": "it",
+      "parent": 149,
+      "size": 1,
+      "men": 1600,
+      "src": "E",
+      "at": "Bir Rabia"
+    },
+    {
+      "id": 160,
+      "side": "axis",
+      "name": "62nd Marmarica Division",
+      "type": "foot",
+      "nation": "it",
+      "size": 2,
+      "men": 4800,
+      "src": "E",
+      "hex": [
+        70,
+        18
+      ]
+    },
+    {
+      "id": 170,
+      "side": "axis",
+      "name": "64th Catanzaro Division",
+      "type": "foot",
+      "nation": "it",
+      "size": 2,
+      "men": 4800,
+      "src": "E",
+      "hex": [
+        74,
+        16
+      ]
+    },
+    {
+      "id": 180,
+      "side": "axis",
+      "name": "Italian XXIII Corps HQ",
+      "type": "hq",
+      "nation": "it",
+      "size": 1,
+      "steps": 1,
+      "src": "P2",
+      "at": "Bardia"
+    },
+    {
+      "id": 181,
+      "side": "axis",
+      "name": "1st Blackshirt Division (Bardia)",
+      "type": "foot",
+      "nation": "it",
+      "parent": 180,
+      "size": 2,
+      "men": 6000,
+      "src": "E",
+      "at": "Bardia"
+    },
+    {
+      "id": 182,
+      "side": "axis",
+      "name": "2nd Blackshirt Division (Bardia reserve)",
+      "type": "foot",
+      "nation": "it",
+      "parent": 180,
+      "size": 2,
+      "men": 4800,
+      "src": "E",
+      "at": "Bardia"
+    },
+    {
+      "id": 190,
+      "side": "axis",
+      "name": "Italian XXII Corps HQ",
+      "type": "hq",
+      "nation": "it",
+      "size": 1,
+      "steps": 1,
+      "src": "T",
+      "at": "Tobruk"
+    },
+    {
+      "id": 191,
+      "side": "axis",
+      "name": "61st Sirte Division (Tobruk)",
+      "type": "foot",
+      "nation": "it",
+      "parent": 190,
+      "size": 2,
+      "men": 8000,
+      "src": "E",
+      "at": "Tobruk"
+    },
+    {
+      "id": 192,
+      "side": "axis",
+      "name": "Tobruk fortress troops",
+      "type": "foot",
+      "nation": "it",
+      "parent": 190,
+      "size": 2,
+      "men": 6400,
+      "src": "E",
+      "hex": [
+        56,
+        11
+      ]
+    },
+    {
+      "id": 193,
+      "side": "axis",
+      "name": "Tobruk fortress artillery",
+      "type": "guns",
+      "nation": "it",
+      "parent": 190,
+      "size": 1,
+      "guns": 72,
+      "src": "E",
+      "at": "Tobruk"
+    },
+    {
+      "id": 194,
+      "side": "axis",
+      "name": "60th Sabratha Division (Derna sector)",
+      "type": "foot",
+      "nation": "it",
+      "size": 2,
+      "men": 6000,
+      "src": "E",
+      "arrives": "1941-01-23",
+      "arrives_src": "E",
+      "entry": "Derna",
+      "arrives_note": "Enters the modelled order of battle; this is not a historical reinforcement date."
+    },
+    {
+      "id": 195,
+      "side": "axis",
+      "name": "Babini armoured group",
+      "type": "armour",
+      "nation": "it",
+      "size": 1,
+      "tanks": 60,
+      "src": "D",
+      "arrives": "1941-01-23",
+      "arrives_src": "E",
+      "entry": "Mechili",
+      "arrives_note": "Enters the modelled order of battle; exact tanks and placement remain research estimates."
+    },
+    {
+      "id": 196,
+      "side": "axis",
+      "name": "Benghazi security troops (provisional)",
+      "type": "foot",
+      "nation": "it",
+      "size": 1,
+      "men": 2000,
+      "src": "E",
+      "arrives": "1941-01-23",
+      "arrives_src": "E",
+      "entry": "Benghazi",
+      "arrives_note": "Provisional rear-area security counter entering the model, not a dated historical reinforcement."
+    },
+    {
+      "id": 301,
+      "side": "cw",
+      "name": "Western Desert Force HQ",
+      "type": "hq",
+      "size": 1,
+      "steps": 1,
+      "hex": [
+        85,
+        18
+      ],
+      "dump": {
+        "fuel": 2000,
+        "stores": 3000
+      },
+      "src": "E"
+    },
+    {
+      "id": 305,
+      "side": "cw",
+      "name": "16th British Infantry Brigade",
+      "type": "motorised",
+      "parent": 301,
+      "size": 1,
+      "men": 2400,
+      "src": "E",
+      "hex": [
+        76,
+        19
+      ]
+    },
+    {
+      "id": 306,
+      "side": "cw",
+      "name": "7th Royal Tank Regiment",
+      "type": "armour",
+      "counter_art": "matilda",
+      "size": 1,
+      "tanks": 50,
+      "src": "W",
+      "hex": [
+        76,
+        18
+      ]
+    },
+    {
+      "id": 310,
+      "side": "cw",
+      "name": "7th Armoured Division HQ",
+      "type": "hq",
+      "size": 1,
+      "steps": 1,
+      "hex": [
+        75,
+        19
+      ],
+      "src": "W"
+    },
+    {
+      "id": 311,
+      "side": "cw",
+      "name": "4th Armoured Brigade",
+      "type": "armour",
+      "parent": 310,
+      "size": 1,
+      "tanks": 75,
+      "src": "E",
+      "hex": [
+        75,
+        18
+      ]
+    },
+    {
+      "id": 312,
+      "side": "cw",
+      "name": "7th Armoured Division Support Group",
+      "type": "motorised",
+      "parent": 310,
+      "size": 1,
+      "men": 2400,
+      "src": "E",
+      "hex": [
+        75,
+        19
+      ]
+    },
+    {
+      "id": 313,
+      "side": "cw",
+      "name": "7th Armoured Brigade",
+      "type": "armour",
+      "parent": 310,
+      "size": 1,
+      "tanks": 70,
+      "src": "E",
+      "hex": [
+        76,
+        21
+      ]
+    },
+    {
+      "id": 314,
+      "side": "cw",
+      "name": "11th Hussars armoured cars",
+      "type": "recon",
+      "parent": 310,
+      "size": 1,
+      "cars": 60,
+      "src": "W",
+      "hex": [
+        75,
+        19
+      ]
+    },
+    {
+      "id": 320,
+      "side": "cw",
+      "name": "Selby Force (Matruh garrison detachment)",
+      "type": "motorised",
+      "size": 1,
+      "men": 1800,
+      "src": "P",
+      "hex": [
+        81,
+        17
+      ]
+    },
+    {
+      "id": 330,
+      "side": "cw",
+      "name": "6th Australian Division HQ",
+      "type": "hq",
+      "size": 1,
+      "steps": 1,
+      "src": "E",
+      "at": "Mersa Matruh"
+    },
+    {
+      "id": 331,
+      "side": "cw",
+      "name": "16th Australian Infantry Brigade",
+      "type": "motorised",
+      "size": 1,
+      "men": 2400,
+      "src": "E",
+      "parent": 330,
+      "at": "Buq Buq"
+    },
+    {
+      "id": 332,
+      "side": "cw",
+      "name": "17th Australian Infantry Brigade",
+      "type": "motorised",
+      "size": 1,
+      "men": 2400,
+      "src": "E",
+      "parent": 330,
+      "at": "Mersa Matruh"
+    },
+    {
+      "id": 333,
+      "side": "cw",
+      "name": "19th Australian Infantry Brigade",
+      "type": "motorised",
+      "size": 1,
+      "men": 2400,
+      "src": "E",
+      "parent": 330,
+      "at": "Sollum"
+    },
+    {
+      "id": 334,
+      "side": "cw",
+      "name": "6th Australian Divisional Artillery",
+      "type": "guns",
+      "size": 1,
+      "guns": 48,
+      "src": "E",
+      "parent": 330,
+      "at": "Mersa Matruh"
+    }
+  ],
+  "objectives": [],
+  "thresholds": [
+    10,
+    30,
+    60
+  ],
+  "par": 0,
+  "landing_sides": {
+    "Sollum": "cw"
+  },
+  "mission": {
+    "routes": {},
+    "cw": {
+      "orders": [
+        {
+          "verb": "reach",
+          "place": "Mechili"
+        },
+        {
+          "verb": "hold",
+          "place": "Derna"
+        }
+      ],
+      "success_grade": "major"
+    },
+    "axis": {
+      "orders": [
+        {
+          "verb": "hold",
+          "place": "Derna"
+        },
+        {
+          "verb": "hold",
+          "place": "Benghazi"
+        }
+      ],
+      "success_grade": "tactical"
+    }
+  },
+  "research_next": "beda_fomm_pursuit"
+}

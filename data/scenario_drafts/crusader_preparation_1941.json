@@ -1,0 +1,59 @@
+{
+  "base": "tobruk_relief_1941",
+  "retire_units": [330, 331, 332, 333, 334],
+  "id": "crusader_preparation_1941",
+  "research_next": "crusader_linked_1941",
+  "name": "Crusader preparation: 30 September–17 November 1941 (linked research)",
+  "campaign_only": true,
+  "start": "1941-09-30",
+  "turn_days": 1,
+  "turns": 49,
+  "aim": {
+    "cw": "Keep the Egyptian base secure and prepare a mobile offensive to defeat Axis armour, retake Cyrenaica and relieve Tobruk if it remains isolated. An early attack is permitted but risks insufficient readiness and supply.",
+    "axis": "Guard the frontier and supply routes, contain Tobruk if it remains Commonwealth-held, and preserve the mobile force. An attack into Egypt remains a command choice, not a historical trigger."
+  },
+  "about": "Linked daily-turn preparation through the eve of Crusader. The 6th Australian Division counters, already called away for Greece in the earlier chapter, leave the active roster but remain archived in the played save. The October Tobruk garrison change is conditional on friendly-held Tobruk and surviving Australian units still near it. The 20th Brigade leaves a 2/13th Battalion remnant; if relief cannot occur the full played formation remains. The 70th Division is modelled as HQ and three brigades on 22/26 October, a coarse completion-date proxy for the September–October sea rotation. The 22nd Armoured Brigade becomes available on 1 November after its 4 October convoy and desert preparation; its tank count is an estimate. Earlier owners and placements are checker placeholders, not a reset of the played campaign. Workshop repair and exact brigade strengths remain unverified.",
+  "port_access": [
+    {"port": "Benghazi", "side": "cw", "date": "1941-09-30", "pct": 0, "src": "R2"}
+  ],
+  "unit_updates": {
+    "201": {"name": "21st Panzer Division reconnaissance", "alternate_names": ["5th Light Division reconnaissance"], "redesignation_src": "TR41"},
+    "202": {"name": "21st Panzer Division motorised troops", "alternate_names": ["5th Light Division motorised troops"], "redesignation_src": "TR41"},
+    "203": {"name": "21st Panzer Division anti-tank guns", "alternate_names": ["5th Light Division anti-tank guns"], "redesignation_src": "TR41"},
+    "204": {"name": "21st Panzer Division Panzer Regiment", "alternate_names": ["5th Light Division Panzer Regiment"], "redesignation_src": "TR41"},
+    "351": {"alternate_names": ["2/13th Australian Infantry Battalion"]}
+  },
+  "withdrawals": [
+    {"date": "1941-10-26", "unit": 350, "if_near": "Tobruk", "radius": 2, "src": "K", "note": "9th Australian Division headquarters leaves after the October sea relief only if still near a friendly-held Tobruk."},
+    {"date": "1941-10-26", "unit": 351, "if_near": "Tobruk", "radius": 2, "remain_as": {"name": "2/13th Australian Infantry Battalion", "men": 800, "size": 1}, "src": "K", "note": "Most of 20th Brigade leaves by sea; 2/13th Battalion remains. The battalion's 800 men are a model estimate."},
+    {"date": "1941-10-26", "unit": 352, "if_near": "Tobruk", "radius": 2, "src": "K", "note": "24th Australian Brigade leaves only if still near a friendly-held Tobruk."},
+    {"date": "1941-10-26", "unit": 353, "if_near": "Tobruk", "radius": 2, "src": "K", "note": "26th Australian Brigade leaves only if still near a friendly-held Tobruk."}
+  ],
+  "add_units": [
+    {"id": 391, "side": "cw", "name": "22nd Armoured Brigade", "type": "armour", "size": 2, "tanks": 80, "src": "E", "arrives": "1941-11-01", "arrives_src": "K", "entry": "Mersa Matruh", "arrives_note": "Convoy arrived in Egypt 4 October; modelled field availability 1 November after desert preparation. 80 tanks is an estimate, not a documented serviceable count."},
+    {"id": 392, "side": "cw", "name": "70th Infantry Division HQ", "type": "hq", "size": 1, "steps": 1, "src": "K", "arrives": "1941-10-22", "arrives_src": "K", "entry": "Tobruk", "arrives_note": "Scobie took command of Tobruk on 22 October if the fortress is still held. Otherwise the HQ enters from the Commonwealth base."},
+    {"id": 393, "side": "cw", "name": "14th Infantry Brigade (70th Division)", "type": "foot", "parent": 392, "size": 2, "men": 3000, "src": "E", "arrives": "1941-10-26", "arrives_src": "K", "entry": "Tobruk", "arrives_note": "Models completion of the September–October 70th Division relief. Brigade strength and exact entry day are estimates."},
+    {"id": 394, "side": "cw", "name": "16th Infantry Brigade (70th Division)", "type": "foot", "parent": 392, "size": 2, "men": 3000, "src": "E", "arrives": "1941-10-26", "arrives_src": "K", "entry": "Tobruk", "arrives_note": "Models completion of the September–October 70th Division relief. Brigade strength and exact entry day are estimates."},
+    {"id": 395, "side": "cw", "name": "23rd Infantry Brigade (70th Division)", "type": "foot", "parent": 392, "size": 2, "men": 3000, "src": "E", "arrives": "1941-10-26", "arrives_src": "K", "entry": "Tobruk", "arrives_note": "Models completion of the September–October 70th Division relief. Brigade strength and exact entry day are estimates."}
+  ],
+  "mission": {
+    "routes": {},
+    "cw": {
+      "orders": [
+        {"verb": "hold", "place": "Mersa Matruh"},
+        {"verb": "hold", "place": "Sollum"}
+      ],
+      "success_grade": "major",
+      "commendations": [
+        {"title": "Tobruk retained", "order": {"verb": "hold", "place": "Tobruk"}}
+      ]
+    },
+    "axis": {
+      "orders": [
+        {"verb": "hold", "place": "Bardia"},
+        {"verb": "hold", "place": "Benghazi"}
+      ],
+      "success_grade": "major"
+    }
+  }
+}

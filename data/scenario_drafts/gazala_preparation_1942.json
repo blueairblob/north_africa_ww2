@@ -1,0 +1,41 @@
+{
+  "base": "axis_january_offensive_1942",
+  "sources": {
+    "IND42": "Auchinleck, operations despatch, London Gazette 38177: the 10th and 29th Brigades of 5th Indian Division occupied frontier positions at the beginning of May 1942 and later formed a mobile infantry reserve for Gazala. The 1 May game date, Matruh entry and 6,000 men are estimates. https://www.ibiblio.org/hyperwar/UN/UK/LondonGazette/38177.pdf"
+  },
+  "id": "gazala_preparation_1942",
+  "research_next": "gazala_battle_1942",
+  "name": "Gazala preparation: 9 February–25 May 1942 (linked research)",
+  "campaign_only": true,
+  "start": "1942-02-09",
+  "turn_days": 2,
+  "turns": 53,
+  "aim": {
+    "cw": "Build a defensible line around Gazala, Bir Hakeim and Tobruk, maintain a mobile reserve and secure supply. A different forward line remains possible if the played campaign supports it.",
+    "axis": "Restore the mobile force and supply, contest Cyrenaica, and prepare an attack on the Commonwealth position without sacrificing the route from the west."
+  },
+  "about": "A long linked strategic preparation chapter, not a historical deployment snapshot. The real Gazala line developed after the January counteroffensive and the Axis attack began 26 May. 50th Division and an aggregate 5th Indian Division counter are added with estimated field dates, strengths and entry points; Trieste already arrived during the 1941 preparation. No minefield or repair programme is scripted. Both sides may manoeuvre, attack or dig in during the preparation. The checker-owned places are placeholders; the played position is retained.",
+  "withdrawals": [],
+  "replacements": [],
+  "port_access": [{"port": "Benghazi", "side": "cw", "date": "1942-02-09", "pct": 0, "src": "R2"}],
+  "add_units": [
+    {"id": 450, "side": "cw", "name": "50th British Division HQ", "type": "hq", "size": 1, "steps": 1, "src": "B42", "arrives": "1942-03-01", "arrives_src": "E", "entry": "Mersa Matruh", "arrives_note": "Formation present at Gazala. 1 March field availability and map entry are estimates, not its arrival in theatre."},
+    {"id": 451, "side": "cw", "name": "69th Infantry Brigade (50th Division)", "type": "motorised", "parent": 450, "size": 2, "men": 3000, "src": "E", "arrives": "1942-03-01", "arrives_src": "E", "entry": "Mersa Matruh", "arrives_note": "Brigade and strength need a unit-level source check; field date and 3,000 men are estimates."},
+    {"id": 452, "side": "cw", "name": "150th Infantry Brigade (50th Division)", "type": "motorised", "parent": 450, "size": 2, "men": 3000, "src": "E", "arrives": "1942-03-01", "arrives_src": "E", "entry": "Mersa Matruh", "arrives_note": "Brigade and strength need a unit-level source check; field date and 3,000 men are estimates."},
+    {"id": 453, "side": "cw", "name": "151st Infantry Brigade (50th Division)", "type": "motorised", "parent": 450, "size": 2, "men": 3000, "src": "E", "arrives": "1942-03-01", "arrives_src": "E", "entry": "Mersa Matruh", "arrives_note": "Brigade and strength need a unit-level source check; field date and 3,000 men are estimates."},
+    {"id": 473, "side": "cw", "name": "5th Indian Division (10th and 29th Brigades)", "type": "foot", "size": 2, "men": 6000, "nation": "in", "src": "IND42", "arrives": "1942-05-01", "arrives_src": "IND42", "entry": "Mersa Matruh", "arrives_note": "The brigades were on the frontier in early May. This aggregate counter's 1 May field date, 6,000 men and Matruh entry are estimates."}
+  ],
+  "mission": {
+    "routes": {},
+    "cw": {
+      "orders": [{"verb": "hold", "place": "Gazala"}, {"verb": "hold", "place": "Tobruk"}],
+      "success_grade": "tactical",
+      "commendations": [{"title": "Southern box prepared", "order": {"verb": "hold", "place": "Bir Hakeim"}}]
+    },
+    "axis": {
+      "orders": [{"verb": "hold", "place": "Benghazi"}, {"verb": "hold", "place": "Derna"}],
+      "success_grade": "tactical",
+      "commendations": [{"title": "Gazala threatened", "order": {"verb": "reach", "place": "Gazala"}}]
+    }
+  }
+}

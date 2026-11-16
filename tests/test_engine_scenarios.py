@@ -34,12 +34,26 @@ def test_a_scenario_cut_from_another_is_its_base_up_to_its_last_turn(tmp_path): 
 
 def test_sidi_rezegh_is_crusaders_first_five_turns():                # 2.4, 1.9
     whole, sc = scenarios.load("crusader"), scenarios.load("sidi_rezegh")
+    assert whole["mission"]["cw"]["orders"] == [{"verb": "hold", "place": "Tobruk"}]
+    assert sc["mission"]["cw"]["orders"][-1] == {"verb": "clear", "route": "Tobruk relief corridor"}
     assert S.turn_of(sc, "1941-11-27") == sc["turns"] == 5 and sc["start"] == whole["start"] == "1941-11-18"
     late = [u["id"] for u in whole["units"] if "arrives" in u]
     assert late == [360, 361, 362, 363, 364]                         # 2nd South African Division, 2 December
     assert sc["units"] == [u for u in whole["units"] if u["id"] not in late]
     assert [(e["date"], e["unit"]) for e in sc["withdrawals"] + sc["replacements"]] == [("1941-11-27", 312), ("1941-11-27", 311)]
     assert all(sc[k] == whole[k] for k in ("owners", "sides", "ports", "tripoli", "forts", "sources"))
+
+
+def test_18_november_sidi_airfield_is_not_held_by_the_whole_axis_formation():
+    for name in ("crusader", "sidi_rezegh"):
+        sc = scenarios.load(name)
+        sidi = GMAP.places["Sidi Rezegh"]["hex"]
+        belhamed = GMAP.places["Belhamed"]["hex"]
+        opening_axis = [u for u in sc["units"] if u["side"] == "axis" and "arrives" not in u]
+        assert all(tuple(u.get("hex") or GMAP.places[u["at"]]["hex"]) != sidi for u in opening_axis)
+        assert tuple(next(u for u in opening_axis if u["id"] == 106)["hex"]) != belhamed
+        assert not any((c, r) == belhamed for c, r, _, _ in sc["forts"])
+        assert len({tuple(u["hex"]) for u in opening_axis if u["id"] in (130, 131, 132, 133, 134)}) > 1
 
 
 def test_sidi_rezegh_has_one_aim_and_its_grades_are_what_it_says():  # 13.6
@@ -59,5 +73,5 @@ def test_sidi_rezegh_plays_to_the_end_with_the_invariants_holding(axis, cw):
     sc = scenarios.load("sidi_rezegh")
     state, record = runner.play(sc, GMAP, {"axis": players.SCRIPTED[axis](GMAP), "cw": players.SCRIPTED[cw](GMAP)})
     assert state["over"] and len(record) == 5
-    if axis == cw == "nothing":                                      # standing still is level
-        assert state["result"] == {"winner": None, "grade": "draw", "margin": 0}
+    if axis == cw == "nothing":                                      # the defender keeps the corridor blocked
+        assert (state["result"]["winner"], state["result"]["grade"], state["result"]["margin"]) == ("axis", "tactical", 0)

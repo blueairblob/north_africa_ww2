@@ -42,8 +42,9 @@ def odds(scenario, turn):
     own = S.value_at(scenario, scenario.get("weather", []), turn, None)
     if own is not None:
         return own.get("rain", 0), own.get("sandstorm", 0)
-    day = date.fromisoformat(scenario["start"]) + timedelta(days=2 * (turn - 1))
-    return ODDS[day.month]
+    day = date.fromisoformat(scenario["start"]) + timedelta(days=S.turn_days(scenario) * (turn - 1))
+    odds = ODDS[day.month]
+    return odds if S.turn_days(scenario) == 2 else tuple((n + 1) // 2 for n in odds)
 
 
 def of(seed, turn, scenario):

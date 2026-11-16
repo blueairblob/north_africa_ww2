@@ -1,4 +1,5 @@
 """What each side can see (docs/RULES.md §14). A player is given this and nothing else."""
+from copy import deepcopy
 from . import state as S
 from .reinforce import timetable
 from . import weather as W
@@ -6,6 +7,7 @@ from .gamemap import distance
 
 SPOT_RANGE = 2          # hexes at which any unit spots
 SPOT_RANGE_RECON = 4    # hexes at which a recon unit spots
+CONVOY_SPOT_RANGE = 2   # scouts can observe local truck traffic, not the whole haul
 STRONG_PCT = 66         # per cent of its full steps at and above which an enemy unit is "at strength"
 WORN_PCT = 33           # ... and at and above which it is "worn"; below, "weak"
 WORDS = ("at strength", "worn", "weak")
@@ -32,6 +34,21 @@ def spot_range(state, u, extra):
     return W.sight(state["weather"], (SPOT_RANGE_RECON if u["type"] == "recon" else SPOT_RANGE) + extra)
 
 
+def observed_convoys(state, side):
+    """Local sightings of enemy hauls; never disclose their source, destination or load."""
+    scouts = [tuple(u["hex"]) for u in S.on_map(state, side) if u["type"] == "recon"]
+    if not scouts:
+        return []
+    sightings = set()
+    for event in state["log"]:
+        if event.get("event") != "haul" or event["side"] != S.enemy(side):
+            continue
+        near = [(distance(tuple(h), scout), tuple(h)) for h in event["route"] for scout in scouts]
+        if near and min(near)[0] <= CONVOY_SPOT_RANGE:
+            sightings.add(min(near)[1])
+    return [list(h) for h in sorted(sightings)]
+
+
 def view(state, gmap, scenario, side):
     mine = S.on_map(state, side)
     extra = state["sides"][side]["recon"]                                    # 7.5
@@ -56,15 +73,19 @@ def view(state, gmap, scenario, side):
             forts[key] = [level, owner]
     specs = {spec["id"]: spec for spec in scenario["units"]}
     return {
-        "side": side, "turn": state["turn"], "over": state["over"], "result": state["result"],
+        "side": side, "turn": state["turn"], "turn_days": S.turn_days(scenario),
+        "over": state["over"], "result": state["result"],
         "weather": state["weather"],                                         # 21.5: this turn's, and a word on the next
         "outlook": W.outlook(state["seed"], state["turn"], scenario),
-        "units": [dict(u) for u in state["units"] if u["side"] == side],
+        "units": [dict(u) for u in state["units"] if u["side"] == side and u["id"] in specs],
         "arrivals": [{"unit": u["id"], "date": specs[u["id"]]["arrives"]} for u in state["units"]
                      if u["side"] == side and u["status"] == "not_arrived"],
         "withdrawals": [w for w in scenario.get("withdrawals", []) if S.unit(state, w["unit"])["side"] == side],
         "timetable": timetable(scenario, side),                              # 14.2: its own dated events, in order
-        "enemy": seen, "forts": forts, "places": dict(state["places"]),
+        "enemy": seen, "forts": forts,
+        "fort_work": {key: progress for key, (owner, progress) in state.get("fort_work", {}).items() if owner == side},
+        "places": dict(state["places"]),
+        "enemy_convoys": observed_convoys(state, side),
         "ports": {n: dict(p) for n, p in state["ports"].items() if state["places"][n] == side},
         "tripoli": {k: (v if k != "pipeline" else [list(x) for x in v]) for k, v in state["tripoli"].items()}
         if side == "axis" else None,
@@ -74,6 +95,8 @@ def view(state, gmap, scenario, side):
         "kills": {s: state["sides"][s]["kills"] for s in S.SIDES},               # the part of vp for units destroyed
         "par": scenario.get("par", 0),
         "objectives": scenario["objectives"],
+        "mission": deepcopy(scenario.get("mission", {})),
+        "mission_reached": list(state.get("mission_reached", {}).get(side, [])),
         "events": [told(e, side) for e in state["log"]                       # 14.6
                    if e["side"] == side or (e["side"] == "both" and side in e["sides"])],
     }
@@ -87,6 +110,9 @@ def leaks(v, state):
     for e in v["enemy"]:
         if set(e) - {"id", "name", "type", "hex", "xp", "strength"}:
             out.append(f"enemy unit {e['id']} shows {sorted(e)}")
+    if any(not isinstance(h, list) or len(h) != 2 or not all(isinstance(n, int) for n in h)
+           for h in v.get("enemy_convoys", [])):
+        out.append("enemy convoy sighting shows more than a hex")
     for e in v["events"]:
         if e["event"] == "battle" and set(e) & set(SECRET["attacker" if e["sides"][0] == side else "defender"]):
             out.append(f"the enemy's figures in the battle at {e['hex']}")

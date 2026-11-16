@@ -78,6 +78,12 @@ def footer_flag(size):
     return pygame.Rect(console.x + 14, console.centery - h // 2, w, h)
 
 
+def campaign_continue(size):
+    """Result-screen action in the command footer when a linked chapter is ready."""
+    console = areas(size)["console"]
+    return pygame.Rect(console.right - 258, console.centery - 23, 236, 46)
+
+
 def buttons(size):
     """Stable, responsive command-console rectangles (including disabled orders)."""
     console = areas(size)["console"]
@@ -149,7 +155,7 @@ def layers(size, opened, collapsed=False):
     area = areas(size, collapsed)["map"]
     out = {"layers": pygame.Rect(area.x + 12, area.bottom - 46, 104, 34)}
     if opened:
-        names = ("k", "weather", "s", "z", "pictures", "nato")
+        names = ("mission", "k", "weather", "s", "z", "pictures", "nato")
         for n, name in enumerate(reversed(names)):
             out[name] = pygame.Rect(area.x + 12, area.bottom - 46 - (n + 1) * 36, 150, 32)
     return out

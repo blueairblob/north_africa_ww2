@@ -1,0 +1,54 @@
+{
+  "base": "frontier_stalemate_1941",
+  "sources": {
+    "TR41": "Auchinleck despatch, London Gazette 37695, section 27: Trieste reached Tripoli by the end of August 1941; 5th Light Division became an armoured division in mid-August. The 15 August game redesignation is an approximate day within that sourced period. London Gazette 38177 identifies Trieste in the mobile corps opposite Crusader. The 1 September game arrival at El Agheila is estimated field availability. https://www.ibiblio.org/hyperwar/UN/UK/LondonGazette/37695.pdf"
+  },
+  "id": "tobruk_relief_1941",
+  "research_next": "crusader_preparation_1941",
+  "name": "Tobruk relief and frontier preparation: 1 August–29 September 1941 (linked research)",
+  "campaign_only": true,
+  "start": "1941-08-01",
+  "turn_days": 2,
+  "turns": 30,
+  "aim": {
+    "cw": "Keep Egypt secure and retain or recover the frontier foothold while preparing a later offensive. If Tobruk remains accessible, rotate the exhausted garrison without losing the port.",
+    "axis": "Hold the frontier and Benghazi supply route. Contain Tobruk if it remains in Commonwealth hands, and prepare for a future attack without wasting the mobile force."
+  },
+  "about": "Linked open-play August–September trial. The first Tobruk relief stage is sourced to 19–29 August; this two-day model resolves its Polish arrival and 18th Australian Brigade withdrawal at the end of the 29–30 August turn. The Australian withdrawal occurs only if Tobruk is Commonwealth-held and the brigade is still within two hexes. If Tobruk is Axis-held the Polish brigade reaches the Commonwealth base instead. The unit count and exact entry date within that interval are model estimates. Trieste reached Tripoli by the end of August; its 1 September entry at El Agheila is an estimated playable availability. The later relief of most of the 9th Australian Division by 70th Division is not yet represented. Earlier owners and placements are checker placeholders, never a reset of the played state.",
+  "port_access": [
+    {"port": "Benghazi", "side": "cw", "date": "1941-08-01", "pct": 0, "src": "R2"}
+  ],
+  "withdrawals": [
+    {"date": "1941-08-29", "unit": 354, "if_near": "Tobruk", "radius": 2, "src": "G", "note": "First stage of sea relief, 19–29 August. Only if the brigade remains near friendly-held Tobruk; otherwise it remains available in the played campaign."}
+  ],
+  "redesignations": [
+    {"date": "1941-08-15", "unit": 201, "from": "5th Light Division reconnaissance", "name": "21st Panzer Division reconnaissance", "src": "TR41", "note": "5th Light Division converted to an armoured division in mid-August; 15 August is a model date."},
+    {"date": "1941-08-15", "unit": 202, "from": "5th Light Division motorised troops", "name": "21st Panzer Division motorised troops", "src": "TR41", "note": "Same formation and unit ID; the conversion date is approximate."},
+    {"date": "1941-08-15", "unit": 203, "from": "5th Light Division anti-tank guns", "name": "21st Panzer Division anti-tank guns", "src": "TR41", "note": "Same formation and unit ID; the conversion date is approximate."},
+    {"date": "1941-08-15", "unit": 204, "from": "5th Light Division Panzer Regiment", "name": "21st Panzer Division Panzer Regiment", "src": "TR41", "note": "Same formation and unit ID; the conversion date is approximate."}
+  ],
+  "add_units": [
+    {"id": 390, "side": "cw", "name": "Polish Independent Carpathian Rifle Brigade", "type": "foot", "nation": "pl", "size": 2, "men": 5000, "src": "G", "arrives": "1941-08-29", "arrives_src": "G", "entry": "Tobruk", "arrives_note": "First Tobruk relief stage, 19–29 August. About 5,000 men is a game estimate; if the port is not Commonwealth-held, the brigade enters from the Commonwealth base."},
+    {"id": 480, "side": "axis", "name": "101st Trieste Motorised Division", "type": "motorised", "size": 2, "men": 6000, "nation": "it", "src": "TR41", "arrives": "1941-09-01", "arrives_src": "TR41", "entry": "El Agheila", "arrives_note": "Reached Tripoli by end of August 1941 and was in the mobile corps by Crusader. 1 September field availability, 6,000 men and El Agheila entry are estimates."}
+  ],
+  "mission": {
+    "routes": {},
+    "cw": {
+      "orders": [
+        {"verb": "hold", "place": "Mersa Matruh"},
+        {"verb": "hold", "place": "Sollum"}
+      ],
+      "success_grade": "major",
+      "commendations": [
+        {"title": "Tobruk retained", "order": {"verb": "hold", "place": "Tobruk"}}
+      ]
+    },
+    "axis": {
+      "orders": [
+        {"verb": "hold", "place": "Bardia"},
+        {"verb": "hold", "place": "Benghazi"}
+      ],
+      "success_grade": "major"
+    }
+  }
+}

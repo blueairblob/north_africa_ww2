@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="480" height="288" viewBox="0 0 480 288">
+  <defs>
+    <linearGradient id="body" x2="0" y2="1"><stop stop-color="#ead7a4"/><stop offset="1" stop-color="#b89d6c"/></linearGradient>
+    <linearGradient id="cab" x2="0" y2="1"><stop stop-color="#dcc694"/><stop offset="1" stop-color="#ad8d59"/></linearGradient>
+  </defs>
+  <g stroke="#382b21" stroke-linecap="round" stroke-linejoin="round">
+    <!-- Two wire aerials and a command pennant distinguish this from a supply lorry. -->
+    <path d="M112 83V18m10 15h-20m123 47V10m-10 15h20m-123 12c39 12 75 11 113-12" fill="none" stroke-width="5"/>
+    <path d="M225 12l42 9-42 16z" fill="#b44234" stroke-width="4"/>
+    <path d="M62 84h223l16 14v116H48V100z" fill="url(#body)" stroke-width="9"/>
+    <path d="M62 92h211v19H62z" fill="#cdb780" stroke-width="3"/>
+    <path d="M73 119h66v62H73z" fill="#566159" stroke-width="6"/>
+    <path d="M82 128h48m-48 12h48m-48 12h48m-48 12h48" fill="none" stroke="#aeb9a7" stroke-width="3"/>
+    <path d="M152 121h111v68H152z" fill="#c6ae7a" stroke-width="5"/>
+    <path d="M166 136h84m-84 13h84m-84 13h84m-84 13h84" fill="none" stroke="#8a7550" stroke-width="3"/>
+    <path d="M279 99h70l39 47 43 10 12 58H279z" fill="url(#cab)" stroke-width="9"/>
+    <path d="M298 113h45l28 32h-73z" fill="#48555a" stroke-width="6"/>
+    <path d="M387 151l34 9v28h-34z" fill="#b99e6a" stroke-width="5"/>
+    <path d="M284 162h93m0-14v61m-71-32h16" fill="none" stroke-width="5"/>
+    <path d="M48 212h393v14H48z" fill="#72583c" stroke-width="7"/>
+    <circle cx="121" cy="226" r="31" fill="#312d29" stroke-width="8"/>
+    <circle cx="121" cy="226" r="13" fill="#c4aa76" stroke-width="5"/>
+    <circle cx="360" cy="226" r="31" fill="#312d29" stroke-width="8"/>
+    <circle cx="360" cy="226" r="13" fill="#c4aa76" stroke-width="5"/>
+    <path d="M47 188H33v26h18m390-18h12v20h-12" fill="#b9a06f" stroke-width="5"/>
+  </g>
+</svg>

@@ -5,7 +5,8 @@
     "cw": "Relieve Tobruk, break the siege, and push Axis forces back across Cyrenaica.",
     "axis": "Keep Tobruk encircled and hold the approaches against the Eighth Army."
   },
-  "about": "The relief of Tobruk, 18 November to 30 December 1941. Each division is shown as the units that fought within it, under its HQ; units of one division that start in one hex start as a group. Formations from the published orders of battle (docs/SOURCES.md). Each unit's strength is its figure on the first day with a source letter (see sources). Positions are approximate, to a hex or two. Lift, air points, sea_pct and the opening stocks are first guesses, to be tuned. Arrivals, withdrawals and replacements fall on their historical dates, each with a source letter; where a date or a number is worked out and not stated by the source, its basis says so. Left out: Oasis Force at Jarabub.",
+  "mission": {"cw": {"orders": [{"verb": "hold", "place": "Tobruk"}], "failure_grade": "major"}},
+  "about": "The relief of Tobruk, 18 November to 30 December 1941. Each division is shown as the units that fought within it, under its HQ; units of one division that start in one hex start as a group. Formations from the published orders of battle (docs/SOURCES.md). Each unit's strength is its figure on the first day with a source letter (see sources). Positions are approximate, to a hex or two; the Division z.b.V. Afrika and Boettcher counters start around the Tobruk siege ring, not on the Sidi Rezegh airfield or Belhamed. See docs/SIDI_REZEGH_OPENING_POSITIONS.md for dated evidence and uncertainties. Lift, air points, sea_pct and the opening stocks are first guesses, to be tuned. Arrivals, withdrawals and replacements fall on their historical dates, each with a source letter; where a date or a number is worked out and not stated by the source, its basis says so. Left out: Oasis Force at Jarabub.",
   "sources": {
     "W": "Wikipedia, Operation Crusader: 7th Armoured Brigade, 129 tanks",
     "H": "historyofwar.org, Operation Crusader: 4th Armoured Brigade 166 Stuarts; 22nd Armoured Brigade 155; 1st Army Tank Brigade about 130; 249 German and 189 Italian medium tanks in all",
@@ -47,8 +48,7 @@
     [53, 10, 1, "axis"],
     [53, 11, 1, "axis"],
     [55, 12, 1, "axis"],
-    [57, 11, 1, "axis"],
-    [57, 12, 1, "axis"]
+    [57, 11, 1, "axis"]
   ],
   "units": [
     {"id": 101, "side": "axis", "name": "Panzergruppe Afrika", "type": "hq", "size": 1, "steps": 1, "at": "Gambut", "dump": {"fuel": 1500, "stores": 2500}},
@@ -56,7 +56,7 @@
     {"id": 103, "side": "axis", "name": "Corpo d'Armata di Manovra", "type": "hq", "size": 1, "steps": 1, "nation": "it", "at": "Bir Hakeim", "dump": {"fuel": 1000, "stores": 1500}},
     {"id": 104, "side": "axis", "name": "Halfaya garrison", "type": "guns", "counter_art": "flak88", "size": 1, "xp": "veteran", "guns": 36, "src": "E", "at": "Halfaya Pass"},
     {"id": 105, "side": "axis", "name": "Bardia garrison", "type": "foot", "size": 1, "nation": "it", "xp": "green", "men": 2400, "src": "E", "at": "Bardia"},
-    {"id": 106, "side": "axis", "name": "Artillery Group Boettcher", "type": "guns", "size": 1, "guns": 60, "src": "E", "at": "Belhamed"},
+    {"id": 106, "side": "axis", "name": "Artillery Group Boettcher", "type": "guns", "size": 1, "guns": 60, "src": "E", "hex": [57, 11]},
     {"id": 107, "side": "axis", "name": "RECAM", "type": "recon", "art_note": "AB41 shown; RECAM vehicle mix and count unverified.", "size": 1, "nation": "it", "cars": 45, "src": "E", "hex": [52, 16]},
     {"id": 110, "side": "axis", "name": "15. Panzer-Division", "type": "hq", "size": 1, "steps": 1, "hex": [59, 11]},
     {"id": 111, "side": "axis", "name": "Panzer-Regiment 8", "type": "armour", "art_note": "Panzer III shown; 15th also had II and IV in November.", "size": 1, "parent": 110, "xp": "veteran", "tanks": 133, "max": 16, "src": "M", "hex": [59, 11]},
@@ -69,11 +69,11 @@
     {"id": 123, "side": "axis", "name": "Artillerie-Regiment 155", "type": "guns", "size": 1, "parent": 120, "xp": "veteran", "guns": 36, "src": "E", "hex": [63, 14]},
     {"id": 124, "side": "axis", "name": "Aufklaerungs-Abteilung 3", "type": "recon", "art_note": "222 shown; 3rd also had 231/232 by Dec 1941.", "size": 1, "parent": 120, "xp": "veteran", "cars": 30, "src": "E", "hex": [63, 14]},
     {"id": 125, "side": "axis", "name": "Panzerjaeger-Abteilungen 39 und 605", "type": "guns", "counter_art": "antitank", "art_note": "Panzerjäger I shown for 605; 39 also had towed guns.", "size": 1, "parent": 120, "xp": "veteran", "guns": 36, "src": "E", "hex": [63, 14]},
-    {"id": 130, "side": "axis", "name": "Division z.b.V. Afrika", "type": "hq", "size": 1, "steps": 1, "at": "Sidi Rezegh"},
-    {"id": 131, "side": "axis", "name": "Infanterie-Regiment 155", "type": "foot", "size": 1, "parent": 130, "men": 2400, "src": "E", "at": "Sidi Rezegh"},
-    {"id": 132, "side": "axis", "name": "Afrika-Regiment 361", "type": "foot", "size": 1, "parent": 130, "men": 1600, "src": "E", "at": "Sidi Rezegh"},
-    {"id": 133, "side": "axis", "name": "III./255 und III./347", "type": "foot", "size": 1, "parent": 130, "men": 1600, "src": "E", "at": "Sidi Rezegh"},
-    {"id": 134, "side": "axis", "name": "Artillerie der Division Afrika", "type": "guns", "size": 1, "parent": 130, "guns": 24, "src": "E", "at": "Sidi Rezegh"},
+    {"id": 130, "side": "axis", "name": "Division z.b.V. Afrika", "type": "hq", "size": 1, "steps": 1, "hex": [56, 11]},
+    {"id": 131, "side": "axis", "name": "Infanterie-Regiment 155", "type": "foot", "size": 1, "parent": 130, "men": 2400, "src": "E", "hex": [56, 12]},
+    {"id": 132, "side": "axis", "name": "Afrika-Regiment 361", "type": "foot", "size": 1, "parent": 130, "men": 1600, "src": "E", "hex": [58, 12]},
+    {"id": 133, "side": "axis", "name": "III./255 und III./347", "type": "foot", "size": 1, "parent": 130, "men": 1600, "src": "E", "hex": [56, 11]},
+    {"id": 134, "side": "axis", "name": "Artillerie der Division Afrika", "type": "guns", "size": 1, "parent": 130, "guns": 24, "src": "E", "hex": [56, 11]},
     {"id": 140, "side": "axis", "name": "Savona", "type": "hq", "size": 1, "steps": 1, "nation": "it", "at": "Sidi Omar"},
     {"id": 141, "side": "axis", "name": "15 Reggimento fanteria", "type": "foot", "size": 1, "nation": "it", "parent": 140, "men": 2400, "src": "E", "at": "Sidi Omar"},
     {"id": 142, "side": "axis", "name": "16 Reggimento fanteria", "type": "foot", "size": 1, "nation": "it", "parent": 140, "men": 2400, "src": "E", "at": "Fort Capuzzo"},

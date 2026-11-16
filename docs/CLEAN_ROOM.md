@@ -34,5 +34,7 @@ contributor, working only from `DESIGN.md` and `SOURCES.md`, should.
 - [ ] `docs/SOURCES.md` lists every source used for the map and the orders of
       battle, with its licence; attributions are in place (OpenStreetMap needs one).
 - [ ] No file, name, text or number has come from another game or a reconstruction of one.
-- [ ] Art is generated or drawn for this game.
+- [ ] Art is generated or drawn for this game, apart from sourced historical
+      formation signs and archival photographs credited in `docs/ART_CREDITS.md`
+      and `data/history/north_africa_1940_1942.json`.
 - [ ] Repository history contains only this project.

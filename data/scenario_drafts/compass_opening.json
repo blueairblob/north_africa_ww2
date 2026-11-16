@@ -1,0 +1,761 @@
+{
+  "id": "compass_opening",
+  "name": "Compass: Sidi Barrani (trial)",
+  "start": "1940-12-09",
+  "turn_days": 1,
+  "turns": 8,
+  "research_next": "compass_interval",
+  "aim": {
+    "cw": "Break the Italian camp line at Nibeiwa, take Sidi Barrani, and cut the coast road towards Buq Buq.",
+    "axis": "Hold Sidi Barrani and keep the westward coast road open for the Tenth Army."
+  },
+  "about": "Trial operational reconstruction of 9–16 December 1940 on the game's existing 10 km map, one day per turn. Nibeiwa, the nearby Tummar camps and Sidi Barrani can receive separate daily orders. Tummar West/East are represented by a sector north of Nibeiwa, not separate named places. The 7th RTR's approximately 50 infantry tanks and the named formations follow official accounts; most formation strengths, stocks, local hexes and the air/sea percentages are explicit game estimates requiring further research. Green experience and 60 opening cohesion for the forward Italian camps are gameplay proxies for the documented surprise and weak command response, not measured unit readiness. The 4th Indian Division withdraws at the end of 14 December, the battlefield departure date given in the Australian official history; 16th British Brigade and 7th RTR remain. Brigade 16 is linked to Western Desert Force HQ from the start so it can remain supplied after the division departs. The approach march of 7–8 December is outside this opening. The dated assaults and supply are still under review; this is not a validated historical simulation. Tobruk’s pre-existing Italian XXII Corps and Sirte garrison are carried from this chapter so a later campaign handoff never spawns defenders retroactively. The 8,000/6,400 men, 72 guns, and town fort level are game estimates; they are not a reconstruction of the roughly 25,000-man, 220-gun January garrison.",
+  "sources": {
+    "W": "Wavell, Western Desert operations despatch, London Gazette 37628, sections 10–21: plan, forces, opening, Nibeiwa and Sidi Barrani",
+    "P": "Playfair et al., The Mediterranean and Middle East, vol. I, chapter XIV: positions, supply preparation, assault sequence and withdrawal of 4th Indian Division",
+    "A": "Australian official history, To Benghazi, chapter 6: Commonwealth formations and armoured screening task",
+    "E": "Game estimate: individual-unit strength, exact 10 km placement, opening stock or supply setting not verified by the cited account",
+    "T": "Australian official history, To Benghazi, chapter 9: XXII Corps, 61st Sirte and Tobruk garrison; approximately 25,000 men and 220 guns estimated 15 January"
+  },
+  "owners": {
+    "axis": [
+      "Acroma",
+      "Agedabia",
+      "Antelat",
+      "Augila",
+      "Barce",
+      "Bardia",
+      "Beda Fomm",
+      "Belhamed",
+      "Ben Gania",
+      "Benghazi",
+      "Bir Hakeim",
+      "Bir Rabia",
+      "Bir el Gubi",
+      "Buq Buq",
+      "Cyrene",
+      "Derna",
+      "El Adem",
+      "El Agheila",
+      "Fort Capuzzo",
+      "Fort Maddalena",
+      "Gambut",
+      "Gazala",
+      "Gicherra",
+      "Halfaya Pass",
+      "Jarabub",
+      "Knightsbridge",
+      "Maaten el Grara",
+      "Maktila",
+      "Marada",
+      "Martuba",
+      "Mechili",
+      "Mersa Brega",
+      "Misheifa",
+      "Msus",
+      "Nibeiwa",
+      "Sceleidima",
+      "Sidi Barrani",
+      "Sidi Omar",
+      "Sidi Rezegh",
+      "Sofafi",
+      "Sollum",
+      "Soluch",
+      "Tengeder",
+      "Tmimi",
+      "Tobruk",
+      "Tocra"
+    ],
+    "cw": [
+      "Alam Halfa",
+      "Alexandria",
+      "El Alamein",
+      "El Daba",
+      "Fuka",
+      "Mersa Matruh",
+      "Siwa"
+    ]
+  },
+  "sides": {
+    "axis": {
+      "lift": [
+        [
+          "1940-12-09",
+          150000
+        ]
+      ],
+      "air": [
+        [
+          "1940-12-09",
+          1
+        ]
+      ],
+      "sea_pct": [
+        [
+          "1940-12-09",
+          70
+        ]
+      ],
+      "fuel_pct": [
+        [
+          "1940-12-09",
+          50
+        ]
+      ]
+    },
+    "cw": {
+      "lift": [
+        [
+          "1940-12-09",
+          200000
+        ]
+      ],
+      "air": [
+        [
+          "1940-12-09",
+          2
+        ]
+      ],
+      "railhead": [
+        [
+          "1940-12-09",
+          "Mersa Matruh"
+        ]
+      ]
+    }
+  },
+  "ports": {
+    "Benghazi": {
+      "fuel": 5000,
+      "stores": 8000
+    },
+    "Tobruk": {
+      "fuel": 5000,
+      "stores": 8000
+    },
+    "Bardia": {
+      "fuel": 3000,
+      "stores": 6000
+    },
+    "Alexandria": {
+      "fuel": 15000,
+      "stores": 30000
+    },
+    "Mersa Matruh": {
+      "fuel": 3000,
+      "stores": 5000
+    }
+  },
+  "tripoli": {
+    "fuel": 8000,
+    "stores": 20000,
+    "pipeline": [
+      [
+        200,
+        350
+      ],
+      [
+        200,
+        350
+      ],
+      [
+        200,
+        350
+      ],
+      [
+        200,
+        350
+      ]
+    ]
+  },
+  "forts": [
+    [
+      77,
+      18,
+      2,
+      "axis"
+    ],
+    [
+      78,
+      17,
+      1,
+      "axis"
+    ],
+    [
+      77,
+      15,
+      1,
+      "axis"
+    ],
+    [
+      80,
+      17,
+      1,
+      "axis"
+    ],
+    [
+      73,
+      20,
+      2,
+      "axis"
+    ],
+    [
+      67,
+      13,
+      3,
+      "axis"
+    ],
+    [
+      66,
+      13,
+      2,
+      "axis"
+    ],
+    [
+      67,
+      14,
+      2,
+      "axis"
+    ],
+    [
+      55,
+      10,
+      3,
+      "axis"
+    ],
+    [
+      56,
+      11,
+      2,
+      "axis"
+    ]
+  ],
+  "units": [
+    {
+      "id": 101,
+      "side": "axis",
+      "name": "Group of Libyan Divisions HQ",
+      "type": "hq",
+      "nation": "it",
+      "size": 1,
+      "steps": 1,
+      "at": "Sidi Barrani",
+      "dump": {
+        "fuel": 1000,
+        "stores": 1600
+      },
+      "src": "E"
+    },
+    {
+      "id": 110,
+      "side": "axis",
+      "name": "Maletti Group HQ",
+      "type": "hq",
+      "nation": "it",
+      "size": 1,
+      "steps": 1,
+      "at": "Nibeiwa",
+      "src": "W"
+    },
+    {
+      "id": 111,
+      "side": "axis",
+      "name": "Maletti Group infantry",
+      "type": "motorised",
+      "nation": "it",
+      "parent": 110,
+      "size": 1,
+      "men": 3000,
+      "xp": "green",
+      "cohesion": 60,
+      "src": "W",
+      "at": "Nibeiwa"
+    },
+    {
+      "id": 112,
+      "side": "axis",
+      "name": "Maletti Group M11/39 tanks",
+      "type": "armour",
+      "nation": "it",
+      "parent": 110,
+      "size": 1,
+      "tanks": 35,
+      "xp": "green",
+      "cohesion": 60,
+      "src": "P",
+      "art_note": "M11/39 shown as an approximate mixed tank group.",
+      "at": "Nibeiwa"
+    },
+    {
+      "id": 120,
+      "side": "axis",
+      "name": "2nd Libyan Division (Tummar sector)",
+      "type": "foot",
+      "nation": "it",
+      "size": 2,
+      "men": 4800,
+      "xp": "green",
+      "cohesion": 60,
+      "src": "E",
+      "hex": [
+        78,
+        17
+      ]
+    },
+    {
+      "id": 130,
+      "side": "axis",
+      "name": "1st Libyan Division (Maktila)",
+      "type": "foot",
+      "nation": "it",
+      "size": 2,
+      "men": 4800,
+      "xp": "green",
+      "cohesion": 60,
+      "src": "E",
+      "at": "Maktila"
+    },
+    {
+      "id": 140,
+      "side": "axis",
+      "name": "4th Blackshirt Division (Sidi garrison)",
+      "type": "foot",
+      "nation": "it",
+      "size": 2,
+      "men": 3200,
+      "xp": "green",
+      "cohesion": 60,
+      "src": "E",
+      "at": "Sidi Barrani"
+    },
+    {
+      "id": 149,
+      "side": "axis",
+      "name": "63rd Cirene Division HQ",
+      "type": "hq",
+      "nation": "it",
+      "size": 1,
+      "steps": 1,
+      "dump": {
+        "fuel": 600,
+        "stores": 1200
+      },
+      "src": "E",
+      "at": "Sofafi"
+    },
+    {
+      "id": 150,
+      "side": "axis",
+      "name": "63rd Cirene Division (Sofafi)",
+      "type": "foot",
+      "nation": "it",
+      "parent": 149,
+      "size": 2,
+      "men": 4800,
+      "src": "E",
+      "at": "Sofafi"
+    },
+    {
+      "id": 151,
+      "side": "axis",
+      "name": "63rd Cirene detachment (Rabia)",
+      "type": "foot",
+      "nation": "it",
+      "parent": 149,
+      "size": 1,
+      "men": 1600,
+      "src": "E",
+      "at": "Bir Rabia"
+    },
+    {
+      "id": 160,
+      "side": "axis",
+      "name": "62nd Marmarica Division",
+      "type": "foot",
+      "nation": "it",
+      "size": 2,
+      "men": 4800,
+      "src": "E",
+      "hex": [
+        70,
+        18
+      ]
+    },
+    {
+      "id": 170,
+      "side": "axis",
+      "name": "64th Catanzaro Division",
+      "type": "foot",
+      "nation": "it",
+      "size": 2,
+      "men": 4800,
+      "src": "E",
+      "hex": [
+        74,
+        16
+      ]
+    },
+    {
+      "id": 190,
+      "side": "axis",
+      "name": "Italian XXII Corps HQ",
+      "type": "hq",
+      "nation": "it",
+      "size": 1,
+      "steps": 1,
+      "src": "T",
+      "at": "Tobruk"
+    },
+    {
+      "id": 191,
+      "side": "axis",
+      "name": "61st Sirte Division (Tobruk)",
+      "type": "foot",
+      "nation": "it",
+      "parent": 190,
+      "size": 2,
+      "men": 8000,
+      "src": "E",
+      "at": "Tobruk"
+    },
+    {
+      "id": 192,
+      "side": "axis",
+      "name": "Tobruk fortress troops",
+      "type": "foot",
+      "nation": "it",
+      "parent": 190,
+      "size": 2,
+      "men": 6400,
+      "src": "E",
+      "hex": [
+        56,
+        11
+      ]
+    },
+    {
+      "id": 193,
+      "side": "axis",
+      "name": "Tobruk fortress artillery",
+      "type": "guns",
+      "nation": "it",
+      "parent": 190,
+      "size": 1,
+      "guns": 72,
+      "src": "E",
+      "at": "Tobruk"
+    },
+    {
+      "id": 301,
+      "side": "cw",
+      "name": "Western Desert Force HQ",
+      "type": "hq",
+      "size": 1,
+      "steps": 1,
+      "hex": [
+        85,
+        18
+      ],
+      "dump": {
+        "fuel": 2000,
+        "stores": 3000
+      },
+      "src": "E"
+    },
+    {
+      "id": 302,
+      "side": "cw",
+      "name": "4th Indian Division HQ",
+      "type": "hq",
+      "size": 1,
+      "steps": 1,
+      "hex": [
+        76,
+        18
+      ],
+      "src": "W"
+    },
+    {
+      "id": 303,
+      "side": "cw",
+      "name": "11th Indian Infantry Brigade",
+      "type": "motorised",
+      "parent": 302,
+      "size": 1,
+      "men": 2400,
+      "src": "E",
+      "hex": [
+        76,
+        18
+      ]
+    },
+    {
+      "id": 304,
+      "side": "cw",
+      "name": "5th Indian Infantry Brigade",
+      "type": "motorised",
+      "parent": 302,
+      "size": 1,
+      "men": 2400,
+      "src": "E",
+      "hex": [
+        76,
+        17
+      ]
+    },
+    {
+      "id": 305,
+      "side": "cw",
+      "name": "16th British Infantry Brigade",
+      "type": "motorised",
+      "parent": 301,
+      "size": 1,
+      "men": 2400,
+      "src": "E",
+      "hex": [
+        76,
+        19
+      ]
+    },
+    {
+      "id": 306,
+      "side": "cw",
+      "name": "7th Royal Tank Regiment",
+      "type": "armour",
+      "counter_art": "matilda",
+      "size": 1,
+      "tanks": 50,
+      "src": "W",
+      "hex": [
+        76,
+        18
+      ]
+    },
+    {
+      "id": 307,
+      "side": "cw",
+      "name": "4th Indian Divisional Artillery",
+      "type": "guns",
+      "parent": 302,
+      "size": 1,
+      "guns": 72,
+      "src": "P",
+      "hex": [
+        76,
+        18
+      ]
+    },
+    {
+      "id": 310,
+      "side": "cw",
+      "name": "7th Armoured Division HQ",
+      "type": "hq",
+      "size": 1,
+      "steps": 1,
+      "hex": [
+        75,
+        19
+      ],
+      "src": "W"
+    },
+    {
+      "id": 311,
+      "side": "cw",
+      "name": "4th Armoured Brigade",
+      "type": "armour",
+      "parent": 310,
+      "size": 1,
+      "tanks": 75,
+      "src": "E",
+      "hex": [
+        75,
+        18
+      ]
+    },
+    {
+      "id": 312,
+      "side": "cw",
+      "name": "7th Armoured Division Support Group",
+      "type": "motorised",
+      "parent": 310,
+      "size": 1,
+      "men": 2400,
+      "src": "E",
+      "hex": [
+        75,
+        19
+      ]
+    },
+    {
+      "id": 313,
+      "side": "cw",
+      "name": "7th Armoured Brigade",
+      "type": "armour",
+      "parent": 310,
+      "size": 1,
+      "tanks": 70,
+      "src": "E",
+      "hex": [
+        76,
+        21
+      ]
+    },
+    {
+      "id": 314,
+      "side": "cw",
+      "name": "11th Hussars armoured cars",
+      "type": "recon",
+      "parent": 310,
+      "size": 1,
+      "cars": 60,
+      "src": "W",
+      "hex": [
+        75,
+        19
+      ]
+    },
+    {
+      "id": 320,
+      "side": "cw",
+      "name": "Selby Force (Matruh garrison detachment)",
+      "type": "motorised",
+      "size": 1,
+      "men": 1800,
+      "src": "P",
+      "hex": [
+        81,
+        17
+      ]
+    }
+  ],
+  "withdrawals": [
+    {
+      "date": "1940-12-14",
+      "unit": 302,
+      "src": "A",
+      "note": "Left the battlefield for Maaten Bagush on 14 December, leaving 16th Brigade at Sidi Barrani."
+    },
+    {
+      "date": "1940-12-14",
+      "unit": 303,
+      "src": "A"
+    },
+    {
+      "date": "1940-12-14",
+      "unit": 304,
+      "src": "A"
+    },
+    {
+      "date": "1940-12-14",
+      "unit": 307,
+      "src": "A"
+    }
+  ],
+  "mission": {
+    "routes": {
+      "Sidi Barrani–Buq Buq road": {
+        "terrain": "road",
+        "from": "Sidi Barrani",
+        "via": [],
+        "to": "Buq Buq",
+        "hexes": [
+          [
+            77,
+            15
+          ],
+          [
+            76,
+            16
+          ],
+          [
+            75,
+            16
+          ],
+          [
+            74,
+            16
+          ],
+          [
+            73,
+            16
+          ]
+        ]
+      }
+    },
+    "cw": {
+      "orders": [
+        {
+          "verb": "reach",
+          "place": "Nibeiwa"
+        },
+        {
+          "verb": "hold",
+          "place": "Sidi Barrani"
+        },
+        {
+          "verb": "deny",
+          "route": "Sidi Barrani–Buq Buq road"
+        }
+      ],
+      "success_grade": "major"
+    },
+    "axis": {
+      "orders": [
+        {
+          "verb": "hold",
+          "place": "Sidi Barrani"
+        },
+        {
+          "verb": "clear",
+          "route": "Sidi Barrani–Buq Buq road"
+        },
+        {
+          "verb": "hold",
+          "place": "Tobruk"
+        },
+        {
+          "verb": "stage",
+          "hex": [
+            56,
+            11
+          ],
+          "label": "the Tobruk southeastern perimeter (approximate)"
+        }
+      ],
+      "success_grade": "tactical"
+    }
+  },
+  "objectives": [
+    {
+      "place": "Nibeiwa",
+      "turn": 2,
+      "end": 16
+    },
+    {
+      "place": "Sidi Barrani",
+      "turn": 3,
+      "end": 30
+    },
+    {
+      "place": "Buq Buq",
+      "turn": 2,
+      "end": 18
+    },
+    {
+      "place": "Maktila",
+      "turn": 1,
+      "end": 10
+    },
+    {
+      "place": "Sofafi",
+      "turn": 1,
+      "end": 10
+    }
+  ],
+  "par": 156,
+  "thresholds": [
+    25,
+    70,
+    130
+  ]
+}

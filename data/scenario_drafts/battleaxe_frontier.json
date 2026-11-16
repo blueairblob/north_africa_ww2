@@ -1,0 +1,1185 @@
+{
+  "id": "battleaxe_frontier",
+  "name": "Battleaxe frontier battle: 15–17 June 1941 (linked research)",
+  "campaign_only": true,
+  "start": "1941-06-15",
+  "turn_days": 1,
+  "turns": 3,
+  "research_next": "frontier_stalemate_1941",
+  "aim": {
+    "cw": "Defeat the frontier defence and secure Sollum and Fort Capuzzo. Advance toward Tobruk only if strength and supply permit.",
+    "axis": "Hold Halfaya Pass and Bardia, blunt the Commonwealth armour and keep Tobruk contained."
+  },
+  "about": "Linked open-play Battleaxe chapter, 15–17 June 1941. The official history reports that the real Commonwealth attack failed, but this game scores the played holdings without forcing that result. The frontier objectives are a map-scale proxy for Battleaxe’s first stage; a full Tobruk relief, the Hafid ridge, 88-mm anti-tank positions, tank serviceability and rapid repair are not yet represented. Earlier owners and placements in this JSON are checker placeholders, not a historical standalone start.",
+  "sources": {
+    "W": "Wavell, Western Desert operations despatch, London Gazette 37628, sections 10–21: plan, forces, opening, Nibeiwa and Sidi Barrani",
+    "P": "Playfair et al., The Mediterranean and Middle East, vol. I, chapter XIV: positions, supply preparation, assault sequence and withdrawal of 4th Indian Division",
+    "A": "Australian official history, To Benghazi, chapter 6: Commonwealth formations and armoured screening task",
+    "E": "Game estimate: individual-unit strength, exact 10 km placement, opening stock or supply setting not verified by the cited account",
+    "B": "Australian official history, To Benghazi, chapter VII Before Bardia: 16th Brigade via Buq Buq and Sollum 17-19 December; 17th Brigade and divisional HQ move ordered for 22 December; 19th Brigade forward 1 January",
+    "P2": "Playfair et al., The Mediterranean and Middle East, vol. I, chapter XV: Sollum port and supply, Bardia perimeter preparations, ammunition delay and 7th RTR serviceability",
+    "O": "6th Australian Division operation order, 1 January 1941, Appendix 2 of Australian official history To Benghazi: western attack, phases, 7th RTR and 17th Brigade",
+    "H": "Australian War Memorial Battle of Bardia: breach 3 January, town 4 January, southern surrender 5 January",
+    "T": "Australian official history, To Benghazi, chapter 9: XXII Corps, 61st Sirte and Tobruk garrison; approximately 25,000 men and 220 guns estimated 15 January",
+    "T2": "Australian official history, To Benghazi, chapter 9: Bardia to Tobruk, XXII Corps garrison, preparation and attack on 21 January",
+    "P3": "UK official history, The Mediterranean and Middle East vol I chapter XV: Tobruk garrison, routes, preparations and fall",
+    "D": "Australian official history, To Benghazi, chapter 10, The Engagement at Derna: 22 January advance, Derna rearguard and 30 January occupation; contemporary estimate of 60th Sabratha and Babini armour near Derna/Mechili. Exact strength and scenario-entry placement remain unverified.",
+    "F": "Australian official history, To Benghazi, chapter 11, Beda Fomm and Benghazi: 3 February withdrawal, 4 February desert march, 5–7 February road block and surrender, and the Benghazi occupation.",
+    "R": "Playfair et al., The Mediterranean and Middle East, volume II, chapter I: defence of Cyrenaica, 7th Armoured refit, 6th/9th Australian relief, 2nd Armoured weakness, German arrivals, 24 March El Agheila and 31 March Mersa Brega attack.",
+    "W2": "Australian War Memorial, Tobruk diaries timeline: 8–9 March 9th Australian relief of 6th, 31 March Axis attack and 10–11 April siege onset.",
+    "R2": "Playfair et al., The Mediterranean and Middle East, volume II, chapter II, The Loss of Cyrenaica: 31 March Mersa Brega defence, 1 April German occupation, 4 April Benghazi entry, 6–7 April withdrawal and Mechili actions, and 18th Australian Brigade arrival at Tobruk by 7 April.",
+    "S": "Australian War Memorial, Tobruk diaries timeline: Easter Battle 13–14 April and Battle of the Salient 30 April–4 May; Battles for Tobruk: 9th Division ordered to hold the harbour and delay Axis advance while frontier defences were prepared.",
+    "M": "Playfair et al., The Mediterranean and Middle East, vol. II, chapter VIII: Brevity orders, 22nd Guards and Coast groups, 29 cruisers in the 7th Armoured Brigade Group and 24 I tanks with 4th RTR; Tiger convoy arrival 12 May and later re-equipment.",
+    "J": "Playfair et al., The Mediterranean and Middle East, vol. II, chapter VIII: 28 May Battleaxe orders; Tiger convoy, 7th Armoured re-equipment, 15 June readiness, 4th Indian and 22nd Guards participation, 15th Panzer frontier defence; approximate 90 cruiser and 100 infantry tanks at battle start.",
+    "G": "UK official history, The Mediterranean and Middle East, vol. II, chronology: first stage of Australian relief at Tobruk 19–29 August 1941; Australian War Memorial, The Great Siege: 18th Australian Brigade relieved by a Polish brigade in August. The game resolves this interval at the end of the 29–30 August turn.",
+    "K": "Auchinleck despatch, London Gazette 37695, section 29: 70th Division relief 18–28 September and 12–26 October, 2/13th Battalion remaining, Scobie assumes Tobruk command 22 October. Playfair et al., The Mediterranean and Middle East, vol. II, chapter XIII: 22nd Armoured Brigade convoy arrived 4 October and required desert preparation.",
+    "L": "Auchinleck despatch on Crusader, London Gazette 38177, operation instruction appendix A: Eighth Army, XXX and XIII Corps, New Zealand and South African divisions and army tank brigades in the planned force. Formation presence is sourced; first-turn entry and individual strengths are model estimates.",
+    "N2": "Australian War Memorial, Tobruk diaries timeline: the last Australian unit, 2/13th Battalion, was evacuated on 10 December 1941.",
+    "P42": "Toppe, Desert Warfare: German Experiences in World War II, chapter II section 7e: Axis Marada–Mersa Brega line 10 January 1942; limited counterattack starts 21 January; Agedabia 22 January, Benghazi 30 January, Derna 4 February, halt by 7 February. Retrospective German account; no game outcome is scripted from it.",
+    "F42": "Auchinleck despatch, London Gazette 38177: 1st Free French Brigade Group joined Eighth Army at the end of January 1942 and fought at Gazala and Bir Hakeim. The 31 January game entry and its manpower are estimates.",
+    "G42": "Toppe, Desert Warfare: German Experiences in World War II, chapter II sections 7e–f: Gazala attack 26 May, Tobruk capitulation 21 June, Egyptian pursuit and Alamein line by 30 June. Includes operational plan and fuel constraints; no capture is forced in the game.",
+    "A42": "Australian War Memorial, Battles of El Alamein: 9th Australian Division joined the line 4 July, Alam Halfa attack 30 August, Alamein attack 23 October and the November breakthrough. Dates and formations only; game strength and entry are estimates.",
+    "AR42": "Auchinleck despatch, London Gazette 38177, Eighth Army withdrawal to Gazala: 1st Armoured Division, 2nd Armoured Brigade and Guards Brigade fought in western Cyrenaica in January 1942. 1 January model entry and strengths are estimates.",
+    "B42": "House of Commons official report, 2 June 1942, statement on the Gazala battle: 50th British Division, 1st South African Division and Free French at Bir Hakeim faced Axis mobile formations including 90th Light, Ariete and Trieste. Exact game strengths and readiness dates are estimates."
+  },
+  "owners": {
+    "axis": [
+      "Acroma",
+      "Agedabia",
+      "Antelat",
+      "Augila",
+      "Barce",
+      "Bardia",
+      "Beda Fomm",
+      "Belhamed",
+      "Ben Gania",
+      "Benghazi",
+      "Bir Hakeim",
+      "Bir Rabia",
+      "Bir el Gubi",
+      "Buq Buq",
+      "Cyrene",
+      "Derna",
+      "El Adem",
+      "El Agheila",
+      "Fort Capuzzo",
+      "Fort Maddalena",
+      "Gambut",
+      "Gazala",
+      "Gicherra",
+      "Halfaya Pass",
+      "Jarabub",
+      "Knightsbridge",
+      "Maaten el Grara",
+      "Maktila",
+      "Marada",
+      "Martuba",
+      "Mechili",
+      "Mersa Brega",
+      "Misheifa",
+      "Msus",
+      "Nibeiwa",
+      "Sceleidima",
+      "Sidi Barrani",
+      "Sidi Omar",
+      "Sidi Rezegh",
+      "Sofafi",
+      "Sollum",
+      "Soluch",
+      "Tengeder",
+      "Tmimi",
+      "Tobruk",
+      "Tocra"
+    ],
+    "cw": [
+      "Alam Halfa",
+      "Alexandria",
+      "El Alamein",
+      "El Daba",
+      "Fuka",
+      "Mersa Matruh",
+      "Siwa"
+    ]
+  },
+  "sides": {
+    "axis": {
+      "lift": [
+        [
+          "1941-06-15",
+          150000
+        ]
+      ],
+      "air": [
+        [
+          "1941-06-15",
+          2
+        ]
+      ],
+      "sea_pct": [
+        [
+          "1941-06-15",
+          70
+        ]
+      ],
+      "fuel_pct": [
+        [
+          "1941-06-15",
+          50
+        ]
+      ]
+    },
+    "cw": {
+      "lift": [
+        [
+          "1941-06-15",
+          160000
+        ]
+      ],
+      "air": [
+        [
+          "1941-06-15",
+          2
+        ]
+      ],
+      "railhead": [
+        [
+          "1941-06-15",
+          "Mersa Matruh"
+        ]
+      ]
+    }
+  },
+  "landing_points": {
+    "Sollum": 200
+  },
+  "ports": {
+    "Benghazi": {
+      "fuel": 5000,
+      "stores": 8000
+    },
+    "Tobruk": {
+      "fuel": 5000,
+      "stores": 8000
+    },
+    "Bardia": {
+      "fuel": 3000,
+      "stores": 6000
+    },
+    "Alexandria": {
+      "fuel": 15000,
+      "stores": 30000
+    },
+    "Mersa Matruh": {
+      "fuel": 3000,
+      "stores": 5000
+    },
+    "Sollum": {
+      "fuel": 0,
+      "stores": 0
+    }
+  },
+  "tripoli": {
+    "fuel": 8000,
+    "stores": 20000,
+    "pipeline": [
+      [
+        200,
+        350
+      ],
+      [
+        200,
+        350
+      ],
+      [
+        200,
+        350
+      ],
+      [
+        200,
+        350
+      ]
+    ]
+  },
+  "forts": [
+    [
+      67,
+      13,
+      3,
+      "axis"
+    ],
+    [
+      66,
+      13,
+      2,
+      "axis"
+    ],
+    [
+      67,
+      14,
+      2,
+      "axis"
+    ],
+    [
+      55,
+      10,
+      3,
+      "axis"
+    ],
+    [
+      56,
+      11,
+      2,
+      "axis"
+    ]
+  ],
+  "units": [
+    {
+      "id": 101,
+      "side": "axis",
+      "name": "Group of Libyan Divisions HQ",
+      "type": "hq",
+      "nation": "it",
+      "size": 1,
+      "steps": 1,
+      "at": "Sidi Barrani",
+      "dump": {
+        "fuel": 1000,
+        "stores": 1600
+      },
+      "src": "E"
+    },
+    {
+      "id": 110,
+      "side": "axis",
+      "name": "Maletti Group HQ",
+      "type": "hq",
+      "nation": "it",
+      "size": 1,
+      "steps": 1,
+      "at": "Nibeiwa",
+      "src": "W"
+    },
+    {
+      "id": 111,
+      "side": "axis",
+      "name": "Maletti Group infantry",
+      "type": "motorised",
+      "nation": "it",
+      "parent": 110,
+      "size": 1,
+      "men": 3000,
+      "xp": "green",
+      "cohesion": 60,
+      "src": "W",
+      "at": "Nibeiwa"
+    },
+    {
+      "id": 112,
+      "side": "axis",
+      "name": "Maletti Group M11/39 tanks",
+      "type": "armour",
+      "nation": "it",
+      "parent": 110,
+      "size": 1,
+      "tanks": 35,
+      "xp": "green",
+      "cohesion": 60,
+      "src": "P",
+      "art_note": "M11/39 shown as an approximate mixed tank group.",
+      "at": "Nibeiwa"
+    },
+    {
+      "id": 120,
+      "side": "axis",
+      "name": "2nd Libyan Division (Tummar sector)",
+      "type": "foot",
+      "nation": "it",
+      "size": 2,
+      "men": 4800,
+      "xp": "green",
+      "cohesion": 60,
+      "src": "E",
+      "hex": [
+        78,
+        17
+      ]
+    },
+    {
+      "id": 130,
+      "side": "axis",
+      "name": "1st Libyan Division (Maktila)",
+      "type": "foot",
+      "nation": "it",
+      "size": 2,
+      "men": 4800,
+      "xp": "green",
+      "cohesion": 60,
+      "src": "E",
+      "at": "Maktila"
+    },
+    {
+      "id": 140,
+      "side": "axis",
+      "name": "4th Blackshirt Division (Sidi garrison)",
+      "type": "foot",
+      "nation": "it",
+      "size": 2,
+      "men": 3200,
+      "xp": "green",
+      "cohesion": 60,
+      "src": "E",
+      "at": "Sidi Barrani"
+    },
+    {
+      "id": 149,
+      "side": "axis",
+      "name": "63rd Cirene Division HQ",
+      "type": "hq",
+      "nation": "it",
+      "size": 1,
+      "steps": 1,
+      "dump": {
+        "fuel": 600,
+        "stores": 1200
+      },
+      "src": "E",
+      "at": "Sofafi"
+    },
+    {
+      "id": 150,
+      "side": "axis",
+      "name": "63rd Cirene Division (Sofafi)",
+      "type": "foot",
+      "nation": "it",
+      "parent": 149,
+      "size": 2,
+      "men": 4800,
+      "src": "E",
+      "at": "Sofafi"
+    },
+    {
+      "id": 151,
+      "side": "axis",
+      "name": "63rd Cirene detachment (Rabia)",
+      "type": "foot",
+      "nation": "it",
+      "parent": 149,
+      "size": 1,
+      "men": 1600,
+      "src": "E",
+      "at": "Bir Rabia"
+    },
+    {
+      "id": 160,
+      "side": "axis",
+      "name": "62nd Marmarica Division",
+      "type": "foot",
+      "nation": "it",
+      "size": 2,
+      "men": 4800,
+      "src": "E",
+      "hex": [
+        70,
+        18
+      ]
+    },
+    {
+      "id": 170,
+      "side": "axis",
+      "name": "64th Catanzaro Division",
+      "type": "foot",
+      "nation": "it",
+      "size": 2,
+      "men": 4800,
+      "src": "E",
+      "hex": [
+        74,
+        16
+      ]
+    },
+    {
+      "id": 180,
+      "side": "axis",
+      "name": "Italian XXIII Corps HQ",
+      "type": "hq",
+      "nation": "it",
+      "size": 1,
+      "steps": 1,
+      "src": "P2",
+      "at": "Bardia"
+    },
+    {
+      "id": 181,
+      "side": "axis",
+      "name": "1st Blackshirt Division (Bardia)",
+      "type": "foot",
+      "nation": "it",
+      "parent": 180,
+      "size": 2,
+      "men": 6000,
+      "src": "E",
+      "at": "Bardia"
+    },
+    {
+      "id": 182,
+      "side": "axis",
+      "name": "2nd Blackshirt Division (Bardia reserve)",
+      "type": "foot",
+      "nation": "it",
+      "parent": 180,
+      "size": 2,
+      "men": 4800,
+      "src": "E",
+      "at": "Bardia"
+    },
+    {
+      "id": 190,
+      "side": "axis",
+      "name": "Italian XXII Corps HQ",
+      "type": "hq",
+      "nation": "it",
+      "size": 1,
+      "steps": 1,
+      "src": "T",
+      "at": "Tobruk"
+    },
+    {
+      "id": 191,
+      "side": "axis",
+      "name": "61st Sirte Division (Tobruk)",
+      "type": "foot",
+      "nation": "it",
+      "parent": 190,
+      "size": 2,
+      "men": 8000,
+      "src": "E",
+      "at": "Tobruk"
+    },
+    {
+      "id": 192,
+      "side": "axis",
+      "name": "Tobruk fortress troops",
+      "type": "foot",
+      "nation": "it",
+      "parent": 190,
+      "size": 2,
+      "men": 6400,
+      "src": "E",
+      "hex": [
+        56,
+        11
+      ]
+    },
+    {
+      "id": 193,
+      "side": "axis",
+      "name": "Tobruk fortress artillery",
+      "type": "guns",
+      "nation": "it",
+      "parent": 190,
+      "size": 1,
+      "guns": 72,
+      "src": "E",
+      "at": "Tobruk"
+    },
+    {
+      "id": 194,
+      "side": "axis",
+      "name": "60th Sabratha Division (Derna sector)",
+      "type": "foot",
+      "nation": "it",
+      "size": 2,
+      "men": 6000,
+      "src": "E",
+      "arrives": "1941-01-23",
+      "arrives_src": "E",
+      "entry": "Derna",
+      "arrives_note": "Enters the modelled order of battle; this is not a historical reinforcement date."
+    },
+    {
+      "id": 195,
+      "side": "axis",
+      "name": "Babini armoured group",
+      "type": "armour",
+      "nation": "it",
+      "size": 1,
+      "tanks": 60,
+      "src": "D",
+      "arrives": "1941-01-23",
+      "arrives_src": "E",
+      "entry": "Mechili",
+      "arrives_note": "Enters the modelled order of battle; exact tanks and placement remain research estimates."
+    },
+    {
+      "id": 196,
+      "side": "axis",
+      "name": "Benghazi security troops (provisional)",
+      "type": "foot",
+      "nation": "it",
+      "size": 1,
+      "men": 2000,
+      "src": "E",
+      "arrives": "1941-01-23",
+      "arrives_src": "E",
+      "entry": "Benghazi",
+      "arrives_note": "Provisional rear-area security counter entering the model, not a dated historical reinforcement."
+    },
+    {
+      "id": 200,
+      "side": "axis",
+      "name": "Deutsches Afrika Korps HQ",
+      "type": "hq",
+      "size": 1,
+      "steps": 1,
+      "src": "R",
+      "arrives": "1941-02-24",
+      "arrives_src": "R",
+      "entry": [
+        1,
+        30
+      ],
+      "arrives_note": "Forward map entry after German reconnaissance was identified west of El Agheila; Rommel reached Tripoli 12 February. The west-edge entry is outside El Agheila so the formation can still enter if Commonwealth forces hold that town.",
+      "nation": "de",
+      "dump": {
+        "fuel": 300,
+        "stores": 500
+      }
+    },
+    {
+      "id": 201,
+      "side": "axis",
+      "name": "5th Light Division reconnaissance",
+      "type": "recon",
+      "size": 1,
+      "cars": 40,
+      "src": "R",
+      "arrives": "1941-02-24",
+      "arrives_src": "R",
+      "entry": [
+        1,
+        30
+      ],
+      "arrives_note": "Forward map entry is approximate; German troops were identified west of El Agheila on 24 February. The west-edge entry is outside El Agheila so the formation can still enter if Commonwealth forces hold that town.",
+      "parent": 200,
+      "nation": "de"
+    },
+    {
+      "id": 202,
+      "side": "axis",
+      "name": "5th Light Division motorised troops",
+      "type": "motorised",
+      "size": 2,
+      "men": 3000,
+      "src": "E",
+      "arrives": "1941-03-08",
+      "arrives_src": "E",
+      "entry": [
+        1,
+        30
+      ],
+      "arrives_note": "Modelled entry date and hex; exact placement is a research estimate. The west-edge entry is outside El Agheila so the formation can still enter if Commonwealth forces hold that town.",
+      "parent": 200,
+      "nation": "de"
+    },
+    {
+      "id": 203,
+      "side": "axis",
+      "name": "5th Light Division anti-tank guns",
+      "type": "guns",
+      "size": 1,
+      "guns": 24,
+      "src": "E",
+      "arrives": "1941-03-08",
+      "arrives_src": "E",
+      "entry": [
+        1,
+        30
+      ],
+      "arrives_note": "Modelled entry date and hex; exact placement is a research estimate. The west-edge entry is outside El Agheila so the formation can still enter if Commonwealth forces hold that town.",
+      "parent": 200,
+      "nation": "de"
+    },
+    {
+      "id": 204,
+      "side": "axis",
+      "name": "5th Light Division Panzer Regiment",
+      "type": "armour",
+      "size": 2,
+      "tanks": 150,
+      "src": "R",
+      "arrives": "1941-03-23",
+      "arrives_src": "R",
+      "entry": [
+        1,
+        30
+      ],
+      "arrives_note": "Official history places the regiment at El Agheila on 23 March; about 70 light and 80 medium tanks describes its composition, not this date’s serviceable count. The west-edge entry is outside El Agheila so the formation can still enter if Commonwealth forces hold that town.",
+      "parent": 200,
+      "nation": "de"
+    },
+    {
+      "id": 205,
+      "side": "axis",
+      "name": "132nd Ariete Armoured Division",
+      "type": "armour",
+      "size": 2,
+      "tanks": 60,
+      "src": "E",
+      "arrives": "1941-03-25",
+      "arrives_src": "E",
+      "entry": [
+        1,
+        30
+      ],
+      "arrives_note": "Provisional map entry and tank count; Ariete came under DAK on 7 March, but its eastern placement requires verification. The west-edge entry is outside El Agheila so the formation can still enter if Commonwealth forces hold that town.",
+      "nation": "it"
+    },
+    {
+      "id": 206,
+      "side": "axis",
+      "name": "27th Brescia Division (April pursuit)",
+      "type": "foot",
+      "nation": "it",
+      "size": 2,
+      "men": 8000,
+      "src": "E",
+      "arrives": "1941-04-02",
+      "arrives_src": "R2",
+      "entry": [
+        1,
+        30
+      ],
+      "arrives_note": "Models Brescia following the April advance; exact strength and west-edge entry are game estimates."
+    },
+    {
+      "id": 301,
+      "side": "cw",
+      "name": "Western Desert Force HQ",
+      "type": "hq",
+      "size": 1,
+      "steps": 1,
+      "hex": [
+        85,
+        18
+      ],
+      "dump": {
+        "fuel": 2000,
+        "stores": 3000
+      },
+      "src": "E"
+    },
+    {
+      "id": 305,
+      "side": "cw",
+      "name": "16th British Infantry Brigade",
+      "type": "motorised",
+      "parent": 301,
+      "size": 1,
+      "men": 2400,
+      "src": "E",
+      "hex": [
+        76,
+        19
+      ]
+    },
+    {
+      "id": 306,
+      "side": "cw",
+      "name": "7th Royal Tank Regiment",
+      "type": "armour",
+      "counter_art": "matilda",
+      "size": 1,
+      "tanks": 50,
+      "src": "W",
+      "hex": [
+        76,
+        18
+      ]
+    },
+    {
+      "id": 310,
+      "side": "cw",
+      "name": "7th Armoured Division HQ",
+      "type": "hq",
+      "size": 1,
+      "steps": 1,
+      "hex": [
+        75,
+        19
+      ],
+      "src": "W"
+    },
+    {
+      "id": 311,
+      "side": "cw",
+      "name": "4th Armoured Brigade",
+      "type": "armour",
+      "parent": 310,
+      "size": 1,
+      "tanks": 75,
+      "src": "E",
+      "hex": [
+        75,
+        18
+      ]
+    },
+    {
+      "id": 312,
+      "side": "cw",
+      "name": "7th Armoured Division Support Group",
+      "type": "motorised",
+      "parent": 310,
+      "size": 1,
+      "men": 2400,
+      "src": "E",
+      "hex": [
+        75,
+        19
+      ]
+    },
+    {
+      "id": 313,
+      "side": "cw",
+      "name": "7th Armoured Brigade",
+      "type": "armour",
+      "parent": 310,
+      "size": 1,
+      "tanks": 70,
+      "src": "E",
+      "hex": [
+        76,
+        21
+      ]
+    },
+    {
+      "id": 314,
+      "side": "cw",
+      "name": "11th Hussars armoured cars",
+      "type": "recon",
+      "parent": 310,
+      "size": 1,
+      "cars": 60,
+      "src": "W",
+      "hex": [
+        75,
+        19
+      ]
+    },
+    {
+      "id": 320,
+      "side": "cw",
+      "name": "Selby Force (Matruh garrison detachment)",
+      "type": "motorised",
+      "size": 1,
+      "men": 1800,
+      "src": "P",
+      "hex": [
+        81,
+        17
+      ]
+    },
+    {
+      "id": 330,
+      "side": "cw",
+      "name": "6th Australian Division HQ",
+      "type": "hq",
+      "size": 1,
+      "steps": 1,
+      "src": "E",
+      "at": "Mersa Matruh"
+    },
+    {
+      "id": 331,
+      "side": "cw",
+      "name": "16th Australian Infantry Brigade",
+      "type": "motorised",
+      "size": 1,
+      "men": 2400,
+      "src": "E",
+      "parent": 330,
+      "at": "Buq Buq"
+    },
+    {
+      "id": 332,
+      "side": "cw",
+      "name": "17th Australian Infantry Brigade",
+      "type": "motorised",
+      "size": 1,
+      "men": 2400,
+      "src": "E",
+      "parent": 330,
+      "at": "Mersa Matruh"
+    },
+    {
+      "id": 333,
+      "side": "cw",
+      "name": "19th Australian Infantry Brigade",
+      "type": "motorised",
+      "size": 1,
+      "men": 2400,
+      "src": "E",
+      "parent": 330,
+      "at": "Sollum"
+    },
+    {
+      "id": 334,
+      "side": "cw",
+      "name": "6th Australian Divisional Artillery",
+      "type": "guns",
+      "size": 1,
+      "guns": 48,
+      "src": "E",
+      "parent": 330,
+      "at": "Mersa Matruh"
+    },
+    {
+      "id": 340,
+      "side": "cw",
+      "name": "2nd Armoured Division HQ",
+      "type": "hq",
+      "size": 1,
+      "steps": 1,
+      "src": "E",
+      "arrives": "1941-02-10",
+      "arrives_src": "E",
+      "entry": "Mersa Matruh",
+      "arrives_note": "Enters the active model after Beda Fomm; it had arrived in Egypt earlier.",
+      "dump": {
+        "fuel": 300,
+        "stores": 500
+      }
+    },
+    {
+      "id": 341,
+      "side": "cw",
+      "name": "3rd Armoured Brigade",
+      "type": "armour",
+      "size": 2,
+      "tanks": 50,
+      "src": "E",
+      "arrives": "1941-02-10",
+      "arrives_src": "E",
+      "entry": "Mersa Matruh",
+      "arrives_note": "Provisional tank count; formation was weak and mechanically unreliable.",
+      "parent": 340
+    },
+    {
+      "id": 342,
+      "side": "cw",
+      "name": "2nd Armoured Division Support Group",
+      "type": "motorised",
+      "size": 1,
+      "men": 2200,
+      "src": "E",
+      "arrives": "1941-02-10",
+      "arrives_src": "E",
+      "entry": "Mersa Matruh",
+      "arrives_note": "Modelled entry date and hex; exact placement is a research estimate.",
+      "parent": 340
+    },
+    {
+      "id": 343,
+      "side": "cw",
+      "name": "1st King’s Dragoon Guards",
+      "type": "recon",
+      "size": 1,
+      "cars": 40,
+      "src": "E",
+      "arrives": "1941-02-10",
+      "arrives_src": "E",
+      "entry": "Mersa Matruh",
+      "arrives_note": "Modelled entry date and hex; exact placement is a research estimate.",
+      "parent": 340
+    },
+    {
+      "id": 350,
+      "side": "cw",
+      "name": "9th Australian Division HQ",
+      "type": "hq",
+      "size": 1,
+      "steps": 1,
+      "src": "E",
+      "arrives": "1941-03-08",
+      "arrives_src": "E",
+      "entry": "Mersa Matruh",
+      "arrives_note": "The division relieved 6th Australian around 8–9 March; entry at Matruh is an abstraction if Tobruk remains Axis-held.",
+      "dump": {
+        "fuel": 300,
+        "stores": 500
+      }
+    },
+    {
+      "id": 351,
+      "side": "cw",
+      "name": "20th Australian Infantry Brigade",
+      "type": "foot",
+      "size": 2,
+      "men": 3000,
+      "src": "E",
+      "arrives": "1941-03-08",
+      "arrives_src": "E",
+      "entry": "Mersa Matruh",
+      "arrives_note": "Modelled entry date and hex; exact placement is a research estimate.",
+      "parent": 350
+    },
+    {
+      "id": 352,
+      "side": "cw",
+      "name": "24th Australian Infantry Brigade",
+      "type": "foot",
+      "size": 2,
+      "men": 3000,
+      "src": "E",
+      "arrives": "1941-03-08",
+      "arrives_src": "E",
+      "entry": "Mersa Matruh",
+      "arrives_note": "Modelled entry date and hex; exact placement is a research estimate.",
+      "parent": 350
+    },
+    {
+      "id": 353,
+      "side": "cw",
+      "name": "26th Australian Infantry Brigade",
+      "type": "foot",
+      "size": 2,
+      "men": 3000,
+      "src": "E",
+      "arrives": "1941-03-08",
+      "arrives_src": "E",
+      "entry": "Mersa Matruh",
+      "arrives_note": "Modelled entry date and hex; exact placement is a research estimate.",
+      "parent": 350
+    },
+    {
+      "id": 354,
+      "side": "cw",
+      "name": "18th Australian Infantry Brigade",
+      "type": "foot",
+      "size": 2,
+      "men": 3000,
+      "src": "E",
+      "arrives": "1941-04-07",
+      "arrives_src": "R2",
+      "entry": "Tobruk",
+      "arrives_note": "Official history places the brigade at Tobruk by 7 April. If the port is enemy-held in this campaign, entry falls back to the Commonwealth base; exact strength is an estimate."
+    },
+    {
+      "id": 360,
+      "side": "cw",
+      "name": "3rd Indian Motor Brigade",
+      "type": "motorised",
+      "size": 1,
+      "men": 2400,
+      "src": "E",
+      "arrives": "1941-03-29",
+      "arrives_src": "E",
+      "entry": "El Adem",
+      "arrives_note": "Official history says the brigade was due at El Adem by 29 March; strength is a game estimate."
+    },
+    {
+      "id": 370,
+      "side": "cw",
+      "name": "22nd Guards Brigade Group (Brevity)",
+      "type": "motorised",
+      "size": 2,
+      "men": 3000,
+      "src": "E",
+      "arrives": "1941-05-05",
+      "arrives_src": "E",
+      "entry": "Mersa Matruh",
+      "arrives_note": "Model entry date and 3,000 men are estimates. The official history identifies the group for Brevity and notes that it borrowed transport."
+    },
+    {
+      "id": 371,
+      "side": "cw",
+      "name": "4th Royal Tank Regiment (Brevity)",
+      "type": "armour",
+      "size": 1,
+      "tanks": 24,
+      "src": "M",
+      "arrives": "1941-05-05",
+      "arrives_src": "E",
+      "entry": "Mersa Matruh",
+      "arrives_note": "Official history reports two squadrons, 24 I tanks, for Brevity. Availability on 5 May is a model estimate."
+    },
+    {
+      "id": 372,
+      "side": "cw",
+      "name": "7th Armoured Brigade Group (Brevity)",
+      "type": "armour",
+      "size": 1,
+      "tanks": 29,
+      "src": "M",
+      "arrives": "1941-05-05",
+      "arrives_src": "E",
+      "entry": "Mersa Matruh",
+      "arrives_note": "Official history reports 2nd RTR with 29 cruiser tanks for Brevity. Availability on 5 May is a model estimate."
+    },
+    {
+      "id": 373,
+      "side": "cw",
+      "name": "Coast Group (Brevity)",
+      "type": "motorised",
+      "size": 1,
+      "men": 1800,
+      "src": "E",
+      "arrives": "1941-05-05",
+      "arrives_src": "E",
+      "entry": "Mersa Matruh",
+      "arrives_note": "Mainly 2nd Rifle Brigade and 8th Field Regiment RA in the official history; 1,800 men and model entry date are estimates."
+    },
+    {
+      "id": 210,
+      "side": "axis",
+      "name": "15th Panzer Division frontier HQ",
+      "type": "hq",
+      "size": 1,
+      "steps": 1,
+      "src": "J",
+      "nation": "de",
+      "arrives": "1941-06-01",
+      "arrives_src": "E",
+      "entry": "Bardia",
+      "arrives_note": "Model entry at Bardia is conditional on Axis control; historical 15th Panzer was already in theatre. Date and location are game estimates."
+    },
+    {
+      "id": 211,
+      "side": "axis",
+      "name": "15th Panzer Division 8th Panzer Regiment",
+      "type": "armour",
+      "size": 2,
+      "tanks": 100,
+      "src": "J",
+      "nation": "de",
+      "arrives": "1941-06-01",
+      "arrives_src": "E",
+      "entry": "Bardia",
+      "parent": 210,
+      "arrives_note": "Official history estimates about 100 tanks at Battleaxe start; 1 June model-entry date and exact placement are estimates."
+    },
+    {
+      "id": 380,
+      "side": "cw",
+      "name": "4th Indian Division frontier HQ",
+      "type": "hq",
+      "size": 1,
+      "steps": 1,
+      "src": "J",
+      "arrives": "1941-06-01",
+      "arrives_src": "E",
+      "entry": "Mersa Matruh",
+      "arrives_note": "The official history identifies divisional HQ for Battleaxe; 1 June model-entry date and place are estimates."
+    },
+    {
+      "id": 381,
+      "side": "cw",
+      "name": "11th Indian Infantry Brigade (Battleaxe)",
+      "type": "motorised",
+      "size": 2,
+      "men": 3000,
+      "src": "E",
+      "arrives": "1941-06-01",
+      "arrives_src": "E",
+      "entry": "Mersa Matruh",
+      "parent": 380,
+      "arrives_note": "The official history identifies the brigade, but 3,000 men and model-entry date are estimates."
+    },
+    {
+      "id": 382,
+      "side": "cw",
+      "name": "4th Indian Division artillery group",
+      "type": "guns",
+      "size": 1,
+      "guns": 24,
+      "src": "E",
+      "arrives": "1941-06-01",
+      "arrives_src": "E",
+      "entry": "Mersa Matruh",
+      "parent": 380,
+      "arrives_note": "Divisional artillery is in the official Battleaxe force; 24 guns and model-entry date are estimates."
+    },
+    {
+      "id": 383,
+      "side": "cw",
+      "name": "7th Armoured Brigade reinforcement group",
+      "type": "armour",
+      "size": 2,
+      "tanks": 60,
+      "src": "E",
+      "arrives": "1941-06-01",
+      "arrives_src": "E",
+      "entry": "Mersa Matruh",
+      "arrives_note": "Modelled additional cruiser tanks after Tiger re-equipment; 60 is an estimate chosen with the carried Brevity group to approach the official roughly 90-cruiser Battleaxe total. It does not restore earlier losses."
+    },
+    {
+      "id": 384,
+      "side": "cw",
+      "name": "4th Armoured Brigade reinforcement group",
+      "type": "armour",
+      "size": 2,
+      "tanks": 75,
+      "src": "E",
+      "arrives": "1941-06-01",
+      "arrives_src": "E",
+      "entry": "Mersa Matruh",
+      "arrives_note": "Modelled additional infantry tanks after Tiger re-equipment; 75 is an estimate chosen with the carried Brevity group to approach the official roughly 100-infantry-tank Battleaxe total. It does not restore earlier losses."
+    }
+  ],
+  "objectives": [],
+  "thresholds": [
+    10,
+    30,
+    60
+  ],
+  "par": 0,
+  "landing_sides": {
+    "Sollum": "cw"
+  },
+  "mission": {
+    "routes": {},
+    "cw": {
+      "orders": [
+        {
+          "verb": "hold",
+          "place": "Sollum"
+        },
+        {
+          "verb": "hold",
+          "place": "Fort Capuzzo"
+        }
+      ],
+      "success_grade": "major",
+      "commendations": [
+        {
+          "title": "Halfaya Pass secured",
+          "order": {
+            "verb": "hold",
+            "place": "Halfaya Pass"
+          }
+        }
+      ]
+    },
+    "axis": {
+      "orders": [
+        {
+          "verb": "hold",
+          "place": "Halfaya Pass"
+        },
+        {
+          "verb": "hold",
+          "place": "Bardia"
+        }
+      ],
+      "success_grade": "major"
+    }
+  },
+  "port_access": [
+    {
+      "port": "Benghazi",
+      "side": "cw",
+      "date": "1941-06-15",
+      "pct": 0,
+      "src": "R2"
+    }
+  ]
+}

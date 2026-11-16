@@ -1,0 +1,38 @@
+{
+  "base": "crusader_linked_1941",
+  "id": "cyrenaica_winter_1942",
+  "research_next": "axis_january_offensive_1942",
+  "name": "Cyrenaica winter: 1–20 January 1942 (linked research)",
+  "campaign_only": true,
+  "start": "1942-01-01",
+  "turn_days": 2,
+  "turns": 10,
+  "aim": {
+    "cw": "Keep Tobruk and the Egyptian line secure, consolidate the ground won or retained in Cyrenaica, and protect supply before another advance.",
+    "axis": "Preserve a mobile force and a western supply base, probe the Commonwealth's exposed flank, and prepare a counterattack if the played balance of supply and strength permits."
+  },
+  "about": "A played continuation into January 1942; no historical retreat, port capture or fixed new tank strength is imposed. The historical Axis line reached Marada–Mersa Brega by 10 January, but a counterfactual player may hold very different ground. Command aims are adapted to this map-scale chapter, not verbatim orders. Repair capacity, serviceable tanks, new shipping and exact January unit strengths still require research and rules.",
+  "add_units": [
+    {"id": 460, "side": "cw", "name": "1st Armoured Division HQ", "type": "hq", "size": 1, "steps": 1, "src": "AR42", "arrives": "1942-01-01", "arrives_src": "E", "entry": "Tobruk", "arrives_note": "Official despatch places this division in Cyrenaica by 21 January. 1 January field entry is a game estimate; if Tobruk is lost it enters from the Commonwealth base."},
+    {"id": 461, "side": "cw", "name": "2nd Armoured Brigade (1st Armoured Division)", "type": "armour", "parent": 460, "size": 2, "tanks": 70, "src": "E", "arrives": "1942-01-01", "arrives_src": "E", "entry": "Tobruk", "arrives_note": "Official despatch identifies the brigade in the January retreat. 70 serviceable tanks and 1 January are game estimates."},
+    {"id": 462, "side": "cw", "name": "Guards Brigade (1st Armoured Division)", "type": "motorised", "parent": 460, "size": 2, "men": 3000, "src": "E", "arrives": "1942-01-01", "arrives_src": "E", "entry": "Tobruk", "arrives_note": "Official despatch identifies the brigade in the January retreat. 3,000 men and 1 January are game estimates."}
+  ],
+  "withdrawals": [],
+  "replacements": [],
+  "port_access": [
+    {"port": "Benghazi", "side": "cw", "date": "1942-01-01", "pct": 0, "src": "R2"}
+  ],
+  "mission": {
+    "routes": {},
+    "cw": {
+      "orders": [{"verb": "hold", "place": "Tobruk"}, {"verb": "hold", "place": "Mersa Matruh"}],
+      "success_grade": "major",
+      "commendations": [{"title": "Benghazi secured", "order": {"verb": "hold", "place": "Benghazi"}}]
+    },
+    "axis": {
+      "orders": [{"verb": "hold", "place": "El Agheila"}, {"verb": "hold", "place": "Mersa Brega"}],
+      "success_grade": "major",
+      "commendations": [{"title": "Agedabia foothold", "order": {"verb": "reach", "place": "Agedabia"}}]
+    }
+  }
+}

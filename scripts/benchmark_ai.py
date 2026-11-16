@@ -14,19 +14,21 @@ from time import perf_counter
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
-from engine import invariants, players, scenarios, state as S  # noqa: E402
-from engine.computer import ComputerHardBaseline, ComputerHardBeforeFlank, ComputerHardCoordinated, ComputerHardTactical, ComputerHardUnrestrictedFlank  # noqa: E402
+from engine import invariants, mission, players, scenarios, state as S  # noqa: E402
+from engine.computer import ComputerHardBaseline, ComputerHardBeforeFlank, ComputerHardCoordinated, ComputerHardPoints, ComputerHardTactical, ComputerHardUnrestrictedFlank, ComputerPoints  # noqa: E402
 from engine.gamemap import GameMap  # noqa: E402
 from engine.turn import begin_turn, finish_turn  # noqa: E402
 from engine.view import leaks, view  # noqa: E402
 
 
 OPPONENTS = {"easy": players.ComputerEasy, "standard": players.ComputerOpponent,
-             "hard": ComputerHardBaseline, "passive": players.DoNothing}
+             "hard": ComputerHardBaseline, "passive": players.DoNothing,
+             "points-standard": ComputerPoints}
 POLICIES = {"hard": players.ComputerHard, "tactical": ComputerHardTactical,
             "coordinated": ComputerHardCoordinated,
             "baseline": ComputerHardBaseline, "unrestricted": ComputerHardUnrestrictedFlank,
-            "pre-flank": ComputerHardBeforeFlank}
+            "pre-flank": ComputerHardBeforeFlank, "standard": players.ComputerOpponent,
+            "points-standard": ComputerPoints, "points-hard": ComputerHardPoints}
 
 
 def play(scenario, gmap, side, policy, opponent, seed):
@@ -36,6 +38,7 @@ def play(scenario, gmap, side, policy, opponent, seed):
     shortages = untraced = invalid = turns = 0
     hq_dump_lost = objective_turn_vp = 0
     flank_goals, captured_flank_goals = set(), set()
+    mission_progress = []
     cpu = 0.0
     while not state["over"]:
         state = begin_turn(state, gmap, scenario)
@@ -62,6 +65,10 @@ def play(scenario, gmap, side, policy, opponent, seed):
         dump_before = sum(sum(u["dump"].values()) for u in state["units"]
                           if u["side"] == side and u["type"] == "hq")
         state, replies = finish_turn(state, gmap, scenario, given)
+        assessed = mission.assessment(state, scenario, gmap).get(side)
+        if assessed:
+            mission_progress.append({"turn": turns + 1,
+                                     "met": [check["order"] for check in assessed["checks"] if check["met"]]})
         dump_after = sum(sum(u["dump"].values()) for u in state["units"]
                          if u["side"] == side and u["type"] == "hq")
         hq_dump_lost += dump_before - dump_after
@@ -74,7 +81,11 @@ def play(scenario, gmap, side, policy, opponent, seed):
             raise AssertionError(("turn", state["turn"], bad))
         turns += 1
     totals = state["sides"]
+    mission_result = (state["result"].get("mission") or {}).get("checks", {}).get(side, {})
     return {"seed": seed, "winner": state["result"]["winner"],
+            "mission_complete": mission_result.get("complete"),
+            "mission_checks": {check["order"]: check["met"] for check in mission_result.get("checks", [])},
+            "mission_progress": mission_progress,
             "margin": state["result"]["margin"] * (1 if side == "axis" else -1),
             "objective_vp": totals[side]["vp"] - totals[side]["kills"],
             "objective_turn_vp": objective_turn_vp,
@@ -117,8 +128,8 @@ def main():
     parser.add_argument("--seeds", type=int, nargs="+", default=(0, 1, 65, 1941, 2026))
     parser.add_argument("--sides", nargs="+", choices=S.SIDES, default=S.SIDES)
     parser.add_argument("--opponents", nargs="+", choices=OPPONENTS, default=("standard", "hard"))
-    parser.add_argument("--baseline", choices=("baseline", "unrestricted", "pre-flank"), default="baseline")
-    parser.add_argument("--candidate", choices=("tactical", "hard", "coordinated"), default="tactical")
+    parser.add_argument("--baseline", choices=("baseline", "unrestricted", "pre-flank", "points-standard", "points-hard"), default="baseline")
+    parser.add_argument("--candidate", choices=("tactical", "hard", "coordinated", "standard"), default="tactical")
     parser.add_argument("--json", action="store_true", help="Print full paired results as JSON")
     args = parser.parse_args()
     gmap = GameMap(json.loads((ROOT / "data" / "map.json").read_text()))
@@ -139,6 +150,10 @@ def main():
                       f"Δloss={statistics.mean(r['delta_loss_vp'] for r in group):+6.1f} "
                       f"range=[{min(deltas):+d},{max(deltas):+d}] "
                       f"bootstrap95={f'[{ci[0]:+.1f},{ci[1]:+.1f}]' if ci else 'n/a'} "
+                      f"mission={sum(r['baseline']['mission_complete'] is True for r in group)}→"
+                      f"{sum(r['candidate']['mission_complete'] is True for r in group)} "
+                      f"orders_met={sum(sum(r['baseline']['mission_checks'].values()) for r in group)}→"
+                      f"{sum(sum(r['candidate']['mission_checks'].values()) for r in group)} "
                       f"invalid={sum(r['candidate']['invalid'] for r in group)}")
 
 

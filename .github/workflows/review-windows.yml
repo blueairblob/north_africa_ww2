@@ -1,0 +1,25 @@
+name: Windows review build
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - 'review-*'
+
+jobs:
+  package:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.13'
+      - name: Build and smoke-test portable ZIP
+        shell: pwsh
+        run: ./scripts/build_review.ps1
+      - name: Upload reviewer ZIP
+        uses: actions/upload-artifact@v7
+        with:
+          name: Benghazi-Handicap-Windows-Review
+          path: dist/Benghazi-Handicap-Windows-Review.zip
+          if-no-files-found: error

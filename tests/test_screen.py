@@ -11,7 +11,7 @@ pygame = pytest.importorskip("pygame")
 from engine import players                                        # noqa: E402
 from engine import state as S                                     # noqa: E402
 from engine.view import view                                     # noqa: E402
-from helpers import GMAP, ROOT, small                             # noqa: E402
+from helpers import GMAP, ROOT, scenario, small, unit              # noqa: E402
 from screen import layout, theme                                  # noqa: E402
 from screen.app import App                                        # noqa: E402
 from screen.layout import Layout                                  # noqa: E402
@@ -312,7 +312,7 @@ def test_map_layers_hold_weather_terrain_and_counter_style_preferences():
     app.paint(surface)
     app.click(layout.layers(app.size, False)["layers"].center)
     menu = layout.layers(app.size, True)
-    assert all(name in menu for name in ("k", "weather", "s", "z", "pictures", "nato"))
+    assert all(name in menu for name in ("mission", "k", "weather", "s", "z", "pictures", "nato"))
     assert app.ui.weather_visible and app.ui.symbols == "pictures"
     app.click(menu["k"].center)
     app.click(menu["weather"].center)
@@ -322,6 +322,27 @@ def test_map_layers_hold_weather_terrain_and_counter_style_preferences():
     assert app.painter.weather_rect is None and app.ui.symbols == "nato"
     app.click(menu["pictures"].center)
     assert app.ui.symbols == "pictures"
+
+
+def test_mission_layer_shows_orders_and_marks_the_sidi_corridor():
+    from engine.scenarios import load
+    pygame.init()
+    app = App(Session(load("sidi_rezegh"), GMAP, humans=["cw"]))
+    app.centre_on(GMAP.places["Belhamed"]["hex"])
+    plain, marked = pygame.Surface(app.size), pygame.Surface(app.size)
+    app.paint(plain)
+    app.click(layout.layers(app.size, False)["layers"].center)
+    app.click(layout.layers(app.size, True)["mission"].center)
+    assert app.ui.overlays == {"mission"} and not app.ui.layers_open
+    said = []
+    real = app.painter.text
+    app.painter.text = lambda surface, words, *a, **k: (said.append(str(words)), real(surface, words, *a, **k))
+    app.paint(marked)
+    assert any("MISSION · COMMONWEALTH" in words for words in said)
+    assert "• Clear Tobruk relief corridor" in said
+    assert pygame.image.tostring(plain, "RGB") != pygame.image.tostring(marked, "RGB")
+    keys(app, "F2")
+    assert "mission" not in app.ui.overlays
 
 
 def test_air_effort_is_visible_clickable_and_keeps_keyboard_parity():
@@ -1222,6 +1243,15 @@ def test_the_end_of_a_game_says_how_the_result_was_reached():        # C, E
     assert score_lines(view) == ["Axis: 252 points (162 for ground held; 90 for enemy losses).",
                                  "Commonwealth: 112 points (92 for ground held; 20 for enemy losses).",
                                  "Against the starting position: Axis gained 34 points."]
+    lost = {"vp": {"axis": 195, "cw": 119}, "kills": {"axis": 35, "cw": 25}, "par": 106,
+            "places": {"Tobruk": "axis", "Sidi Rezegh": "axis", "El Adem": "axis", "Gazala": "axis",
+                       "Derna": "axis", "Benghazi": "axis"},
+            "result": {"winner": "axis", "grade": "major", "margin": -30,
+                       "mission": {"checks": {"cw": {"complete": False, "checks": [
+                           {"order": "Occupy Tobruk", "met": False}]}}, "decides": True}}}
+    assert "failed its relief objective" in result_assessment(lost, {"id": "crusader"})[0]
+    assert score_lines(lost)[-2:] == ["Against the starting position: Commonwealth gained 30 points.",
+                                     "High Command orders decide this result; the points swing records secondary progress."]
     report_view = {"places": {"Sidi Rezegh": "axis", "Belhamed": "axis", "Tobruk": "cw"}}
     assert "denying a link" in result_assessment(report_view, {"id": "sidi_rezegh"})[0]
     report_view["places"]["Sidi Rezegh"] = report_view["places"]["Belhamed"] = "cw"
@@ -1273,6 +1303,11 @@ def test_morale_is_told_in_nine_named_levels_and_strength_in_real_terms():
     assert theme.strength({"type": "foot", "steps": 9}) == "about 7,200 men"
     assert theme.strength({"type": "hq", "steps": 1}) == "about 300 men"        # an HQ: a nominal figure
     assert theme.strength({"type": "foot"}) == ""                                # an enemy not seen close
+    assert theme.movement_distance(12, "cw") == "about 75 miles (12 hexes)"
+    assert theme.movement_distance(12, "axis") == "about 120 km (12 hexes)"
+    mixed, tip = theme.formation_strength([{"type": "armour", "steps": 2}, {"type": "foot", "steps": 1}])
+    assert mixed == "~20 tanks · ~800 men" and "Scenario figures are approximate" in tip
+    assert theme.formation_strength([{"type": "hq", "steps": 1}])[0] == "HQ staff"
 
 
 def test_the_orders_are_in_the_console_and_travel_is_the_road_march():
@@ -1384,7 +1419,7 @@ def test_split_takes_a_unit_out_of_its_group_and_join_puts_it_back():
     keys(app, "j")
     assert app.ui.mode == "join"
     app.centre_on((59, 11))
-    app.click(app.spot((58, 12)))                                                # nobody of yours is there
+    app.click(app.spot((58, 13)))                                                # nobody of yours is there
     assert "no other unit of yours" in app.ui.message and app.ui.mode == "join"
     app.click(app.spot((59, 11)))
     assert s.pending["axis"][111] == {"unit": 111, "order": "join", "with": 110}
@@ -1600,6 +1635,23 @@ def test_the_supply_layer_puts_port_figures_in_a_callout_and_haul_figures_on_req
     assert pygame.image.tostring(plain.subsurface(area), "RGB") != pygame.image.tostring(shown.subsurface(area), "RGB")
 
 
+def test_commonwealth_supply_layer_labels_enemy_sources_and_observed_traffic():
+    from engine import scenarios
+    scenario = scenarios.load("sidi_rezegh")
+    next(u for u in scenario["units"] if u["id"] == 305)["hex"] = [64, 10]
+    pygame.init()
+    app = App(Session(scenario, GMAP, humans=["cw"]))
+    app.ui.overlays = {"s"}
+    app.centre_on(GMAP.places["Bardia"]["hex"])
+    said = []
+    real = app.painter.text
+    app.painter.text = lambda surface, words, *a, **k: (said.append(str(words)), real(surface, words, *a, **k))
+    app.paint(pygame.Surface(app.size))
+    assert "Bardia · enemy port" in said
+    assert "Enemy convoy observed" in said
+    assert "Possible supply source; stock unknown" in said
+
+
 def test_a_unit_in_trouble_is_marked_in_the_list_over_a_crowded_hex():
     from screen.draw import problem
     pygame.init()
@@ -1630,7 +1682,7 @@ def test_the_map_has_a_border_at_its_edge_and_a_key_among_its_layers():
     assert tuple(surface.get_at((6, 60)))[:3] == theme.PAPER          # paper outside the border
     line = int(theme.MARGIN - 9) + 1
     assert tuple(surface.get_at((line, 60)))[:3] == theme.INK         # the neat line
-    assert [name for name, _, _ in theme.LAYERS] == ["s", "z", "k"] and "k" in layout.layers(app.size, True)
+    assert [name for name, _, _ in theme.LAYERS] == ["s", "z", "k", "mission"] and "k" in layout.layers(app.size, True)
     before = pygame.image.tostring(surface, "RGB")
     keys(app, "k")
     app.paint(surface)
@@ -1783,6 +1835,7 @@ def test_next_unit_is_greyed_when_every_unit_has_its_order_and_a_units_own_order
 
 def test_fuel_is_told_in_kilometres_with_the_hexes_beside():
     assert theme.fuel_words(30) == "300 km (30 hexes)" and theme.fuel_words(1) == "10 km (1 hex)"
+    assert theme.fuel_words(30, "cw") == "185 miles (30 hexes)"
 
 
 def test_a_surrender_is_reported_and_shown_as_a_white_flag():        # RULES 6.10.2, 14.6
@@ -1819,7 +1872,11 @@ def test_the_playback_is_watched_close_in_and_the_zoom_returns_after():
     app.done()
     assert app.play is not None and app.ui.zoom == 1.0              # counters are legible while it plays
     keys(app, "ESCAPE")
-    assert app.play is None and app.ui.zoom == far                   # and the player's zoom comes back
+    assert app.front.page == "pause" and app.play is not None       # Escape opens the game menu
+    keys(app, "ESCAPE")
+    assert app.front is None and app.play is not None                # resume playback
+    keys(app, "SPACE")
+    assert app.play is None and app.ui.zoom == far                   # the player's zoom comes back
 
 
 def test_the_instruction_line_follows_the_state_and_the_tooltip_keeps_quiet_on_empty_desert():
@@ -2166,6 +2223,30 @@ def test_the_reports_say_what_the_timetable_will_do_this_turn_and_what_it_did():
     assert dict(s.reports())["Replacements for Panzer-Regiment 8 were lost: Benghazi is in enemy hands."] == 111
 
 
+def test_conditional_tobruk_relief_reports_when_a_unit_remains_elsewhere():
+    scene = scenario([unit(201, "cw", "foot", "Mersa Matruh"), unit(101, "axis", "foot", "Bardia")],
+                     objectives=[], withdrawals=[{"date": "1941-11-18", "unit": 201,
+                                                   "if_near": "Tobruk", "radius": 2}])
+    game = Session(scene, GMAP, humans=["cw"], scripted={"axis": players.DoNothing(GMAP)})
+    assert game.timetable()[0]["words"] == "cw foot 201 is withdrawn if still near friendly-held Tobruk."
+    game.done()
+    assert S.unit(game.state, 201)["status"] == "on_map"
+    assert game.timetable()[0]["words"] == "cw foot 201 remains in the campaign: relief at Tobruk did not apply."
+    assert "cw foot 201 remains in the campaign: relief at Tobruk did not apply." in [w for w, _ in game.reports()]
+
+
+def test_tobruk_relief_reports_the_surviving_battalion():
+    scene = scenario([unit(201, "cw", "foot", "Tobruk", size=2, men=3000),
+                      unit(101, "axis", "foot", "Bardia")], objectives=[],
+                     withdrawals=[{"date": "1941-11-18", "unit": 201, "if_near": "Tobruk", "radius": 2,
+                                   "remain_as": {"name": "2/13th Battalion", "men": 800, "size": 1}}])
+    game = Session(scene, GMAP, humans=["cw"], scripted={"axis": players.DoNothing(GMAP)})
+    assert "leaves 2/13th Battalion" in game.timetable()[0]["words"]
+    game.done()
+    assert game.timetable()[0]["words"] == "Most of cw foot 201 was relieved; 2/13th Battalion remains at Tobruk."
+    assert "Most of cw foot 201 was relieved; 2/13th Battalion remains at Tobruk." in [w for w, _ in game.reports()]
+
+
 
 # ---- the tile layout: a name, a division's notch, and the unit taken up as a tile (docs/COUNTERS.md) ----
 
@@ -2201,12 +2282,12 @@ def test_the_unit_taken_up_is_a_tile_in_the_panel_and_at_the_closest_zoom_its_co
     app.ui.selected, app.ui.alone = 311, True                       # 4th Armoured Brigade, by itself
     app.centre_on(tuple(s.unit(311)["hex"]))
     app.paint(pygame.Surface(theme.WINDOW))
-    for said in ("4th Armoured Brigade", "7th Armoured Division", "166", "tanks", "8", "open hexes", "300", "km of fuel",
+    for said in ("4th Armoured Brigade", "7th Armoured Division", "166", "tanks", "8", "open hexes", "185", "miles of fuel",
                  "9", "morale", "excellent", "regular", "stores"):
         assert said in seen, said
     assert "4 Armd Bde" not in seen                                  # at the opening zoom a counter has no name
     tips = [tip for _, tip in app.painter.tips]
-    assert "about 166 of 166 tanks (100%, 0 lost)" in tips and "Fuel for 300 km (30 hexes)" in tips
+    assert "about 166 of 166 tanks (100%, 0 lost)" in tips and "Fuel for 185 miles (30 hexes)" in tips
     assert "250 tonnes of stores" in tips and "Experience: regular" in tips
     assert "Hexes a turn across open desert in this weather. Travel by road goes farther." in tips
     flown = [box for box, tip in app.painter.tips if tip == "United Kingdom"]                           # its flag, top right
@@ -2217,12 +2298,12 @@ def test_the_unit_taken_up_is_a_tile_in_the_panel_and_at_the_closest_zoom_its_co
     app.ui.zoom = theme.ZOOM_MAX
     app.centre_on(tuple(s.unit(311)["hex"]))
     app.paint(pygame.Surface(theme.WINDOW))
-    assert "4 Armd Bde" in seen and "XXX Corps" in seen             # the counters' names, cut down
+    assert "4 Armd Bde" in seen and "XXX Cps" in seen               # the counters' names, cut down
     del seen[:]
     app.ui.selected, app.ui.zoom = 341, theme.ZOOM_START            # 5th Indian Brigade: men on foot
     app.centre_on(tuple(s.unit(341)["hex"]))
     app.paint(pygame.Surface(theme.WINDOW))
-    assert "men" in seen and "4" in seen and "km of fuel" not in seen           # four hexes a turn, and no fuel to show
+    assert "men" in seen and "4" in seen and "miles of fuel" not in seen           # four hexes a turn, and no fuel to show
 
 
 def test_recon_details_use_plain_strength_one_supply_line_and_a_clear_split_action():
@@ -2234,10 +2315,10 @@ def test_recon_details_use_plain_strength_one_supply_line_and_a_clear_split_acti
     app.painter.text = lambda surface, words, pos, *a, **k: (drawn.append((str(words), pos)), original(surface, words, pos, *a, **k))
     app.paint(pygame.Surface(app.size))
     words = [value for value, _ in drawn]
-    assert "Full strength" in words and "2 / 2 steps" not in words
+    assert "about 30 scout vehicles" in words and "2 / 2 steps" not in words
     assert words.count("In supply") == 1
     assert "Mk VI light tank (example)" in words and "open hexes" in words
-    assert "48 MP = 12 open hexes" in words
+    assert "about 75 miles (12 hexes)" in words
     assert any(value.startswith("18 November 1941") and pos[0] < layout.areas(app.size)["panel"].x
                for value, pos in drawn)
     assert app.session.can(335, "split", True)[0]
@@ -2248,11 +2329,57 @@ def test_recon_details_use_plain_strength_one_supply_line_and_a_clear_split_acti
                for rect, tip in app.painter.tips)
 
 
+def test_field_intelligence_names_the_place_and_the_underlying_ground():
+    pygame.init()
+    app = App(Session(regiments(), GMAP, humans=["cw"], scripted={"axis": players.DoNothing(GMAP)}))
+    app.ui.selected, app.ui.alone = 307, True
+    drawn = []
+    original = app.painter.text
+    app.painter.text = lambda surface, words, pos, *a, **k: (drawn.append(str(words)), original(surface, words, pos, *a, **k))
+    app.paint(pygame.Surface(app.size))
+    assert "Tobruk · Open Desert" in drawn
+
+
+def test_hq_flag_label_uses_the_actual_formation_name_on_counter_and_card():
+    pygame.init()
+    app = App(Session(regiments(), GMAP, humans=["cw"], scripted={"axis": players.DoNothing(GMAP)}))
+    assert app.session.counter_art[302] == "hq_label"
+    app.ui.selected = 302
+    app.centre_on(tuple(app.session.unit(302)["hex"]))
+    words = []
+    original = app.painter.text
+    app.painter.text = lambda surface, value, pos, *a, **k: (words.append(str(value)), original(surface, value, pos, *a, **k))
+    app.paint(pygame.Surface(app.size))
+    assert app.session.flag[302] == "uk"
+    assert "XXX Cps" in words and "XXX Corps" in words and "HQ" in words
+    assert app.painter.hq_badge("XXX Corps", (104, 104)) is not None
+    assert app.painter.hq_badge("Eighth Army", (104, 104)) is not None
+    assert app.painter.hq_badge("7th Armoured Division", (104, 104)) is not None
+    for formation in ("XIII Corps", "1st South African Division", "2nd New Zealand Division",
+                      "4th Indian Division", "70th Division", "2nd South African Division"):
+        assert app.painter.hq_badge(formation, (104, 104)) is not None
+    assert app.painter.hq_badge("Unverified headquarters", (104, 104)) is None
+
+
+def test_axis_hqs_use_named_markers_by_default_with_scenario_art_override():
+    scenario = regiments()
+    session = Session(scenario, GMAP, humans=["axis"], scripted={"cw": players.DoNothing(GMAP)})
+    axis_hqs = [u for u in scenario["units"] if u["side"] == "axis" and u["type"] == "hq"]
+    assert len(axis_hqs) == 13
+    assert all(session.counter_art[u["id"]] == "hq_label" for u in axis_hqs)
+    assert session.flag[101] == "de" and session.flag[150] == "it"
+
+    next_scenario = regiments()
+    next_scenario["units"][0]["counter_art"] = "hq_wireless_truck"
+    overridden = Session(next_scenario, GMAP, humans=["axis"], scripted={"cw": players.DoNothing(GMAP)})
+    assert overridden.counter_art[next_scenario["units"][0]["id"]] == "hq_wireless_truck"
+
+
 def test_scenarios_say_each_side_its_aim_on_the_timetable_tab():           # RULES 13.1, 2.4
     from engine import scenarios
     pygame.init()
     surface = pygame.Surface(theme.WINDOW)
-    for side, other, aim in (("cw", "axis", "Open the road into Tobruk"), ("axis", "cw", "Keep Tobruk shut in")):
+    for side, other, aim in (("cw", "axis", "Open the Tobruk relief corridor"), ("axis", "cw", "Keep Tobruk shut in")):
         app = App(Session(scenarios.load("sidi_rezegh"), GMAP, humans=[side], scripted={other: players.DoNothing(GMAP)}))
         seen = []
         text = app.painter.text
@@ -2289,7 +2416,7 @@ def test_a_commonwealth_unit_flies_its_own_countrys_flag():
     assert theme.flag_of("cw", "2/13th Australian Battalion", "70th Division") == "au"        # its own name before its division's
     assert theme.flag_of("it", "Polish volunteers") == "it"
     drawn = {code: pygame.image.tostring(draw.flag(code, *theme.FLAG), "RGB") for code in theme.FLAG_NAME}
-    assert len(set(drawn.values())) == len(drawn) == 8               # each has a drawing, and no two are the same
+    assert len(set(drawn.values())) == len(drawn) == 9               # each has a drawing, and no two are the same
     app = App(Session(regiments(), GMAP, humans=["cw"], scripted={"axis": players.DoNothing(GMAP)}))
     for uid, country in ((331, "New Zealand"), (341, "India"), (321, "Union of South Africa"), (308, "Poland")):
         app.ui.selected, app.ui.alone = uid, True

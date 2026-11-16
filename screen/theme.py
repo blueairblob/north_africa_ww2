@@ -28,8 +28,10 @@ COMMAND = {"axis": (42, 49, 40), "cw": (40, 77, 112)}
 SIDE_NAME = {"axis": "Axis", "cw": "Commonwealth"}
 SELECT, PATH, PATH_FAR, ATTACK = (255, 226, 60), (30, 90, 200), (120, 150, 205), (200, 40, 30)
 SUPPLY, REACH, REACH_FULL, SHORT = (24, 98, 170), (70, 140, 210, 34), (70, 140, 210, 46), (210, 40, 30)
+ENEMY_SUPPLY = (156, 77, 25)  # inferred sources and locally observed convoy traffic
 ZOC_OWN, ZOC_FOE, UNSEEN = (40, 110, 200, 50), (210, 50, 40, 70), (60, 52, 40, 100)
 GOOD, POOR, FUEL, STORES = (60, 150, 70), (200, 60, 40), (150, 110, 40), (40, 100, 180)
+MISSION, MISSION_DARK = (40, 240, 90), (13, 77, 36)
 BUTTON, BUTTON_ON, BUTTON_GO = (222, 210, 182), (255, 226, 60), (120, 170, 110)
 ORDER_KEY = {"move": "M", "attack": "A", "hold": "H", "dig_in": "D", "road_march": "T", "rest": "R", "join": "J"}
 ORDER_NAME = {"move": "Move", "attack": "Attack", "hold": "Hold", "dig_in": "Dig in",
@@ -50,9 +52,12 @@ BUTTONS = (("move", "Move", "M"), ("attack", "Attack", "A"), ("road_march", "Tra
            ("hold", "Hold", "H"), ("dig_in", "Dig in", "D"), ("rest", "Rest", "R"),
            ("join", "Join", "J"), ("split", "Split", "X"), ("recall", "Recall", "C"),
            ("next", "Next unit", "Space"), ("done", "End turn", "Enter"))
-LAYERS = (("s", "Supply", "S"), ("z", "Zones", "Z"), ("k", "Key", "K"))   # the map's layers, behind the button in its corner
+LAYERS = (("s", "Supply", "S"), ("z", "Zones", "Z"), ("k", "Key", "K"),
+          ("mission", "Mission", "F2"))
 GAME = (("save", "Save game", "F5"), ("load", "Load game", "F9"),
-        ("screenshot", "Screenshot", "F12"))  # behind the Game button beside Layers
+        ("advance", "Advance 5 turns", "F6"),
+        ("screenshot", "Screenshot", "F12"), ("help", "How to play", "F1"),
+        ("options", "Options", ""), ("menu", "Game menu", "Esc"))
 MARGIN = 46             # base-map pixels of paper shown beyond the map's edge, for its border
 HQ_STAFF = 300          # a headquarters' nominal strength in men, for show: it has one step in the rules
 STRONG, WORN, WEAK = (40, 90, 190), (214, 126, 24), (200, 40, 30)   # strength: under full, under 70%, under 50%
@@ -66,9 +71,10 @@ TILE_H = 210            # ...and its height; it is as wide as the panel's text
 FLAG = (42, 28)         # the flag in its top right corner
 FLAG_BLUE, FLAG_RED, FLAG_WHITE = (1, 33, 105), (200, 16, 46), (244, 242, 236)
 FLAG_NAME = {"uk": "United Kingdom", "nz": "New Zealand", "au": "Australia", "in": "India", "sa": "Union of South Africa",
-             "pl": "Poland", "de": "Germany", "it": "Italy"}
+             "pl": "Poland", "fr": "Free France", "de": "Germany", "it": "Italy"}
 # a Commonwealth unit flies its own country's flag: told from its name, or failing that its division's
-CONTINGENT = (("New Zealand", "nz"), ("South African", "sa"), ("Indian", "in"), ("Australian", "au"), ("Polish", "pl"))
+CONTINGENT = (("New Zealand", "nz"), ("South African", "sa"), ("Indian", "in"), ("Australian", "au"),
+             ("Polish", "pl"), ("Free French", "fr"))
 PACE = {"cw": PAPER, "de": (160, 204, 240), "it": PAPER}           # the pace on a counter: not the strength's colour
 # a division's notch on its units' counters, in the order of the divisions' HQs within a side: the
 # strongest against any face first (docs/COUNTERS.md)
@@ -101,7 +107,8 @@ def order_name(name, units=()):
 
 
 # the Timetable tab's sections: the kinds of event under each heading; the last takes whatever is left
-TIMETABLE = ((("withdrawal",), "Withdrawals"), (("arrival", "replacement"), "Reinforcements"), ((), "Other"))
+TIMETABLE = ((("withdrawal",), "Withdrawals"), (("arrival", "replacement"), "Reinforcements"),
+             (("redesignation",), "Formation names"), ((), "Other"))
 
 
 def flag_of(nation, name, division=""):
@@ -180,9 +187,40 @@ def strength(u):
     return f"about {u['steps'] * each:,} {what}"
 
 
-def fuel_words(hexes):
-    """How far the fuel goes: "300 km (30 hexes)". A hex is 10 km."""
-    return f"{hexes * 10:,} km ({count(hexes, 'hex', 'hexes')})"
+def formation_strength(units):
+    """A short material estimate for the field ledger, with a full hover description."""
+    fighters = [u for u in units if u["type"] != "hq"]
+    if not fighters:
+        return "HQ staff", "Headquarters staff; no verified headcount is shown."
+    totals = {}
+    for u in fighters:
+        now, _, what = strength_now(u)
+        totals[what] = totals.get(what, 0) + now
+    kinds = sorted(totals, key=lambda what: (CLAIMED.index(what) if what in CLAIMED else len(CLAIMED), what))
+    parts = [f"about {totals[what]:,} {what}" for what in kinds]
+    short = [f"~{totals[what]:,} {what}" for what in kinds]
+    visible = parts[0] if len(parts) == 1 else " · ".join(short[:2]) + (" + more" if len(short) > 2 else "")
+    return visible, "Estimated current strength: " + "; ".join(parts) + ". Scenario figures are approximate."
+
+
+def travel_distance(hexes, side):
+    """Approximate distance of a number of open-desert hexes."""
+    if side == "cw":
+        miles = hexes * 10 / 1.609344
+        return (5 * round(miles / 5) if hexes >= 5 else round(miles), "miles")
+    return hexes * 10, "km"
+
+
+def movement_distance(hexes, side):
+    """Open-desert range as a familiar distance; game movement still uses terrain costs."""
+    distance, unit = travel_distance(hexes, side)
+    return f"about {distance} {unit} ({count(hexes, 'hex', 'hexes')})"
+
+
+def fuel_words(hexes, side="axis"):
+    """How far fuel goes in the side's distance units, with hexes beside it."""
+    distance, unit = travel_distance(hexes, side)
+    return f"{distance:,} {unit} ({count(hexes, 'hex', 'hexes')})"
 
 
 def count(n, one, many=None):

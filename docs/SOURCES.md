@@ -40,6 +40,13 @@ the official histories below.
 
 ## History (orders of battle, dates, positions)
 
+The first campaign-expansion source audit is in `COMPASS_OPENING_RESEARCH.md`.
+It uses Wavell's published Western Desert operations despatch (London Gazette
+37628), the UK official history's volume I chapter XIV, and the Australian
+official history *To Benghazi* chapter 6 for the December 1940 opening.
+Formation-level strengths, exact camp coordinates and the 1940 supply setup
+remain to be researched before they can enter a playable scenario.
+
 | Source | Notes |
 | --- | --- |
 | *The Mediterranean and Middle East*, Vols I–IV (UK official history, Playfair et al., 1954–66) | the standard British account; orders of battle and dates. Check the current copyright status before reproducing any text or maps; the facts may be used. |

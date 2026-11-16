@@ -162,6 +162,14 @@ themselves are not in this repository. Places read off them are marked
 
 ## Known limitations
 
+The Bardia research assault adds two named, approximate map-scale crossings
+on the western approach and coast road south of town. The western crossing
+follows the [UK official history's account of the selected attack ground](https://www.ibiblio.org/hyperwar/UN/UK/UK-Med-I/UK-Med-I-15.html):
+tanks could operate there after engineers prepared the ditch and minefield.
+These passable terrain edges do **not** mean that the perimeter wire and ditch
+were open before 3 January 1941. The exact position needs checking against
+the Bardia operation maps before the draft becomes a historical start.
+
 - **Escarpments end where the cliff does.** An escarpment that fades into a
   slope stops, and can be passed round its end; that is the ground, not a gap.
   The lines were checked by eye against the elevation data for Gazala–Bardia,
@@ -170,6 +178,23 @@ themselves are not in this repository. Places read off them are marked
   where a route climbs.
 - **Close pairs.** Two escarpments less than a hex apart (the ridges at Sidi
   Rezegh) leave a row of hexes with cliffs on both sides, some of them rough.
+  The Sidi Rezegh track is now an approximate pass at the Sidi Rezegh–Belhamed
+  hexside. The New Zealand official histories describe a track down past the
+  mosque, difficult vehicle crossings at only a few gullies, and the narrow
+  valley between the Sidi Rezegh and Ed Duda escarpments. At 10 km per hex the
+  exact track cannot be placed more finely; this pass represents the usable
+  approach and leaves the adjacent cliffs as dangerous flanks, not an unbroken
+  vehicle barrier. The generated Tobruk–El Adem track now uses that pass, and
+  the generated railway line also shifts locally; the latter is a least-cost
+  map trace, not a claim that the 1942 railway ran through the mosque site.
+  The Sidi Rezegh relief mission follows the existing track and road through
+  `[57,11]` instead of scoring a direct vehicle crossing at the northern cliff
+  `[56,12]`–`[56,11]`. This is a traversable map corridor, still an approximate
+  representation of the historical linkup through Ed Duda.
+  Sources: W. E. Murphy, [*The Relief of Tobruk*](https://www.22battalion.org.nz/publications/histories/tobruk.pdf),
+  chs. 6 and 15; [*21 Battalion*](https://www.22battalion.org.nz/publications/histories/21battalion.pdf),
+  ch. 5; [*Divisional Cavalry*](https://www.22battalion.org.nz/publications/histories/divcav.pdf),
+  ch. 6 (New Zealand official histories).
 - **The Jebel Akhdar** is cut up by wadis: it comes out as rough ground with
   pieces of escarpment round its edge, not as its two clean terraces.
 - **The Halfaya track** is joined from the pass to Sidi Omar by least cost, and
