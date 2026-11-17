@@ -83,6 +83,7 @@ def view(state, gmap, scenario, side):
         "withdrawals": [w for w in scenario.get("withdrawals", []) if S.unit(state, w["unit"])["side"] == side],
         "timetable": timetable(scenario, side),                              # 14.2: its own dated events, in order
         "enemy": seen, "forts": forts,
+        "perimeters": dict(state.get("perimeters", {})),  # mapped permanent works; an opened gap disappears
         "fort_work": {key: progress for key, (owner, progress) in state.get("fort_work", {}).items() if owner == side},
         "places": dict(state["places"]),
         "enemy_convoys": observed_convoys(state, side),

@@ -55,12 +55,14 @@ def test_three_chapter_research_run_preserves_history_and_delays_the_assault():
             session.done()
         assert len(session.record) == turns
         if expected == "bardia_assault":
-            assert all(not (o["order"] == "attack" and o.get("to") == [67, 13])
+            protected = ([67, 13], [66, 13], [67, 14])
+            assert all(not (o["order"] == "attack" and o.get("to") in protected)
                        for entry in session.record for o in entry["cw"]["orders"])
         following = session.following_chapter()
         assert following and following["id"] == expected
         before = session.state
         session = session.continue_campaign(following)
+        assert session.state.get("perimeters", {}) == before.get("perimeters", {})
         for uid in (306, 331, 332, 333, 334):
             if S.unit(before, uid):
                 assert S.unit(session.state, uid)["steps"] == S.unit(before, uid)["steps"]
@@ -68,13 +70,20 @@ def test_three_chapter_research_run_preserves_history_and_delays_the_assault():
         session.done()
         if len(session.record) == 1:
             assert "breach:66,13" in session.state["mission_reached"]["cw"]
+            assert any(e["event"] == "perimeter breach" and e["hex"] == [66, 13]
+                       for e in session.state["log"])
             assert session.state["places"]["Bardia"] == "axis"
             assert all(o.get("to") != [67, 13] for o in session.record[0]["cw"]["orders"])
         elif len(session.record) == 2:
             assert any(e["event"] == "battle" and e["hex"] == [67, 13]
-                       and 306 in e["attackers"] for e in session.state["log"])
+                       for e in session.state["log"])
     assert len(session.record) == 3 and session.state["turn"] == 4
     assert [h["scenario"] for h in session.state["campaign"]["history"]] == [
         "compass_opening", "compass_interval"]
     assert session.state["result"]["winner"] == "axis"
     assert not session.state["result"]["mission"]["checks"]["cw"]["complete"]
+    following = session.following_chapter()
+    assert following and following["id"] == "tobruk_approach"
+    continued = session.continue_campaign(following)
+    assert continued.state.get("perimeters", {}) == session.state.get("perimeters", {})
+    assert "66,13" not in continued.state.get("perimeters", {})

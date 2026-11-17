@@ -54,7 +54,7 @@ def problems(scenario, gmap):
         spec = mission.get(side)
         if spec is None:
             continue
-        if (not isinstance(spec, dict) or set(spec) - {"orders", "success_grade", "failure_grade", "avoid_attack", "commendations"}
+        if (not isinstance(spec, dict) or set(spec) - {"orders", "success_grade", "failure_grade", "avoid_attack", "avoid_attack_hexes", "commendations"}
                 or not isinstance(spec.get("orders"), list) or not spec["orders"]
                 or any(spec.get(k) not in GRADES for k in ("success_grade", "failure_grade") if k in spec)):
             bad.append(f"mission {side}: expected orders and an optional success or failure grade")
@@ -62,6 +62,11 @@ def problems(scenario, gmap):
         avoid = spec.get("avoid_attack", [])
         if not isinstance(avoid, list) or any(name not in gmap.places for name in avoid):
             bad.append(f"mission {side}: avoid_attack needs named places")
+        avoid_hexes = spec.get("avoid_attack_hexes", [])
+        if (not isinstance(avoid_hexes, list) or any(
+                not isinstance(h, list) or len(h) != 2 or any(type(n) is not int for n in h)
+                or not gmap.passable(tuple(h)) for h in avoid_hexes)):
+            bad.append(f"mission {side}: avoid_attack_hexes needs passable hexes")
         awards = spec.get("commendations", [])
         if not isinstance(awards, list):
             bad.append(f"mission {side}: commendations must be a list")

@@ -79,6 +79,8 @@ def new_game(scenario, gmap, seed=0):
     state["tripoli"].update(scenario.get("tripoli", {}))
     for c, r, level, side in scenario.get("forts", []):
         state["forts"][fort_key((c, r))] = [level, side]
+    if scenario.get("perimeters"):
+        state["perimeters"] = {fort_key((c, r)): side for c, r, side in scenario["perimeters"]}
     for spec in sorted(scenario["units"], key=lambda s: s["id"]):
         steps = U.steps_of(spec)
         u = {"id": spec["id"], "side": spec["side"], "name": spec["name"], "type": spec["type"],

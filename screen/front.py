@@ -42,6 +42,7 @@ HELP = (
         "Press End turn once all orders are ready. A reminder may ask a second time if you left units untouched. Watch the movement and battles, then give orders for the next turn.")),
     ("FIGHTING & SUPPLY", (
         "Attack moves towards a hex and fights visible enemies reached during the turn. Ground, fortifications, cohesion, multiple attack directions and nearby stationary HQs matter.",
+        "A double outlined fort is an intact fortress perimeter. To cross an empty enemy perimeter, give an Attack order with a foot or motorised formation carrying at least 50 tonnes of stores per size. A successful entry opens it for later movement.",
         "Keep units supplied from ports and HQs. The Supply layer shows your reach, enemy ports as possible sources, and convoy traffic spotted locally by your reconnaissance units. Occupying a port or placing a unit near a route can disrupt supply next turn, but trucks may bypass it and HQs keep reserves. Dig in builds fieldworks; Rest recovers cohesion.",
         "Travel uses roads and tracks faster, but cannot cross open desert and is exposed if attacked. Use Attack near the enemy. Weather can ground aircraft and slow movement. The right panel shows unit details and the timetable.")),
     ("SCENARIOS & SEA DELIVERY", (

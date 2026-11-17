@@ -675,13 +675,17 @@
           "verb": "stage",
           "hex": [
             67,
-            14
+            15
           ],
           "label": "the southern Bardia approach"
         }
       ],
       "avoid_attack": [
         "Bardia"
+      ],
+      "avoid_attack_hexes": [
+        [66, 13],
+        [67, 14]
       ]
     },
     "axis": {

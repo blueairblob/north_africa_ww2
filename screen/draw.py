@@ -584,6 +584,9 @@ class Painter:
                 cx, cy = at(hx)
                 pts = [(cx + (x - cx) * 0.84, cy + (y - cy) * 0.84) for x, y in poly(hx)]
                 pygame.draw.polygon(surface, T.INK if owner == session.side else T.SHORT, pts, max(1, int(level * z)))
+                if key in view.get("perimeters", {}):
+                    inner = [(cx + (x - cx) * 0.67, cy + (y - cy) * 0.67) for x, y in poly(hx)]
+                    pygame.draw.polygon(surface, T.INK if owner == session.side else T.SHORT, inner, max(1, int(z)))
 
         veil = pygame.Surface((w, h), pygame.SRCALPHA)
         if "z" in ui.overlays:
@@ -1362,8 +1365,12 @@ class Painter:
         key = f"{hx[0]},{hx[1]}"
         fort = view["forts"].get(key)
         work = view.get("fort_work", {}).get(key)
+        perimeter = view.get("perimeters", {}).get(key)
         ground = T.TERRAIN_NAME[g.terrain[hx[1]][hx[0]]] + (f", fortified level {fort[0]}" if fort else "")
         lines.append((ground + (", fieldworks 1 of 2 days" if work else ""), False, T.DIM))
+        if perimeter:
+            lines.append(("Perimeter: infantry Attack with stores to cross" if perimeter != session.side
+                          else "Perimeter: intact", False, T.DIM))
         font = self.font(13)
         w = max(self.font(13, bold).size(s)[0] for s, bold, _ in lines) + 14
         h = len(lines) * (font.get_height() + 2) + 8

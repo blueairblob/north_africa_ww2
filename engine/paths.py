@@ -40,19 +40,20 @@ def step_cost(gmap, a, b, hexside, mode):
     return (ROUGH_COST if gmap.rough(b) else OPEN_COST) + extra
 
 
-def least_path(gmap, start, goal, mode):
+def least_path(gmap, start, goal, mode, blocked=frozenset()):
     """The hexes after start on the least-cost way to goal, or None (9.2.1).
     Ties: fewer hexes, then the list that comes first hex by hex (9.2.2)."""
     if start == goal:
         return []
-    key = (start, goal, mode)
-    if key not in gmap.path_cache:                    # the way depends on the map alone
-        gmap.path_cache[key] = _least_path(gmap, start, goal, mode)
+    blocked = frozenset(blocked)
+    key = (start, goal, mode, blocked)
+    if key not in gmap.path_cache:                    # include this route's blocked hexes in the cache key
+        gmap.path_cache[key] = _least_path(gmap, start, goal, mode, blocked)
     path = gmap.path_cache[key]
     return None if path is None else list(path)
 
 
-def _least_path(gmap, start, goal, mode):
+def _least_path(gmap, start, goal, mode, blocked=frozenset()):
     best = {start: (0, 0, ())}
     heap = [(0, 0, (), start)]
     while heap:
@@ -62,6 +63,8 @@ def _least_path(gmap, start, goal, mode):
         if cur == goal:
             return list(path)
         for _, nxt, hexside in gmap.around(cur):
+            if nxt in blocked:
+                continue
             c = step_cost(gmap, cur, nxt, hexside, mode)
             if c is None:
                 continue

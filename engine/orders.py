@@ -63,7 +63,11 @@ def full_path(gmap, u, order, state=None):
     else:
         stops = [tuple(v) for v in order.get("via", [])] + [tuple(order["to"])]
     for stop in stops:
-        leg = paths.least_path(gmap, here, stop, how)
+        barriers = {tuple(int(x) for x in key.split(",")) for key, side in
+                    state.get("perimeters", {}).items() if side != u["side"]} if state else set()
+        if order["order"] == "attack":
+            barriers.discard(stop)
+        leg = paths.least_path(gmap, here, stop, how, barriers)
         if leg is None:
             return None
         out += leg

@@ -165,6 +165,17 @@ def problems(scenario, gmap):
             bad.append(f"fort at {(c, r)}: bad hex, level or side")
         if any(s["side"] != side for s in where.get((c, r), [])):
             bad.append(f"fort at {(c, r)}: the other side's units start in it")
+    forts = {(c, r): (level, side) for c, r, level, side in scenario.get("forts", [])}
+    perimeters = set()
+    for entry in scenario.get("perimeters", []):
+        if (not isinstance(entry, list) or len(entry) != 3
+                or any(type(x) is not int for x in entry[:2]) or entry[2] not in S.SIDES):
+            bad.append("perimeter: expected a hex and defending side")
+            continue
+        c, r, side = entry
+        if (c, r) in perimeters or (c, r) not in forts or forts[(c, r)][1] != side or forts[(c, r)][0] < 2:
+            bad.append(f"perimeter at {(c, r)}: needs one matching level-2-or-higher fort")
+        perimeters.add((c, r))
     specs = {s["id"]: s for s in scenario["units"]}
     seen_redesignations = set()
     for event in scenario.get("redesignations", []):

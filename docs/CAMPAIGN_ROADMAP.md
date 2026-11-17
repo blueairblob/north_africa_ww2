@@ -82,3 +82,16 @@ The target is an actual playable, saveable September 1940–November 1942 game, 
 6. **Release gate.** A human can start at the campaign's first date, save and resume at any chapter, reach its last date, review a comprehensible final result, and play against a computer opponent. Run deterministic complete-campaign traces and human reviews for both sides; document every historical estimate and known limitation. Only then enable New campaign as the full game.
 
 The next implementation slice is the Bardia/Tobruk fortress and pursuit model. The Australian official history [*To Benghazi*, chapter 9](https://www.ibiblio.org/hyperwar/UN/Australia/Bengazi/Benghazi-9.html) describes the 6th Division's move and Tobruk preparation; [chapter 10](https://www.ibiblio.org/hyperwar/UN/Australia/Bengazi/Benghazi-10.html) records the advance to Derna and its 30 January occupation; [chapter 11](https://www.ibiblio.org/hyperwar/UN/Australia/Bengazi/Benghazi-11.html) covers the Beda Fomm road block and Benghazi. These sources establish chronology and broad forces, not our game-unit strengths or exact 10 km positions. The new pursuit chapters do not yet model the historical mass surrender or the transport shortage that forced the Australians to lift one brigade at a time.
+
+Source-map check, 17 November 2026: the Australian War Memorial's Bardia
+first/last-phase drawings and 17th Brigade 1:50,000 dispositions, plus the
+official-history Tobruk attack map, now anchor the *relative* breach and
+exploitation sectors. The 10 km hex registration is still open. A seed `1940`
+trace originally showed Commonwealth units entering Bardia's empty western
+fort hex on 3 January without an engineer crossing or battle. The trial now
+requires a player-ordered, supplied infantry Attack to open an intact
+perimeter; the breach state carries across linked chapters and old saves with
+no perimeter field still load. This is an operational proxy, with the
+historical engineer programme, grid registration, garrison distribution and
+tank serviceability still to be researched;
+see `BARDIA_OPENING_RESEARCH.md` and `COMPASS_PURSUIT_RESEARCH.md`.

@@ -10,6 +10,7 @@ IMPULSES = 24           # impulses in a Movement phase; also the most hexes a un
 ALLOWANCE = {"foot": 16, "armour": 32, "guns": 32, "motorised": 40, "hq": 40, "recon": 48}   # MP per turn
 MOVE_COHESION_DIV = 4   # MP spent per point of cohesion lost
 FORT_MP = 2             # MP per level to enter a hex with an enemy fortification
+BREACH_STORES = 50      # tonnes per size for an infantry assault on an empty perimeter proxy
 
 
 def turn_allowance(members, days):
@@ -47,6 +48,11 @@ def movement_phase(state, gmap, ctx, scenario):
             for u in m["units"]:
                 S.log(state, "stopped", side=u["side"], unit=u["id"], why=why, hex=u["hex"])
 
+    def breach_payer(m):
+        """The first infantry formation in a party able to prepare an empty crossing."""
+        return next((u for u in m["units"] if u["type"] in ("foot", "motorised")
+                     and u["stores"] >= u["size"] * BREACH_STORES), None)
+
     def passing(m, here, enemy_zoc, foe):
         """The way through the full hexes ahead to the first hex with room, as one step:
         (that hex, the MP for the whole passage, the hexes entered). None if the next hex is
@@ -58,6 +64,8 @@ def movement_phase(state, gmap, ctx, scenario):
             return None
         cur, total, hexes = here, 0, []
         for h in m["path"][m["i"]:]:
+            if state.get("perimeters", {}).get(S.fort_key(h)) == foe:
+                return None  # a party must stop at an unbreached crossing
             total += cost_of(state, gmap, m, cur, h)
             hexes.append(h)
             if held.get(h) == foe:
@@ -87,6 +95,9 @@ def movement_phase(state, gmap, ctx, scenario):
                 continue
             if held.get(nxt) == foe:
                 stop(m, "contact")
+            elif (state.get("perimeters", {}).get(S.fort_key(nxt)) == foe
+                  and (not m["attack"] or breach_payer(m) is None)):
+                stop(m, "perimeter needs an infantry Attack with stores")
             elif here in zocs[foe] and nxt in zocs[foe]:
                 stop(m, "zone of control")
             elif any(U.is_vehicle(u) and u["fuel"] < U.step_fuel(u) for u in m["units"]):
@@ -130,6 +141,11 @@ def movement_phase(state, gmap, ctx, scenario):
         for lead in sorted(trying):                                          # 9.5.5, 9.5.6
             nxt, cost, hexes = trying[lead]
             m = movers[lead]
+            if state.get("perimeters", {}).get(S.fort_key(nxt)) == S.enemy(m["side"]):
+                payer = breach_payer(m)
+                spent = payer["size"] * BREACH_STORES
+                payer["stores"] -= spent
+                state["sides"][m["side"]]["spent"] += spent
             for u in m["units"]:
                 fuel = U.step_fuel(u) * len(hexes) if U.is_vehicle(u) else 0  # 9.7.1
                 u["fuel"] -= fuel

@@ -16,14 +16,14 @@ from .weather import weather_step
 LOG = {"log"} | {f"sides.{t}" for t in S.TOTALS}     # any phase may log and count supply (5.1)
 GONE = {"unit.status", "unit.hex", "unit.steps", "unit.fuel", "unit.stores", "unit.dump", "unit.fate", "unit.group",
         "sides.vp", "sides.kills"}
-CAPTURE = {"places", "ports", "forts"}
+CAPTURE = {"places", "ports", "forts", "perimeters"}
 MAY_CHANGE = {                                       # what each phase may change (5.1)
     "weather": {"weather"},
     "supply": {"ports", "tripoli", "forts", "fort_work", "unit.dump", "unit.fuel", "unit.stores", "unit.out_of_stores", "unit.group",
                "unit.traced", "unit.cohesion", "unit.ceiling"} | GONE,
     "orders": {"unit.group"},
     "air": {"sides.air", "sides.interdiction", "sides.recon"},
-    "movement": {"unit.hex", "unit.fuel", "unit.cohesion", "unit.stationary", "unit.dump", "unit.group"} | CAPTURE,
+    "movement": {"unit.hex", "unit.fuel", "unit.stores", "unit.cohesion", "unit.stationary", "unit.dump", "unit.group"} | CAPTURE,
     "combat": {"unit.cohesion", "unit.stationary"} | GONE | CAPTURE,
     "recovery": {"unit.steps", "unit.cohesion", "unit.stores", "forts", "fort_work"},
     "reinforcement": {"unit.stationary", "unit.name", "unit.size", "unit.max", "unit.real", "forts", "fort_work"}

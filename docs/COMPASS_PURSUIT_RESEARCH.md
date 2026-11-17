@@ -10,6 +10,23 @@
 
 ## Current abstractions and checks
 
+The [Australian official history's Tobruk attack map and account](https://s3-ap-southeast-2.amazonaws.com/awm-media/collection/RCDIG1070231/document/5519529.PDF)
+identify a planned breakthrough on the **southern** perimeter on 21 January,
+followed by the 16th Brigade and then the 19th Brigade moving through the
+opening toward different objectives. The map distinguishes the start line,
+perimeter, interior gun positions and town. The account records artillery and
+engineer preparation and **18 working infantry tanks** for that attack; this
+is a serviceability count, not a new pool of replacement tanks. The source
+supports a staged southern crossing and exploitation in the trial, but has not
+been registered against the 10 km game grid. As at Bardia, capturing an empty
+fort hex by movement would not model the crossing. The new intact perimeter
+proxy at `[56,11]` requires a player-ordered supplied infantry Attack to
+open; it remains closed if the played force cannot make that approach. The
+stores threshold and coordinate are game estimates, and the rule does not
+yet represent the historical engineer or artillery preparation. Check
+Tobruk's perimeter and current counters together before changing combat
+values.
+
 Tobruk has a town fort and a southeastern-perimeter proxy one hex away. The model's 10 km hexes cannot resolve the actual ditch, individual posts, wire, minefield lanes, engineer crossings or naval and air preparation. The four Italian Tobruk counters have game-estimate strengths and have been present since the opening chapter. They are not introduced as a surprise reinforcement on 6 January.
 
 The Derna chapter runs **23 January–2 February** daily; the Beda Fomm chapter runs **3–9 February** daily. Three western Axis counters enter the *modelled order of battle* on 23 January: 60th Sabratha near Derna, Babini armour near Mechili, and a provisional Benghazi security counter. This does **not** mean the formations historically arrived in Libya on that day. The model currently lacks a researched 9 December western roster; the entries prevent an empty western map in the pursuit. The Sabratha 6,000 men, Babini 60 tanks and Benghazi 2,000 men are research or game estimates, not verified strength returns. The security counter's exact formation identity is unresolved.

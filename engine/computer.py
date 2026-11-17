@@ -32,6 +32,8 @@ class ComputerOpponent:
     def __init__(self, gmap):
         self.gmap = gmap
         self.days = 2
+        self.blocked_perimeters = frozenset()
+        self.avoid_attack = frozenset()
 
     def _objectives(self, view):
         """Public objectives form a stable plan, including the short game's two road goals."""
@@ -134,7 +136,8 @@ class ComputerOpponent:
 
     def _route(self, here, target, members, name, weather):
         mode = O.mode(members, name, weather)
-        return paths.least_path(self.gmap, here, target, mode)
+        blocked = (self.blocked_perimeters - ({target} if name == "attack" else set())) | self.avoid_attack
+        return paths.least_path(self.gmap, here, target, mode, blocked)
 
     def _staging(self, here, target, members, weather, occupied, foes):
         """Keep additional formations beside a goal instead of ordering all into one hex."""
@@ -310,6 +313,8 @@ class ComputerOpponent:
 
         self.days = view.get("turn_days", 2)
         side = view["side"]
+        self.blocked_perimeters = frozenset(tuple(int(x) for x in key.split(","))
+                                            for key, owner in view.get("perimeters", {}).items() if owner != side)
         goals = self._objectives(view)
         foes = sorted((tuple(e["hex"]), e["id"]) for e in view["enemy"])
         formations = sorted(parties(view), key=lambda party: party[0]["id"])
@@ -318,12 +323,15 @@ class ComputerOpponent:
         avoid_attack = ({tuple(self.gmap.places[name]["hex"])
                          for name in view.get("mission", {}).get(side, {}).get("avoid_attack", [])}
                         if self.mission_enabled else set())
+        if self.mission_enabled:
+            avoid_attack.update(tuple(h) for h in view.get("mission", {}).get(side, {}).get("avoid_attack_hexes", []))
         secure_hexes = {tuple(u["hex"]) for u in view["units"]
                         if u["status"] == "on_map" and u["type"] != "hq"}
         if any(order["verb"] == "breach" and M.breach_key(order) not in view.get("mission_reached", [])
                and tuple(order["hex"]) not in secure_hexes for order in mission_orders):
             avoid_attack.update(tuple(self.gmap.places[order["place"]]["hex"])
                                 for order in mission_orders if order["verb"] == "hold")
+        self.avoid_attack = frozenset(avoid_attack)
         mission_holds = {order["place"] for order in mission_orders if order["verb"] == "hold"}
         route_blockers = set()
         if mission_holds and all(view["places"].get(place) == side for place in mission_holds):
@@ -407,7 +415,10 @@ class ComputerOpponent:
                               key=lambda foe: (distance(here, foe[0]), foe), default=None)
                 target, action = (blocker or nearest)[0], "attack"
             elif stage_goal:
-                action = "attack" if fighting and target in {h for h, _ in foes} else "move"
+                barrier = view.get("perimeters", {}).get(f"{target[0]},{target[1]}")
+                has_infantry = any(m["type"] in ("foot", "motorised") for m in members)
+                action = "attack" if fighting and (target in {h for h, _ in foes}
+                                                    or (barrier is not None and barrier != side and has_infantry)) else "move"
             elif goal and view["places"].get(goal[0]) != side and fighting:
                 action = "attack"
             else:
@@ -532,7 +543,7 @@ class ComputerHard(ComputerOpponent):
                 if self.limit_dump_discard and dump_discard > 2 * HQ_CARRY and goal.get("end", 0) < 20:
                     continue
                 target = tuple(self.gmap.places[goal["place"]]["hex"])
-                direct = paths.least_path(self.gmap, here, target, mode)
+                direct = self._route(here, target, members, "move", view["weather"])
                 if direct is None or not 7 <= len(direct) <= 17:
                     continue
                 value = goal.get("end", 0) + 3 * goal.get("turn", 0)
@@ -544,7 +555,7 @@ class ComputerHard(ComputerOpponent):
                         continue
                     if min(distance(waypoint, h) for h in direct) < 3:
                         continue
-                    route = paths.least_path(self.gmap, here, waypoint, mode)
+                    route = self._route(here, waypoint, members, "move", view["weather"])
                     hq_route = self._route(hq_here, waypoint, [hq], "move", view["weather"])
                     if not route or not hq_route or not 6 <= len(route) <= 14 or len(hq_route) > 14:
                         continue

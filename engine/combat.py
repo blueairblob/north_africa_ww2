@@ -195,6 +195,8 @@ def retreat_hexes(state, gmap, units, here, froms, stack, barred=None):
     for d, n, hexside in gmap.around(here):
         if hexside in gmap.cliffs and any(U.is_vehicle(u) for u in units):
             continue
+        if state.get("perimeters", {}).get(S.fort_key(n)) == foe:
+            continue
         if held.get(n) == foe or (n in foe_zoc and held.get(n) != side) or n in froms:
             continue
         if n in (tuple(units[0]["hex"]), barred) or B.room(there.get(n, []), units) != stack:
@@ -281,14 +283,23 @@ def combat_phase(state, gmap, ctx):
     for battle in battles:                                                   # 10.7.1
         if not battle["fought"] or B.occupied(state).get(battle["hex"]) == battle["defenders"][0]["side"]:
             continue
-        for u in battle["attackers"]:
+        needs_breach = state.get("perimeters", {}).get(S.fort_key(battle["hex"])) == battle["defenders"][0]["side"]
+        infantry = [u for u in battle["attackers"] if u["type"] in ("foot", "motorised")
+                    and u["status"] == "on_map" and u["id"] not in battle["short"]
+                    and u["id"] not in ctx["retreated"]]
+        if needs_breach and not infantry:
+            continue  # fire alone can clear the defenders; supplied infantry must open the crossing
+        for u in sorted(battle["attackers"], key=lambda attacker: (attacker not in infantry, attacker["id"])):
             if u["status"] != "on_map" or u["id"] in ctx["retreated"] or tuple(u["hex"]) == battle["hex"]:
                 continue
             units = [v for v in S.party(state, u) if v["hex"] == u["hex"] and v["id"] not in ctx["retreated"]]
+            if needs_breach and not any(v in infantry for v in units):
+                continue
             if B.room(S.at(state).get(battle["hex"], []), units):            # its group goes with it, HQ and all (20.2.7)
                 for v in units:
                     B.enter(state, v, battle["hex"], ctx["entered"])         # 10.7.2
                     S.log(state, "advanced", side=v["side"], unit=v["id"], to=list(battle["hex"]))
+                needs_breach = False
     B.regroup(state)                                                         # 20.2.8
     B.settle_owners(state, gmap)                                             # 10.7.3
 

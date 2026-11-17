@@ -23,4 +23,4 @@ def test_history_covers_every_trial_chapter_with_sourced_pre_and_post_context():
     assert review.count("**Before — objective:**") == len(record["episodes"]) + len(record["battles"])
     assert review.count("**After — result:**") == len(record["episodes"]) + len(record["battles"])
     review_file = Path(__file__).resolve().parents[1] / "docs" / "HISTORICAL_STORY_REVIEW.md"
-    assert review_file.read_text(encoding="utf-8") == review + "\n"
+    assert review_file.read_text(encoding="utf-8") == review

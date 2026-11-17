@@ -102,7 +102,7 @@ def victory_phase(state, scenario, gmap=None):
                                           for u in state["units"])]
     if gmap is not None:
         M.record_reached(state, scenario, gmap)
-    if last or gone:                                                         # 13.5
+    if last or (gone and not state.get("campaign")):                         # 13.5; linked chapters keep their dated boundary
         state["over"] = True
         state["result"] = result_for(state, scenario, gmap)                   # 13.6
     state["turn"] += 1                                                       # 13.7

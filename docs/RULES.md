@@ -1380,7 +1380,9 @@ it and in which turn.
 
 **13.5 End.** The game ends after the Victory phase of the scenario's last
 turn, or of any turn in which a side has no unit on the map and none still to
-arrive.
+arrive. A linked campaign chapter continues to its dated last turn even if
+one side has no current or pending unit in that chapter; the next chapter may
+bring new formations. A standalone battle still ends on elimination.
 
 **13.6 Result.** The scenario's **par** is the Axis lead in points if both
 sides hold to the end exactly the objectives they hold at the start: for each
@@ -1408,8 +1410,16 @@ too coarse for the historical start line.
 `breach` marks a passable perimeter hex and is complete once a friendly
 fighting unit has ended a turn there, even if that unit later moves on. The
 computer prioritizes an unmet breach before attacking a named place it is
-ordered to hold. This tracks an operational sequence; it does not itself
-remove fortifications or model engineer work. `preserve` names a group of
+ordered to hold. A scenario can also declare an intact `perimeters` hex on a
+level 2 or stronger fortification. An empty enemy perimeter can only be entered
+by a party on an Attack order that includes a foot or motorised formation with
+at least 50 tonnes of stores per size. That formation spends the stores on
+entry, which removes the fort and opens the crossing for later movement. A
+perimeter held by an enemy must first be won in combat; a surviving supplied
+foot or motorised attacker must advance into it to open the crossing. Enemy
+perimeters block ordinary routes and retreats. This is a coarse game proxy for
+ditch, wire, mines and engineer preparation, not a counted engineer unit or a
+historically measured tonnage. `preserve` names a group of
 formations and a minimum percentage of their combined steps. Its baseline is
 the **actual played strength at chapter entry**, including newly scheduled
 formations, not a historical reset. A destroyed formation contributes zero;
@@ -1419,7 +1429,8 @@ formation's losses. This is a strength check, not a serviceability model.
 A side's mission may also list
 `avoid_attack` places for computer planning: the computer will not initiate
 an attack on those named hexes while that chapter's orders apply. Human
-players may still choose to attack.
+players may still choose to attack. `avoid_attack_hexes` gives the same
+computer instruction for specific unnamed hexes.
 
 A side may also list optional `commendations`, each with a title and one
 ordinary mission order. They are checked from the played state at the chapter

@@ -53,6 +53,25 @@ def test_daily_weather_and_mixed_length_campaign_handoff():
     assert weather.odds(daily, 1) != weather.odds(daily, 2)
 
 
+def test_linked_chapter_keeps_its_calendar_when_one_side_is_eliminated():
+    troops = [unit(101, "axis", "foot", "Bardia"), unit(201, "cw", "foot", "Mersa Matruh")]
+    sc = scenario(troops, turns=3)
+    sc["par"] = victory.par(sc)
+    state = S.new_game(sc, GMAP)
+    S.unit(state, 101).update(status="destroyed", steps=0, hex=None)
+    state["campaign"] = {"id": "north_africa", "history": []}
+    for expected_turn in (2, 3):
+        victory.victory_phase(state, sc)
+        assert state["turn"] == expected_turn and not state["over"]
+    victory.victory_phase(state, sc)
+    assert state["over"] and state["turn"] == 4
+
+    standalone = S.new_game(sc, GMAP)
+    S.unit(standalone, 101).update(status="destroyed", steps=0, hex=None)
+    victory.victory_phase(standalone, sc)
+    assert standalone["over"] and standalone["turn"] == 2
+
+
 def test_daily_fieldworks_take_two_working_days_and_survive_a_save():
     from engine import invariants, view
     from helpers import start, turn

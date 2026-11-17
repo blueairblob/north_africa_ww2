@@ -77,6 +77,9 @@ def enter(state, u, h, entered):
     fort = state["forts"].get(S.fort_key(h))
     if fort and fort[1] != u["side"]:
         del state["forts"][S.fort_key(h)]                       # 9.5.6
+    if state.get("perimeters", {}).get(S.fort_key(h)) == S.enemy(u["side"]):
+        del state["perimeters"][S.fort_key(h)]
+        S.log(state, "perimeter breach", side="both", sides=list(S.SIDES), hex=list(h), by=u["side"])
     if U.is_hq(u):
         u["stationary"] = False                                 # 9.9.1
         for kind in ("fuel", "stores"):                         # 6.11.4

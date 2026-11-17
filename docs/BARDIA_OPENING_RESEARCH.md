@@ -186,12 +186,87 @@ sets 7th RTR to 23 tanks would conflate working tanks with losses unless this
 is addressed or clearly labelled as a standalone snapshot. The same problem
 already affects the Compass opening trial.
 
+## Source-map check, 17 November 2026
+
+The Australian War Memorial's [Berryman wallet 30](https://www.awm.gov.au/collection/C2741629)
+contains two contemporary overview drawings (PDF pages 3–4) of the first
+and last assault phases. The first shows the 16th Australian Brigade
+entering the western face and fanning north, toward Bardia town, and south;
+the 17th Brigade crosses farther south while the 2/6th Battalion makes its
+separate diversion near the southern posts. The last-phase drawing keeps
+the town, western breach and southern pocket distinct. The War Memorial's
+[17th Brigade map wallet](https://s3-ap-southeast-2.amazonaws.com/awm-media/collection/RCDIG1021202/bundled/RCDIG1021202.pdf)
+(pages 3–4) shows positions on a Bardia 1:50,000 grid, including dispositions
+marked for 1–2 January and zero hour on 3 January. The
+[division operation order](https://www.ibiblio.org/hyperwar/UN/Australia/Bengazi/Benghazi-B.html)
+assigns the first breach to 16th Brigade, engineers and 7th RTR, with a later
+17th Brigade phase. Together these support the *sequence and relative sectors*
+in the mission; the overview drawings do not locate a game hex or reproduce
+the engineer traces, and the detailed map has not yet been registered against
+our generated 10 km grid. Keep `[66,13]` and `[67,14]` explicitly approximate.
+
+The reproducible seed `1940` Hard/Hard trace exposes a sharper model problem.
+On 3 January Commonwealth units **move** into `[66,13]`, the western
+fortification proxy, without a battle there. That hex has no Axis garrison in
+the played state; `engine/board.py` removes an enemy fort when the first unit
+enters it, and `engine/movement.py` charges only extra movement points. No
+engineer task, mine or ditch crossing is checked. On 4 January the town fight
+at `[67,13]` instead puts all three visible defenders into one battle and
+totals 2,307 attack against 5,386 defence; on 5 January the assault has
+collapsed. This is a **game trace**, not evidence for historical numbers.
+The map and order explain why the current automatic capture cannot stand for
+the recorded first-phase breach. Avoid weakening the town garrison or
+awarding a dated breach to force a win: a counterfactual attack may arrive
+late, lack engineers or supplies, or face a different defending position.
+
+## Perimeter crossing trial, 17 November 2026
+
+The Compass opening now marks three intact fortification proxies: Bardia's
+western and southern approaches at `[66,13]` and `[67,14]`, and Tobruk's
+southeastern approach at `[56,11]`. An empty enemy perimeter blocks ordinary
+movement. A player may order a foot or motorised formation to **Attack** the
+hex if it has at least 50 tonnes of stores per formation size; the entry
+spends those stores, opens the perimeter and removes the fort. An occupied
+perimeter still requires a battle, followed by the advance of a surviving
+infantry formation that paid its normal combat stores. The player controls
+the order and timing. A failed approach or missing stores leaves the work
+intact, and a later linked chapter carries that actual state forward.
+
+The 50-tonne threshold and the 10 km crossing hexes are **game estimates**.
+There is no separate engineer counter, mine clearance time, artillery
+programme or serviceability pool yet. The action therefore represents a
+prepared crossing at operational scale, not a claim that infantry alone
+cleared the historical works. The interval computer now stages at `[66,14]`
+and `[67,15]`, outside the mapped Bardia works, and is instructed to avoid
+attacking the town and either perimeter before 3 January. Human orders remain
+unrestricted.
+
+In the revised seed `1940` Hard/Hard trace, a Commonwealth formation opens
+the western proxy on 3 January while Bardia town stays Axis-held. The town
+fight is still lost by 5 January, and 7th RTR does not reliably support it.
+This verifies the crossing sequence and persistence in one reproducible
+computer run; it does not validate the assault balance. The Berryman and
+17th Brigade plates still need registration against the generated grid, and
+the garrison distribution, engineer support and tank serviceability remain
+open research gates.
+
+The next modelling decision is how a player prepares and opens a defended
+perimeter *using orders available in the game*. It needs an explicit crossing
+condition and visible progress, then a way for the remaining garrison to
+hold the southern sector after the town falls. Choose any movement and combat
+costs from play and evidence rather than treating the 1:50,000 posts as
+individual 10 km hexes. Apply the same contract to Tobruk only after its
+perimeter map has been checked. A complete linked trial must then show the
+first-phase crossing, second-phase town and southern-sector outcomes as
+separate events, preserving the actual played losses and position.
+
 ## Build and validation sequence
 
-1. Obtain the Bardia North/South operation map plates or another dated map;
-   locate the western breach, southern posts, approach roads and 6th
-   Australian assembly areas on the shared campaign map. Record uncertainty
-   where 10 km hexes cannot resolve them.
+1. Register the located 1:50,000 Bardia map and the first/last-phase drawings
+   against the shared campaign map; locate the western breach, southern posts,
+   approach roads and 6th Australian assembly areas. Record uncertainty where
+   10 km hexes cannot resolve them. The source maps are now identified, but the
+   exact game-hex correspondence remains unverified.
 2. Audit the linked interval's actual positions, Australian transport and
    serviceability, Axis frontier withdrawal, Sollum throughput, water and
    Bardia port access against dated records. The first legal trace above is

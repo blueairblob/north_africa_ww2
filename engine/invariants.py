@@ -51,6 +51,9 @@ def check(state, gmap):
         h = tuple(int(x) for x in key.split(","))
         if not 1 <= level <= FORT_MAX or any(u["side"] != owner for u in there.get(h, [])):
             bad.append(f"I-13 fortification at {key}: level {level}, {owner}")
+    for key, owner in state.get("perimeters", {}).items():
+        if owner not in S.SIDES or key not in state["forts"] or state["forts"][key][1] != owner:
+            bad.append(f"I-13 perimeter at {key}: no matching fortification for {owner}")
     for key, work in state.get("fort_work", {}).items():
         try:
             h = tuple(int(x) for x in key.split(","))
