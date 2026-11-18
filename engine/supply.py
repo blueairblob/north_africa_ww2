@@ -270,6 +270,8 @@ def upkeep(state, gmap, scenario):
 
 
 def supply_phase(state, gmap, scenario, audit):
+    from . import perimeter as P
+    P.expire(state, scenario)
     land(state, gmap, scenario)
     for side in S.SIDES:
         distribute(state, gmap, scenario, side, audit)

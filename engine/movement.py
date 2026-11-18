@@ -3,6 +3,7 @@ from . import board as B
 from . import state as S
 from . import units as U
 from . import weather as W
+from . import perimeter as P
 from .orders import MOVING, full_path, mode
 from .paths import step_cost
 
@@ -48,10 +49,11 @@ def movement_phase(state, gmap, ctx, scenario):
             for u in m["units"]:
                 S.log(state, "stopped", side=u["side"], unit=u["id"], why=why, hex=u["hex"])
 
-    def breach_payer(m):
+    def breach_payer(m, h):
         """The first infantry formation in a party able to prepare an empty crossing."""
+        cost = (P.PREP_STORES if P.ready(state, h, m["side"], "engineers") else BREACH_STORES)
         return next((u for u in m["units"] if u["type"] in ("foot", "motorised")
-                     and u["stores"] >= u["size"] * BREACH_STORES), None)
+                     and u["stores"] >= u["size"] * cost), None)
 
     def passing(m, here, enemy_zoc, foe):
         """The way through the full hexes ahead to the first hex with room, as one step:
@@ -96,7 +98,7 @@ def movement_phase(state, gmap, ctx, scenario):
             if held.get(nxt) == foe:
                 stop(m, "contact")
             elif (state.get("perimeters", {}).get(S.fort_key(nxt)) == foe
-                  and (not m["attack"] or breach_payer(m) is None)):
+                  and (not m["attack"] or breach_payer(m, nxt) is None)):
                 stop(m, "perimeter needs an infantry Attack with stores")
             elif here in zocs[foe] and nxt in zocs[foe]:
                 stop(m, "zone of control")
@@ -142,8 +144,9 @@ def movement_phase(state, gmap, ctx, scenario):
             nxt, cost, hexes = trying[lead]
             m = movers[lead]
             if state.get("perimeters", {}).get(S.fort_key(nxt)) == S.enemy(m["side"]):
-                payer = breach_payer(m)
-                spent = payer["size"] * BREACH_STORES
+                payer = breach_payer(m, nxt)
+                rate = P.PREP_STORES if P.ready(state, nxt, m["side"], "engineers") else BREACH_STORES
+                spent = payer["size"] * rate
                 payer["stores"] -= spent
                 state["sides"][m["side"]]["spent"] += spent
             for u in m["units"]:

@@ -54,6 +54,10 @@ def check(state, gmap):
     for key, owner in state.get("perimeters", {}).items():
         if owner not in S.SIDES or key not in state["forts"] or state["forts"][key][1] != owner:
             bad.append(f"I-13 perimeter at {key}: no matching fortification for {owner}")
+    for key, work in state.get("perimeter_prep", {}).items():
+        if (state.get("perimeters", {}).get(key) != S.enemy(work.get("side"))
+                or not any(work.get(role) for role in ("engineers", "artillery"))):
+            bad.append(f"I-13 preparation at {key}: no intact enemy perimeter or work")
     for key, work in state.get("fort_work", {}).items():
         try:
             h = tuple(int(x) for x in key.split(","))

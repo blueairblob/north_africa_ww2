@@ -455,6 +455,18 @@ class Session:
             reach = self.allowance(group) // 4 + 1
             if not any(S.distance(tuple(u["hex"]), tuple(e["hex"])) <= reach for e in self.view["enemy"]):
                 return False, "No enemy in sight within its reach."
+        if name == "prepare":
+            from engine import perimeter as P
+            possible = any(m["type"] in P.ROLE and m["stores"] >= m["size"] * P.PREP_STORES
+                           and not m["out_of_stores"] for m in group)
+            if not possible:
+                return False, "Infantry or guns need stores to prepare an enemy perimeter."
+            if not any(owner != self.side and any(
+                    m["type"] in P.ROLE and S.distance(tuple(m["hex"]), tuple(int(x) for x in key.split(",")))
+                    <= P.RANGE[m["type"]] and not self.view.get("perimeter_prep", {}).get(key, {}).get(P.ROLE[m["type"]])
+                    for m in group)
+                    for key, owner in self.view.get("perimeters", {}).items()):
+                return False, "No unfinished enemy perimeter work is within range."
         if name == "dig_in" and not fighters:
             return False, "A headquarters does not dig in."
         if name == "dig_in" and self._dug(u["id"]):
@@ -477,8 +489,9 @@ class Session:
         if self.unit(uid) is None:
             return []
         has = None if alone else self.pending[self.side].get(self.leader(uid), {}).get("order")
-        return [name for name in ("move", "attack", "road_march", "hold", "dig_in", "rest", "join", "split", "recall")
-                if name == has or self.can(uid, name, alone)[1] not in NEVER]
+        return [name for name in ("move", "attack", "prepare", "road_march", "hold", "dig_in", "rest", "join", "split", "recall")
+                if name == has or ((name != "prepare" or self.view.get("perimeters"))
+                                   and self.can(uid, name, alone)[1] not in NEVER)]
 
     def blocked(self, uid, alone=False):
         """[(order, why)] for the orders shown that the unit cannot take just now."""
@@ -731,6 +744,8 @@ class Session:
         """The way a unit would go under this order: the hexes, how many it reaches this turn,
         and the MP and fuel for those. None if the order would be rejected."""
         uid = self.leader(uid)
+        if name == "prepare":
+            return None
         order = {"unit": uid, "order": name, "to": list(to)}
         u = self.unit(uid)
         if u is None or O.check_one(self.state, self.gmap, self.side, order, {}):

@@ -79,6 +79,7 @@ def enter(state, u, h, entered):
         del state["forts"][S.fort_key(h)]                       # 9.5.6
     if state.get("perimeters", {}).get(S.fort_key(h)) == S.enemy(u["side"]):
         del state["perimeters"][S.fort_key(h)]
+        state.get("perimeter_prep", {}).pop(S.fort_key(h), None)
         S.log(state, "perimeter breach", side="both", sides=list(S.SIDES), hex=list(h), by=u["side"])
     if U.is_hq(u):
         u["stationary"] = False                                 # 9.9.1

@@ -54,9 +54,10 @@ def problems(scenario, gmap):
         spec = mission.get(side)
         if spec is None:
             continue
-        if (not isinstance(spec, dict) or set(spec) - {"orders", "success_grade", "failure_grade", "avoid_attack", "avoid_attack_hexes", "commendations"}
+        if (not isinstance(spec, dict) or set(spec) - {"orders", "success_grade", "failure_grade", "avoid_attack", "avoid_attack_hexes", "prepare_breach", "commendations"}
                 or not isinstance(spec.get("orders"), list) or not spec["orders"]
-                or any(spec.get(k) not in GRADES for k in ("success_grade", "failure_grade") if k in spec)):
+                or any(spec.get(k) not in GRADES for k in ("success_grade", "failure_grade") if k in spec)
+                or ("prepare_breach" in spec and type(spec["prepare_breach"]) is not bool)):
             bad.append(f"mission {side}: expected orders and an optional success or failure grade")
             continue
         avoid = spec.get("avoid_attack", [])

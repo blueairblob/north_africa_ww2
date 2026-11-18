@@ -1,16 +1,17 @@
-"""The six orders: when each is legal and the reply when it is not (docs/RULES.md §8)."""
+"""Orders: when each is legal and the reply when it is not (docs/RULES.md §8)."""
 from . import paths
+from . import perimeter as P
 from . import state as S
 from . import units as U
 
-ORDERS = ("move", "attack", "hold", "dig_in", "road_march", "rest", "join")     # join: 20.2.2
+ORDERS = ("move", "attack", "prepare", "hold", "dig_in", "road_march", "rest", "join")     # join: 20.2.2
 MOVING = ("move", "attack", "road_march", "join")
 AIR = ("support", "interdict", "recon")
 VIA_MAX = 4             # points on the way in one order
 ATTACK_MIN = 40         # least cohesion to be given, or to carry out, an attack
 
 REPLIES = {
-    "E_ORDER": "That is not one of the six orders.",
+    "E_ORDER": "That is not an available order.",
     "E_UNIT": "There is no such unit.",
     "E_NOT_YOURS": "That unit is not yours.",
     "E_NOT_ON_MAP": "That unit is not on the map.",
@@ -28,6 +29,7 @@ REPLIES = {
     "E_AIR": "That is not an air mission; support is flown.",
     "E_JOIN": "That unit cannot join that one.",
     "E_GROUPED": "That unit is in a group; order the group, or split the unit from it.",
+    "E_PREPARE": "Prepare needs a nearby enemy perimeter, infantry or guns, and stores.",
 }
 
 
@@ -98,6 +100,17 @@ def check_one(state, gmap, side, order, seen):
                 or other["side"] != u["side"] or other in members):
             return "E_JOIN"
         return None if full_path(gmap, u, order, state) is not None else "E_NO_PATH"
+    if name == "prepare":
+        h = _hex(order.get("to"))
+        if "via" in order or h is None or not gmap.passable(h):
+            return "E_PREPARE"
+        if state.get("perimeters", {}).get(S.fort_key(h)) != S.enemy(side):
+            return "E_PREPARE"
+        if not any(m["type"] in P.ROLE and S.distance(tuple(m["hex"]), h) <= P.RANGE[m["type"]]
+                   and m["stores"] >= m["size"] * P.PREP_STORES and not m["out_of_stores"]
+                   and not P.ready(state, h, side, P.ROLE[m["type"]]) for m in members):
+            return "E_PREPARE"
+        return None
     if name not in MOVING:                                      # 8.4.1
         if "to" in order or "via" in order:
             return "E_DEST"

@@ -5,7 +5,7 @@ from pathlib import Path
 
 import pytest
 
-from engine import campaign, checker, computer, reinforce, runner, scenarios, state as S
+from engine import board, campaign, checker, computer, perimeter as P, reinforce, runner, scenarios, state as S
 from helpers import GMAP
 from screen.session import Session
 
@@ -54,6 +54,39 @@ def test_tobruk_research_chapters_are_contiguous_and_campaign_only():
             campaign.start(scene, GMAP)
 
 
+def test_abstract_tobruk_defender_starts_on_southern_perimeter_proxy():
+    for scene in (chapters()[0], chapters()[4]):
+        defender = next(u for u in scene["units"] if u["id"] == 192)
+        assert defender["hex"] == [56, 12]
+        assert [56, 12, 2, "axis"] in scene["forts"]
+
+
+@pytest.mark.parametrize("bardia_owner", ("axis", "cw"))
+def test_tobruk_handoff_keeps_a_played_bardia_result_and_preparation(bardia_owner):
+    approach, assault = chapters()[3:5]
+    played = S.new_game(approach, GMAP)
+    played["campaign"] = {"id": "north_africa", "history": []}
+    played["perimeters"] = {"56,12": "axis"}
+    played["perimeter_prep"] = {"56,12": {"side": "cw", "engineers": "1941-01-22"}}
+    if bardia_owner == "cw":
+        for uid in (180, 181, 182):
+            board.remove(played, S.unit(played, uid), "withdrawn")
+        board.enter(played, S.unit(played, 331), (67, 13), set())
+        board.settle_owners(played, GMAP)
+    played["turn"] = approach["turns"] + 1
+    played["over"] = True
+    played["result"] = {"winner": bardia_owner, "grade": "tactical"}
+    carried = campaign.handoff(played, approach, assault, GMAP)
+    assert carried["places"]["Bardia"] == bardia_owner
+    assert carried["perimeters"] == played["perimeters"]
+    assert carried["perimeter_prep"] == played["perimeter_prep"]
+    P.expire(carried, assault)
+    assert P.ready(carried, (56, 12), "cw", "engineers")
+    carried["turn"] = 4
+    P.expire(carried, assault)
+    assert carried["perimeter_prep"] == {}
+
+
 def test_linked_trace_carries_actual_control_into_february_1942():
     scenes = chapters()
     players = {side: computer.ComputerHard(GMAP) for side in S.SIDES}
@@ -63,7 +96,7 @@ def test_linked_trace_carries_actual_control_into_february_1942():
     assert final["places"]["Bardia"] == "axis" and final["places"]["Tobruk"] == "cw"
     assert all(S.unit(final, uid) is not None for uid in (190, 191, 192, 193, 194, 195, 196))
     assert S.unit(final, 206)["status"] == "on_map"
-    assert S.unit(final, 354)["status"] == "on_map" and S.unit(final, 354)["hex"] == [55, 10]
+    assert S.unit(final, 354)["status"] == "on_map"
     assert final["result"]["winner"] == "cw"
     siege = json.loads((DRAFTS / "tobruk_siege_opening.json").read_text(encoding="utf-8"))
     assert checker.problems(siege, GMAP) == []

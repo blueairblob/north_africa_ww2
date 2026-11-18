@@ -1,6 +1,7 @@
 """Combat: battles, values, losses, retreat and advance (docs/RULES.md §10)."""
 from . import board as B
 from . import state as S
+from . import perimeter as P
 from . import units as U
 from . import weather as W
 from .gamemap import distance
@@ -154,8 +155,11 @@ def values(state, gmap, ctx, battle):
         total += (10 * u["steps"] * (d_soft * sa + d_hard * ha) * efficiency(u, battle)
                   * posture) // ((sa + ha) * 10 ** 8)
     fort = state["forts"].get(S.fort_key(h))
+    fort_level = (fort[0] if fort and fort[1] == dfn[0]["side"] else 0)
+    if fort_level and P.ready(state, h, att[0]["side"], "artillery"):
+        fort_level = max(0, fort_level - 1)
     ground = ((ROUGH_PCT if gmap.rough(h) else 0) + (TOWN_PCT if h in gmap.town_hexes else 0)
-              + (FORT_PCT * fort[0] if fort and fort[1] == dfn[0]["side"] else 0))
+              + FORT_PCT * fort_level)
     battle["def"] = max(1, (total * (100 + ground) * (100 + ctx["support"][dfn[0]["side"]])) // 10000)
     battle["steps"] = (sa + ha, sd + hd)
 

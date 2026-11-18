@@ -95,3 +95,22 @@ no perimeter field still load. This is an operational proxy, with the
 historical engineer programme, grid registration, garrison distribution and
 tank serviceability still to be researched;
 see `BARDIA_OPENING_RESEARCH.md` and `COMPASS_PURSUIT_RESEARCH.md`.
+
+The Tobruk source-map pass placed the southern crossing proxy off the Bardia
+road at `[56,12]`. An optional, dated Prepare order now records infantry
+crossing work and a local gun barrage before the attack, with estimated
+stores costs and two-day expiry. The linked trial still needs validated
+garrison and tank serviceability data, surrender behaviour and play balance.
+
+### Future battle: Hold / Take Tobruk
+
+The coloured [official-history attack map](https://s3-ap-southeast-2.amazonaws.com/awm-media/collection/RCDIG1070231/document/5519529.PDF)
+is a strong reference for a separate, closer-scale Tobruk scenario playable
+from either side. A detailed map could show the southern break-in, individual
+perimeter sectors and posts, the anti-tank ditch, the El Adem and Bardia roads,
+interior batteries and the approach to the harbour. The Commonwealth player
+would plan and exploit a crossing; the Axis player would hold sectors, commit
+reserves and decide where to counterattack. This is a future battle concept,
+not a replacement for the current 10 km campaign map. Check the archive's
+image reuse terms before placing the colour plate itself in a distributable
+game; a new game map can use its geography and annotations as research input.

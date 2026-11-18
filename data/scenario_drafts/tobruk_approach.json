@@ -208,7 +208,7 @@
     ],
     [
       56,
-      11,
+      12,
       2,
       "axis"
     ]
@@ -448,7 +448,7 @@
       "src": "E",
       "hex": [
         56,
-        11
+        12
       ]
     },
     {
@@ -686,13 +686,16 @@
           "verb": "stage",
           "hex": [
             57,
-            11
+            12
           ],
           "label": "the eastern Tobruk approach (approximate)"
         }
       ],
       "avoid_attack": [
         "Tobruk"
+      ],
+      "avoid_attack_hexes": [
+        [56, 12]
       ],
       "success_grade": "tactical",
       "failure_grade": "tactical"
@@ -707,7 +710,7 @@
           "verb": "stage",
           "hex": [
             56,
-            11
+            12
           ],
           "label": "the Tobruk southeastern perimeter (approximate)"
         }

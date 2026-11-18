@@ -24,7 +24,7 @@ from .session import GOES
 from .sound import Sounds
 from .paths import open_game_files, user_folder
 
-GO = {pygame.K_m: "move", pygame.K_a: "attack", pygame.K_t: "road_march",        # orders with a destination
+GO = {pygame.K_m: "move", pygame.K_a: "attack", pygame.K_p: "prepare", pygame.K_t: "road_march",        # orders with a destination
       pygame.K_j: "join", pygame.K_x: "split", pygame.K_c: "recall",             # the three for groups
       pygame.K_h: "hold", pygame.K_d: "dig_in", pygame.K_r: "rest"}              # and those that stay
 AIR = {pygame.K_1: "support", pygame.K_2: "interdict", pygame.K_3: "recon"}
@@ -652,7 +652,7 @@ class App:
             ui.message = "Join: click another friendly unit, or choose it with the arrow keys and press Enter." if ui.mode else ""
         elif name in ("hold", "dig_in", "rest"):
             self.give(name)
-        elif name in ("move", "attack", "road_march"):
+        elif name in ("move", "attack", "prepare", "road_march"):
             ui.mode = None if ui.mode == name else name
             ui.hover = tuple(self.session.unit(ui.selected)["hex"]) if ui.mode else ui.hover     # the cursor starts on the unit
             ui.message = (f"{T.ORDER_NAME[name]}: click the hex, or choose it with the arrow keys and press Enter."

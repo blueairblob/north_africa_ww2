@@ -92,18 +92,19 @@ def buttons(size):
     navigation = min(256, max(170, console.w // 5))
     x0, right = identity + 12, console.right - navigation - 12
     width = right - x0
-    columns = 9 if width >= 765 else 5
-    rows = 1 if columns == 9 else 2
+    commands = len(names) - 2
+    columns = 10 if width >= 850 else 5
+    rows = (commands + columns - 1) // columns
     cell = (width - GAP * (columns - 1)) // columns
     height = 44 if rows == 1 else 37
     top = console.y + (console.h - height * rows - GAP * (rows - 1)) // 2
     out = {}
-    for i, name in enumerate(names[:9]):
+    for i, name in enumerate(names[:commands]):
         out[name] = pygame.Rect(x0 + (i % columns) * (cell + GAP),
                                 top + (i // columns) * (height + GAP), cell, height)
     half = (navigation - GAP) // 2
-    out[names[9]] = pygame.Rect(right + 6, console.y + 25, half, 50)
-    out[names[10]] = pygame.Rect(right + 6 + half + GAP, console.y + 25, half, 50)
+    out[names[-2]] = pygame.Rect(right + 6, console.y + 25, half, 50)
+    out[names[-1]] = pygame.Rect(right + 6 + half + GAP, console.y + 25, half, 50)
     return out
 
 

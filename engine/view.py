@@ -84,6 +84,8 @@ def view(state, gmap, scenario, side):
         "timetable": timetable(scenario, side),                              # 14.2: its own dated events, in order
         "enemy": seen, "forts": forts,
         "perimeters": dict(state.get("perimeters", {})),  # mapped permanent works; an opened gap disappears
+        "perimeter_prep": {key: {role: bool(work.get(role)) for role in ("engineers", "artillery")}
+                           for key, work in state.get("perimeter_prep", {}).items() if work.get("side") == side},
         "fort_work": {key: progress for key, (owner, progress) in state.get("fort_work", {}).items() if owner == side},
         "places": dict(state["places"]),
         "enemy_convoys": observed_convoys(state, side),

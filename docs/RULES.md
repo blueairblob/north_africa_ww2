@@ -630,14 +630,15 @@ of the side spots `AIR_RECON_HEXES × points` hexes further (14.3).
 
 ## 8. Orders
 
-### 8.1 The six orders
+### 8.1 Orders
 
 **8.1.1** Each unit on the map has exactly one order each turn: `move`,
-`attack`, `hold`, `dig_in`, `road_march` or `rest`.
+`attack`, `prepare`, `hold`, `dig_in`, `road_march`, `rest` or `join`.
 
 **8.1.2** An order is a record: the unit id, the order name, and, for `move`,
 `attack` and `road_march`, a destination hex `to` and optionally a list `via`
 of up to `VIA_MAX` hexes to pass through in the order given.
+`prepare` also takes a destination hex `to`, but no `via`.
 
 **8.1.3** A unit given no order, or whose order is rejected, has the order
 `hold`.
@@ -647,11 +648,11 @@ until they are done, are conveniences of the screen. The engine receives one
 order per unit per turn. At the screen an order with somewhere to go stands
 (Move, Attack, Travel or March, Join) until the unit arrives, the order can no
 longer be carried out, or its attack is repulsed; Dig in stands until the
-defences in the hex are at `FORT_MAX`. Rest is for one turn. A unit with no
+defences in the hex are at `FORT_MAX`. Prepare and Rest are for one turn. A unit with no
 order holds (8.1.3), and the screen shows Hold as its order. Every turn the
 screen takes the player through every unit or group: each is shown with what
 it will do, let stand with one key or tap and changed by any order. A click on
-the map gives an order only after Move, Attack, Travel or March, or Join has
+the map gives an order only after Move, Attack, Prepare, Travel or March, or Join has
 been pressed. The screen shows a split, and a join of units already
 in one hex, as soon as it is ordered: the rules do both in the Orders phase,
 before anything moves (20.2.2, 20.2.4), so nothing in the game is changed by
@@ -676,7 +677,7 @@ because of an enemy unit.
 
 In this sequence; the first failure gives the reply.
 
-1. The order is a record with a whole-number unit id and one of the six
+1. The order is a record with a whole-number unit id and an available
    order names. Else `E_ORDER`.
 2. The unit id is a unit of the scenario. Else `E_UNIT`.
 3. The unit belongs to the side submitting. Else `E_NOT_YOURS`.
@@ -715,6 +716,15 @@ men on foot march it, more slowly (9.3). The checks of 8.4.2, with one more:
   on a road or track link; else `E_NOT_ON_ROUTE`.
 
 The path of check 6 is the road-march path (9.2.3).
+
+**8.4.5 Prepare.** `to` must be an intact enemy perimeter hex. A foot or
+motorised formation must stand adjacent to plan an engineer crossing; guns
+may register a barrage from at most two hexes away. Each participating
+formation needs 25 tonnes of stores per size and must not be out of stores.
+The order has no `via` and the unit does not move. If these checks fail, reply
+`E_PREPARE`. A unit drawn into battle cannot finish its preparation that turn.
+Preparation is completed after combat and lasts through the
+following two calendar days unless the crossing is opened sooner.
 
 ### 8.5 Replies
 
@@ -1418,8 +1428,12 @@ entry, which removes the fort and opens the crossing for later movement. A
 perimeter held by an enemy must first be won in combat; a surviving supplied
 foot or motorised attacker must advance into it to open the crossing. Enemy
 perimeters block ordinary routes and retreats. This is a coarse game proxy for
-ditch, wire, mines and engineer preparation, not a counted engineer unit or a
-historically measured tonnage. `preserve` names a group of
+ditch, wire and mines, not a counted engineer unit or a historically measured
+tonnage. A prepared engineer crossing halves the stores needed for entry to
+25 tonnes per size. A registered barrage reduces the defending fort's combat
+bonus by one level at that hex only. Both effects are optional and expire
+after two days; neither opens the perimeter without a successful entry.
+`preserve` names a group of
 formations and a minimum percentage of their combined steps. Its baseline is
 the **actual played strength at chapter entry**, including newly scheduled
 formations, not a historical reset. A destroyed formation contributes zero;
@@ -1430,7 +1444,9 @@ A side's mission may also list
 `avoid_attack` places for computer planning: the computer will not initiate
 an attack on those named hexes while that chapter's orders apply. Human
 players may still choose to attack. `avoid_attack_hexes` gives the same
-computer instruction for specific unnamed hexes.
+computer instruction for specific unnamed hexes. `prepare_breach` asks the
+computer to spend a turn preparing a reachable mapped breach before it attacks;
+human orders remain free.
 
 A side may also list optional `commendations`, each with a title and one
 ordinary mission order. They are checked from the played state at the chapter

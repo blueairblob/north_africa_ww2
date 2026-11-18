@@ -223,7 +223,7 @@ late, lack engineers or supplies, or face a different defending position.
 
 The Compass opening now marks three intact fortification proxies: Bardia's
 western and southern approaches at `[66,13]` and `[67,14]`, and Tobruk's
-southeastern approach at `[56,11]`. An empty enemy perimeter blocks ordinary
+southern approach at `[56,12]`. An empty enemy perimeter blocks ordinary
 movement. A player may order a foot or motorised formation to **Attack** the
 hex if it has at least 50 tonnes of stores per formation size; the entry
 spends those stores, opens the perimeter and removes the fort. An occupied
@@ -233,16 +233,17 @@ the order and timing. A failed approach or missing stores leaves the work
 intact, and a later linked chapter carries that actual state forward.
 
 The 50-tonne threshold and the 10 km crossing hexes are **game estimates**.
-There is no separate engineer counter, mine clearance time, artillery
-programme or serviceability pool yet. The action therefore represents a
-prepared crossing at operational scale, not a claim that infantry alone
+There is no separate engineer counter, mine clearance time or serviceability
+pool yet. Optional, short-lived infantry and gun preparation now reduces the
+next crossing cost and local fort bonus; this still does not claim that infantry alone
 cleared the historical works. The interval computer now stages at `[66,14]`
 and `[67,15]`, outside the mapped Bardia works, and is instructed to avoid
 attacking the town and either perimeter before 3 January. Human orders remain
 unrestricted.
 
-In the revised seed `1940` Hard/Hard trace, a Commonwealth formation opens
-the western proxy on 3 January while Bardia town stays Axis-held. The town
+With the Tobruk defender's opening proxy moved to the southern sector, the
+revised seed `1940` Hard/Hard trace opens Bardia's western proxy on 4 January
+while Bardia town stays Axis-held. The town
 fight is still lost by 5 January, and 7th RTR does not reliably support it.
 This verifies the crossing sequence and persistence in one reproducible
 computer run; it does not validate the assault balance. The Berryman and
@@ -250,13 +251,9 @@ computer run; it does not validate the assault balance. The Berryman and
 the garrison distribution, engineer support and tank serviceability remain
 open research gates.
 
-The next modelling decision is how a player prepares and opens a defended
-perimeter *using orders available in the game*. It needs an explicit crossing
-condition and visible progress, then a way for the remaining garrison to
-hold the southern sector after the town falls. Choose any movement and combat
-costs from play and evidence rather than treating the 1:50,000 posts as
-individual 10 km hexes. Apply the same contract to Tobruk only after its
-perimeter map has been checked. A complete linked trial must then show the
+The remaining Bardia decision is how the garrison holds the southern sector
+after the town falls. The preparation and crossing costs remain game estimates;
+the 1:50,000 posts are not individual 10 km hexes. A complete linked trial must show the
 first-phase crossing, second-phase town and southern-sector outcomes as
 separate events, preserving the actual played losses and position.
 

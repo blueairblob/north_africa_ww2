@@ -1,6 +1,7 @@
 """After the fighting: recovered tanks, rest, digging (docs/RULES.md §11)."""
 from . import state as S
 from . import units as U
+from . import perimeter as P
 
 RECOVER_PCT = 50        # share of its lost tank steps the field's holder gets back
 REST_GAIN = 20          # cohesion regained by resting
@@ -10,6 +11,7 @@ DIG_STORES = 50         # tonnes of stores per size to raise a level
 
 
 def recovery_phase(state, ctx, scenario):
+    P.prepare(state, ctx, scenario)
     for battle in ctx["battles"]:                                            # 11.1
         if not battle["fought"]:
             continue

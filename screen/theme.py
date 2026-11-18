@@ -33,10 +33,11 @@ ZOC_OWN, ZOC_FOE, UNSEEN = (40, 110, 200, 50), (210, 50, 40, 70), (60, 52, 40, 1
 GOOD, POOR, FUEL, STORES = (60, 150, 70), (200, 60, 40), (150, 110, 40), (40, 100, 180)
 MISSION, MISSION_DARK = (40, 240, 90), (13, 77, 36)
 BUTTON, BUTTON_ON, BUTTON_GO = (222, 210, 182), (255, 226, 60), (120, 170, 110)
-ORDER_KEY = {"move": "M", "attack": "A", "hold": "H", "dig_in": "D", "road_march": "T", "rest": "R", "join": "J"}
-ORDER_NAME = {"move": "Move", "attack": "Attack", "hold": "Hold", "dig_in": "Dig in",
+ORDER_KEY = {"move": "M", "attack": "A", "prepare": "P", "hold": "H", "dig_in": "D", "road_march": "T", "rest": "R", "join": "J"}
+ORDER_NAME = {"move": "Move", "attack": "Attack", "prepare": "Prepare", "hold": "Hold", "dig_in": "Dig in",
               "road_march": "Travel", "rest": "Rest", "join": "Join"}   # Travel is the road march of the rules
 ORDER_HELP = {"move": "go to a hex across country", "attack": "go there and attack what you meet",
+              "prepare": "plan an enemy perimeter crossing or register the barrage (costs stores)",
               "hold": "stay and defend", "dig_in": "stay and build defences (costs stores)",
               "road_march": "far and fast by road; nearly helpless if caught", "rest": "stay and recover",
               "join": "go to a unit of its division and group with it"}
@@ -48,7 +49,7 @@ STRENGTH = {"armour": (10, "tanks"), "motorised": (800, "men"), "foot": (800, "m
 CLAIMED = ("tanks", "armoured cars", "scout vehicles", "guns", "men")                 # the order a battle's claim is told in
 MORALE = ("Very poor", "Poor", "Very low", "Low", "Fair", "Normal", "Good", "Very good", "Excellent")
 # the order bar: name, label, key shown
-BUTTONS = (("move", "Move", "M"), ("attack", "Attack", "A"), ("road_march", "Travel", "T"),
+BUTTONS = (("move", "Move", "M"), ("attack", "Attack", "A"), ("prepare", "Prepare", "P"), ("road_march", "Travel", "T"),
            ("hold", "Hold", "H"), ("dig_in", "Dig in", "D"), ("rest", "Rest", "R"),
            ("join", "Join", "J"), ("split", "Split", "X"), ("recall", "Recall", "C"),
            ("next", "Next unit", "Space"), ("done", "End turn", "Enter"))

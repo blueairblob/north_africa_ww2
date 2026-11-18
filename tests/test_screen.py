@@ -1317,7 +1317,8 @@ def test_the_orders_are_in_the_console_and_travel_is_the_road_march():
         assert emblem.size == minimum
         assert layout.areas(size)["console"].contains(emblem)
         assert emblem.right + 10 < layout.buttons(size)["move"].left - 10
-    assert len(where) == 11 and all(area["console"].contains(r) for r in where.values())
+    assert len(where) == 12 and "prepare" in where
+    assert all(area["console"].contains(r) for r in where.values())
     assert not any(a.colliderect(b) for n, a in where.items() for m, b in where.items() if n < m)
     assert theme.ORDER_NAME["road_march"] == "Travel" and ("road_march", "Travel", "T") in theme.BUTTONS
     assert ("rest", "Rest", "R") in theme.BUTTONS

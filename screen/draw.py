@@ -1371,6 +1371,11 @@ class Painter:
         if perimeter:
             lines.append(("Perimeter: infantry Attack with stores to cross" if perimeter != session.side
                           else "Perimeter: intact", False, T.DIM))
+        prep = view.get("perimeter_prep", {}).get(key)
+        if prep:
+            parts = [name for role, name in (("engineers", "crossing planned"), ("artillery", "barrage registered"))
+                     if prep.get(role)]
+            lines.append(("Prepared: " + ", ".join(parts), False, T.DIM))
         font = self.font(13)
         w = max(self.font(13, bold).size(s)[0] for s, bold, _ in lines) + 14
         h = len(lines) * (font.get_height() + 2) + 8
@@ -1534,6 +1539,9 @@ class Painter:
             pygame.draw.polygon(surface, colour, [(x + 8, cy), (x + 1, cy - 6), (x + 1, cy + 6)])
         elif name == "attack":
             pygame.draw.polygon(surface, colour, star(x, cy, 10))
+        elif name == "prepare":
+            pygame.draw.circle(surface, colour, (x, cy), 9, 2)
+            pygame.draw.line(surface, colour, (x - 11, cy), (x + 11, cy), 2)
         elif name == "hold":
             pts = [(x + 9 * math.cos(math.pi * k / 4), cy + 9 * math.sin(math.pi * k / 4)) for k in range(8)]
             pygame.draw.polygon(surface, colour, pts, 2)

@@ -6,6 +6,7 @@ strength, position or supply outside the side view is read.
 from . import orders as O
 from . import mission as M
 from . import paths
+from . import perimeter as P
 from . import tactics
 from . import units as U
 from .board import HQ_CARRY
@@ -320,6 +321,22 @@ class ComputerOpponent:
         formations = sorted(parties(view), key=lambda party: party[0]["id"])
         mission_anchors = self._mission_anchors(view, formations)
         mission_orders = self._mission_orders(view)
+        prep_orders, assigned_prep = {}, set()
+        for goal in (mission_orders if view.get("mission", {}).get(side, {}).get("prepare_breach") else ()):
+            if goal["verb"] != "breach":
+                continue
+            target = tuple(goal["hex"])
+            key = f"{target[0]},{target[1]}"
+            if view.get("perimeters", {}).get(key) in (None, side):
+                continue
+            ready = view.get("perimeter_prep", {}).get(key, {})
+            for lead, members in formations:
+                roles = {P.ROLE[u["type"]] for u in members if u["type"] in P.ROLE
+                         and distance(tuple(u["hex"]), target) <= P.RANGE[u["type"]]
+                         and not u["out_of_stores"] and u["stores"] >= u["size"] * P.PREP_STORES}
+                if any(not ready.get(role) and (key, role) not in assigned_prep for role in roles):
+                    prep_orders[lead["id"]] = target
+                    assigned_prep.update((key, role) for role in roles if not ready.get(role))
         avoid_attack = ({tuple(self.gmap.places[name]["hex"])
                          for name in view.get("mission", {}).get(side, {}).get("avoid_attack", [])}
                         if self.mission_enabled else set())
@@ -331,6 +348,7 @@ class ComputerOpponent:
                and tuple(order["hex"]) not in secure_hexes for order in mission_orders):
             avoid_attack.update(tuple(self.gmap.places[order["place"]]["hex"])
                                 for order in mission_orders if order["verb"] == "hold")
+        avoid_attack.update(prep_orders.values())
         self.avoid_attack = frozenset(avoid_attack)
         mission_holds = {order["place"] for order in mission_orders if order["verb"] == "hold"}
         route_blockers = set()
@@ -348,6 +366,9 @@ class ComputerOpponent:
             here = tuple(lead["hex"])
             fighters = [m for m in members if m["type"] != "hq"]
             fighting = bool(fighters) and any(m["cohesion"] >= O.ATTACK_MIN for m in fighters)
+            if lead["id"] in prep_orders:
+                orders.append({"unit": lead["id"], "order": "prepare", "to": list(prep_orders[lead["id"]])})
+                continue
             cut_off = any(not m["traced"] for m in members)
             short_of_stores = any(m["out_of_stores"] for m in members)
             fuel_hexes = min((m["fuel"] // U.step_fuel(m) for m in members if U.is_vehicle(m)), default=99)

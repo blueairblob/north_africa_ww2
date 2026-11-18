@@ -69,12 +69,17 @@ def test_three_chapter_research_run_preserves_history_and_delays_the_assault():
     while not session.state["over"]:
         session.done()
         if len(session.record) == 1:
+            assert "breach:66,13" not in session.state.get("mission_reached", {}).get("cw", [])
+            assert session.state["places"]["Bardia"] == "axis"
+            assert all(o.get("to") != [67, 13] for o in session.record[0]["cw"]["orders"])
+        elif len(session.record) == 2:
             assert "breach:66,13" in session.state["mission_reached"]["cw"]
             assert any(e["event"] == "perimeter breach" and e["hex"] == [66, 13]
                        for e in session.state["log"])
             assert session.state["places"]["Bardia"] == "axis"
-            assert all(o.get("to") != [67, 13] for o in session.record[0]["cw"]["orders"])
-        elif len(session.record) == 2:
+            assert any(e["event"] == "battle" and e["hex"] == [67, 13]
+                       for e in session.state["log"])
+        elif len(session.record) == 3:
             assert any(e["event"] == "battle" and e["hex"] == [67, 13]
                        for e in session.state["log"])
     assert len(session.record) == 3 and session.state["turn"] == 4
